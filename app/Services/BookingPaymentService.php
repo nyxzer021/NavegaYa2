@@ -40,8 +40,10 @@ class BookingPaymentService
                     'webhook_event_id' => $paymentData['webhook_event_id'] ?? null,
                     'amount' => $total,
                     'currency_code' => 'PEN',
+                    'commission_rate' => $rate,
                     'commission_amount' => $commission,
                     'operator_net' => $operatorNet,
+                    'commission_status' => 'pending',
                     'status' => 'confirmed',
                     'paid_at' => now(),
                     'provider_payload' => $paymentData['provider_payload'] ?? null,
@@ -54,7 +56,6 @@ class BookingPaymentService
                 'paid_at' => now(),
                 'expires_at' => null,
             ]);
-            $organization->increment('pending_payout_balance', $operatorNet);
             $reservation->seats->each(fn (ReservationSeat $seat) => Ticket::firstOrCreate(
                 ['reservation_seat_id' => $seat->id],
                 [

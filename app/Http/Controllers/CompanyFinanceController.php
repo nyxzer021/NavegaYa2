@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Organization;
-use App\Models\Reservation;
+use App\Models\Payment;
 use App\Support\AdminScope;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CompanyFinanceController extends Controller
@@ -16,28 +14,26 @@ class CompanyFinanceController extends Controller
     {
         $organization = $this->organization();
         $organization->loadMissing('vessels.basePort');
-        $confirmed = $this->confirmedReservations($organization);
-        $grossToday = (float) (clone $confirmed)->whereDate('updated_at', today())->sum('total_amount');
-        $grossMonth = (float) (clone $confirmed)->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('total_amount');
-        $rate = (float) ($organization->commission_rate ?? 8);
+
+        $payments = $this->payments($organization)
+            ->with(['reservation.departure.transportRoute.originPort', 'reservation.departure.transportRoute.destinationPort', 'reservation.airDeparture.airRoute'])
+            ->latest('paid_at')
+            ->get();
+
+        $todayPayments = $payments->filter(fn (Payment $payment): bool => $payment->paid_at?->isToday() ?? false);
+        $monthPayments = $payments->filter(fn (Payment $payment): bool => $payment->paid_at?->isCurrentMonth() ?? false);
 
         return view('company.finance.index', [
-            'organization' => $organization, 'commissionRate' => $rate,
-            'grossToday' => $grossToday, 'commissionToday' => round($grossToday * $rate / 100, 2),
-            'grossMonth' => $grossMonth, 'commissionMonth' => round($grossMonth * $rate / 100, 2),
-            'recentReservations' => (clone $confirmed)->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'airDeparture.airRoute'])->latest('updated_at')->limit(12)->get(),
+            'organization' => $organization,
+            'commissionRate' => (float) ($organization->commission_rate ?? 0),
+            'grossToday' => (float) $todayPayments->sum('amount'),
+            'commissionToday' => (float) $todayPayments->sum('commission_amount'),
+            'grossMonth' => (float) $monthPayments->sum('amount'),
+            'commissionMonth' => (float) $monthPayments->sum('commission_amount'),
+            'commissionCollected' => (float) $payments->where('commission_status', 'paid')->sum('commission_amount'),
+            'commissionPending' => (float) $payments->whereIn('commission_status', ['pending', 'invoiced'])->sum('commission_amount'),
+            'recentPayments' => $payments->take(12),
         ]);
-    }
-
-    public function updateBank(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'bank_name' => ['required', 'string', 'max:120'], 'bank_account' => ['required', 'string', 'max:40'],
-            'bank_cci' => ['nullable', 'string', 'max:40'],
-        ]);
-        $this->organization()->update($data);
-
-        return back()->with('success', 'Cuenta bancaria actualizada.');
     }
 
     private function organization(): Organization
@@ -45,11 +41,13 @@ class CompanyFinanceController extends Controller
         return Organization::query()->whereKey(AdminScope::organizationId(auth()->user()))->where('status', 'active')->firstOrFail();
     }
 
-    private function confirmedReservations(Organization $organization): Builder
+    private function payments(Organization $organization): Builder
     {
-        return Reservation::query()->where('status', 'confirmed')->where(function ($query) use ($organization) {
-            $query->whereHas('departure.transportRoute', fn ($route) => $route->where('organization_id', $organization->id))
-                ->orWhereHas('airDeparture.airRoute', fn ($route) => $route->where('organization_id', $organization->id));
-        });
+        return Payment::query()
+            ->whereIn('status', ['confirmed', 'succeeded'])
+            ->where(function (Builder $query) use ($organization): void {
+                $query->whereHas('reservation.departure.transportRoute', fn (Builder $route) => $route->where('organization_id', $organization->id))
+                    ->orWhereHas('reservation.airDeparture.airRoute', fn (Builder $route) => $route->where('organization_id', $organization->id));
+            });
     }
 }

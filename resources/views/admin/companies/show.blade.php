@@ -93,6 +93,7 @@
             <div class="rounded-2xl bg-black/20 p-3 text-center">
                 <span class="block text-[10px] font-bold uppercase tracking-wider text-emerald-300/80">Comisión NavegaYA</span>
                 <strong class="mt-1 block text-lg font-black text-amber-300">{{ number_format((float) $organization->commission_rate, 2) }}%</strong>
+                <span class="mt-0.5 block text-[9px] font-bold uppercase text-emerald-100/60">{{ match($organization->commercial_plan ?? 'standard') { 'initial' => 'Nivel inicial', 'strategic' => 'Nivel estratégico', 'custom' => 'Acuerdo personalizado', default => 'Nivel estándar' } }}{{ $organization->agreement_number ? ' · '.$organization->agreement_number : '' }}</span>
             </div>
         </div>
     </section>

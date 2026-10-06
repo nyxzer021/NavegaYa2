@@ -68,9 +68,9 @@
                         </a>
                     </div>
                     <div class="space-y-1">
-                        <p class="px-3 pb-1 text-[9px] font-bold uppercase tracking-[.18em] text-emerald-400">Finanzas</p>
-                        <a href="{{ route('company.settlements.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.settlements.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">💳</span><span>Liquidaciones</span>
+                        <p class="px-3 pb-1 text-[9px] font-bold uppercase tracking-[.18em] text-emerald-400">Comercial</p>
+                        <a href="{{ route('company.commissions.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.commissions.*', 'company.settlements.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">📈</span><span>Comisiones NavegaYA</span>
                         </a>
                     </div>
                 @endunless

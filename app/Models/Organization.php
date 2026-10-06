@@ -16,13 +16,22 @@ class Organization extends Model
 
     protected $fillable = [
         'type', 'modality', 'base_city', 'legal_name', 'commercial_name', 'contact_name', 'ruc', 'email', 'phone', 'whatsapp',
-        'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'pending_payout_balance', 'physical_sales_commission_rate', 'bank_name', 'bank_account', 'bank_cci',
+        'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
+        'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
         'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path',
     ];
 
     protected function casts(): array
     {
-        return ['verified_at' => 'datetime', 'contact_verified_at' => 'datetime', 'is_marketplace_paused' => 'boolean', 'commission_rate' => 'decimal:2', 'pending_payout_balance' => 'decimal:2', 'physical_sales_commission_rate' => 'decimal:2'];
+        return [
+            'verified_at' => 'datetime',
+            'contact_verified_at' => 'datetime',
+            'is_marketplace_paused' => 'boolean',
+            'commission_rate' => 'decimal:2',
+            'commission_starts_on' => 'date',
+            'commission_ends_on' => 'date',
+            'physical_sales_commission_rate' => 'decimal:2',
+        ];
     }
 
     public function users(): BelongsToMany

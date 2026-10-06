@@ -100,7 +100,8 @@ Route::middleware(['auth', 'role:company_admin|company_counter'])->prefix('empre
     Route::get('/salidas/{departure}/manifiesto', [CompanyDepartureController::class, 'manifest'])->name('departures.manifest');
     Route::get('/flota', [CompanyFleetController::class, 'index'])->name('fleet.index');
     Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
-    Route::get('/liquidaciones', [CompanySettlementController::class, 'index'])->name('settlements.index');
+    Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');
+    Route::get('/liquidaciones', fn () => redirect()->route('company.commissions.index'))->name('settlements.index');
     Route::get('/pos', [CompanyPosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
 });
@@ -110,8 +111,7 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::post('/flota/embarcaciones', [CompanyFleetController::class, 'storeVessel'])->name('fleet.vessels.store');
     Route::post('/flota/aeronaves', [CompanyFleetController::class, 'storeAircraft'])->name('fleet.aircraft.store');
     Route::get('/equipo', fn () => redirect()->route('company.staff.index'))->name('personnel.index');
-    Route::get('/finanzas', fn () => redirect()->route('company.settlements.index'))->name('finance.index');
-    Route::patch('/liquidaciones/cuenta-bancaria', [CompanySettlementController::class, 'updateBank'])->name('finance.bank');
+    Route::get('/finanzas', fn () => redirect()->route('company.commissions.index'))->name('finance.index');
 });
 Route::middleware(['auth', 'role:company_admin'])->prefix('empresa/salidas')->name('company.departures.')->group(function () {
     Route::get('/programar', [AdminTransportRouteController::class, 'createDeparture'])->name('create');
@@ -175,8 +175,9 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::put('/supervision-salidas/{departure}', [AdminSupervisionController::class, 'update'])->name('supervision.update');
     Route::get('/flota-permisos', [AdminFleetComplianceController::class, 'index'])->name('fleet-compliance.index');
     Route::patch('/flota-permisos/{vessel}/verify', [AdminFleetComplianceController::class, 'verifyVessel'])->name('fleet-compliance.verify');
-    Route::get('/liquidaciones', [AdminSettlementController::class, 'index'])->name('settlements.index');
-    Route::post('/liquidaciones/{organization}/pagar', [AdminSettlementController::class, 'storeSettlement'])->name('settlements.store');
+    Route::get('/comisiones-facturacion', [AdminSettlementController::class, 'index'])->name('commissions.index');
+    Route::post('/comisiones-facturacion/{organization}/cobros', [AdminSettlementController::class, 'recordCollection'])->name('commissions.store');
+    Route::get('/liquidaciones', fn () => redirect()->route('admin.commissions.index'))->name('settlements.index');
     Route::get('/ventas-globales', [AdminSalesController::class, 'index'])->name('sales.index');
     Route::get('/tours-experiencias', [AdminTourController::class, 'index'])->name('tours.index');
     Route::get('/aliados-turisticos', [AdminTourismPartnerController::class, 'index'])->name('tourism-partners.index');

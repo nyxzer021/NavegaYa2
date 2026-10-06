@@ -43,8 +43,8 @@
     <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         @php
             $kpis = [
-                ['GMV procesado hoy', 'S/ '.number_format((float) $gmvToday, 2), 'Ventas confirmadas en pasarela', '💳', 'text-slate-950'],
-                ['Comisión NavegaYA', 'S/ '.number_format((float) $commissionToday, 2), 'Margen real confirmado hoy', '📈', 'text-amber-600'],
+                ['GMV marketplace hoy', 'S/ '.number_format((float) $gmvToday, 2), 'Ventas confirmadas de operadores', '💳', 'text-slate-950'],
+                ['Comisión generada', 'S/ '.number_format((float) $commissionToday, 2), 'Según acuerdos comerciales', '📈', 'text-amber-600'],
                 ['Boletos emitidos', number_format($ticketsToday), "🚤 {$fluvialTicketsToday} fluviales · ✈️ {$airTicketsToday} aéreos", '🎟️', 'text-slate-950'],
                 ['Operadores con salidas', $activeOperatorsToday, 'Actividad registrada hoy', '🏢', 'text-slate-950'],
             ];

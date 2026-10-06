@@ -167,13 +167,21 @@ class AdminCompanyController extends Controller
             'base_city' => ['required', 'string', 'max:100'],
             'modality' => ['required', 'in:fluvial,aereo,mixto'],
             'commission_rate' => ['required', 'numeric', 'between:0,100'],
+            'commercial_plan' => ['required', 'in:initial,standard,strategic,custom'],
+            'agreement_number' => ['nullable', 'string', 'max:80'],
+            'commission_starts_on' => ['nullable', 'date'],
+            'commission_ends_on' => ['nullable', 'date', 'after_or_equal:commission_starts_on'],
+            'commission_notes' => ['nullable', 'string', 'max:2000'],
             'admin_name' => ['required', 'string', 'max:255'],
             'admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($admin)],
             'admin_password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         DB::transaction(function () use ($organization, $admin, $data): void {
-            $organization->update(collect($data)->only(['legal_name', 'commercial_name', 'phone', 'base_city', 'modality', 'commission_rate'])->all());
+            $organization->update(collect($data)->only([
+                'legal_name', 'commercial_name', 'phone', 'base_city', 'modality', 'commission_rate',
+                'commercial_plan', 'agreement_number', 'commission_starts_on', 'commission_ends_on', 'commission_notes',
+            ])->all());
             if ($admin) {
                 $admin->update([
                     'name' => $data['admin_name'],

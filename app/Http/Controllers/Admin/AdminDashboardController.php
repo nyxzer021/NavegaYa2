@@ -9,7 +9,6 @@ use App\Models\CargoShipment;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\RouteDeparture;
-use App\Models\Settlement;
 use App\Models\Ticket;
 use App\Models\Vessel;
 use Carbon\Carbon;
@@ -74,13 +73,16 @@ class AdminDashboardController extends Controller
             fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0
         );
 
-        $pendingPayouts = max(0, (float) Organization::query()->sum('pending_payout_balance'));
-        if ($pendingPayouts === 0.0) {
-            $settled = (float) Settlement::query()
-                ->whereIn('status', ['paid', 'transferred'])
-                ->sum('net_amount');
-            $pendingPayouts = max(0, (float) $payments->sum('operator_net') - $settled);
-        }
+        $commissionCollected = (float) $payments
+            ->where('commission_status', 'paid')
+            ->sum('commission_amount');
+        $commissionReceivable = (float) $payments
+            ->whereIn('commission_status', ['pending', 'invoiced'])
+            ->sum('commission_amount');
+        $activeOperatorsCount = Organization::query()
+            ->where('type', 'transport_company')
+            ->where('status', 'active')
+            ->count();
 
         $todayFluvialDepartures = RouteDeparture::query()
             ->whereDate('departure_at', $today)
@@ -215,7 +217,9 @@ class AdminDashboardController extends Controller
             'to',
             'grossSales',
             'netCommission',
-            'pendingPayouts',
+            'commissionCollected',
+            'commissionReceivable',
+            'activeOperatorsCount',
             'totalTicketsSold',
             'cargoRevenue',
             'todaysDeparturesCount',

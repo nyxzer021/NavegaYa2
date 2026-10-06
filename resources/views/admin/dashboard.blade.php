@@ -23,7 +23,7 @@
                     <span class="text-[10px] font-semibold text-emerald-100/55">Actualizado {{ now()->format('d/m/Y · H:i') }}</span>
                 </div>
                 <h2 class="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Control comercial de Loreto</h2>
-                <p class="mt-1 text-xs text-emerald-100/65">Caja, ventas bimodales y rendimiento de la red NavegaYA.</p>
+                <p class="mt-1 text-xs text-emerald-100/65">Ventas del marketplace, comisiones y salud de la red de operadores.</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -50,11 +50,12 @@
         </div>
     </header>
 
-    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         @foreach([
-            ['Ganancia NavegaYA', $netCommission, 'Comisión del período', '↗', 'border-emerald-300 bg-emerald-50/60 text-emerald-800'],
-            ['Total cobrado', $grossSales, 'GMV procesado', 'S/', 'border-slate-200 bg-white text-slate-950'],
-            ['Por pagar a operadores', $pendingPayouts, 'Fondo en custodia', '→', 'border-amber-200 bg-amber-50/50 text-amber-700'],
+            ['GMV marketplace', $grossSales, 'Ventas generadas por operadores', 'S/', 'border-slate-200 bg-white text-slate-950'],
+            ['Comisión generada', $netCommission, 'Según acuerdos comerciales', '↗', 'border-emerald-300 bg-emerald-50/60 text-emerald-800'],
+            ['Comisión cobrada', $commissionCollected, 'Ingreso confirmado NavegaYA', '✓', 'border-cyan-200 bg-cyan-50/50 text-cyan-800'],
+            ['Por cobrar', $commissionReceivable, 'Pendiente de facturación', '→', 'border-amber-200 bg-amber-50/50 text-amber-700'],
         ] as $metric)
             <article class="rounded-2xl border p-4 shadow-sm {{ $metric[4] }}">
                 <div class="flex items-center justify-between">
@@ -77,8 +78,8 @@
         <div class="grid md:grid-cols-[1.25fr_1fr]">
             <div class="border-b border-slate-100 p-4 md:border-b-0 md:border-r">
                 <div class="flex items-center justify-between">
-                    <div><p class="text-[9px] font-black uppercase tracking-[.13em] text-emerald-700">Utilidad acumulada</p><h3 class="text-sm font-black text-slate-900">Comisiones netas de plataforma</h3></div>
-                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black text-emerald-700">Caja NavegaYA</span>
+                    <div><p class="text-[9px] font-black uppercase tracking-[.13em] text-emerald-700">Monetización contractual</p><h3 class="text-sm font-black text-slate-900">Comisiones generadas por ventas</h3></div>
+                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black text-emerald-700">Sin custodia de fondos</span>
                 </div>
                 <div class="mt-3 grid grid-cols-3 divide-x divide-slate-100">
                     @foreach([
@@ -97,7 +98,7 @@
                     ['🚤', 'En río', $riverUnitsInTransit],
                     ['✈️', 'En vuelo', $airUnitsInFlight],
                     ['🛡️', 'Alertas', $technicalAlerts],
-                    ['💳', 'Culqi', $culqiOperational ? 'OK' : 'Pend.'],
+                    ['🏢', 'Empresas', $activeOperatorsCount],
                 ] as $pulse)
                     <div class="flex min-w-0 flex-col items-center justify-center px-1 py-4 text-center"><span class="text-lg">{{ $pulse[0] }}</span><strong class="mt-1 text-sm font-black text-slate-900">{{ $pulse[2] }}</strong><span class="text-[8px] font-bold uppercase text-slate-400">{{ $pulse[1] }}</span></div>
                 @endforeach
@@ -110,7 +111,7 @@
             'resumen' => ['📈', 'Ventas'],
             'operadores' => ['🏢', 'Operadores'],
             'rutas' => ['🧭', 'Corredores'],
-            'canales' => ['💳', 'Cobros'],
+            'canales' => ['💳', 'Canales'],
         ] as $key => $item)
             <button type="button" @click="tab='{{ $key }}'" :class="tab==='{{ $key }}' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="rounded-xl px-3 py-2.5 text-[11px] font-black transition">{{ $item[0] }} {{ $item[1] }}</button>
         @endforeach
@@ -129,7 +130,7 @@
     </section>
 
     <section x-show="tab==='operadores'" x-cloak class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <header class="flex items-center justify-between border-b px-5 py-3"><div><h3 class="text-xs font-black uppercase text-slate-900">Rendimiento por operador</h3><p class="text-[10px] text-slate-400">Ventas y margen del período</p></div><a href="{{ route('admin.companies.index') }}" class="text-[10px] font-black text-emerald-700">Ver empresas →</a></header>
+        <header class="flex items-center justify-between border-b px-5 py-3"><div><h3 class="text-xs font-black uppercase text-slate-900">Rendimiento por operador</h3><p class="text-[10px] text-slate-400">GMV y comisión contractual del período</p></div><a href="{{ route('admin.companies.index') }}" class="text-[10px] font-black text-emerald-700">Ver empresas →</a></header>
         <div class="overflow-x-auto"><table class="w-full min-w-[720px] text-left text-xs"><thead class="bg-slate-50 text-[9px] font-black uppercase text-slate-400"><tr><th class="p-3">Operador</th><th class="p-3">Modalidad</th><th class="p-3 text-center">Boletos</th><th class="p-3 text-right">GMV</th><th class="p-3 text-right">Comisión</th></tr></thead><tbody class="divide-y divide-slate-100">
         @forelse($operatorRanking as $operator)
             <tr class="hover:bg-slate-50"><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3"><span class="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold">{{ $operator['modality'] }}</span></td><td class="p-3 text-center font-black">{{ $operator['tickets'] }}</td><td class="p-3 text-right font-bold">S/ {{ number_format($operator['sales'], 2) }}</td><td class="p-3 text-right font-black text-emerald-700">S/ {{ number_format($operator['commission'], 2) }}</td></tr>
