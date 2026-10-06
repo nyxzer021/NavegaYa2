@@ -72,6 +72,16 @@ class AdminDashboardController extends Controller
         $totalTicketsSold = $payments->sum(
             fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0
         );
+        $fluvialTicketsSold = $payments
+            ->filter(fn (Payment $payment) => $payment->reservation?->route_departure_id !== null)
+            ->sum(fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0);
+        $airTicketsSold = $payments
+            ->filter(fn (Payment $payment) => $payment->reservation?->air_departure_id !== null)
+            ->sum(fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0);
+        $cancelledTickets = Ticket::query()
+            ->whereBetween('issued_at', [$from, $to])
+            ->whereIn('status', ['cancelled', 'void'])
+            ->count();
 
         $commissionCollected = (float) $payments
             ->where('commission_status', 'paid')
@@ -83,6 +93,43 @@ class AdminDashboardController extends Controller
             ->where('type', 'transport_company')
             ->where('status', 'active')
             ->count();
+        $totalOperatorsCount = Organization::query()->where('type', 'transport_company')->count();
+        $pendingOperatorsCount = Organization::query()->where('type', 'transport_company')->where('status', 'pending')->count();
+        $rejectedOperatorsCount = Organization::query()->where('type', 'transport_company')->where('status', 'rejected')->count();
+        $newOperatorsInPeriod = Organization::query()
+            ->where('type', 'transport_company')
+            ->whereBetween('created_at', [$from, $to])
+            ->count();
+
+        $yearAffiliations = Organization::query()
+            ->where('type', 'transport_company')
+            ->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()])
+            ->get(['created_at'])
+            ->groupBy(fn (Organization $organization) => $organization->created_at->month)
+            ->map->count();
+        $affiliationLabels = collect(range(1, 12))
+            ->map(fn (int $month) => Carbon::create(null, $month)->locale('es')->translatedFormat('M'))
+            ->all();
+        $affiliationSeries = collect(range(1, 12))
+            ->map(fn (int $month) => (int) ($yearAffiliations[$month] ?? 0))
+            ->all();
+
+        $fleetByOperator = Organization::query()
+            ->where('type', 'transport_company')
+            ->withCount(['vessels', 'aircraft'])
+            ->get()
+            ->map(fn (Organization $organization) => [
+                'id' => $organization->id,
+                'name' => $organization->commercial_name ?: $organization->legal_name,
+                'modality' => $organization->modality ?: 'fluvial',
+                'vessels' => $organization->vessels_count,
+                'aircraft' => $organization->aircraft_count,
+                'total' => $organization->vessels_count + $organization->aircraft_count,
+            ])
+            ->sortByDesc('total')
+            ->values();
+        $registeredVesselsCount = (int) $fleetByOperator->sum('vessels');
+        $registeredAircraftCount = (int) $fleetByOperator->sum('aircraft');
 
         $todayFluvialDepartures = RouteDeparture::query()
             ->whereDate('departure_at', $today)
@@ -109,6 +156,19 @@ class AdminDashboardController extends Controller
 
         $riverUnitsInTransit = $todayFluvialDepartures->where('status', 'in_transit')->count();
         $airUnitsInFlight = $todayAirDepartures->where('status', 'in_transit')->count();
+
+        $cancelledDeparturesToday = RouteDeparture::query()->whereDate('departure_at', $today)->where('status', 'cancelled')->count()
+            + AirDeparture::query()->whereDate('departure_at', $today)->where('status', 'cancelled')->count();
+        $cancelledDeparturesInPeriod = RouteDeparture::query()->whereBetween('departure_at', [$from, $to])->where('status', 'cancelled')->count()
+            + AirDeparture::query()->whereBetween('departure_at', [$from, $to])->where('status', 'cancelled')->count();
+        $rescheduledDeparturesInPeriod = RouteDeparture::query()
+            ->whereBetween('departure_at', [$from, $to])
+            ->where(fn ($query) => $query->where('status', 'rescheduled')->orWhereRaw("lower(coalesce(notes, '')) like ?", ['%reprogram%']))
+            ->count()
+            + AirDeparture::query()
+                ->whereBetween('departure_at', [$from, $to])
+                ->where(fn ($query) => $query->where('status', 'rescheduled')->orWhereRaw("lower(coalesce(notes, '')) like ?", ['%reprogram%']))
+                ->count();
 
         $technicalAlerts = Vessel::query()
             ->where(function ($query) {
@@ -210,6 +270,9 @@ class AdminDashboardController extends Controller
             fn (float $value) => $modalityTotal > 0 ? round(($value / $modalityTotal) * 100) : 0,
             $modalityValues
         );
+        $cargoShipmentsCount = $cargoShipments->count();
+        $cargoCustomersCount = $cargoShipments->pluck('sender_phone')->filter()->unique()->count();
+        $cargoPackagesCount = (int) $cargoShipments->sum('package_count');
 
         return view('admin.dashboard', compact(
             'period',
@@ -220,14 +283,32 @@ class AdminDashboardController extends Controller
             'commissionCollected',
             'commissionReceivable',
             'activeOperatorsCount',
+            'totalOperatorsCount',
+            'pendingOperatorsCount',
+            'rejectedOperatorsCount',
+            'newOperatorsInPeriod',
+            'affiliationLabels',
+            'affiliationSeries',
+            'fleetByOperator',
+            'registeredVesselsCount',
+            'registeredAircraftCount',
             'totalTicketsSold',
+            'fluvialTicketsSold',
+            'airTicketsSold',
+            'cancelledTickets',
             'cargoRevenue',
+            'cargoShipmentsCount',
+            'cargoCustomersCount',
+            'cargoPackagesCount',
             'todaysDeparturesCount',
             'todaysTicketsCount',
             'todayOccupancyRate',
             'riverUnitsInTransit',
             'airUnitsInFlight',
             'technicalAlerts',
+            'cancelledDeparturesToday',
+            'cancelledDeparturesInPeriod',
+            'rescheduledDeparturesInPeriod',
             'culqiOperational',
             'operatorRanking',
             'topRoutes',

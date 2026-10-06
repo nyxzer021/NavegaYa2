@@ -30,7 +30,7 @@
         <section class="ny-main flex min-w-0 flex-1 flex-col">
             @include('layouts.partials.admin-header')
 
-            <main class="flex-1 p-6 md:p-7">
+            <main class="@yield('main-class', 'flex-1 p-6 md:p-7')">
                 {{ $slot ?? '' }}
                 @yield('content')
             </main>
