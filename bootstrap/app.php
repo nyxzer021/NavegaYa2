@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway terminates TLS before forwarding the request to Laravel.
+        // Trust its proxy headers so URLs, Vite assets and redirects use HTTPS.
+        $middleware->trustProxies(at: '*');
+
         $middleware->validateCsrfTokens(except: ['webhooks/culqi']);
         $middleware->alias(['role' => EnsureUserHasRole::class, 'permission' => EnsureUserHasPermission::class]);
         $middleware->appendToGroup('web', SetPublicLocale::class);
