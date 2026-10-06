@@ -1,0 +1,2 @@
+@props(['name','label','type'=>'text','placeholder'=>'','required'=>false])
+<label class="block rounded-2xl border border-slate-200 bg-slate-50 p-2.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-600"><span class="block text-[10px] font-bold uppercase text-slate-400">{{$label}}</span><input type="{{$type}}" name="{{$name}}" value="{{old($name)}}" placeholder="{{$placeholder}}" @required($required) class="mt-0.5 w-full border-0 bg-transparent p-0 text-xs font-semibold text-slate-800 outline-none focus:ring-0"></label>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\Users\dreyna\Herd\navegaya\phpunit.xml" tests="5" assertions="45" errors="0" failures="0" skipped="0" time="1.055470">
+    <testsuite name="Feature" tests="5" assertions="45" errors="0" failures="0" skipped="0" time="1.055470">
+      <testsuite name="Tests\Feature\PaymentTicketTest" file="C:\Users\dreyna\Herd\navegaya\tests\Feature\PaymentTicketTest.php" tests="5" assertions="45" errors="0" failures="0" skipped="0" time="1.055470">
+        <testcase name="test_sandbox_payment_confirms_reservation_and_issues_ticket" file="C:\Users\dreyna\Herd\navegaya\tests\Feature\PaymentTicketTest.php" line="38" class="Tests\Feature\PaymentTicketTest" classname="Tests.Feature.PaymentTicketTest" assertions="21" time="0.869839"/>
+        <testcase name="test_sandbox_confirmation_is_unavailable_when_disabled" file="C:\Users\dreyna\Herd\navegaya\tests\Feature\PaymentTicketTest.php" line="59" class="Tests\Feature\PaymentTicketTest" classname="Tests.Feature.PaymentTicketTest" assertions="6" time="0.035451"/>
+        <testcase name="test_boarding_page_opens_the_selected_departure_roster_and_can_undo_boarding" file="C:\Users\dreyna\Herd\navegaya\tests\Feature\PaymentTicketTest.php" line="76" class="Tests\Feature\PaymentTicketTest" classname="Tests.Feature.PaymentTicketTest" assertions="10" time="0.068909"/>
+        <testcase name="test_company_boarding_is_scoped_to_the_selected_departure_and_organization" file="C:\Users\dreyna\Herd\navegaya\tests\Feature\PaymentTicketTest.php" line="107" class="Tests\Feature\PaymentTicketTest" classname="Tests.Feature.PaymentTicketTest" assertions="7" time="0.047292"/>
+        <testcase name="test_another_passenger_cannot_open_a_linked_reservation" file="C:\Users\dreyna\Herd\navegaya\tests\Feature\PaymentTicketTest.php" line="144" class="Tests\Feature\PaymentTicketTest" classname="Tests.Feature.PaymentTicketTest" assertions="1" time="0.033980"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>
