@@ -13,7 +13,8 @@
 @endsection
 
 @section('content')
-<div x-data="{ tab: 'resumen' }" class="w-full space-y-4 text-slate-800">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<div x-data="{ tab: 'resumen', changeTab(name) { this.tab = name; this.$nextTick(() => window.initDashboardTab(name)); } }" class="w-full space-y-4 text-slate-800">
     <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
@@ -30,15 +31,24 @@
                 @endforeach
             </nav>
             <details class="relative">
-                <summary class="flex h-9 cursor-pointer list-none items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-bold text-slate-700">📅 {{ $from->format('d/m') }}–{{ $to->format('d/m/Y') }} ▾</summary>
-                <form method="GET" action="{{ route('admin.dashboard') }}" class="absolute right-0 z-40 mt-2 grid w-72 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+                <summary class="flex h-9 cursor-pointer list-none items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-bold text-slate-700 hover:border-emerald-300">
+                    <span class="text-sm">📅</span><span><span class="block text-[8px] uppercase text-slate-400">Período analizado</span>{{ $from->translatedFormat('d M') }} – {{ $to->translatedFormat('d M Y') }}</span><span class="text-slate-400">Cambiar ▾</span>
+                </summary>
+                <form method="GET" action="{{ route('admin.dashboard') }}" class="absolute right-0 z-[1000] mt-2 grid w-72 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
                     <input type="hidden" name="period" value="custom">
                     <label class="text-[9px] font-black uppercase text-slate-400">Desde<input type="date" name="from" value="{{ request('from', $from->toDateString()) }}" required class="mt-1 h-9 w-full rounded-lg border-slate-200 bg-slate-50 text-xs"></label>
                     <label class="text-[9px] font-black uppercase text-slate-400">Hasta<input type="date" name="to" value="{{ request('to', $to->toDateString()) }}" required class="mt-1 h-9 w-full rounded-lg border-slate-200 bg-slate-50 text-xs"></label>
-                    <button class="h-9 rounded-lg bg-emerald-700 text-xs font-black text-white">Aplicar rango</button>
+                    <button class="h-9 rounded-lg bg-emerald-700 text-xs font-black text-white">Aplicar período</button>
                 </form>
             </details>
-            <button type="button" onclick="window.print()" class="h-9 rounded-xl bg-amber-400 px-4 text-[10px] font-black text-slate-950 hover:bg-amber-300">Exportar</button>
+            <details class="relative">
+                <summary class="flex h-9 cursor-pointer list-none items-center gap-2 rounded-xl bg-amber-400 px-4 text-[10px] font-black text-slate-950 hover:bg-amber-300">⬇ Descargar reporte ▾</summary>
+                <div class="absolute right-0 z-[1000] mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl">
+                    <button type="button" onclick="window.downloadDashboardCsv()" class="w-full rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-slate-50">📊 Descargar resumen CSV</button>
+                    <button type="button" onclick="window.print()" class="w-full rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-slate-50">🖨️ Imprimir / guardar PDF</button>
+                    <a href="{{ route('admin.sales.index') }}" class="block rounded-lg px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50">📋 Abrir detalle de ventas</a>
+                </div>
+            </details>
         </div>
     </section>
 
@@ -46,7 +56,7 @@
         @php
             $kpis = [
                 ['GMV del período', 'S/ '.number_format($grossSales, 2), 'Ventas procesadas', '💳', 'admin.sales.index', 'slate'],
-                ['Comisión generada', 'S/ '.number_format($netCommission, 2), 'Ingreso NavegaYA', '↗', 'admin.commissions.index', 'emerald'],
+                ['Comisión generada', 'S/ '.number_format($netCommission, 2), 'Ingreso NavegaYA', '%', 'admin.commissions.index', 'emerald'],
                 ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'admin.sales.index', 'sky'],
                 ['Pasajes cancelados', number_format($cancelledTickets), 'En el período', '↩', 'admin.refunds.index', 'rose'],
                 ['Empresas registradas', number_format($totalOperatorsCount), $activeOperatorsCount.' activas', '🏢', 'admin.companies.index', 'violet'],
@@ -84,7 +94,7 @@
             <div><h3 class="text-sm font-black text-slate-950">Análisis ejecutivo</h3><p class="text-[10px] text-slate-400">Selecciona una perspectiva para revisar indicadores y acceder al detalle.</p></div>
             <nav class="flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
                 @foreach(['resumen' => 'Resumen', 'ventas' => 'Ventas y rutas', 'empresas' => 'Empresas y flota', 'operacion' => 'Operación', 'carga' => 'Carga'] as $key => $label)
-                    <button type="button" @click="tab='{{ $key }}'" :class="tab==='{{ $key }}' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-3 py-2 text-[10px] font-black transition">{{ $label }}</button>
+                    <button type="button" @click="changeTab('{{ $key }}')" :class="tab==='{{ $key }}' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-3 py-2 text-[10px] font-black transition">{{ $label }}</button>
                 @endforeach
             </nav>
         </div>
@@ -94,50 +104,88 @@
             <div><h4 class="text-xs font-black uppercase text-slate-900">Distribución comercial</h4><p class="text-[10px] text-slate-400">Participación por modalidad</p><div class="mx-auto h-44 max-w-56 py-3"><canvas id="modalityChart"></canvas></div><div class="grid grid-cols-3 gap-1 text-center text-[9px] font-bold"><span class="rounded-lg bg-emerald-50 p-2 text-emerald-700">Fluvial<br>{{ $modalityPercentages[0] }}%</span><span class="rounded-lg bg-cyan-50 p-2 text-cyan-700">Aéreo<br>{{ $modalityPercentages[1] }}%</span><span class="rounded-lg bg-amber-50 p-2 text-amber-700">Carga<br>{{ $modalityPercentages[2] }}%</span></div></div>
         </div>
 
-        <div x-show="tab==='ventas'" x-cloak class="grid gap-4 p-4 xl:grid-cols-2">
-            <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Ventas por empresa</h4><p class="text-[9px] text-slate-400">Pasajes, GMV y comisión</p></div><a href="{{ route('admin.sales.index') }}" class="text-[9px] font-black text-emerald-700">Todas →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th></tr></thead><tbody class="divide-y">@forelse($operatorRanking as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a><span class="block text-[8px] text-slate-400">{{ $operator['modality'] }}</span></td><td class="p-3 text-center font-black">{{ $operator['tickets'] }}</td><td class="p-3 text-right font-black">S/ {{ number_format($operator['sales'], 2) }}</td></tr>@empty<tr><td colspan="3" class="p-8 text-center text-slate-400">Sin ventas en el período.</td></tr>@endforelse</tbody></table></div>
-            <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Rutas con mayor demanda</h4><p class="text-[9px] text-slate-400">Tramos ordenados por pasajes</p></div><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-emerald-700">Catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y bg-white uppercase text-slate-400"><tr><th class="p-3">Ruta</th><th class="p-3">Modo</th><th class="p-3 text-center">Pasajes</th></tr></thead><tbody class="divide-y">@forelse($topRoutes as $route)<tr><td class="p-3 font-black text-slate-900">{{ $route['name'] }}</td><td class="p-3">{{ $route['type'] === 'Aéreo' ? '✈️' : '🚤' }} {{ $route['type'] }}</td><td class="p-3 text-center font-black">{{ $route['tickets'] }}</td></tr>@empty<tr><td colspan="3" class="p-8 text-center text-slate-400">Sin demanda registrada.</td></tr>@endforelse</tbody></table></div>
+        <div x-show="tab==='ventas'" x-cloak class="space-y-4 p-4">
+            <div class="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+                <article class="overflow-hidden rounded-xl border border-slate-200">
+                    <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Mapa comercial de rutas</h4><p class="text-[9px] text-slate-400">Haz clic en una línea para ver operador, pasajes y ventas</p></div><div class="flex gap-2 text-[9px] font-bold"><span class="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">━ Fluvial</span><span class="rounded-full bg-cyan-50 px-2 py-1 text-cyan-700">┄ Aéreo</span></div></div>
+                    <div id="loretoRoutesMap" class="h-[360px] w-full bg-slate-100"></div>
+                </article>
+                <article class="rounded-xl border border-slate-200 p-4"><h4 class="text-xs font-black text-slate-900">Pasajes por modalidad</h4><p class="text-[9px] text-slate-400">Comparación del período seleccionado</p><div class="h-36"><canvas id="ticketModalityChart"></canvas></div><h4 class="mt-4 border-t pt-4 text-xs font-black text-slate-900">Empresas con más pasajes</h4><div class="h-36"><canvas id="operatorTicketsChart"></canvas></div></article>
+            </div>
+            <div class="grid gap-4 xl:grid-cols-2">
+                <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Ventas por empresa</h4><p class="text-[9px] text-slate-400">Pasajes, GMV y comisión</p></div><a href="{{ route('admin.sales.index') }}" class="text-[9px] font-black text-emerald-700">Ver todas →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th></tr></thead><tbody class="divide-y">@forelse($operatorRanking as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a><span class="block text-[8px] text-slate-400">{{ $operator['modality'] }}</span></td><td class="p-3 text-center font-black">{{ $operator['tickets'] }}</td><td class="p-3 text-right font-black">S/ {{ number_format($operator['sales'], 2) }}</td></tr>@empty<tr><td colspan="3" class="p-8 text-center text-slate-400">Sin ventas en el período.</td></tr>@endforelse</tbody></table></div>
+                <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Rutas con mayor demanda</h4><p class="text-[9px] text-slate-400">Tramos ordenados por pasajes</p></div><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-emerald-700">Ver catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y bg-white uppercase text-slate-400"><tr><th class="p-3">Ruta</th><th class="p-3">Modo</th><th class="p-3 text-center">Pasajes</th></tr></thead><tbody class="divide-y">@forelse($topRoutes as $route)<tr><td class="p-3 font-black text-slate-900">{{ $route['name'] }}</td><td class="p-3">{{ $route['type'] === 'Aéreo' ? '✈️' : '🚤' }} {{ $route['type'] }}</td><td class="p-3 text-center font-black">{{ $route['tickets'] }}</td></tr>@empty<tr><td colspan="3" class="p-8 text-center text-slate-400">Sin demanda registrada.</td></tr>@endforelse</tbody></table></div>
+            </div>
         </div>
 
-        <div x-show="tab==='empresas'" x-cloak class="grid gap-4 p-4 xl:grid-cols-[1fr_1.6fr]">
-            <div><div class="grid grid-cols-2 gap-2">@foreach([['Activas',$activeOperatorsCount,'emerald'],['Pendientes',$pendingOperatorsCount,'amber'],['Rechazadas',$rejectedOperatorsCount,'rose'],['Unidades',$registeredVesselsCount+$registeredAircraftCount,'sky']] as $item)<a href="{{ route('admin.companies.index') }}" class="rounded-xl border border-slate-200 p-3"><span class="text-[9px] font-bold uppercase text-slate-400">{{ $item[0] }}</span><strong class="mt-1 block text-xl font-black text-slate-950">{{ $item[1] }}</strong></a>@endforeach</div><div class="mt-4 h-48"><canvas id="affiliationsChart"></canvas></div></div>
-            <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Flota registrada por empresa</h4><p class="text-[9px] text-slate-400">{{ $registeredVesselsCount }} embarcaciones · {{ $registeredAircraftCount }} aeronaves</p></div><a href="{{ route('admin.companies.index') }}" class="text-[9px] font-black text-emerald-700">Expedientes →</a></div><div class="max-h-64 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0 bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">🚤</th><th class="p-3 text-center">✈️</th><th class="p-3 text-center">Total</th></tr></thead><tbody class="divide-y">@forelse($fleetByOperator as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3 text-center">{{ $operator['vessels'] }}</td><td class="p-3 text-center">{{ $operator['aircraft'] }}</td><td class="p-3 text-center font-black">{{ $operator['total'] }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin flota registrada.</td></tr>@endforelse</tbody></table></div></div>
+        <div x-show="tab==='empresas'" x-cloak class="grid gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
+            <div><div class="grid grid-cols-2 gap-2">@foreach([['Activas',$activeOperatorsCount],['Pendientes',$pendingOperatorsCount],['Rechazadas',$rejectedOperatorsCount],['Unidades',$registeredVesselsCount+$registeredAircraftCount]] as $item)<a href="{{ route('admin.companies.index') }}" class="rounded-xl border border-slate-200 p-3 hover:border-emerald-300"><span class="text-[9px] font-bold uppercase text-slate-400">{{ $item[0] }}</span><strong class="mt-1 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[8px] font-bold text-emerald-700">Ver detalle →</span></a>@endforeach</div><div class="mt-4 grid gap-3 sm:grid-cols-2"><div><h4 class="text-[10px] font-black text-slate-800">Afiliaciones por mes</h4><div class="h-44"><canvas id="affiliationsChart"></canvas></div></div><div><h4 class="text-[10px] font-black text-slate-800">Flota por modalidad</h4><div class="h-44"><canvas id="fleetChart"></canvas></div></div></div></div>
+            <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Flota registrada por empresa</h4><p class="text-[9px] text-slate-400">{{ $registeredVesselsCount }} embarcaciones · {{ $registeredAircraftCount }} aeronaves</p></div><a href="{{ route('admin.companies.index') }}" class="text-[9px] font-black text-emerald-700">Ver expedientes →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0 bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">🚤</th><th class="p-3 text-center">✈️</th><th class="p-3 text-center">Total</th></tr></thead><tbody class="divide-y">@forelse($fleetByOperator as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3 text-center">{{ $operator['vessels'] }}</td><td class="p-3 text-center">{{ $operator['aircraft'] }}</td><td class="p-3 text-center font-black">{{ $operator['total'] }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin flota registrada.</td></tr>@endforelse</tbody></table></div></div>
         </div>
 
-        <div x-show="tab==='operacion'" x-cloak class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
-            @foreach([
-                ['Salidas canceladas hoy', $cancelledDeparturesToday, 'Requieren atención inmediata', '⛔'],
-                ['Canceladas en período', $cancelledDeparturesInPeriod, 'Fluviales y aéreas', '📅'],
-                ['Reprogramaciones', $rescheduledDeparturesInPeriod, 'Cambios comunicados', '🔄'],
-                ['Alertas técnicas', $technicalAlerts, 'DICAPI / DGAC', '🛡️'],
-            ] as $item)<a href="{{ route('admin.itineraries.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-2xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black text-slate-700">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-400">{{ $item[2] }}</p></a>@endforeach
+        <div x-show="tab==='operacion'" x-cloak class="space-y-4 p-4">
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">@foreach([['Salidas canceladas hoy',$cancelledDeparturesToday,'Requieren atención','⛔'],['Canceladas en período',$cancelledDeparturesInPeriod,'Fluviales y aéreas','📅'],['Reprogramaciones',$rescheduledDeparturesInPeriod,'Cambios comunicados','🔄'],['Alertas técnicas',$technicalAlerts,'DICAPI / DGAC','🛡️']] as $item)<a href="{{ route('admin.itineraries.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-2xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black text-slate-700">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div>
+            <div class="grid gap-4 rounded-xl bg-slate-50 p-4 lg:grid-cols-[1.4fr_1fr]"><div><h4 class="text-xs font-black text-slate-900">Incidencias operativas del período</h4><p class="text-[9px] text-slate-400">Cancelaciones, reprogramaciones y alertas técnicas</p><div class="h-48"><canvas id="operationsChart"></canvas></div></div><div class="flex items-center justify-between rounded-xl border border-cyan-200 bg-white p-4"><div><span class="text-[9px] font-black uppercase text-cyan-700">Apoyo para decisiones</span><h4 class="mt-1 text-sm font-black">Clima y navegabilidad</h4><p class="mt-1 text-[10px] text-slate-500">Revisa las condiciones antes de evaluar una incidencia.</p><a href="{{ route('weather.index') }}" target="_blank" class="mt-3 inline-flex text-[10px] font-black text-cyan-800">Abrir monitoreo →</a></div><span class="text-4xl">🌦️</span></div></div>
         </div>
 
-        <div x-show="tab==='carga'" x-cloak class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
-            @foreach([
-                ['Envíos registrados', $cargoShipmentsCount, 'Guías del período', '📦'],
-                ['Remitentes únicos', $cargoCustomersCount, 'Usuarios que enviaron carga', '👤'],
-                ['Paquetes movilizados', $cargoPackagesCount, 'Bultos declarados', '▣'],
-                ['Ingreso por carga', 'S/ '.number_format($cargoRevenue, 2), 'Operaciones pagadas', '💰'],
-            ] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-2xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black text-slate-700">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-400">{{ $item[2] }}</p></a>@endforeach
+        <div x-show="tab==='carga'" x-cloak class="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
+            <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
+
     </section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
-window.initAdminDashboardCharts = function () {
-    if (typeof Chart === 'undefined') return;
-    ['nyRevenueTrendChart','nyModalityChart','nyAffiliationsChart'].forEach(key => { if (window[key]) window[key].destroy(); });
-    const common = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } };
-    const revenue = document.getElementById('revenueTrendChart');
-    if (revenue) window.nyRevenueTrendChart = new Chart(revenue,{type:'line',data:{labels:@json($chartLabels),datasets:[{label:'Fluvial',data:@json($fluvialSeries),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.08)',fill:true,tension:.35},{label:'Aéreo',data:@json($airSeries),borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.05)',fill:true,tension:.35},{label:'Carga',data:@json($cargoSeries),borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.05)',fill:true,tension:.35}]},options:{...common,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:9},callback:v=>'S/ '+v}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});
-    const modality = document.getElementById('modalityChart');
-    if (modality) window.nyModalityChart = new Chart(modality,{type:'doughnut',data:{labels:['Fluvial','Aéreo','Carga'],datasets:[{data:@json($modalityValues),backgroundColor:['#059669','#0891b2','#d97706'],borderWidth:0}]},options:{...common,cutout:'74%'}});
-    const affiliations = document.getElementById('affiliationsChart');
-    if (affiliations) window.nyAffiliationsChart = new Chart(affiliations,{type:'bar',data:{labels:@json($affiliationLabels),datasets:[{data:@json($affiliationSeries),backgroundColor:'#10b981',borderRadius:5}]},options:{...common,scales:{y:{beginAtZero:true,ticks:{precision:0,font:{size:8}},grid:{color:'#f1f5f9'}},x:{grid:{display:false},ticks:{font:{size:8}}}}}});
+window.dashboardData = {
+    chartLabels: @json($chartLabels), fluvialSeries: @json($fluvialSeries), airSeries: @json($airSeries), cargoSeries: @json($cargoSeries),
+    modalityValues: @json($modalityValues), affiliationLabels: @json($affiliationLabels), affiliationSeries: @json($affiliationSeries),
+    operatorNames: @json($operatorRanking->pluck('name')), operatorTickets: @json($operatorRanking->pluck('tickets')),
+    fleetNames: @json($fleetByOperator->take(8)->pluck('name')), vesselSeries: @json($fleetByOperator->take(8)->pluck('vessels')), aircraftSeries: @json($fleetByOperator->take(8)->pluck('aircraft')),
+    routes: @json($mapRoutes), tickets: [{{ $fluvialTicketsSold }}, {{ $airTicketsSold }}], operations: [{{ $cancelledDeparturesInPeriod }}, {{ $rescheduledDeparturesInPeriod }}, {{ $technicalAlerts }}],
+    cargo: [{{ $cargoShipmentsCount }}, {{ $cargoCustomersCount }}, {{ $cargoPackagesCount }}]
 };
-document.addEventListener('DOMContentLoaded', window.initAdminDashboardCharts);
-document.addEventListener('turbo:load', window.initAdminDashboardCharts);
+@php
+    $dashboardSummary = [
+        ['Indicador', 'Valor'],
+        ['Período', $from->format('d/m/Y').' - '.$to->format('d/m/Y')],
+        ['Ventas procesadas', $grossSales],
+        ['Comisión NavegaYA', $netCommission],
+        ['Pasajes fluviales', $fluvialTicketsSold],
+        ['Pasajes aéreos', $airTicketsSold],
+        ['Pasajes cancelados', $cancelledTickets],
+        ['Empresas registradas', $totalOperatorsCount],
+        ['Empresas pendientes', $pendingOperatorsCount],
+        ['Empresas rechazadas', $rejectedOperatorsCount],
+        ['Envíos de carga', $cargoShipmentsCount],
+    ];
+@endphp
+window.dashboardSummary = @json($dashboardSummary);
+window.downloadDashboardCsv = function () { const csv = window.dashboardSummary.map(row => row.map(value => '"'+String(value).replaceAll('"','""')+'"').join(';')).join('\n'); const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='navegaya-resumen-{{ $from->format('Ymd') }}-{{ $to->format('Ymd') }}.csv'; a.click(); URL.revokeObjectURL(a.href); };
+window.nyCharts = window.nyCharts || {};
+const baseOptions = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
+window.makeChart = function(id, config) { const el=document.getElementById(id); if(!el) return; if(window.nyCharts[id]) window.nyCharts[id].destroy(); window.nyCharts[id]=new Chart(el,config); };
+window.initDashboardTab = function(tab) {
+    const d=window.dashboardData;
+    if(typeof Chart==='undefined') return;
+    if(tab==='resumen') {
+        window.makeChart('revenueTrendChart',{type:'line',data:{labels:d.chartLabels,datasets:[{label:'Fluvial',data:d.fluvialSeries,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.08)',fill:true,tension:.35},{label:'Aéreo',data:d.airSeries,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.05)',fill:true,tension:.35},{label:'Carga',data:d.cargoSeries,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.05)',fill:true,tension:.35}]},options:{...baseOptions,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}});
+        window.makeChart('modalityChart',{type:'doughnut',data:{labels:['Fluvial','Aéreo','Carga'],datasets:[{data:d.modalityValues,backgroundColor:['#059669','#0891b2','#d97706'],borderWidth:0}]},options:{...baseOptions,cutout:'72%'}});
+    }
+    if(tab==='ventas') { window.makeChart('ticketModalityChart',{type:'bar',data:{labels:['Fluvial','Aéreo'],datasets:[{data:d.tickets,backgroundColor:['#059669','#0891b2'],borderRadius:7}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}}); window.makeChart('operatorTicketsChart',{type:'bar',data:{labels:d.operatorNames,datasets:[{data:d.operatorTickets,backgroundColor:'#0f766e',borderRadius:6}]},options:{...baseOptions,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}}); window.initLoretoMap(); }
+    if(tab==='empresas') { window.makeChart('affiliationsChart',{type:'bar',data:{labels:d.affiliationLabels,datasets:[{data:d.affiliationSeries,backgroundColor:'#10b981',borderRadius:5}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}}); window.makeChart('fleetChart',{type:'doughnut',data:{labels:['Embarcaciones','Aeronaves'],datasets:[{data:[{{ $registeredVesselsCount }},{{ $registeredAircraftCount }}],backgroundColor:['#059669','#0891b2'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}}); }
+    if(tab==='operacion') window.makeChart('operationsChart',{type:'bar',data:{labels:['Canceladas','Reprogramadas','Alertas técnicas'],datasets:[{data:d.operations,backgroundColor:['#f43f5e','#f59e0b','#0ea5e9'],borderRadius:7}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
+    if(tab==='carga') window.makeChart('cargoChart',{type:'bar',data:{labels:['Envíos','Remitentes','Paquetes'],datasets:[{data:d.cargo,backgroundColor:['#0f766e','#0891b2','#d97706'],borderRadius:8}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
+};
+window.initLoretoMap = function() {
+    if(typeof L==='undefined') return; const el=document.getElementById('loretoRoutesMap'); if(!el) return;
+    if(window.nyLoretoMap){setTimeout(()=>window.nyLoretoMap.invalidateSize(),50);return;}
+    const map=L.map(el,{zoomControl:true}).setView([-4.45,-74.3],6); window.nyLoretoMap=map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+    const bounds=[]; window.dashboardData.routes.forEach(route=>{if(!route.origin_coords||!route.destination_coords)return; const color=route.type==='Aéreo'?'#0891b2':'#059669'; const weight=Math.min(9,3+Number(route.tickets||0)/10); const line=L.polyline([route.origin_coords,route.destination_coords],{color,weight,dashArray:route.type==='Aéreo'?'8 7':null,opacity:.85}).addTo(map); line.bindPopup(`<strong>${route.type==='Aéreo'?'✈️':'🚤'} ${route.origin} → ${route.destination}</strong><br>${route.operator}<br><b>${route.tickets}</b> pasajes · S/ ${Number(route.sales).toFixed(2)}`); bounds.push(route.origin_coords,route.destination_coords); }); if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:8}); else L.popup().setLatLng([-3.75,-73.25]).setContent('Registra coordenadas en Puertos y Aeródromos para visualizar las rutas.').openOn(map); setTimeout(()=>map.invalidateSize(),100);
+};
+document.addEventListener('DOMContentLoaded',()=>window.initDashboardTab('resumen'));
+document.addEventListener('turbo:load',()=>window.initDashboardTab('resumen'));
 </script>
 @endsection

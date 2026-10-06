@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aircraft;
+use App\Models\AirRoute;
 use App\Models\AirDeparture;
 use App\Models\CargoShipment;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\Ticket;
+use App\Models\TransportRoute;
 use App\Models\Vessel;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -274,6 +277,77 @@ class AdminDashboardController extends Controller
         $cargoCustomersCount = $cargoShipments->pluck('sender_phone')->filter()->unique()->count();
         $cargoPackagesCount = (int) $cargoShipments->sum('package_count');
 
+        $routeDemand = $payments
+            ->groupBy(function (Payment $payment): string {
+                $reservation = $payment->reservation;
+
+                return $reservation?->air_departure_id
+                    ? 'air:'.$reservation->airDeparture?->air_route_id
+                    : 'river:'.$reservation?->departure?->transport_route_id;
+            })
+            ->map(fn (Collection $group) => [
+                'tickets' => $group->sum(fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0),
+                'sales' => (float) $group->sum('amount'),
+            ]);
+
+        $cityCoordinates = [
+            'iquitos' => [-3.7437, -73.2516],
+            'nauta' => [-4.5051, -73.5757],
+            'yurimaguas' => [-5.8966, -76.1043],
+            'requena' => [-5.0638, -73.8528],
+            'contamana' => [-7.3509, -75.0090],
+            'caballococha' => [-3.9058, -70.5168],
+            'san lorenzo' => [-4.8294, -76.5558],
+        ];
+        Port::query()->whereNotNull('latitude')->whereNotNull('longitude')->get(['city', 'latitude', 'longitude'])
+            ->each(function (Port $port) use (&$cityCoordinates): void {
+                $cityCoordinates[mb_strtolower(trim($port->city))] = [(float) $port->latitude, (float) $port->longitude];
+            });
+
+        $riverMapRoutes = TransportRoute::query()
+            ->where('status', 'active')
+            ->with(['originPort', 'destinationPort', 'organization'])
+            ->get()
+            ->map(function (TransportRoute $route) use ($routeDemand): array {
+                $demand = $routeDemand->get('river:'.$route->id, ['tickets' => 0, 'sales' => 0]);
+
+                return [
+                    'id' => $route->id,
+                    'type' => 'Fluvial',
+                    'operator' => $route->organization?->commercial_name ?: $route->organization?->legal_name ?: 'Operador',
+                    'origin' => $route->originPort?->city ?: 'Origen',
+                    'destination' => $route->destinationPort?->city ?: 'Destino',
+                    'origin_coords' => $route->originPort?->latitude && $route->originPort?->longitude ? [(float) $route->originPort->latitude, (float) $route->originPort->longitude] : null,
+                    'destination_coords' => $route->destinationPort?->latitude && $route->destinationPort?->longitude ? [(float) $route->destinationPort->latitude, (float) $route->destinationPort->longitude] : null,
+                    'tickets' => $demand['tickets'],
+                    'sales' => $demand['sales'],
+                    'status' => $route->status,
+                ];
+            });
+
+        $airMapRoutes = AirRoute::query()
+            ->where('status', 'active')
+            ->with('organization')
+            ->get()
+            ->map(function (AirRoute $route) use ($routeDemand, $cityCoordinates): array {
+                $demand = $routeDemand->get('air:'.$route->id, ['tickets' => 0, 'sales' => 0]);
+
+                return [
+                    'id' => $route->id,
+                    'type' => 'Aéreo',
+                    'operator' => $route->organization?->commercial_name ?: $route->organization?->legal_name ?: 'Operador',
+                    'origin' => $route->origin_city,
+                    'destination' => $route->destination_city,
+                    'origin_coords' => $cityCoordinates[mb_strtolower(trim($route->origin_city))] ?? null,
+                    'destination_coords' => $cityCoordinates[mb_strtolower(trim($route->destination_city))] ?? null,
+                    'tickets' => $demand['tickets'],
+                    'sales' => $demand['sales'],
+                    'status' => $route->status,
+                ];
+            });
+
+        $mapRoutes = $riverMapRoutes->concat($airMapRoutes)->values();
+
         return view('admin.dashboard', compact(
             'period',
             'from',
@@ -312,6 +386,7 @@ class AdminDashboardController extends Controller
             'culqiOperational',
             'operatorRanking',
             'topRoutes',
+            'mapRoutes',
             'chartLabels',
             'fluvialSeries',
             'airSeries',
