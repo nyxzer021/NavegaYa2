@@ -14,7 +14,8 @@
 
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<div id="executiveDashboard" class="w-full space-y-4 text-slate-800">
+@php($isAdvertisingDashboard = request('area') === 'publicidad')
+<div id="executiveDashboard" data-server-area="{{ $isAdvertisingDashboard ? 'publicidad' : 'transporte' }}" class="w-full space-y-4 text-slate-800">
     <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
@@ -54,11 +55,12 @@
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 sm:grid-cols-2" role="tablist" aria-label="Líneas de negocio">
-            <button type="button" data-business-tab="transporte" data-business-active="border-emerald-600 bg-emerald-950 text-white shadow-lg" aria-selected="true" class="flex min-h-16 items-center gap-3 rounded-2xl border border-transparent px-4 text-left transition hover:border-emerald-300 hover:bg-white"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-xl">🚤</span><span><strong class="block text-sm font-black">Transporte de pasajeros</strong><small class="block text-[9px] font-semibold opacity-70">Fluvial, aéreo, empresas, carga y finanzas</small></span><span class="ml-auto">→</span></button>
-            <button type="button" data-business-tab="publicidad" data-business-active="border-fuchsia-500 bg-fuchsia-950 text-white shadow-lg" aria-selected="false" class="flex min-h-16 items-center gap-3 rounded-2xl border border-transparent px-4 text-left text-slate-700 transition hover:border-fuchsia-300 hover:bg-white"><span class="grid h-10 w-10 place-items-center rounded-xl bg-fuchsia-100 text-xl">📣</span><span><strong class="block text-sm font-black">Publicidad y anunciantes</strong><small class="block text-[9px] font-semibold opacity-70">Contratos, campañas, planes e impacto</small></span><span class="ml-auto">→</span></button>
+            <a href="{{ route('admin.dashboard',['area'=>'transporte','period'=>$period]) }}" aria-current="{{ $isAdvertisingDashboard ? 'false' : 'page' }}" class="flex min-h-16 items-center gap-3 rounded-2xl border px-4 text-left transition {{ $isAdvertisingDashboard ? 'border-transparent text-slate-700 hover:border-emerald-300 hover:bg-white' : 'border-emerald-600 bg-emerald-950 text-white shadow-lg' }}"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-xl">🚤</span><span><strong class="block text-sm font-black">Transporte de pasajeros</strong><small class="block text-[9px] font-semibold opacity-70">Fluvial, aéreo, empresas, carga y finanzas</small></span><span class="ml-auto">→</span></a>
+            <a href="{{ route('admin.dashboard',['area'=>'publicidad','period'=>$period]) }}" aria-current="{{ $isAdvertisingDashboard ? 'page' : 'false' }}" class="flex min-h-16 items-center gap-3 rounded-2xl border px-4 text-left transition {{ $isAdvertisingDashboard ? 'border-fuchsia-500 bg-fuchsia-950 text-white shadow-lg' : 'border-transparent text-slate-700 hover:border-fuchsia-300 hover:bg-white' }}"><span class="grid h-10 w-10 place-items-center rounded-xl bg-fuchsia-100 text-xl">📣</span><span><strong class="block text-sm font-black">Publicidad y anunciantes</strong><small class="block text-[9px] font-semibold opacity-70">Contratos, campañas, planes e impacto</small></span><span class="ml-auto">→</span></a>
         </div>
         <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-            <div><h3 data-analysis-title class="text-sm font-black text-slate-950">Control de transporte</h3><p data-analysis-copy class="text-[10px] text-slate-400">Selecciona una perspectiva operativa para revisar sus indicadores.</p></div>
+            <div><h3 data-analysis-title class="text-sm font-black text-slate-950">{{ $isAdvertisingDashboard ? 'Inteligencia publicitaria' : 'Control de transporte' }}</h3><p data-analysis-copy class="text-[10px] text-slate-400">{{ $isAdvertisingDashboard ? 'Empresas anunciantes, contratos, campañas, directorio y rendimiento.' : 'Selecciona una perspectiva operativa para revisar sus indicadores.' }}</p></div>
+            @unless($isAdvertisingDashboard)
             <nav id="transportSubnav" class="flex max-w-full gap-1.5 overflow-x-auto rounded-2xl bg-slate-950 p-1.5 shadow-inner" role="tablist" aria-label="Áreas de transporte">
                 @foreach([
                     ['fluvial','🚤','Fluvial','bg-emerald-500 text-emerald-950'],
@@ -73,8 +75,10 @@
                     </button>
                 @endforeach
             </nav>
+            @endunless
         </div>
 
+        @unless($isAdvertisingDashboard)
         <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" hidden class="space-y-4 p-4">
             <div class="grid gap-3 md:grid-cols-3">
                 @foreach([
@@ -147,6 +151,7 @@
             <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
 
+        @else
         <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" hidden class="bg-fuchsia-50/40 p-4">
             <nav class="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
                 @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📣','Campañas'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
@@ -163,6 +168,7 @@
             <div data-ad-panel="directorio" hidden><article class="rounded-2xl border border-fuchsia-200 bg-white p-5"><div class="flex justify-between"><div><p class="text-[9px] font-black uppercase text-fuchsia-700">Directorio turístico público</p><h4 class="text-lg font-black">{{ $publishedTourismCount }} fichas publicadas</h4></div><span class="text-[9px] font-black text-amber-700">{{ $featuredTourismCount }} destacadas</span></div><div class="mt-4 grid grid-cols-3 gap-3">@foreach([['🏨','Hospedajes',$tourismDirectoryCounts['lodging'],'lodging'],['🍽️','Restaurantes',$tourismDirectoryCounts['gastronomy'],'gastronomy'],['🌿','Tours',$tourismDirectoryCounts['attraction'],'attraction']] as [$icon,$label,$count,$type])<a href="{{ route('admin.destination-listings.index',$type) }}" class="rounded-xl bg-slate-50 p-4 text-center hover:bg-fuchsia-50"><span class="text-xl">{{ $icon }}</span><strong class="block text-2xl font-black">{{ $count }}</strong><span class="text-[9px]">{{ $label }}</span></a>@endforeach</div></article></div>
             <div data-ad-panel="rendimiento" hidden><article class="rounded-2xl bg-slate-950 p-5 text-white"><p class="text-[9px] font-black uppercase text-fuchsia-300">Rendimiento publicitario</p><div class="mt-4 grid gap-3 sm:grid-cols-3"><div class="rounded-xl bg-white/10 p-4"><span class="text-[9px]">Impresiones</span><strong class="block text-3xl">{{ number_format($advertisingViews) }}</strong></div><div class="rounded-xl bg-white/10 p-4"><span class="text-[9px]">Clics</span><strong class="block text-3xl">{{ number_format($advertisingClicks) }}</strong></div><div class="rounded-xl bg-fuchsia-500/20 p-4"><span class="text-[9px]">CTR</span><strong class="block text-3xl">{{ number_format($advertisingCtr,1) }}%</strong></div></div>@if($advertisingViews===0)<p class="mt-4 rounded-xl bg-white/5 p-4 text-[10px] text-slate-300">Las métricas aparecerán cuando las campañas reciban impresiones y clics.</p>@endif</article></div>
         </div>
+        @endunless
 
     </section>
 </div>
@@ -261,7 +267,20 @@ window.initExecutiveDashboard = function() {
     const subnav=root.querySelector('#transportSubnav');
     const title=root.querySelector('[data-analysis-title]');
     const copy=root.querySelector('[data-analysis-copy]');
-    if(!businessButtons.length || !buttons.length || !panels.length) return;
+    if(root.dataset.serverArea==='publicidad') {
+        const adButtons=[...root.querySelectorAll('[data-ad-tab]')];
+        const adPanels=[...root.querySelectorAll('[data-ad-panel]')];
+        const activateAd=name=>{
+            if(!adButtons.some(button=>button.dataset.adTab===name)) name='resumen';
+            adPanels.forEach(panel=>{const show=panel.dataset.adPanel===name;panel.hidden=!show;panel.style.display=show?'':'none';});
+            adButtons.forEach(button=>{const selected=button.dataset.adTab===name;button.setAttribute('aria-selected',selected?'true':'false');button.classList.toggle('bg-fuchsia-700',selected);button.classList.toggle('text-white',selected);button.classList.toggle('shadow-sm',selected);button.classList.toggle('text-slate-500',!selected);});
+            if(name==='campanas') requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab('publicidad'),40));
+        };
+        adButtons.forEach(button=>button.addEventListener('click',()=>activateAd(button.dataset.adTab)));
+        activateAd('resumen');
+        return;
+    }
+    if(!buttons.length || !panels.length) return;
     const valid=buttons.map(button=>button.dataset.dashboardTab);
     const activePalette=['bg-white','bg-emerald-500','bg-sky-400','bg-amber-400','bg-violet-400','bg-orange-400','text-slate-950','text-emerald-950','text-sky-950','text-amber-950','text-violet-950','text-orange-950','shadow-md'];
     const businessPalette=['border-emerald-600','bg-emerald-950','border-fuchsia-500','bg-fuchsia-950','text-white','text-slate-700','shadow-lg'];
@@ -324,7 +343,7 @@ window.initExecutiveDashboard = function() {
             buttons[next].focus(); activateTransportTab(buttons[next].dataset.dashboardTab);
         });
     });
-    activateBusiness(new URL(location.href).searchParams.get('area')==='publicidad'?'publicidad':'transporte',false);
+    activateBusiness(root.dataset.serverArea==='publicidad'?'publicidad':'transporte',false);
 };
 document.addEventListener('DOMContentLoaded',window.initExecutiveDashboard);
 document.addEventListener('turbo:load',window.initExecutiveDashboard);
