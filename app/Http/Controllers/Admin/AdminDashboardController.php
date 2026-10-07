@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aircraft;
+use App\Models\Advertisement;
 use App\Models\AirRoute;
 use App\Models\AirDeparture;
 use App\Models\CargoShipment;
@@ -348,6 +349,37 @@ class AdminDashboardController extends Controller
 
         $mapRoutes = $riverMapRoutes->concat($airMapRoutes)->values();
 
+        $advertisements = Advertisement::query()->get();
+        $activeAdvertisements = $advertisements->where('status', 'active');
+        $activeAdvertisersCount = $activeAdvertisements->pluck('business_name')->filter()->unique()->count();
+        $activeCampaignsCount = $activeAdvertisements->count();
+        $pendingAdLeadsCount = $advertisements->where('status', 'lead_pending')->count();
+        $pausedAdsCount = $advertisements->where('status', 'paused')->count();
+        $monthlyAdvertisingRevenue = (float) $activeAdvertisements->sum('monthly_fee');
+        $advertisingViews = (int) $activeAdvertisements->sum('views');
+        $advertisingClicks = (int) $activeAdvertisements->sum('clicks');
+        $advertisingCtr = $advertisingViews > 0 ? round(($advertisingClicks / $advertisingViews) * 100, 1) : 0;
+
+        $advertisingPlans = [
+            'essential' => ['name' => 'Esencial', 'description' => '1 ubicación', 'count' => 0],
+            'featured' => ['name' => 'Destacado', 'description' => '2 ubicaciones', 'count' => 0],
+            'total' => ['name' => 'Cobertura total', 'description' => '3 o más ubicaciones', 'count' => 0],
+        ];
+
+        $activeAdvertisements->each(function (Advertisement $advertisement) use (&$advertisingPlans): void {
+            $placementsCount = count($advertisement->placements ?? []);
+            $plan = $placementsCount >= 3 ? 'total' : ($placementsCount === 2 ? 'featured' : 'essential');
+            $advertisingPlans[$plan]['count']++;
+        });
+        $advertisingPlans = collect($advertisingPlans);
+
+        $advertisingPipeline = [
+            $activeCampaignsCount,
+            $pendingAdLeadsCount,
+            $pausedAdsCount,
+            $advertisements->where('status', 'expired')->count(),
+        ];
+
         return view('admin.dashboard', compact(
             'period',
             'from',
@@ -397,6 +429,16 @@ class AdminDashboardController extends Controller
             'profitMonth',
             'profitYear',
             'paymentMethodStats',
+            'activeAdvertisersCount',
+            'activeCampaignsCount',
+            'pendingAdLeadsCount',
+            'pausedAdsCount',
+            'monthlyAdvertisingRevenue',
+            'advertisingViews',
+            'advertisingClicks',
+            'advertisingCtr',
+            'advertisingPlans',
+            'advertisingPipeline',
         ));
     }
 

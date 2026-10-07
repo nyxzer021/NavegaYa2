@@ -55,17 +55,17 @@
     <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         @php
             $kpis = [
-                ['GMV del período', 'S/ '.number_format($grossSales, 2), 'Ventas procesadas', '💳', 'admin.sales.index', 'slate'],
-                ['Comisión generada', 'S/ '.number_format($netCommission, 2), 'Ingreso NavegaYA', '%', 'admin.commissions.index', 'emerald'],
-                ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'admin.sales.index', 'sky'],
-                ['Pasajes cancelados', number_format($cancelledTickets), 'En el período', '↩', 'admin.refunds.index', 'rose'],
-                ['Empresas registradas', number_format($totalOperatorsCount), $activeOperatorsCount.' activas', '🏢', 'admin.companies.index', 'violet'],
-                ['Nuevas afiliaciones', number_format($newOperatorsInPeriod), $pendingOperatorsCount.' por aprobar', '＋', 'admin.companies.index', 'amber'],
+                ['GMV del período', 'S/ '.number_format($grossSales, 2), 'Ventas procesadas', '💳', 'admin.sales.index', 'border-blue-200 bg-blue-50/70', 'bg-blue-100 text-blue-700', 'group-hover:border-blue-300'],
+                ['Comisión generada', 'S/ '.number_format($netCommission, 2), 'Ingreso NavegaYA', '%', 'admin.commissions.index', 'border-emerald-200 bg-emerald-50/70', 'bg-emerald-100 text-emerald-700', 'group-hover:border-emerald-300'],
+                ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'admin.sales.index', 'border-cyan-200 bg-cyan-50/70', 'bg-cyan-100 text-cyan-700', 'group-hover:border-cyan-300'],
+                ['Pasajes cancelados', number_format($cancelledTickets), 'En el período', '↩', 'admin.refunds.index', 'border-rose-200 bg-rose-50/70', 'bg-rose-100 text-rose-700', 'group-hover:border-rose-300'],
+                ['Empresas registradas', number_format($totalOperatorsCount), $activeOperatorsCount.' activas', '🏢', 'admin.companies.index', 'border-violet-200 bg-violet-50/70', 'bg-violet-100 text-violet-700', 'group-hover:border-violet-300'],
+                ['Nuevas afiliaciones', number_format($newOperatorsInPeriod), $pendingOperatorsCount.' por aprobar', '＋', 'admin.companies.index', 'border-amber-200 bg-amber-50/70', 'bg-amber-100 text-amber-700', 'group-hover:border-amber-300'],
             ];
         @endphp
         @foreach($kpis as $kpi)
-            <a href="{{ route($kpi[4]) }}" class="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
-                <div class="flex items-start justify-between gap-2"><span class="text-[9px] font-black uppercase tracking-wider text-slate-500">{{ $kpi[0] }}</span><span class="text-base">{{ $kpi[3] }}</span></div>
+            <a href="{{ route($kpi[4]) }}" class="group rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $kpi[5] }} {{ $kpi[7] }}">
+                <div class="flex items-start justify-between gap-2"><span class="text-[9px] font-black uppercase tracking-wider text-slate-600">{{ $kpi[0] }}</span><span class="grid h-8 w-8 place-items-center rounded-xl text-sm {{ $kpi[6] }}">{{ $kpi[3] }}</span></div>
                 <strong class="mt-2 block text-xl font-black text-slate-950">{{ $kpi[1] }}</strong>
                 <span class="mt-1 flex items-center justify-between text-[9px] font-semibold text-slate-400"><span>{{ $kpi[2] }}</span><span class="text-emerald-600 opacity-0 transition group-hover:opacity-100">Ver →</span></span>
             </a>
@@ -89,12 +89,40 @@
         </article>
     </section>
 
+    <section class="overflow-hidden rounded-2xl border border-fuchsia-200 bg-gradient-to-r from-fuchsia-950 via-violet-950 to-indigo-950 text-white shadow-sm">
+        <div class="grid gap-4 p-4 lg:grid-cols-[1.1fr_1.4fr_auto] lg:items-center">
+            <div>
+                <div class="flex items-center gap-2"><span class="grid h-9 w-9 place-items-center rounded-xl bg-white/10 text-lg">📣</span><div><p class="text-[9px] font-black uppercase tracking-[.18em] text-fuchsia-200">Publicidad B2B</p><h3 class="text-sm font-black">Negocios que anuncian en NavegaYA</h3></div></div>
+                <p class="mt-2 text-[10px] leading-relaxed text-violet-200">Controla contratos, solicitudes y rendimiento publicitario sin mezclarlo con la venta de pasajes.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] font-bold uppercase text-fuchsia-200">Anunciantes</span><strong class="mt-1 block text-lg font-black">{{ $activeAdvertisersCount }}</strong><span class="text-[8px] text-white/60">negocios activos</span></div>
+                <div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] font-bold uppercase text-amber-200">Solicitudes</span><strong class="mt-1 block text-lg font-black">{{ $pendingAdLeadsCount }}</strong><span class="text-[8px] text-white/60">por evaluar</span></div>
+                <div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] font-bold uppercase text-emerald-200">Ingreso mensual</span><strong class="mt-1 block text-lg font-black">S/ {{ number_format($monthlyAdvertisingRevenue, 2) }}</strong><span class="text-[8px] text-white/60">contratado</span></div>
+                <div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] font-bold uppercase text-cyan-200">Rendimiento</span><strong class="mt-1 block text-lg font-black">{{ number_format($advertisingCtr, 1) }}%</strong><span class="text-[8px] text-white/60">CTR · {{ $advertisingClicks }} clics</span></div>
+            </div>
+            <a href="{{ route('admin.advertisements.index') }}" class="inline-flex h-10 items-center justify-center rounded-xl bg-fuchsia-400 px-4 text-[10px] font-black text-fuchsia-950 transition hover:bg-fuchsia-300">Gestionar pautas →</a>
+        </div>
+        <div class="grid border-t border-white/10 sm:grid-cols-3">
+            @foreach([
+                ['Esencial', '1 ubicación publicitaria', $advertisingPlans['essential']['count'], 'text-sky-200'],
+                ['Destacado', '2 ubicaciones publicitarias', $advertisingPlans['featured']['count'], 'text-violet-200'],
+                ['Cobertura total', '3 o más ubicaciones', $advertisingPlans['total']['count'], 'text-amber-200']
+            ] as $plan)
+                <button type="button" @click="changeTab('publicidad')" class="flex items-center justify-between border-white/10 px-4 py-3 text-left transition hover:bg-white/10 sm:border-r">
+                    <span><strong class="block text-[10px] font-black {{ $plan[3] }}">{{ $plan[0] }}</strong><span class="text-[8px] text-white/55">{{ $plan[1] }}</span></span>
+                    <span class="rounded-full bg-white/10 px-2.5 py-1 text-xs font-black">{{ $plan[2] }}</span>
+                </button>
+            @endforeach
+        </div>
+    </section>
+
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div><h3 class="text-sm font-black text-slate-950">Análisis ejecutivo</h3><p class="text-[10px] text-slate-400">Selecciona una perspectiva para revisar indicadores y acceder al detalle.</p></div>
             <nav class="flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
-                @foreach(['resumen' => 'Resumen', 'ventas' => 'Ventas y rutas', 'empresas' => 'Empresas y flota', 'operacion' => 'Operación', 'carga' => 'Carga'] as $key => $label)
-                    <button type="button" @click="changeTab('{{ $key }}')" :class="tab==='{{ $key }}' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-3 py-2 text-[10px] font-black transition">{{ $label }}</button>
+                @foreach(['resumen' => '▦ Resumen', 'ventas' => '↗ Ventas y rutas', 'empresas' => '▥ Empresas y flota', 'operacion' => '⚠ Operación', 'carga' => '◆ Carga', 'publicidad' => '📣 Publicidad B2B'] as $key => $label)
+                    <button type="button" @click="changeTab('{{ $key }}')" :class="tab==='{{ $key }}' ? '{{ $key === 'publicidad' ? 'bg-fuchsia-700 text-white' : 'bg-emerald-700 text-white' }} shadow-sm' : 'text-slate-500 hover:bg-white hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-3 py-2 text-[10px] font-black transition">{{ $label }}</button>
                 @endforeach
             </nav>
         </div>
@@ -140,6 +168,30 @@
             <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
 
+        <div x-show="tab==='publicidad'" x-cloak class="space-y-4 bg-fuchsia-50/40 p-4">
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach([
+                    ['Anunciantes activos',$activeAdvertisersCount,'Negocios con pauta vigente','📣','border-fuchsia-200 bg-fuchsia-50'],
+                    ['Campañas activas',$activeCampaignsCount,'Piezas publicadas','🟣','border-violet-200 bg-violet-50'],
+                    ['Solicitudes pendientes',$pendingAdLeadsCount,'Requieren evaluación','⏳','border-amber-200 bg-amber-50'],
+                    ['Ingreso mensual','S/ '.number_format($monthlyAdvertisingRevenue,2),'Tarifa mensual contratada','💰','border-emerald-200 bg-emerald-50']
+                ] as $item)
+                    <a href="{{ route('admin.advertisements.index') }}" class="rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md {{ $item[4] }}"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-500">{{ $item[2] }}</p></a>
+                @endforeach
+            </div>
+            <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.1fr]">
+                <article class="rounded-xl border border-violet-200 bg-white p-4"><h4 class="text-xs font-black text-slate-900">Contratos por plan</h4><p class="text-[9px] text-slate-400">Distribución según ubicaciones contratadas</p><div class="h-52"><canvas id="advertisingPlansChart"></canvas></div></article>
+                <article class="rounded-xl border border-fuchsia-200 bg-white p-4"><h4 class="text-xs font-black text-slate-900">Estado de campañas</h4><p class="text-[9px] text-slate-400">Activas, pendientes, pausadas y vencidas</p><div class="h-52"><canvas id="advertisingPipelineChart"></canvas></div></article>
+                <article class="rounded-xl bg-slate-950 p-4 text-white">
+                    <p class="text-[9px] font-black uppercase tracking-wider text-fuchsia-300">Rendimiento publicitario</p>
+                    <div class="mt-3 grid grid-cols-2 gap-2"><div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] text-slate-300">Impresiones</span><strong class="block text-xl font-black">{{ number_format($advertisingViews) }}</strong></div><div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] text-slate-300">Clics</span><strong class="block text-xl font-black">{{ number_format($advertisingClicks) }}</strong></div></div>
+                    <div class="mt-3 rounded-xl bg-fuchsia-500/20 p-3"><span class="text-[8px] font-bold uppercase text-fuchsia-200">Tasa de clics (CTR)</span><strong class="mt-1 block text-2xl font-black">{{ number_format($advertisingCtr,1) }}%</strong></div>
+                    <p class="mt-3 text-[9px] leading-relaxed text-slate-300">Los planes se clasifican por cobertura: Esencial usa 1 ubicación, Destacado 2 y Cobertura total 3 o más.</p>
+                    <a href="{{ route('admin.advertisements.index') }}" class="mt-3 inline-flex rounded-lg bg-fuchsia-400 px-3 py-2 text-[9px] font-black text-fuchsia-950">Abrir gestión de anuncios →</a>
+                </article>
+            </div>
+        </div>
+
     </section>
 </div>
 
@@ -152,7 +204,9 @@ window.dashboardData = {
     operatorNames: @json($operatorRanking->pluck('name')), operatorTickets: @json($operatorRanking->pluck('tickets')),
     fleetNames: @json($fleetByOperator->take(8)->pluck('name')), vesselSeries: @json($fleetByOperator->take(8)->pluck('vessels')), aircraftSeries: @json($fleetByOperator->take(8)->pluck('aircraft')),
     routes: @json($mapRoutes), tickets: [{{ $fluvialTicketsSold }}, {{ $airTicketsSold }}], operations: [{{ $cancelledDeparturesInPeriod }}, {{ $rescheduledDeparturesInPeriod }}, {{ $technicalAlerts }}],
-    cargo: [{{ $cargoShipmentsCount }}, {{ $cargoCustomersCount }}, {{ $cargoPackagesCount }}]
+    cargo: [{{ $cargoShipmentsCount }}, {{ $cargoCustomersCount }}, {{ $cargoPackagesCount }}],
+    advertisingPlans: @json($advertisingPlans->pluck('count')->values()),
+    advertisingPipeline: @json($advertisingPipeline)
 };
 @php
     $dashboardSummary = [
@@ -167,6 +221,9 @@ window.dashboardData = {
         ['Empresas pendientes', $pendingOperatorsCount],
         ['Empresas rechazadas', $rejectedOperatorsCount],
         ['Envíos de carga', $cargoShipmentsCount],
+        ['Anunciantes activos', $activeAdvertisersCount],
+        ['Campañas publicitarias activas', $activeCampaignsCount],
+        ['Ingreso mensual por publicidad', $monthlyAdvertisingRevenue],
     ];
 @endphp
 window.dashboardSummary = @json($dashboardSummary);
@@ -185,6 +242,10 @@ window.initDashboardTab = function(tab) {
     if(tab==='empresas') { window.makeChart('affiliationsChart',{type:'bar',data:{labels:d.affiliationLabels,datasets:[{data:d.affiliationSeries,backgroundColor:'#10b981',borderRadius:5}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}}); window.makeChart('fleetChart',{type:'doughnut',data:{labels:['Embarcaciones','Aeronaves'],datasets:[{data:[{{ $registeredVesselsCount }},{{ $registeredAircraftCount }}],backgroundColor:['#059669','#0891b2'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}}); }
     if(tab==='operacion') window.makeChart('operationsChart',{type:'bar',data:{labels:['Canceladas','Reprogramadas','Alertas técnicas'],datasets:[{data:d.operations,backgroundColor:['#f43f5e','#f59e0b','#0ea5e9'],borderRadius:7}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
     if(tab==='carga') window.makeChart('cargoChart',{type:'bar',data:{labels:['Envíos','Remitentes','Paquetes'],datasets:[{data:d.cargo,backgroundColor:['#0f766e','#0891b2','#d97706'],borderRadius:8}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
+    if(tab==='publicidad') {
+        window.makeChart('advertisingPlansChart',{type:'bar',data:{labels:['Esencial','Destacado','Cobertura total'],datasets:[{data:d.advertisingPlans,backgroundColor:['#38bdf8','#8b5cf6','#f59e0b'],borderRadius:8}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
+        window.makeChart('advertisingPipelineChart',{type:'doughnut',data:{labels:['Activas','Pendientes','Pausadas','Vencidas'],datasets:[{data:d.advertisingPipeline.some(Number)?d.advertisingPipeline:[1],backgroundColor:d.advertisingPipeline.some(Number)?['#10b981','#f59e0b','#8b5cf6','#94a3b8']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}});
+    }
 };
 window.initLoretoMap = function() {
     if(typeof L==='undefined') return; const el=document.getElementById('loretoRoutesMap'); if(!el) return;
