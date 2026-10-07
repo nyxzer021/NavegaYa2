@@ -14,7 +14,7 @@
 
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<div x-data="{ tab: 'resumen', changeTab(name) { this.tab = name; this.$nextTick(() => window.initDashboardTab(name)); } }" class="w-full space-y-4 text-slate-800">
+<div id="executiveDashboard" class="w-full space-y-4 text-slate-800">
     <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
@@ -55,14 +55,24 @@
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div><h3 class="text-sm font-black text-slate-950">Análisis ejecutivo</h3><p class="text-[10px] text-slate-400">Selecciona una perspectiva para revisar indicadores y acceder al detalle.</p></div>
-            <nav class="flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
-                @foreach(['resumen' => '▦ Resumen', 'fluvial' => '🚤 Fluvial', 'aereo' => '✈️ Aéreo', 'finanzas' => 'S/ Finanzas', 'empresas' => '▥ Empresas', 'carga' => '◆ Carga', 'publicidad' => '📣 Publicidad'] as $key => $label)
-                    <button type="button" @click="changeTab('{{ $key }}')" :class="tab==='{{ $key }}' ? '{{ $key === 'publicidad' ? 'bg-fuchsia-700 text-white' : 'bg-emerald-700 text-white' }} shadow-sm' : 'text-slate-500 hover:bg-white hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-3 py-2 text-[10px] font-black transition">{{ $label }}</button>
+            <nav class="flex max-w-full gap-1.5 overflow-x-auto rounded-2xl bg-slate-950 p-1.5 shadow-inner" role="tablist" aria-label="Áreas del dashboard">
+                @foreach([
+                    ['resumen','▦','Resumen','bg-white text-slate-950'],
+                    ['fluvial','🚤','Fluvial','bg-emerald-500 text-emerald-950'],
+                    ['aereo','✈️','Aéreo','bg-sky-400 text-sky-950'],
+                    ['finanzas','S/','Finanzas','bg-amber-400 text-amber-950'],
+                    ['empresas','▥','Empresas','bg-violet-400 text-violet-950'],
+                    ['carga','◆','Carga','bg-orange-400 text-orange-950'],
+                    ['publicidad','📣','Publicidad','bg-fuchsia-400 text-fuchsia-950']
+                ] as [$key,$icon,$label,$activeClass])
+                    <button type="button" role="tab" data-dashboard-tab="{{ $key }}" data-active-class="{{ $activeClass }}" aria-selected="{{ $key === 'resumen' ? 'true' : 'false' }}" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-[10px] font-black text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/70">
+                        <span class="grid h-6 w-6 place-items-center rounded-lg bg-white/10">{{ $icon }}</span><span>{{ $label }}</span>
+                    </button>
                 @endforeach
             </nav>
         </div>
 
-        <div x-show="tab==='resumen'" class="space-y-4 p-4">
+        <div data-dashboard-panel="resumen" role="tabpanel" class="space-y-4 p-4">
             <div class="grid gap-3 md:grid-cols-3">
                 @foreach([
                     ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'border-cyan-200 bg-cyan-50'],
@@ -89,7 +99,7 @@
             </div>
         </div>
 
-        <div x-show="tab==='fluvial'" x-cloak class="space-y-4 bg-emerald-50/30 p-4">
+        <div data-dashboard-panel="fluvial" role="tabpanel" hidden class="space-y-4 bg-emerald-50/30 p-4">
             <div class="grid gap-3 md:grid-cols-3">
                 @foreach([['Pasajes fluviales',$fluvialTicketsSold,'Vendidos en el período','🎟️'],['GMV fluvial','S/ '.number_format($fluvialGmv,2),$fluvialDeparturesCount.' salidas programadas','💳'],['Ocupación',number_format($fluvialOccupancyRate,1).'%',number_format($fluvialCapacity).' asientos publicados','◔']] as $item)
                     <article class="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-emerald-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-emerald-800">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
@@ -102,7 +112,7 @@
             <article class="overflow-hidden rounded-xl border border-emerald-200 bg-white"><div class="flex justify-between bg-emerald-50 px-4 py-3"><h4 class="text-xs font-black">Rutas fluviales con mayor demanda</h4><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-emerald-700">Ver catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Ruta</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-center">Estado</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Fluvial') as $route)<tr><td class="p-3 font-black">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td><td class="p-3 text-center"><span class="rounded-full bg-emerald-50 px-2 py-1 font-bold text-emerald-700">Activa</span></td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin ventas fluviales en este período.</td></tr>@endforelse</tbody></table></article>
         </div>
 
-        <div x-show="tab==='aereo'" x-cloak class="space-y-4 bg-sky-50/30 p-4">
+        <div data-dashboard-panel="aereo" role="tabpanel" hidden class="space-y-4 bg-sky-50/30 p-4">
             <div class="grid gap-3 md:grid-cols-3">
                 @foreach([['Pasajes aéreos',$airTicketsSold,'Vendidos en el período','🎟️'],['GMV aéreo','S/ '.number_format($airGmv,2),$airDeparturesCount.' vuelos programados','💳'],['Ocupación',number_format($airOccupancyRate,1).'%',number_format($airCapacity).' asientos publicados','◔']] as $item)
                     <article class="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-sky-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-sky-800">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
@@ -115,7 +125,7 @@
             <article class="overflow-hidden rounded-xl border border-sky-200 bg-white"><div class="flex justify-between bg-sky-50 px-4 py-3"><h4 class="text-xs font-black">Conexiones aéreas con mayor demanda</h4><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-sky-700">Ver catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Conexión</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-center">Estado</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Aéreo') as $route)<tr><td class="p-3 font-black">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td><td class="p-3 text-center"><span class="rounded-full bg-sky-50 px-2 py-1 font-bold text-sky-700">Activa</span></td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin ventas aéreas en este período.</td></tr>@endforelse</tbody></table></article>
         </div>
 
-        <div x-show="tab==='finanzas'" x-cloak class="space-y-4 bg-amber-50/30 p-4">
+        <div data-dashboard-panel="finanzas" role="tabpanel" hidden class="space-y-4 bg-amber-50/30 p-4">
             <div class="grid gap-3 md:grid-cols-3">
                 @foreach([['GMV procesado','S/ '.number_format($grossSales,2),'Ventas confirmadas','💳'],['Comisión generada','S/ '.number_format($netCommission,2),'Ingreso NavegaYA','%'],['Comisión pendiente','S/ '.number_format($commissionReceivable,2),'Pendiente de cobro','⏳']] as $item)
                     <article class="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-amber-800">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
@@ -125,16 +135,16 @@
             <article class="overflow-hidden rounded-xl border border-amber-200 bg-white"><div class="flex justify-between bg-amber-50 px-4 py-3"><h4 class="text-xs font-black">Rendimiento financiero por operador</h4><a href="{{ route('admin.commissions.index') }}" class="text-[9px] font-black text-amber-800">Abrir comisiones →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3">Modalidad</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-right">Comisión</th></tr></thead><tbody class="divide-y">@forelse($operatorRanking as $operator)<tr><td class="p-3 font-black">{{ $operator['name'] }}</td><td class="p-3">{{ $operator['modality'] }}</td><td class="p-3 text-center">{{ $operator['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($operator['sales'],2) }}</td><td class="p-3 text-right font-black text-emerald-700">S/ {{ number_format($operator['commission'],2) }}</td></tr>@empty<tr><td colspan="5" class="p-8 text-center text-slate-400">Sin transacciones en el período.</td></tr>@endforelse</tbody></table></article>
         </div>
 
-        <div x-show="tab==='empresas'" x-cloak class="grid gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="empresas" role="tabpanel" hidden class="grid gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
             <div><div class="grid grid-cols-2 gap-2">@foreach([['Activas',$activeOperatorsCount],['Pendientes',$pendingOperatorsCount],['Rechazadas',$rejectedOperatorsCount],['Unidades',$registeredVesselsCount+$registeredAircraftCount]] as $item)<a href="{{ route('admin.companies.index') }}" class="rounded-xl border border-slate-200 p-3 hover:border-emerald-300"><span class="text-[9px] font-bold uppercase text-slate-400">{{ $item[0] }}</span><strong class="mt-1 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[8px] font-bold text-emerald-700">Ver detalle →</span></a>@endforeach</div><div class="mt-4 grid gap-3 sm:grid-cols-2"><div><h4 class="text-[10px] font-black text-slate-800">Afiliaciones por mes</h4><div class="h-44"><canvas id="affiliationsChart"></canvas></div></div><div><h4 class="text-[10px] font-black text-slate-800">Flota por modalidad</h4><div class="h-44"><canvas id="fleetChart"></canvas></div></div></div></div>
             <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Flota registrada por empresa</h4><p class="text-[9px] text-slate-400">{{ $registeredVesselsCount }} embarcaciones · {{ $registeredAircraftCount }} aeronaves</p></div><a href="{{ route('admin.companies.index') }}" class="text-[9px] font-black text-emerald-700">Ver expedientes →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0 bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">🚤</th><th class="p-3 text-center">✈️</th><th class="p-3 text-center">Total</th></tr></thead><tbody class="divide-y">@forelse($fleetByOperator as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3 text-center">{{ $operator['vessels'] }}</td><td class="p-3 text-center">{{ $operator['aircraft'] }}</td><td class="p-3 text-center font-black">{{ $operator['total'] }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin flota registrada.</td></tr>@endforelse</tbody></table></div></div>
         </div>
 
-        <div x-show="tab==='carga'" x-cloak class="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
+        <div data-dashboard-panel="carga" role="tabpanel" hidden class="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
             <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
 
-        <div x-show="tab==='publicidad'" x-cloak class="space-y-4 bg-fuchsia-50/40 p-4">
+        <div data-dashboard-panel="publicidad" role="tabpanel" hidden class="space-y-4 bg-fuchsia-50/40 p-4">
             <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach([
                     ['Anunciantes activos',$activeAdvertisersCount,'Negocios con pauta vigente','📣','border-fuchsia-200 bg-fuchsia-50'],
@@ -231,7 +241,10 @@ window.initDashboardTab = function(tab) {
 window.initModeMap = function(elementId, modality) {
     if(typeof L==='undefined') return; const el=document.getElementById(elementId); if(!el) return;
     window.nyModeMaps = window.nyModeMaps || {};
-    if(window.nyModeMaps[elementId]) { setTimeout(()=>window.nyModeMaps[elementId].invalidateSize(),50); return; }
+    if(window.nyModeMaps[elementId]) {
+        if(window.nyModeMaps[elementId].getContainer() === el) { setTimeout(()=>window.nyModeMaps[elementId].invalidateSize(),50); return; }
+        window.nyModeMaps[elementId].remove(); delete window.nyModeMaps[elementId];
+    }
     const map=L.map(el,{zoomControl:true}).setView([-4.45,-74.3],6); window.nyModeMaps[elementId]=map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
     const routes=window.dashboardData.routes.filter(route=>route.type===modality); const bounds=[];
@@ -239,7 +252,55 @@ window.initModeMap = function(elementId, modality) {
     if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:8}); else L.popup().setLatLng([-3.75,-73.25]).setContent('No hay rutas '+modality.toLowerCase()+'s georreferenciadas para mostrar.').openOn(map);
     setTimeout(()=>map.invalidateSize(),100);
 };
-document.addEventListener('DOMContentLoaded',()=>window.initDashboardTab('resumen'));
-document.addEventListener('turbo:load',()=>window.initDashboardTab('resumen'));
+window.initExecutiveDashboard = function() {
+    const root=document.getElementById('executiveDashboard'); if(!root) return;
+    const buttons=[...root.querySelectorAll('[data-dashboard-tab]')];
+    const panels=[...root.querySelectorAll('[data-dashboard-panel]')];
+    if(!buttons.length || !panels.length) return;
+    const valid=buttons.map(button=>button.dataset.dashboardTab);
+    const activePalette=['bg-white','bg-emerald-500','bg-sky-400','bg-amber-400','bg-violet-400','bg-orange-400','bg-fuchsia-400','text-slate-950','text-emerald-950','text-sky-950','text-amber-950','text-violet-950','text-orange-950','text-fuchsia-950','shadow-md'];
+
+    const activate=(name,updateUrl=true)=>{
+        if(!valid.includes(name)) name='resumen';
+        panels.forEach(panel=>panel.hidden=panel.dataset.dashboardPanel!==name);
+        buttons.forEach(button=>{
+            const selected=button.dataset.dashboardTab===name;
+            button.setAttribute('aria-selected',selected?'true':'false');
+            button.classList.remove(...activePalette,'text-slate-300');
+            if(selected) button.classList.add(...button.dataset.activeClass.split(' '),'shadow-md');
+            else button.classList.add('text-slate-300');
+        });
+        if(updateUrl) {
+            const url=new URL(window.location.href); url.searchParams.set('tab',name);
+            history.replaceState(history.state,'',url);
+        }
+        requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab(name),40));
+    };
+
+    buttons.forEach((button,index)=>{
+        if(button.dataset.dashboardBound==='true') return;
+        button.dataset.dashboardBound='true';
+        button.addEventListener('click',()=>activate(button.dataset.dashboardTab));
+        button.addEventListener('keydown',event=>{
+            if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+            event.preventDefault();
+            let next=index;
+            if(event.key==='ArrowRight') next=(index+1)%buttons.length;
+            if(event.key==='ArrowLeft') next=(index-1+buttons.length)%buttons.length;
+            if(event.key==='Home') next=0;
+            if(event.key==='End') next=buttons.length-1;
+            buttons[next].focus(); activate(buttons[next].dataset.dashboardTab);
+        });
+    });
+    activate(new URL(window.location.href).searchParams.get('tab') || 'resumen',false);
+};
+document.addEventListener('DOMContentLoaded',window.initExecutiveDashboard);
+document.addEventListener('turbo:load',window.initExecutiveDashboard);
+document.addEventListener('turbo:before-cache',()=>{
+    Object.values(window.nyCharts||{}).forEach(chart=>chart?.destroy());
+    window.nyCharts={};
+    Object.values(window.nyModeMaps||{}).forEach(map=>map?.remove());
+    window.nyModeMaps={};
+});
 </script>
 @endsection
