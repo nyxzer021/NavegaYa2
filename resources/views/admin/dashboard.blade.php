@@ -154,7 +154,7 @@
         </div>
 
         @else
-        <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" hidden class="bg-fuchsia-50/40 p-4">
+        <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" class="bg-fuchsia-50/40 p-4">
             <nav class="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
                 @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📦','Planes y suscripciones'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
                     <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='campanas'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
@@ -373,4 +373,5 @@ document.addEventListener('turbo:before-cache',()=>{
 });
 </script>
 @endsection
+
 
