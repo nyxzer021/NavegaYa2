@@ -14,6 +14,8 @@ use App\Models\Payment;
 use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\Ticket;
+use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use Carbon\Carbon;
@@ -412,6 +414,32 @@ class AdminDashboardController extends Controller
             'attraction' => (int) ($tourismDirectory['attraction'] ?? 0),
         ];
 
+        $subscriptionPlans = SubscriptionPlan::query()->where('is_active', true)->orderBy('monthly_price')->get();
+        $advertisingSubscriptions = Subscription::query()->with(['organization', 'plan'])
+            ->whereIn('status', ['active', 'overdue'])
+            ->orderByRaw('CASE WHEN ends_on IS NULL THEN 1 ELSE 0 END')->orderBy('ends_on')->get();
+        $planMetrics = $subscriptionPlans->map(function (SubscriptionPlan $plan) use ($advertisingSubscriptions): array {
+            $subscriptions = $advertisingSubscriptions->where('subscription_plan_id', $plan->id);
+            $active = $subscriptions->where('status', 'active');
+            $previous = Subscription::query()->where('subscription_plan_id', $plan->id)->whereDate('starts_on', '<', now()->startOfMonth())->count();
+            $growth = $previous > 0 ? round((($active->count() - $previous) / $previous) * 100, 1) : ($active->count() > 0 ? 100 : 0);
+            return ['id'=>$plan->id,'code'=>$plan->code,'name'=>$plan->name,'price'=>(float)$plan->monthly_price,'benefits'=>$plan->benefits ?? [],'clients'=>$active->count(),'revenue'=>(float)$active->sum('monthly_price'),'growth'=>$growth];
+        })->values();
+        $subscriptionRows = $advertisingSubscriptions->map(function (Subscription $subscription) use ($activeAdvertisements): array {
+            $organizationName = $subscription->organization?->commercial_name ?: $subscription->organization?->legal_name ?: 'Empresa';
+            $ads = $activeAdvertisements->filter(fn (Advertisement $ad) => mb_strtolower($ad->business_name) === mb_strtolower($organizationName));
+            return ['id'=>$subscription->id,'company'=>$organizationName,'modality'=>$subscription->organization?->modality,'plan'=>$subscription->plan?->name ?? 'Sin plan','plan_code'=>$subscription->plan?->code,'ads'=>$ads->count(),'impressions'=>$ads->sum('views'),'target'=>(int) data_get($subscription->plan?->benefits, 'impressions', 0),'starts_on'=>$subscription->starts_on,'ends_on'=>$subscription->ends_on,'status'=>$subscription->status];
+        });
+        $expiringSubscriptionsCount = $advertisingSubscriptions->filter(fn (Subscription $subscription) => $subscription->ends_on && $subscription->ends_on->between(today(), today()->addDays(7)))->count();
+        $basicPlan = $subscriptionPlans->firstWhere('code','basic');
+        $basicTotal = $basicPlan ? Subscription::where('subscription_plan_id',$basicPlan->id)->count() : 0;
+        $basicRisk = $basicPlan ? Subscription::where('subscription_plan_id',$basicPlan->id)->whereIn('status',['overdue','cancelled'])->count() : 0;
+        $basicChurn = $basicTotal > 0 ? round(($basicRisk / $basicTotal) * 100, 1) : 0;
+        $enterpriseClients = (int) data_get($planMetrics->firstWhere('code','enterprise'),'clients',0);
+        $professionalGrowth = (float) data_get($planMetrics->firstWhere('code','professional'),'growth',0);
+        $subscriptionRevenueSeries = $planMetrics->pluck('revenue')->values();
+        $subscriptionClientSeries = $planMetrics->pluck('clients')->values();
+
         return view('admin.dashboard', compact(
             'period',
             'from',
@@ -484,6 +512,15 @@ class AdminDashboardController extends Controller
             'publishedTourismCount',
             'featuredTourismCount',
             'tourismDirectoryCounts',
+            'planMetrics',
+            'subscriptionRows',
+            'expiringSubscriptionsCount',
+            'basicRisk',
+            'basicChurn',
+            'enterpriseClients',
+            'professionalGrowth',
+            'subscriptionRevenueSeries',
+            'subscriptionClientSeries',
         ));
     }
 
