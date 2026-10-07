@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAdvertisementController;
+use App\Http\Controllers\Admin\AdminAdvertisingSubscriptionController;
 use App\Http\Controllers\Admin\AdminCompanyController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFleetComplianceController;
@@ -187,6 +188,11 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::patch('/publicidad-pautas/{ad}/aprobar', [AdminAdvertisementController::class, 'approve'])->name('advertisements.approve');
     Route::patch('/publicidad-pautas/{ad}/pausar', [AdminAdvertisementController::class, 'pause'])->name('advertisements.pause');
     Route::patch('/publicidad-pautas/{ad}/reactivar', [AdminAdvertisementController::class, 'resume'])->name('advertisements.resume');
+    Route::get('/suscripciones-publicitarias', [AdminAdvertisingSubscriptionController::class, 'index'])->name('advertising-subscriptions.index');
+    Route::post('/suscripciones-publicitarias', [AdminAdvertisingSubscriptionController::class, 'store'])->name('advertising-subscriptions.store');
+    Route::patch('/suscripciones-publicitarias/{subscription}', [AdminAdvertisingSubscriptionController::class, 'update'])->name('advertising-subscriptions.update');
+    Route::patch('/suscripciones-publicitarias/{subscription}/renovar', [AdminAdvertisingSubscriptionController::class, 'renew'])->name('advertising-subscriptions.renew');
+    Route::patch('/suscripciones-publicitarias/{subscription}/cancelar', [AdminAdvertisingSubscriptionController::class, 'cancel'])->name('advertising-subscriptions.cancel');
     Route::get('/reembolsos-soporte', [AdminRefundController::class, 'index'])->name('refunds.index');
     Route::get('/configuracion', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [AdminSettingsController::class, 'update'])->name('settings.update');
