@@ -14,7 +14,9 @@
 
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-@php($isAdvertisingDashboard = request('area') === 'publicidad')
+@php
+    $isAdvertisingDashboard = request('area') === 'publicidad';
+@endphp
 <div id="executiveDashboard" data-server-area="{{ $isAdvertisingDashboard ? 'publicidad' : 'transporte' }}" class="w-full space-y-4 text-slate-800">
     <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
         <div>
@@ -355,3 +357,4 @@ document.addEventListener('turbo:before-cache',()=>{
 });
 </script>
 @endsection
+
