@@ -147,45 +147,21 @@
             <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
 
-        <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" hidden class="space-y-4 bg-fuchsia-50/40 p-4">
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                @foreach([
-                    ['Anunciantes activos',$activeAdvertisersCount,'Negocios con pauta vigente','📣','border-fuchsia-200 bg-fuchsia-50'],
-                    ['Campañas activas',$activeCampaignsCount,'Piezas publicadas','🟣','border-violet-200 bg-violet-50'],
-                    ['Solicitudes pendientes',$pendingAdLeadsCount,'Requieren evaluación','⏳','border-amber-200 bg-amber-50'],
-                    ['Ingreso mensual','S/ '.number_format($monthlyAdvertisingRevenue,2),'Tarifa mensual contratada','💰','border-emerald-200 bg-emerald-50']
-                ] as $item)
-                    <a href="{{ route('admin.advertisements.index') }}" class="rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md {{ $item[4] }}"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-500">{{ $item[2] }}</p></a>
+        <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" hidden class="bg-fuchsia-50/40 p-4">
+            <nav class="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
+                @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📣','Campañas'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
+                    <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='resumen'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
                 @endforeach
+            </nav>
+            <div data-ad-panel="resumen" class="space-y-4">
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">@foreach([['Anunciantes activos',$activeAdvertisersCount,'📣','border-fuchsia-200'],['Campañas activas',$activeCampaignsCount,'🟣','border-violet-200'],['Solicitudes pendientes',$pendingAdLeadsCount,'⏳','border-amber-200'],['Ingreso mensual','S/ '.number_format($monthlyAdvertisingRevenue,2),'💰','border-emerald-200']] as $item)<article class="rounded-xl border bg-white p-4 {{ $item[3] }}"><span>{{ $item[2] }}</span><strong class="mt-2 block text-2xl font-black">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-600">{{ $item[0] }}</span></article>@endforeach</div>
+                <article class="rounded-2xl bg-gradient-to-br from-fuchsia-950 to-slate-950 p-5 text-white"><p class="text-[9px] font-black uppercase text-fuchsia-300">Unidad de negocio independiente</p><h4 class="mt-1 text-lg font-black">Publicidad para negocios que atienden viajeros</h4><p class="mt-2 text-[10px] text-slate-300">NavegaYA comercializa visibilidad y cada anunciante puede complementar su campaña con una ficha pública.</p><a href="{{ route('advertising.create') }}" target="_blank" class="mt-4 inline-flex rounded-xl bg-fuchsia-400 px-4 py-2.5 text-[10px] font-black text-fuchsia-950">Ver página para anunciarse ↗</a></article>
             </div>
-            <div class="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
-                <article class="rounded-2xl bg-gradient-to-br from-fuchsia-950 via-violet-950 to-slate-950 p-5 text-white shadow-lg">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div><p class="text-[9px] font-black uppercase tracking-[.18em] text-fuchsia-300">Modelo comercial independiente</p><h4 class="mt-1 text-lg font-black">Publicidad para negocios que atienden viajeros</h4><p class="mt-2 max-w-2xl text-[10px] leading-relaxed text-slate-300">Hoteles, lodges, alojamientos, restaurantes y operadores turísticos contratan visibilidad. NavegaYA gestiona la pauta y cada negocio puede tener una ficha informativa pública.</p></div>
-                        <a href="{{ route('advertising.create') }}" target="_blank" class="shrink-0 rounded-xl bg-fuchsia-400 px-4 py-3 text-[10px] font-black text-fuchsia-950 shadow-lg transition hover:bg-fuchsia-300">Ver página para anunciarse ↗</a>
-                    </div>
-                </article>
-                <article class="rounded-2xl border border-fuchsia-200 bg-white p-4">
-                    <div class="flex items-center justify-between"><div><p class="text-[9px] font-black uppercase text-fuchsia-700">Directorio turístico público</p><h4 class="text-sm font-black text-slate-950">{{ $publishedTourismCount }} fichas publicadas</h4></div><span class="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-black text-amber-700">{{ $featuredTourismCount }} destacadas</span></div>
-                    <div class="mt-3 grid grid-cols-3 gap-2">
-                        @foreach([['🏨','Hospedajes',$tourismDirectoryCounts['lodging'],'lodging'],['🍽️','Restaurantes',$tourismDirectoryCounts['gastronomy'],'gastronomy'],['🌿','Tours',$tourismDirectoryCounts['attraction'],'attraction']] as [$icon,$label,$count,$type])
-                            <a href="{{ route('admin.destination-listings.index', $type) }}" class="rounded-xl bg-slate-50 p-3 text-center transition hover:bg-fuchsia-50"><span class="text-lg">{{ $icon }}</span><strong class="mt-1 block text-lg font-black text-slate-950">{{ $count }}</strong><span class="text-[8px] font-bold text-slate-500">{{ $label }}</span></a>
-                        @endforeach
-                    </div>
-                    <a href="{{ route('admin.tourism-partners.index') }}" class="mt-3 inline-flex text-[9px] font-black text-fuchsia-700">Administrar directorio completo →</a>
-                </article>
-            </div>
-            <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.1fr]">
-                <article class="rounded-xl border border-violet-200 bg-white p-4"><h4 class="text-xs font-black text-slate-900">Contratos por plan</h4><p class="text-[9px] text-slate-400">Distribución según ubicaciones contratadas</p><div class="h-52"><canvas id="advertisingPlansChart"></canvas></div></article>
-                <article class="rounded-xl border border-fuchsia-200 bg-white p-4"><h4 class="text-xs font-black text-slate-900">Estado de campañas</h4><p class="text-[9px] text-slate-400">Activas, pendientes, pausadas y vencidas</p><div class="h-52"><canvas id="advertisingPipelineChart"></canvas></div></article>
-                <article class="rounded-xl bg-slate-950 p-4 text-white">
-                    <p class="text-[9px] font-black uppercase tracking-wider text-fuchsia-300">Rendimiento publicitario</p>
-                    <div class="mt-3 grid grid-cols-2 gap-2"><div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] text-slate-300">Impresiones</span><strong class="block text-xl font-black">{{ number_format($advertisingViews) }}</strong></div><div class="rounded-xl bg-white/10 p-3"><span class="text-[8px] text-slate-300">Clics</span><strong class="block text-xl font-black">{{ number_format($advertisingClicks) }}</strong></div></div>
-                    <div class="mt-3 rounded-xl bg-fuchsia-500/20 p-3"><span class="text-[8px] font-bold uppercase text-fuchsia-200">Tasa de clics (CTR)</span><strong class="mt-1 block text-2xl font-black">{{ number_format($advertisingCtr,1) }}%</strong></div>
-                    <p class="mt-3 text-[9px] leading-relaxed text-slate-300">Los planes se clasifican por cobertura: Esencial usa 1 ubicación, Destacado 2 y Cobertura total 3 o más.</p>
-                    <a href="{{ route('admin.advertisements.index') }}" class="mt-3 inline-flex rounded-lg bg-fuchsia-400 px-3 py-2 text-[9px] font-black text-fuchsia-950">Abrir gestión de anuncios →</a>
-                </article>
-            </div>
+            <div data-ad-panel="anunciantes" hidden class="space-y-4"><div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">@foreach([['🏨','Hoteles y alojamientos'],['🍽️','Restaurantes'],['🌿','Tours y experiencias'],['🧭','Agencias y operadores']] as [$icon,$label])<article class="rounded-2xl border border-fuchsia-200 bg-white p-5"><span class="text-2xl">{{ $icon }}</span><h4 class="mt-2 text-xs font-black">{{ $label }}</h4><p class="mt-1 text-[9px] text-slate-500">Perfil, contacto, plan y vigencia.</p></article>@endforeach</div><a href="{{ route('admin.advertisements.index') }}" class="inline-flex rounded-xl bg-fuchsia-700 px-4 py-2.5 text-[10px] font-black text-white">Administrar {{ $activeAdvertisersCount }} anunciantes →</a></div>
+            <div data-ad-panel="solicitudes" hidden class="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center"><span class="text-3xl">⏳</span><strong class="mt-2 block text-3xl font-black">{{ $pendingAdLeadsCount }}</strong><h4 class="text-xs font-black">Solicitudes pendientes de evaluación</h4><p class="mt-2 text-[10px] text-amber-800">Valida negocio, contacto, categoría y propuesta antes de aprobar.</p><a href="{{ route('admin.advertisements.index',['status'=>'lead_pending']) }}" class="mt-4 inline-flex rounded-xl bg-amber-500 px-4 py-2.5 text-[10px] font-black">Revisar solicitudes →</a></div>
+            <div data-ad-panel="campanas" hidden class="grid gap-4 lg:grid-cols-2"><article class="rounded-xl border border-violet-200 bg-white p-4"><h4 class="text-xs font-black">Contratos por plan</h4><div class="h-56"><canvas id="advertisingPlansChart"></canvas></div></article><article class="rounded-xl border border-fuchsia-200 bg-white p-4"><h4 class="text-xs font-black">Estado de campañas</h4><div class="h-56"><canvas id="advertisingPipelineChart"></canvas></div></article></div>
+            <div data-ad-panel="directorio" hidden><article class="rounded-2xl border border-fuchsia-200 bg-white p-5"><div class="flex justify-between"><div><p class="text-[9px] font-black uppercase text-fuchsia-700">Directorio turístico público</p><h4 class="text-lg font-black">{{ $publishedTourismCount }} fichas publicadas</h4></div><span class="text-[9px] font-black text-amber-700">{{ $featuredTourismCount }} destacadas</span></div><div class="mt-4 grid grid-cols-3 gap-3">@foreach([['🏨','Hospedajes',$tourismDirectoryCounts['lodging'],'lodging'],['🍽️','Restaurantes',$tourismDirectoryCounts['gastronomy'],'gastronomy'],['🌿','Tours',$tourismDirectoryCounts['attraction'],'attraction']] as [$icon,$label,$count,$type])<a href="{{ route('admin.destination-listings.index',$type) }}" class="rounded-xl bg-slate-50 p-4 text-center hover:bg-fuchsia-50"><span class="text-xl">{{ $icon }}</span><strong class="block text-2xl font-black">{{ $count }}</strong><span class="text-[9px]">{{ $label }}</span></a>@endforeach</div></article></div>
+            <div data-ad-panel="rendimiento" hidden><article class="rounded-2xl bg-slate-950 p-5 text-white"><p class="text-[9px] font-black uppercase text-fuchsia-300">Rendimiento publicitario</p><div class="mt-4 grid gap-3 sm:grid-cols-3"><div class="rounded-xl bg-white/10 p-4"><span class="text-[9px]">Impresiones</span><strong class="block text-3xl">{{ number_format($advertisingViews) }}</strong></div><div class="rounded-xl bg-white/10 p-4"><span class="text-[9px]">Clics</span><strong class="block text-3xl">{{ number_format($advertisingClicks) }}</strong></div><div class="rounded-xl bg-fuchsia-500/20 p-4"><span class="text-[9px]">CTR</span><strong class="block text-3xl">{{ number_format($advertisingCtr,1) }}%</strong></div></div>@if($advertisingViews===0)<p class="mt-4 rounded-xl bg-white/5 p-4 text-[10px] text-slate-300">Las métricas aparecerán cuando las campañas reciban impresiones y clics.</p>@endif</article></div>
         </div>
 
     </section>
@@ -292,7 +268,7 @@ window.initExecutiveDashboard = function() {
 
     const activateTransportTab=(name,updateUrl=true)=>{
         if(!valid.includes(name)) name='fluvial';
-        panels.forEach(panel=>panel.hidden=panel.dataset.dashboardArea!=='transporte' || panel.dataset.dashboardPanel!==name);
+        panels.forEach(panel=>{const show=panel.dataset.dashboardArea==='transporte' && panel.dataset.dashboardPanel===name;panel.hidden=!show;panel.style.display=show?'':'none';});
         buttons.forEach(button=>{
             const selected=button.dataset.dashboardTab===name;
             button.setAttribute('aria-selected',selected?'true':'false');
@@ -313,15 +289,26 @@ window.initExecutiveDashboard = function() {
             if(selected) button.classList.add(...button.dataset.businessActive.split(' '));
             else button.classList.add('text-slate-700');
         });
-        subnav.hidden=advertising;
+        subnav.hidden=advertising; subnav.style.display=advertising?'none':'';
         title.textContent=advertising?'Inteligencia publicitaria':'Control de transporte';
         copy.textContent=advertising?'Revisa contratos, campañas, planes e impacto sin mezclarlo con la venta de pasajes.':'Selecciona una perspectiva operativa para revisar sus indicadores.';
         if(advertising){
-            panels.forEach(panel=>panel.hidden=panel.dataset.dashboardArea!=='publicidad');
+            panels.forEach(panel=>{const show=panel.dataset.dashboardArea==='publicidad';panel.hidden=!show;panel.style.display=show?'':'none';});
             if(updateUrl){const url=new URL(location.href);url.searchParams.set('area','publicidad');url.searchParams.delete('tab');history.replaceState(history.state,'',url);}
             requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab('publicidad'),40));
         } else activateTransportTab(new URL(location.href).searchParams.get('tab') || 'fluvial',updateUrl);
     };
+
+    const adButtons=[...root.querySelectorAll('[data-ad-tab]')];
+    const adPanels=[...root.querySelectorAll('[data-ad-panel]')];
+    const activateAdTab=name=>{
+        if(!adButtons.some(button=>button.dataset.adTab===name)) name='resumen';
+        adPanels.forEach(panel=>{const show=panel.dataset.adPanel===name;panel.hidden=!show;panel.style.display=show?'':'none';});
+        adButtons.forEach(button=>{const selected=button.dataset.adTab===name;button.setAttribute('aria-selected',selected?'true':'false');button.classList.toggle('bg-fuchsia-700',selected);button.classList.toggle('text-white',selected);button.classList.toggle('shadow-sm',selected);button.classList.toggle('text-slate-500',!selected);});
+        if(name==='campanas') requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab('publicidad'),40));
+    };
+    adButtons.forEach(button=>{if(button.dataset.adBound)return;button.dataset.adBound='true';button.addEventListener('click',()=>activateAdTab(button.dataset.adTab));});
+    activateAdTab('resumen');
 
     businessButtons.forEach(button=>{if(button.dataset.bound)return;button.dataset.bound='true';button.addEventListener('click',()=>activateBusiness(button.dataset.businessTab));});
     buttons.forEach((button,index)=>{
