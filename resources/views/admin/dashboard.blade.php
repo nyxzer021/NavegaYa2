@@ -13,7 +13,7 @@
 @endsection
 
 @section('content')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <div x-data="{ tab: 'resumen', changeTab(name) { this.tab = name; this.$nextTick(() => window.initDashboardTab(name)); } }" class="w-full space-y-4 text-slate-800">
     <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
         <div>
@@ -99,9 +99,17 @@
             </nav>
         </div>
 
-        <div x-show="tab==='resumen'" class="grid gap-4 p-4 lg:grid-cols-3">
-            <div class="lg:col-span-2"><div class="flex justify-between"><div><h4 class="text-xs font-black uppercase text-slate-900">Evolución del GMV</h4><p class="text-[10px] text-slate-400">Fluvial, aéreo y carga</p></div><div class="flex gap-3 text-[9px] font-bold"><span class="text-emerald-700">● Fluvial</span><span class="text-cyan-700">● Aéreo</span><span class="text-amber-600">● Carga</span></div></div><div class="h-64 pt-3"><canvas id="revenueTrendChart"></canvas></div></div>
-            <div><h4 class="text-xs font-black uppercase text-slate-900">Distribución comercial</h4><p class="text-[10px] text-slate-400">Participación por modalidad</p><div class="mx-auto h-44 max-w-56 py-3"><canvas id="modalityChart"></canvas></div><div class="grid grid-cols-3 gap-1 text-center text-[9px] font-bold"><span class="rounded-lg bg-emerald-50 p-2 text-emerald-700">Fluvial<br>{{ $modalityPercentages[0] }}%</span><span class="rounded-lg bg-cyan-50 p-2 text-cyan-700">Aéreo<br>{{ $modalityPercentages[1] }}%</span><span class="rounded-lg bg-amber-50 p-2 text-amber-700">Carga<br>{{ $modalityPercentages[2] }}%</span></div></div>
+        <div x-show="tab==='resumen'" class="grid gap-4 p-4 xl:grid-cols-[minmax(0,2fr)_minmax(290px,.75fr)]">
+            <article class="rounded-xl border border-slate-200 p-4">
+                <div class="flex flex-wrap justify-between gap-2"><div><h4 class="text-xs font-black uppercase text-slate-900">Evolución de ventas</h4><p class="text-[10px] text-slate-400">Monto vendido por modalidad durante el período</p></div><div class="flex gap-3 text-[9px] font-bold"><span class="text-emerald-700">● Fluvial</span><span class="text-cyan-700">● Aéreo</span><span class="text-amber-600">● Carga</span></div></div>
+                <div class="relative h-56 pt-3"><canvas id="revenueTrendChart" class="{{ array_sum($modalityValues) <= 0 ? 'opacity-25' : '' }}"></canvas>@if(array_sum($modalityValues) <= 0)<div class="pointer-events-none absolute inset-0 grid place-items-center"><div class="rounded-xl border border-slate-200 bg-white/95 px-5 py-3 text-center shadow-sm"><span class="text-xl">📊</span><strong class="block text-[11px] text-slate-700">Aún no hay ventas en este período</strong><span class="text-[9px] text-slate-400">El gráfico aparecerá cuando se confirme la primera venta.</span></div></div>@endif</div>
+            </article>
+            <article class="flex flex-col rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div><h4 class="text-xs font-black uppercase text-slate-900">Distribución de ventas</h4><p class="text-[10px] text-slate-400">Participación fluvial, aérea y carga</p></div>
+                <div class="relative mx-auto h-36 w-36 py-2"><canvas id="modalityChart"></canvas><div class="pointer-events-none absolute inset-0 grid place-items-center pt-1 text-center"><span class="text-[9px] font-bold text-slate-400">Total<br><strong class="text-sm text-slate-800">S/ {{ number_format($grossSales + $cargoRevenue, 2) }}</strong></span></div></div>
+                <div class="mt-auto grid grid-cols-3 gap-1 text-center text-[9px] font-bold"><span class="rounded-lg bg-emerald-50 p-2 text-emerald-700">Fluvial<br>{{ $modalityPercentages[0] }}%</span><span class="rounded-lg bg-cyan-50 p-2 text-cyan-700">Aéreo<br>{{ $modalityPercentages[1] }}%</span><span class="rounded-lg bg-amber-50 p-2 text-amber-700">Carga<br>{{ $modalityPercentages[2] }}%</span></div>
+                @if(array_sum($modalityValues) <= 0)<p class="mt-2 text-center text-[9px] font-semibold text-slate-400">Sin ventas confirmadas</p>@endif
+            </article>
         </div>
 
         <div x-show="tab==='ventas'" x-cloak class="space-y-4 p-4">
@@ -136,7 +144,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
 window.dashboardData = {
     chartLabels: @json($chartLabels), fluvialSeries: @json($fluvialSeries), airSeries: @json($airSeries), cargoSeries: @json($cargoSeries),
@@ -171,7 +179,7 @@ window.initDashboardTab = function(tab) {
     if(typeof Chart==='undefined') return;
     if(tab==='resumen') {
         window.makeChart('revenueTrendChart',{type:'line',data:{labels:d.chartLabels,datasets:[{label:'Fluvial',data:d.fluvialSeries,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.08)',fill:true,tension:.35},{label:'Aéreo',data:d.airSeries,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.05)',fill:true,tension:.35},{label:'Carga',data:d.cargoSeries,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.05)',fill:true,tension:.35}]},options:{...baseOptions,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}});
-        window.makeChart('modalityChart',{type:'doughnut',data:{labels:['Fluvial','Aéreo','Carga'],datasets:[{data:d.modalityValues,backgroundColor:['#059669','#0891b2','#d97706'],borderWidth:0}]},options:{...baseOptions,cutout:'72%'}});
+        window.makeChart('modalityChart',{type:'doughnut',data:{labels:['Fluvial','Aéreo','Carga'],datasets:[{data:d.modalityValues.some(Number)?d.modalityValues:[1],backgroundColor:d.modalityValues.some(Number)?['#059669','#0891b2','#d97706']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'72%'}});
     }
     if(tab==='ventas') { window.makeChart('ticketModalityChart',{type:'bar',data:{labels:['Fluvial','Aéreo'],datasets:[{data:d.tickets,backgroundColor:['#059669','#0891b2'],borderRadius:7}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}}); window.makeChart('operatorTicketsChart',{type:'bar',data:{labels:d.operatorNames,datasets:[{data:d.operatorTickets,backgroundColor:'#0f766e',borderRadius:6}]},options:{...baseOptions,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}}); window.initLoretoMap(); }
     if(tab==='empresas') { window.makeChart('affiliationsChart',{type:'bar',data:{labels:d.affiliationLabels,datasets:[{data:d.affiliationSeries,backgroundColor:'#10b981',borderRadius:5}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}}); window.makeChart('fleetChart',{type:'doughnut',data:{labels:['Embarcaciones','Aeronaves'],datasets:[{data:[{{ $registeredVesselsCount }},{{ $registeredAircraftCount }}],backgroundColor:['#059669','#0891b2'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}}); }
