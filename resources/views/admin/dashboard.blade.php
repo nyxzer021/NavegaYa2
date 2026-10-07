@@ -158,6 +158,23 @@
                     <a href="{{ route('admin.advertisements.index') }}" class="rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md {{ $item[4] }}"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-500">{{ $item[2] }}</p></a>
                 @endforeach
             </div>
+            <div class="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+                <article class="rounded-2xl bg-gradient-to-br from-fuchsia-950 via-violet-950 to-slate-950 p-5 text-white shadow-lg">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div><p class="text-[9px] font-black uppercase tracking-[.18em] text-fuchsia-300">Modelo comercial independiente</p><h4 class="mt-1 text-lg font-black">Publicidad para negocios que atienden viajeros</h4><p class="mt-2 max-w-2xl text-[10px] leading-relaxed text-slate-300">Hoteles, lodges, alojamientos, restaurantes y operadores turísticos contratan visibilidad. NavegaYA gestiona la pauta y cada negocio puede tener una ficha informativa pública.</p></div>
+                        <a href="{{ route('advertising.create') }}" target="_blank" class="shrink-0 rounded-xl bg-fuchsia-400 px-4 py-3 text-[10px] font-black text-fuchsia-950 shadow-lg transition hover:bg-fuchsia-300">Ver página para anunciarse ↗</a>
+                    </div>
+                </article>
+                <article class="rounded-2xl border border-fuchsia-200 bg-white p-4">
+                    <div class="flex items-center justify-between"><div><p class="text-[9px] font-black uppercase text-fuchsia-700">Directorio turístico público</p><h4 class="text-sm font-black text-slate-950">{{ $publishedTourismCount }} fichas publicadas</h4></div><span class="rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-black text-amber-700">{{ $featuredTourismCount }} destacadas</span></div>
+                    <div class="mt-3 grid grid-cols-3 gap-2">
+                        @foreach([['🏨','Hospedajes',$tourismDirectoryCounts['lodging'],'lodging'],['🍽️','Restaurantes',$tourismDirectoryCounts['gastronomy'],'gastronomy'],['🌿','Tours',$tourismDirectoryCounts['attraction'],'attraction']] as [$icon,$label,$count,$type])
+                            <a href="{{ route('admin.destination-listings.index', $type) }}" class="rounded-xl bg-slate-50 p-3 text-center transition hover:bg-fuchsia-50"><span class="text-lg">{{ $icon }}</span><strong class="mt-1 block text-lg font-black text-slate-950">{{ $count }}</strong><span class="text-[8px] font-bold text-slate-500">{{ $label }}</span></a>
+                        @endforeach
+                    </div>
+                    <a href="{{ route('admin.tourism-partners.index') }}" class="mt-3 inline-flex text-[9px] font-black text-fuchsia-700">Administrar directorio completo →</a>
+                </article>
+            </div>
             <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.1fr]">
                 <article class="rounded-xl border border-violet-200 bg-white p-4"><h4 class="text-xs font-black text-slate-900">Contratos por plan</h4><p class="text-[9px] text-slate-400">Distribución según ubicaciones contratadas</p><div class="h-52"><canvas id="advertisingPlansChart"></canvas></div></article>
                 <article class="rounded-xl border border-fuchsia-200 bg-white p-4"><h4 class="text-xs font-black text-slate-900">Estado de campañas</h4><p class="text-[9px] text-slate-400">Activas, pendientes, pausadas y vencidas</p><div class="h-52"><canvas id="advertisingPipelineChart"></canvas></div></article>
@@ -251,8 +268,13 @@ window.initModeMap = function(elementId, modality) {
     const map=L.map(el,{zoomControl:true}).setView([-4.45,-74.3],6); window.nyModeMaps[elementId]=map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
     const routes=window.dashboardData.routes.filter(route=>route.type===modality); const bounds=[];
+    const loretoNodes=[['Iquitos',-3.7437,-73.2516],['Nauta',-4.5051,-73.5757],['Yurimaguas',-5.8966,-76.1043],['Requena',-5.0638,-73.8528],['Contamana',-7.3509,-75.0090],['Caballococha',-3.9058,-70.5168],['San Lorenzo',-4.8294,-76.5558]];
+    loretoNodes.forEach(([name,lat,lng])=>L.circleMarker([lat,lng],{radius:5,color:modality==='Aéreo'?'#0369a1':'#047857',fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(name,{direction:'top'}));
     routes.forEach(route=>{if(!route.origin_coords||!route.destination_coords)return; const color=modality==='Aéreo'?'#0284c7':'#059669'; const line=L.polyline([route.origin_coords,route.destination_coords],{color,weight:Math.min(9,3+Number(route.tickets||0)/10),dashArray:modality==='Aéreo'?'8 7':null,opacity:.9}).addTo(map); line.bindPopup('<strong>'+(modality==='Aéreo'?'✈️':'🚤')+' '+route.origin+' → '+route.destination+'</strong><br>'+route.operator+'<br><b>'+route.tickets+'</b> pasajes · S/ '+Number(route.sales).toFixed(2)); bounds.push(route.origin_coords,route.destination_coords);});
-    if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:8}); else L.popup().setLatLng([-3.75,-73.25]).setContent('No hay rutas '+modality.toLowerCase()+'s georreferenciadas para mostrar.').openOn(map);
+    if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:8}); else {
+        map.setView([-4.65,-73.75],6);
+        const notice=L.control({position:'bottomleft'}); notice.onAdd=()=>{const div=L.DomUtil.create('div','rounded-lg bg-white/95 p-2 text-[9px] font-bold text-slate-600 shadow-lg');div.innerHTML='Puntos de referencia de Loreto<br><span style="color:#64748b;font-weight:500">Las líneas aparecerán al registrar coordenadas en las rutas.</span>';return div;};notice.addTo(map);
+    }
     setTimeout(()=>map.invalidateSize(),100);
 };
 window.initExecutiveDashboard = function() {

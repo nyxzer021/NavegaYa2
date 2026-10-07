@@ -8,6 +8,7 @@ use App\Models\Advertisement;
 use App\Models\AirRoute;
 use App\Models\AirDeparture;
 use App\Models\CargoShipment;
+use App\Models\DestinationListing;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Port;
@@ -397,6 +398,20 @@ class AdminDashboardController extends Controller
             $advertisements->where('status', 'expired')->count(),
         ];
 
+        $tourismDirectory = DestinationListing::query()
+            ->selectRaw('type, count(*) as total')
+            ->where('is_active', true)
+            ->whereIn('type', ['lodging', 'gastronomy', 'attraction'])
+            ->groupBy('type')
+            ->pluck('total', 'type');
+        $publishedTourismCount = (int) $tourismDirectory->sum();
+        $featuredTourismCount = DestinationListing::query()->where('is_active', true)->where('is_featured', true)->count();
+        $tourismDirectoryCounts = [
+            'lodging' => (int) ($tourismDirectory['lodging'] ?? 0),
+            'gastronomy' => (int) ($tourismDirectory['gastronomy'] ?? 0),
+            'attraction' => (int) ($tourismDirectory['attraction'] ?? 0),
+        ];
+
         return view('admin.dashboard', compact(
             'period',
             'from',
@@ -466,6 +481,9 @@ class AdminDashboardController extends Controller
             'advertisingCtr',
             'advertisingPlans',
             'advertisingPipeline',
+            'publishedTourismCount',
+            'featuredTourismCount',
+            'tourismDirectoryCounts',
         ));
     }
 
