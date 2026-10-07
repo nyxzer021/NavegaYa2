@@ -156,17 +156,17 @@
         @else
         <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" hidden class="bg-fuchsia-50/40 p-4">
             <nav class="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
-                @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📣','Campañas'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
-                    <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='resumen'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
+                @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📦','Planes y suscripciones'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
+                    <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='campanas'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
                 @endforeach
             </nav>
-            <div data-ad-panel="resumen" class="space-y-4">
+            <div data-ad-panel="resumen" hidden class="space-y-4">
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">@foreach([['Anunciantes activos',$activeAdvertisersCount,'📣','border-fuchsia-200'],['Campañas activas',$activeCampaignsCount,'🟣','border-violet-200'],['Solicitudes pendientes',$pendingAdLeadsCount,'⏳','border-amber-200'],['Ingreso mensual','S/ '.number_format($monthlyAdvertisingRevenue,2),'💰','border-emerald-200']] as $item)<article class="rounded-xl border bg-white p-4 {{ $item[3] }}"><span>{{ $item[2] }}</span><strong class="mt-2 block text-2xl font-black">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-600">{{ $item[0] }}</span></article>@endforeach</div>
                 <article class="rounded-2xl bg-gradient-to-br from-fuchsia-950 to-slate-950 p-5 text-white"><p class="text-[9px] font-black uppercase text-fuchsia-300">Unidad de negocio independiente</p><h4 class="mt-1 text-lg font-black">Publicidad para negocios que atienden viajeros</h4><p class="mt-2 text-[10px] text-slate-300">NavegaYA comercializa visibilidad y cada anunciante puede complementar su campaña con una ficha pública.</p><a href="{{ route('advertising.create') }}" target="_blank" class="mt-4 inline-flex rounded-xl bg-fuchsia-400 px-4 py-2.5 text-[10px] font-black text-fuchsia-950">Ver página para anunciarse ↗</a></article>
             </div>
             <div data-ad-panel="anunciantes" hidden class="space-y-4"><div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">@foreach([['🏨','Hoteles y alojamientos'],['🍽️','Restaurantes'],['🌿','Tours y experiencias'],['🧭','Agencias y operadores']] as [$icon,$label])<article class="rounded-2xl border border-fuchsia-200 bg-white p-5"><span class="text-2xl">{{ $icon }}</span><h4 class="mt-2 text-xs font-black">{{ $label }}</h4><p class="mt-1 text-[9px] text-slate-500">Perfil, contacto, plan y vigencia.</p></article>@endforeach</div><a href="{{ route('admin.advertisements.index') }}" class="inline-flex rounded-xl bg-fuchsia-700 px-4 py-2.5 text-[10px] font-black text-white">Administrar {{ $activeAdvertisersCount }} anunciantes →</a></div>
             <div data-ad-panel="solicitudes" hidden class="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center"><span class="text-3xl">⏳</span><strong class="mt-2 block text-3xl font-black">{{ $pendingAdLeadsCount }}</strong><h4 class="text-xs font-black">Solicitudes pendientes de evaluación</h4><p class="mt-2 text-[10px] text-amber-800">Valida negocio, contacto, categoría y propuesta antes de aprobar.</p><a href="{{ route('admin.advertisements.index',['status'=>'lead_pending']) }}" class="mt-4 inline-flex rounded-xl bg-amber-500 px-4 py-2.5 text-[10px] font-black">Revisar solicitudes →</a></div>
-            <div data-ad-panel="campanas" hidden x-data="{plan:'all',status:'all',detail:null}" class="space-y-6">
+            <div data-ad-panel="campanas" x-data="{plan:'all',status:'all',detail:null}" class="space-y-6">
                 <section class="grid gap-4 lg:grid-cols-3">
                     @foreach($planMetrics as $plan)
                         <article class="relative flex h-full min-h-[330px] flex-col overflow-hidden rounded-2xl border p-6 shadow-sm {{ match($plan['code']) {'professional'=>'border-amber-300 bg-amber-50','enterprise'=>'border-blue-300 bg-blue-50',default=>'border-slate-300 bg-white'} }}">
@@ -295,7 +295,7 @@ window.initExecutiveDashboard = function() {
             if(name==='campanas') requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab('publicidad'),40));
         };
         adButtons.forEach(button=>button.addEventListener('click',()=>activateAd(button.dataset.adTab)));
-        activateAd('resumen');
+        activateAd('campanas');
         return;
     }
     if(!buttons.length || !panels.length) return;
