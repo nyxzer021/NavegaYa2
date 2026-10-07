@@ -82,6 +82,23 @@ class AdminDashboardController extends Controller
         $airTicketsSold = $payments
             ->filter(fn (Payment $payment) => $payment->reservation?->air_departure_id !== null)
             ->sum(fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0);
+
+        $periodFluvialDepartures = RouteDeparture::query()
+            ->whereBetween('departure_at', [$from, $to])
+            ->with('vessel')
+            ->get();
+        $periodAirDepartures = AirDeparture::query()
+            ->whereBetween('departure_at', [$from, $to])
+            ->with('aircraft')
+            ->get();
+        $fluvialCapacity = (int) $periodFluvialDepartures->sum(fn (RouteDeparture $departure) => $departure->vessel?->seat_capacity ?? 0);
+        $airCapacity = (int) $periodAirDepartures->sum(fn (AirDeparture $departure) => $departure->aircraft?->seat_capacity ?? 0);
+        $fluvialOccupancyRate = $fluvialCapacity > 0 ? min(100, round(($fluvialTicketsSold / $fluvialCapacity) * 100, 1)) : 0;
+        $airOccupancyRate = $airCapacity > 0 ? min(100, round(($airTicketsSold / $airCapacity) * 100, 1)) : 0;
+        $fluvialDeparturesCount = $periodFluvialDepartures->count();
+        $airDeparturesCount = $periodAirDepartures->count();
+        $cancelledFluvialDepartures = $periodFluvialDepartures->where('status', 'cancelled')->count();
+        $cancelledAirDepartures = $periodAirDepartures->where('status', 'cancelled')->count();
         $cancelledTickets = Ticket::query()
             ->whereBetween('issued_at', [$from, $to])
             ->whereIn('status', ['cancelled', 'void'])
@@ -401,6 +418,14 @@ class AdminDashboardController extends Controller
             'totalTicketsSold',
             'fluvialTicketsSold',
             'airTicketsSold',
+            'fluvialCapacity',
+            'airCapacity',
+            'fluvialOccupancyRate',
+            'airOccupancyRate',
+            'fluvialDeparturesCount',
+            'airDeparturesCount',
+            'cancelledFluvialDepartures',
+            'cancelledAirDepartures',
             'cancelledTickets',
             'cargoRevenue',
             'cargoShipmentsCount',
@@ -425,6 +450,8 @@ class AdminDashboardController extends Controller
             'cargoSeries',
             'modalityValues',
             'modalityPercentages',
+            'fluvialGmv',
+            'airGmv',
             'profitToday',
             'profitMonth',
             'profitYear',
