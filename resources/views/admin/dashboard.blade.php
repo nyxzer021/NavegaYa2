@@ -33,7 +33,20 @@
         max-width: 100% !important;
     }
 
+    .ny-enterprise-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     @media (min-width: 1024px) {
+        .ny-enterprise-layout:not([hidden]) {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        }
+
+        .ny-enterprise-layout > .ny-layout-full {
+            grid-column: 1 / -1;
+        }
+
         #executiveDashboard [data-dashboard-area="transporte"] {
             min-height: 680px;
         }
@@ -114,7 +127,7 @@
         </div>
 
         @unless($isAdvertisingDashboard)
-        <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" hidden class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
             <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
                 @foreach([
                     ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'border-cyan-200 bg-cyan-50'],
@@ -135,7 +148,7 @@
                 </article>
                 <article class="flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50 p-4"><div><p class="text-[9px] font-black uppercase text-cyan-700">Clima y navegabilidad</p><h4 class="mt-1 text-sm font-black">Condiciones de Loreto</h4><p class="mt-1 text-[10px] text-slate-500">Lluvia, temperatura y nivel del río.</p><a href="{{ route('weather.index') }}" target="_blank" class="mt-3 inline-flex text-[10px] font-black text-cyan-800">Abrir monitoreo →</a></div><span class="text-4xl">🌦️</span></article>
             </div>
-            <div class="grid min-w-0 gap-4 xl:col-span-2 xl:grid-cols-[1.7fr_1fr]">
+            <div class="ny-layout-full grid min-w-0 gap-4 xl:grid-cols-[1.7fr_1fr]">
                 <article class="rounded-xl border border-slate-200 p-4"><h4 class="text-xs font-black uppercase">Evolución general de ventas</h4><p class="text-[9px] text-slate-400">Fluvial, aéreo y carga durante el período</p><div class="h-52"><canvas id="revenueTrendChart"></canvas></div></article>
                 <article class="rounded-xl border border-slate-200 bg-slate-50 p-4"><h4 class="text-xs font-black uppercase">Distribución comercial</h4><div class="mx-auto h-48 w-48"><canvas id="modalityChart"></canvas></div></article>
             </div>
@@ -167,17 +180,17 @@
             <article class="overflow-hidden rounded-xl border border-sky-200 bg-white xl:col-span-2"><div class="flex justify-between bg-sky-50 px-4 py-3"><h4 class="text-xs font-black">Conexiones aéreas con mayor demanda</h4><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-sky-700">Ver catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Conexión</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-center">Estado</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Aéreo') as $route)<tr><td class="p-3 font-black">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td><td class="p-3 text-center"><span class="rounded-full bg-sky-50 px-2 py-1 font-bold text-sky-700">Activa</span></td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin ventas aéreas en este período.</td></tr>@endforelse</tbody></table></article>
         </div>
 
-        <div data-dashboard-panel="finanzas" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 bg-amber-50/30 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="finanzas" data-dashboard-area="transporte" role="tabpanel" hidden class="ny-enterprise-layout grid w-full min-w-0 gap-4 bg-amber-50/30 p-4">
             <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
                 @foreach([['GMV procesado','S/ '.number_format($grossSales,2),'Ventas confirmadas','💳'],['Comisión generada','S/ '.number_format($netCommission,2),'Ingreso NavegaYA','%'],['Comisión pendiente','S/ '.number_format($commissionReceivable,2),'Pendiente de cobro','⏳']] as $item)
                     <article class="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-amber-800">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
                 @endforeach
             </div>
             <div class="grid min-w-0 gap-4 xl:grid-cols-1"><article class="rounded-xl border border-amber-200 bg-white p-4"><h4 class="text-xs font-black">GMV y comisiones</h4><p class="text-[9px] text-slate-400">Evolución comercial por modalidad</p><div class="h-56"><canvas id="financeTrendChart"></canvas></div></article><article class="rounded-xl border border-amber-200 bg-white p-4"><h4 class="text-xs font-black">Canales de cobro</h4><p class="text-[9px] text-slate-400">Participación de medios de pago</p><div class="h-56"><canvas id="paymentMethodsChart"></canvas></div></article></div>
-            <article class="overflow-hidden rounded-xl border border-amber-200 bg-white xl:col-span-2"><div class="flex justify-between bg-amber-50 px-4 py-3"><h4 class="text-xs font-black">Rendimiento financiero por operador</h4><a href="{{ route('admin.commissions.index') }}" class="text-[9px] font-black text-amber-800">Abrir comisiones →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3">Modalidad</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-right">Comisión</th></tr></thead><tbody class="divide-y">@forelse($operatorRanking as $operator)<tr><td class="p-3 font-black">{{ $operator['name'] }}</td><td class="p-3">{{ $operator['modality'] }}</td><td class="p-3 text-center">{{ $operator['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($operator['sales'],2) }}</td><td class="p-3 text-right font-black text-emerald-700">S/ {{ number_format($operator['commission'],2) }}</td></tr>@empty<tr><td colspan="5" class="p-8 text-center text-slate-400">Sin transacciones en el período.</td></tr>@endforelse</tbody></table></article>
+            <article class="ny-layout-full overflow-hidden rounded-xl border border-amber-200 bg-white"><div class="flex justify-between bg-amber-50 px-4 py-3"><h4 class="text-xs font-black">Rendimiento financiero por operador</h4><a href="{{ route('admin.commissions.index') }}" class="text-[9px] font-black text-amber-800">Abrir comisiones →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3">Modalidad</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-right">Comisión</th></tr></thead><tbody class="divide-y">@forelse($operatorRanking as $operator)<tr><td class="p-3 font-black">{{ $operator['name'] }}</td><td class="p-3">{{ $operator['modality'] }}</td><td class="p-3 text-center">{{ $operator['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($operator['sales'],2) }}</td><td class="p-3 text-right font-black text-emerald-700">S/ {{ number_format($operator['commission'],2) }}</td></tr>@empty<tr><td colspan="5" class="p-8 text-center text-slate-400">Sin transacciones en el período.</td></tr>@endforelse</tbody></table></article>
         </div>
 
-        <div data-dashboard-panel="empresas" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="empresas" data-dashboard-area="transporte" role="tabpanel" hidden class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
             <div><div class="grid grid-cols-2 gap-2">@foreach([['Activas',$activeOperatorsCount],['Pendientes',$pendingOperatorsCount],['Rechazadas',$rejectedOperatorsCount],['Unidades',$registeredVesselsCount+$registeredAircraftCount]] as $item)<a href="{{ route('admin.companies.index') }}" class="rounded-xl border border-slate-200 p-3 hover:border-emerald-300"><span class="text-[9px] font-bold uppercase text-slate-400">{{ $item[0] }}</span><strong class="mt-1 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[8px] font-bold text-emerald-700">Ver detalle →</span></a>@endforeach</div><div class="mt-4 grid gap-3 sm:grid-cols-2"><div><h4 class="text-[10px] font-black text-slate-800">Afiliaciones por mes</h4><div class="h-44"><canvas id="affiliationsChart"></canvas></div></div><div><h4 class="text-[10px] font-black text-slate-800">Flota por modalidad</h4><div class="h-44"><canvas id="fleetChart"></canvas></div></div></div></div>
             <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Flota registrada por empresa</h4><p class="text-[9px] text-slate-400">{{ $registeredVesselsCount }} embarcaciones · {{ $registeredAircraftCount }} aeronaves</p></div><a href="{{ route('admin.companies.index') }}" class="text-[9px] font-black text-emerald-700">Ver expedientes →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0 bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">🚤</th><th class="p-3 text-center">✈️</th><th class="p-3 text-center">Total</th></tr></thead><tbody class="divide-y">@forelse($fleetByOperator as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3 text-center">{{ $operator['vessels'] }}</td><td class="p-3 text-center">{{ $operator['aircraft'] }}</td><td class="p-3 text-center font-black">{{ $operator['total'] }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin flota registrada.</td></tr>@endforelse</tbody></table></div></div>
         </div>
