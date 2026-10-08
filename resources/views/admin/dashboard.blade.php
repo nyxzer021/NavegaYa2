@@ -356,12 +356,29 @@ window.initModeMap = function(elementId, modality) {
         if(window.nyModeMaps[elementId].getContainer() === el) { setTimeout(()=>window.nyModeMaps[elementId].invalidateSize(),50); return; }
         window.nyModeMaps[elementId].remove(); delete window.nyModeMaps[elementId];
     }
-    const map=L.map(el,{zoomControl:true}).setView([-4.45,-74.3],6); window.nyModeMaps[elementId]=map;
+    const loretoBounds=L.latLngBounds([[-8.8,-77.2],[-0.8,-68.3]]);
+    const map=L.map(el,{zoomControl:true,maxBoundsViscosity:.65}).setView([-4.7,-73.8],6); map.setMaxBounds(loretoBounds.pad(.2)); window.nyModeMaps[elementId]=map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
     const routes=window.dashboardData.routes.filter(route=>route.type===modality); const bounds=[];
+    const escapeMapHtml=value=>String(value??'').replace(/[&<>'"]/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[character]));
     const loretoNodes=[['Iquitos',-3.7437,-73.2516],['Nauta',-4.5051,-73.5757],['Yurimaguas',-5.8966,-76.1043],['Requena',-5.0638,-73.8528],['Contamana',-7.3509,-75.0090],['Caballococha',-3.9058,-70.5168],['San Lorenzo',-4.8294,-76.5558]];
     loretoNodes.forEach(([name,lat,lng])=>L.circleMarker([lat,lng],{radius:5,color:modality==='Aéreo'?'#0369a1':'#047857',fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(name,{direction:'top'}));
-    routes.forEach(route=>{if(!route.origin_coords||!route.destination_coords)return; const color=modality==='Aéreo'?'#0284c7':'#059669'; const line=L.polyline([route.origin_coords,route.destination_coords],{color,weight:Math.min(9,3+Number(route.tickets||0)/10),dashArray:modality==='Aéreo'?'8 7':null,opacity:.9}).addTo(map); line.bindPopup('<strong>'+(modality==='Aéreo'?'✈️':'🚤')+' '+route.origin+' → '+route.destination+'</strong><br>'+route.operator+'<br><b>'+route.tickets+'</b> pasajes · S/ '+Number(route.sales).toFixed(2)); bounds.push(route.origin_coords,route.destination_coords);});
+    routes.forEach(route=>{
+        if(!route.origin_coords||!route.destination_coords)return;
+        const color=modality==='Aéreo'?'#0284c7':'#059669';
+        const path=route.path?.type==='LineString' && Array.isArray(route.path.coordinates) && route.path.coordinates.length>1
+            ? route.path.coordinates.map(point=>[Number(point[1]),Number(point[0])])
+            : [route.origin_coords,route.destination_coords];
+        const normalWeight=Math.min(9,3+Number(route.tickets||0)/10);
+        const line=L.polyline(path,{color,weight:normalWeight,dashArray:modality==='Aéreo'?'8 7':null,opacity:.9}).addTo(map);
+        const detail='<strong>'+(modality==='Aéreo'?'✈️':'🚤')+' '+escapeMapHtml(route.origin)+' → '+escapeMapHtml(route.destination)+'</strong><br>'+escapeMapHtml(route.operator)+'<br><b>'+Number(route.tickets||0)+'</b> pasajes · S/ '+Number(route.sales||0).toFixed(2);
+        line.bindTooltip(detail,{sticky:true,direction:'top',className:'ny-route-tooltip'}).bindPopup(detail);
+        line.on('mouseover',()=>{line.setStyle({color:'#f59e0b',weight:normalWeight+4,opacity:1});line.bringToFront();});
+        line.on('mouseout',()=>line.setStyle({color,weight:normalWeight,opacity:.9}));
+        L.circleMarker(route.origin_coords,{radius:5,color,fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(route.origin);
+        L.circleMarker(route.destination_coords,{radius:5,color,fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(route.destination);
+        bounds.push(...path);
+    });
     if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:8}); else {
         map.setView([-4.65,-73.75],6);
         const notice=L.control({position:'bottomleft'}); notice.onAdd=()=>{const div=L.DomUtil.create('div','rounded-lg bg-white/95 p-2 text-[9px] font-bold text-slate-600 shadow-lg');div.innerHTML='Puntos de referencia de Loreto<br><span style="color:#64748b;font-weight:500">Las líneas aparecerán al registrar coordenadas en las rutas.</span>';return div;};notice.addTo(map);

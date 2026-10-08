@@ -9,6 +9,20 @@ use Illuminate\Validation\Validator;
 
 class StoreMasterRouteRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $pathGeoJson = $this->input('path_geojson');
+
+        if (is_string($pathGeoJson)) {
+            $decodedPath = json_decode($pathGeoJson, true);
+            $this->merge([
+                'path_geojson' => $pathGeoJson === ''
+                    ? null
+                    : (json_last_error() === JSON_ERROR_NONE ? $decodedPath : $pathGeoJson),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->roles()->where('code', 'super_admin')->exists() ?? false;
@@ -28,6 +42,12 @@ class StoreMasterRouteRequest extends FormRequest
             'river_basin' => ['nullable', 'string', 'max:160'],
             'corridor' => ['nullable', 'string', 'max:160'],
             'estimated_duration_text' => ['nullable', 'string', 'max:80'],
+            'path_geojson' => ['nullable', 'array'],
+            'path_geojson.type' => ['required_with:path_geojson', Rule::in(['LineString'])],
+            'path_geojson.coordinates' => ['required_with:path_geojson', 'array', 'min:2'],
+            'path_geojson.coordinates.*' => ['array', 'size:2'],
+            'path_geojson.coordinates.*.0' => ['numeric', 'between:-180,180'],
+            'path_geojson.coordinates.*.1' => ['numeric', 'between:-90,90'],
             'status' => ['required', Rule::in(['active', 'suspended_river_level', 'maintenance'])],
         ];
     }

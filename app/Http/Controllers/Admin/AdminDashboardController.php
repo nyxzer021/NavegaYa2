@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Aircraft;
 use App\Models\Advertisement;
-use App\Models\AirRoute;
+use App\Models\Aircraft;
 use App\Models\AirDeparture;
+use App\Models\AirRoute;
 use App\Models\CargoShipment;
 use App\Models\DestinationListing;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Port;
 use App\Models\RouteDeparture;
-use App\Models\Ticket;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
+use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use Carbon\Carbon;
@@ -327,7 +327,7 @@ class AdminDashboardController extends Controller
 
         $riverMapRoutes = TransportRoute::query()
             ->where('status', 'active')
-            ->with(['originPort', 'destinationPort', 'organization'])
+            ->with(['originPort', 'destinationPort', 'organization', 'masterRoute'])
             ->get()
             ->map(function (TransportRoute $route) use ($routeDemand): array {
                 $demand = $routeDemand->get('river:'.$route->id, ['tickets' => 0, 'sales' => 0]);
@@ -340,6 +340,7 @@ class AdminDashboardController extends Controller
                     'destination' => $route->destinationPort?->city ?: 'Destino',
                     'origin_coords' => $route->originPort?->latitude && $route->originPort?->longitude ? [(float) $route->originPort->latitude, (float) $route->originPort->longitude] : null,
                     'destination_coords' => $route->destinationPort?->latitude && $route->destinationPort?->longitude ? [(float) $route->destinationPort->latitude, (float) $route->destinationPort->longitude] : null,
+                    'path' => $route->masterRoute?->path_geojson,
                     'tickets' => $demand['tickets'],
                     'sales' => $demand['sales'],
                     'status' => $route->status,
@@ -348,7 +349,7 @@ class AdminDashboardController extends Controller
 
         $airMapRoutes = AirRoute::query()
             ->where('status', 'active')
-            ->with('organization')
+            ->with(['organization', 'masterRoute.originPort', 'masterRoute.destinationPort'])
             ->get()
             ->map(function (AirRoute $route) use ($routeDemand, $cityCoordinates): array {
                 $demand = $routeDemand->get('air:'.$route->id, ['tickets' => 0, 'sales' => 0]);
@@ -361,6 +362,7 @@ class AdminDashboardController extends Controller
                     'destination' => $route->destination_city,
                     'origin_coords' => $cityCoordinates[mb_strtolower(trim($route->origin_city))] ?? null,
                     'destination_coords' => $cityCoordinates[mb_strtolower(trim($route->destination_city))] ?? null,
+                    'path' => $route->masterRoute?->path_geojson,
                     'tickets' => $demand['tickets'],
                     'sales' => $demand['sales'],
                     'status' => $route->status,
@@ -423,20 +425,22 @@ class AdminDashboardController extends Controller
             $active = $subscriptions->where('status', 'active');
             $previous = Subscription::query()->where('subscription_plan_id', $plan->id)->whereDate('starts_on', '<', now()->startOfMonth())->count();
             $growth = $previous > 0 ? round((($active->count() - $previous) / $previous) * 100, 1) : ($active->count() > 0 ? 100 : 0);
-            return ['id'=>$plan->id,'code'=>$plan->code,'name'=>$plan->name,'price'=>(float)$plan->monthly_price,'benefits'=>$plan->benefits ?? [],'clients'=>$active->count(),'revenue'=>(float)$active->sum('monthly_price'),'growth'=>$growth];
+
+            return ['id' => $plan->id, 'code' => $plan->code, 'name' => $plan->name, 'price' => (float) $plan->monthly_price, 'benefits' => $plan->benefits ?? [], 'clients' => $active->count(), 'revenue' => (float) $active->sum('monthly_price'), 'growth' => $growth];
         })->values();
         $subscriptionRows = $advertisingSubscriptions->map(function (Subscription $subscription) use ($activeAdvertisements): array {
             $organizationName = $subscription->organization?->commercial_name ?: $subscription->organization?->legal_name ?: 'Empresa';
             $ads = $activeAdvertisements->filter(fn (Advertisement $ad) => mb_strtolower($ad->business_name) === mb_strtolower($organizationName));
-            return ['id'=>$subscription->id,'company'=>$organizationName,'modality'=>$subscription->organization?->modality,'plan'=>$subscription->plan?->name ?? 'Sin plan','plan_code'=>$subscription->plan?->code,'ads'=>$ads->count(),'impressions'=>$ads->sum('views'),'target'=>(int) data_get($subscription->plan?->benefits, 'impressions', 0),'starts_on'=>$subscription->starts_on,'ends_on'=>$subscription->ends_on,'status'=>$subscription->status];
+
+            return ['id' => $subscription->id, 'company' => $organizationName, 'modality' => $subscription->organization?->modality, 'plan' => $subscription->plan?->name ?? 'Sin plan', 'plan_code' => $subscription->plan?->code, 'ads' => $ads->count(), 'impressions' => $ads->sum('views'), 'target' => (int) data_get($subscription->plan?->benefits, 'impressions', 0), 'starts_on' => $subscription->starts_on, 'ends_on' => $subscription->ends_on, 'status' => $subscription->status];
         });
         $expiringSubscriptionsCount = $advertisingSubscriptions->filter(fn (Subscription $subscription) => $subscription->ends_on && $subscription->ends_on->between(today(), today()->addDays(7)))->count();
-        $basicPlan = $subscriptionPlans->firstWhere('code','basic');
-        $basicTotal = $basicPlan ? Subscription::where('subscription_plan_id',$basicPlan->id)->count() : 0;
-        $basicRisk = $basicPlan ? Subscription::where('subscription_plan_id',$basicPlan->id)->whereIn('status',['overdue','cancelled'])->count() : 0;
+        $basicPlan = $subscriptionPlans->firstWhere('code', 'basic');
+        $basicTotal = $basicPlan ? Subscription::where('subscription_plan_id', $basicPlan->id)->count() : 0;
+        $basicRisk = $basicPlan ? Subscription::where('subscription_plan_id', $basicPlan->id)->whereIn('status', ['overdue', 'cancelled'])->count() : 0;
         $basicChurn = $basicTotal > 0 ? round(($basicRisk / $basicTotal) * 100, 1) : 0;
-        $enterpriseClients = (int) data_get($planMetrics->firstWhere('code','enterprise'),'clients',0);
-        $professionalGrowth = (float) data_get($planMetrics->firstWhere('code','professional'),'growth',0);
+        $enterpriseClients = (int) data_get($planMetrics->firstWhere('code', 'enterprise'), 'clients', 0);
+        $professionalGrowth = (float) data_get($planMetrics->firstWhere('code', 'professional'), 'growth', 0);
         $subscriptionRevenueSeries = $planMetrics->pluck('revenue')->values();
         $subscriptionClientSeries = $planMetrics->pluck('clients')->values();
 

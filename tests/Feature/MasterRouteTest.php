@@ -27,10 +27,35 @@ class MasterRouteTest extends TestCase
             'destination_city' => 'Nauta', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id,
             'river_basin' => 'Río Amazonas / Marañón', 'corridor' => 'Corredor Loreto',
             'estimated_duration_text' => '1 h 45 min', 'status' => 'active',
+            'path_geojson' => json_encode([
+                'type' => 'LineString',
+                'coordinates' => [[-73.2516, -3.7437], [-73.5757, -4.5051]],
+            ]),
         ])->assertRedirect(route('admin.master-routes.index'));
 
         $this->assertDatabaseHas('master_routes', ['code' => 'TRM-IQT-NAU', 'status' => 'active']);
+        $this->assertSame(
+            [[-73.2516, -3.7437], [-73.5757, -4.5051]],
+            MasterRoute::where('code', 'TRM-IQT-NAU')->firstOrFail()->path_geojson['coordinates'],
+        );
         $this->actingAs($admin)->get(route('admin.master-routes.index'))->assertOk()->assertSee('Iquitos')->assertSee('Nauta');
+    }
+
+    public function test_master_route_rejects_invalid_geojson_coordinates(): void
+    {
+        $admin = $this->userWithRole('super_admin');
+        [$origin, $destination] = $this->ports();
+
+        $this->actingAs($admin)->post(route('admin.master-routes.store'), [
+            'code' => 'TRM-GEO-BAD', 'modality' => 'fluvial', 'origin_city' => 'Iquitos',
+            'destination_city' => 'Nauta', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id,
+            'status' => 'active', 'path_geojson' => json_encode([
+                'type' => 'LineString',
+                'coordinates' => [[-200, -3.7437]],
+            ]),
+        ])->assertSessionHasErrors(['path_geojson.coordinates', 'path_geojson.coordinates.0.0']);
+
+        $this->assertDatabaseMissing('master_routes', ['code' => 'TRM-GEO-BAD']);
     }
 
     public function test_master_route_rejects_equal_origin_and_destination(): void
@@ -113,8 +138,8 @@ class MasterRouteTest extends TestCase
     private function ports(): array
     {
         return [
-            Port::create(['name' => 'Puerto Silico', 'city' => 'Iquitos', 'region' => 'Loreto', 'is_active' => true]),
-            Port::create(['name' => 'Muelle Nauta', 'city' => 'Nauta', 'region' => 'Loreto', 'is_active' => true]),
+            Port::create(['name' => 'Puerto Silico', 'city' => 'Iquitos', 'region' => 'Loreto', 'latitude' => -3.7437, 'longitude' => -73.2516, 'is_active' => true]),
+            Port::create(['name' => 'Muelle Nauta', 'city' => 'Nauta', 'region' => 'Loreto', 'latitude' => -4.5051, 'longitude' => -73.5757, 'is_active' => true]),
         ];
     }
 }

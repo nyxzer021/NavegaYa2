@@ -15,8 +15,15 @@ class MasterRoute extends Model
 
     protected $fillable = [
         'code', 'modality', 'origin_city', 'destination_city', 'origin_port_id',
-        'destination_port_id', 'river_basin', 'corridor', 'estimated_duration_text', 'status',
+        'destination_port_id', 'river_basin', 'corridor', 'estimated_duration_text', 'path_geojson', 'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'path_geojson' => 'array',
+        ];
+    }
 
     public function originPort(): BelongsTo
     {

@@ -71,7 +71,11 @@ class AdminMasterRouteController extends Controller
     {
         return [
             'masterRoute' => $masterRoute,
-            'ports' => Port::query()->where('is_active', true)->orderBy('city')->orderBy('name')->get(),
+            'ports' => Port::query()
+                ->where('is_active', true)
+                ->orderBy('city')
+                ->orderBy('name')
+                ->get(['id', 'name', 'city', 'modality', 'port_type', 'latitude', 'longitude']),
         ];
     }
 
