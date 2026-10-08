@@ -38,12 +38,18 @@
     }
 
     @media (min-width: 1024px) {
-        .ny-enterprise-layout:not([hidden]) {
+        #executiveDashboard [data-dashboard-panel="resumen"]:not([hidden]),
+        #executiveDashboard [data-dashboard-panel="finanzas"]:not([hidden]),
+        #executiveDashboard [data-dashboard-panel="empresas"]:not([hidden]),
+        #executiveDashboard [data-dashboard-panel="carga"]:not([hidden]) {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
         }
 
-        .ny-enterprise-layout > .ny-layout-full {
+        #executiveDashboard [data-dashboard-panel="resumen"] > .ny-layout-full,
+        #executiveDashboard [data-dashboard-panel="finanzas"] > .ny-layout-full,
+        #executiveDashboard [data-dashboard-panel="empresas"] > .ny-layout-full,
+        #executiveDashboard [data-dashboard-panel="carga"] > .ny-layout-full {
             grid-column: 1 / -1;
         }
 
@@ -195,7 +201,7 @@
             <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Flota registrada por empresa</h4><p class="text-[9px] text-slate-400">{{ $registeredVesselsCount }} embarcaciones · {{ $registeredAircraftCount }} aeronaves</p></div><a href="{{ route('admin.companies.index') }}" class="text-[9px] font-black text-emerald-700">Ver expedientes →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0 bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">🚤</th><th class="p-3 text-center">✈️</th><th class="p-3 text-center">Total</th></tr></thead><tbody class="divide-y">@forelse($fleetByOperator as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3 text-center">{{ $operator['vessels'] }}</td><td class="p-3 text-center">{{ $operator['aircraft'] }}</td><td class="p-3 text-center font-black">{{ $operator['total'] }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin flota registrada.</td></tr>@endforelse</tbody></table></div></div>
         </div>
 
-        <div data-dashboard-panel="carga" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="carga" data-dashboard-area="transporte" role="tabpanel" hidden class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
             <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
 
