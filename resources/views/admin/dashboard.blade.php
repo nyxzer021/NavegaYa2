@@ -18,6 +18,8 @@
     #executiveDashboard [data-dashboard-panel],
     #executiveDashboard [data-ad-panel] {
         box-sizing: border-box;
+        inline-size: 100%;
+        max-inline-size: none;
         min-width: 0;
         width: 100%;
     }
@@ -29,6 +31,20 @@
 
     #executiveDashboard canvas {
         max-width: 100% !important;
+    }
+
+    @media (min-width: 1024px) {
+        #executiveDashboard [data-dashboard-area="transporte"] {
+            min-height: 680px;
+        }
+
+        #executiveDashboard [data-dashboard-area="publicidad"] {
+            min-height: 760px;
+        }
+
+        #executiveDashboard [data-ad-panel] {
+            min-height: 620px;
+        }
     }
 </style>
 @php
