@@ -14,6 +14,23 @@
 
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+    #executiveDashboard [data-dashboard-panel],
+    #executiveDashboard [data-ad-panel] {
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
+    }
+
+    #executiveDashboard [data-dashboard-panel] > *,
+    #executiveDashboard [data-ad-panel] > * {
+        min-width: 0;
+    }
+
+    #executiveDashboard canvas {
+        max-width: 100% !important;
+    }
+</style>
 @php
     $isAdvertisingDashboard = request('area') === 'publicidad';
 @endphp
@@ -55,7 +72,7 @@
         </div>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section class="w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 sm:grid-cols-2" role="tablist" aria-label="Líneas de negocio">
             <a href="{{ route('admin.dashboard',['area'=>'transporte','period'=>$period]) }}" aria-current="{{ $isAdvertisingDashboard ? 'false' : 'page' }}" class="flex min-h-16 items-center gap-3 rounded-2xl border px-4 text-left transition {{ $isAdvertisingDashboard ? 'border-transparent text-slate-700 hover:border-emerald-300 hover:bg-white' : 'border-emerald-600 bg-emerald-950 text-white shadow-lg' }}"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-xl">🚤</span><span><strong class="block text-sm font-black">Transporte de pasajeros</strong><small class="block text-[9px] font-semibold opacity-70">Fluvial, aéreo, empresas, carga y finanzas</small></span><span class="ml-auto">→</span></a>
             <a href="{{ route('admin.dashboard',['area'=>'publicidad','period'=>$period]) }}" aria-current="{{ $isAdvertisingDashboard ? 'page' : 'false' }}" class="flex min-h-16 items-center gap-3 rounded-2xl border px-4 text-left transition {{ $isAdvertisingDashboard ? 'border-fuchsia-500 bg-fuchsia-950 text-white shadow-lg' : 'border-transparent text-slate-700 hover:border-fuchsia-300 hover:bg-white' }}"><span class="grid h-10 w-10 place-items-center rounded-xl bg-fuchsia-100 text-xl">📣</span><span><strong class="block text-sm font-black">Publicidad y anunciantes</strong><small class="block text-[9px] font-semibold opacity-70">Contratos, campañas, planes e impacto</small></span><span class="ml-auto">→</span></a>
@@ -63,7 +80,7 @@
         <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div><h3 data-analysis-title class="text-sm font-black text-slate-950">{{ $isAdvertisingDashboard ? 'Inteligencia publicitaria' : 'Control de transporte' }}</h3><p data-analysis-copy class="text-[10px] text-slate-400">{{ $isAdvertisingDashboard ? 'Empresas anunciantes, contratos, campañas, directorio y rendimiento.' : 'Selecciona una perspectiva operativa para revisar sus indicadores.' }}</p></div>
             @unless($isAdvertisingDashboard)
-            <nav id="transportSubnav" class="flex max-w-full gap-1.5 overflow-x-auto rounded-2xl bg-slate-950 p-1.5 shadow-inner" role="tablist" aria-label="Áreas de transporte">
+            <nav id="transportSubnav" class="flex w-full max-w-full gap-1.5 overflow-x-auto rounded-2xl bg-slate-950 p-1.5 shadow-inner lg:w-auto" role="tablist" aria-label="Áreas de transporte">
                 @foreach([
                     ['fluvial','🚤','Fluvial','bg-emerald-500 text-emerald-950'],
                     ['aereo','✈️','Aéreo','bg-sky-400 text-sky-950'],
@@ -144,18 +161,18 @@
             <article class="overflow-hidden rounded-xl border border-amber-200 bg-white"><div class="flex justify-between bg-amber-50 px-4 py-3"><h4 class="text-xs font-black">Rendimiento financiero por operador</h4><a href="{{ route('admin.commissions.index') }}" class="text-[9px] font-black text-amber-800">Abrir comisiones →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3">Modalidad</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-right">Comisión</th></tr></thead><tbody class="divide-y">@forelse($operatorRanking as $operator)<tr><td class="p-3 font-black">{{ $operator['name'] }}</td><td class="p-3">{{ $operator['modality'] }}</td><td class="p-3 text-center">{{ $operator['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($operator['sales'],2) }}</td><td class="p-3 text-right font-black text-emerald-700">S/ {{ number_format($operator['commission'],2) }}</td></tr>@empty<tr><td colspan="5" class="p-8 text-center text-slate-400">Sin transacciones en el período.</td></tr>@endforelse</tbody></table></article>
         </div>
 
-        <div data-dashboard-panel="empresas" data-dashboard-area="transporte" role="tabpanel" hidden class="grid gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="empresas" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 p-4 xl:grid-cols-[1fr_1.4fr]">
             <div><div class="grid grid-cols-2 gap-2">@foreach([['Activas',$activeOperatorsCount],['Pendientes',$pendingOperatorsCount],['Rechazadas',$rejectedOperatorsCount],['Unidades',$registeredVesselsCount+$registeredAircraftCount]] as $item)<a href="{{ route('admin.companies.index') }}" class="rounded-xl border border-slate-200 p-3 hover:border-emerald-300"><span class="text-[9px] font-bold uppercase text-slate-400">{{ $item[0] }}</span><strong class="mt-1 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[8px] font-bold text-emerald-700">Ver detalle →</span></a>@endforeach</div><div class="mt-4 grid gap-3 sm:grid-cols-2"><div><h4 class="text-[10px] font-black text-slate-800">Afiliaciones por mes</h4><div class="h-44"><canvas id="affiliationsChart"></canvas></div></div><div><h4 class="text-[10px] font-black text-slate-800">Flota por modalidad</h4><div class="h-44"><canvas id="fleetChart"></canvas></div></div></div></div>
             <div class="overflow-hidden rounded-xl border border-slate-200"><div class="flex justify-between bg-slate-50 px-4 py-3"><div><h4 class="text-xs font-black text-slate-900">Flota registrada por empresa</h4><p class="text-[9px] text-slate-400">{{ $registeredVesselsCount }} embarcaciones · {{ $registeredAircraftCount }} aeronaves</p></div><a href="{{ route('admin.companies.index') }}" class="text-[9px] font-black text-emerald-700">Ver expedientes →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0 bg-white uppercase text-slate-400"><tr><th class="p-3">Empresa</th><th class="p-3 text-center">🚤</th><th class="p-3 text-center">✈️</th><th class="p-3 text-center">Total</th></tr></thead><tbody class="divide-y">@forelse($fleetByOperator as $operator)<tr><td class="p-3"><a href="{{ route('admin.companies.show', $operator['id']) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $operator['name'] }}</a></td><td class="p-3 text-center">{{ $operator['vessels'] }}</td><td class="p-3 text-center">{{ $operator['aircraft'] }}</td><td class="p-3 text-center font-black">{{ $operator['total'] }}</td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin flota registrada.</td></tr>@endforelse</tbody></table></div></div>
         </div>
 
-        <div data-dashboard-panel="carga" data-dashboard-area="transporte" role="tabpanel" hidden class="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
+        <div data-dashboard-panel="carga" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
             <div class="grid grid-cols-2 gap-3">@foreach([['Envíos registrados',$cargoShipmentsCount,'Guías del período','📦'],['Remitentes únicos',$cargoCustomersCount,'Personas que enviaron','👤'],['Paquetes movilizados',$cargoPackagesCount,'Bultos declarados','▣'],['Ingreso por carga','S/ '.number_format($cargoRevenue,2),'Operaciones pagadas','💰']] as $item)<a href="{{ route('admin.cargo.index') }}" class="rounded-xl border border-slate-200 p-4 hover:border-emerald-300"><span class="text-xl">{{ $item[3] }}</span><strong class="mt-2 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[9px] font-black text-slate-700">{{ $item[0] }}</span><p class="text-[8px] text-slate-400">{{ $item[2] }}</p></a>@endforeach</div><div class="rounded-xl bg-slate-50 p-4"><h4 class="text-xs font-black text-slate-900">Actividad de carga</h4><p class="text-[9px] text-slate-400">Envíos, remitentes y paquetes en el período</p><div class="h-56"><canvas id="cargoChart"></canvas></div></div>
         </div>
 
         @else
-        <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" class="bg-fuchsia-50/40 p-4">
-            <nav class="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
+        <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" class="w-full min-w-0 bg-fuchsia-50/40 p-4">
+            <nav class="mb-4 flex w-full max-w-full gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
                 @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📦','Planes y suscripciones'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
                     <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='campanas'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
                 @endforeach
