@@ -15,6 +15,21 @@
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
+    body:has(#executiveDashboard) .ny-main,
+    body:has(#executiveDashboard) .ny-main > main,
+    #executiveDashboard,
+    #executiveDashboard > section {
+        box-sizing: border-box;
+        inline-size: 100% !important;
+        margin-inline: 0 !important;
+        max-inline-size: none !important;
+        min-inline-size: 0;
+    }
+
+    body:has(#executiveDashboard) .ny-main {
+        overflow-x: clip;
+    }
+
     #executiveDashboard [data-dashboard-panel],
     #executiveDashboard [data-ad-panel] {
         box-sizing: border-box;
