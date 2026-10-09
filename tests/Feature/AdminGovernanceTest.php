@@ -14,6 +14,7 @@ use App\Models\Vessel;
 use Database\Seeders\MarketplaceDashboardSeeder;
 use Database\Seeders\RegionalSupervisionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class AdminGovernanceTest extends TestCase
@@ -31,8 +32,8 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Ecosistema B2B y Aliados Turísticos')
             ->assertSee('Lodges, Hoteles y Rest.')
             ->assertSee('Reembolsos y Soporte');
-        $this->actingAs($admin)->get(route('admin.companies.index'))->assertOk()->assertSee('Gobernanza de Empresas Transportistas');
-        $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Inventario comercial por operador');
+        $this->actingAs($admin)->get(route('admin.companies.index'))->assertOk()->assertSee('Red de empresas transportistas');
+        $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Capacidad y comercio por operador');
         $this->get(route('admin.fleet.index'))->assertRedirect(route('admin.companies.index'));
         $this->get(route('admin.settlements.index'))->assertOk()->assertSee('Liquidaciones y comisiones');
         $this->get(route('admin.sales.index'))->assertOk();
@@ -110,21 +111,14 @@ class AdminGovernanceTest extends TestCase
         $this->actingAs($companyAdmin)->get(route('admin.itineraries.index'))->assertForbidden();
     }
 
-    public function test_company_creation_rejects_invalid_ruc_and_missing_phone(): void
+    public function test_super_admin_company_creation_redirects_to_public_affiliation(): void
     {
         $admin = $this->userWithRole('super_admin');
 
-        $this->actingAs($admin)->post(route('admin.companies.store'), [
-            'company_name' => 'Operador inválido',
-            'ruc' => '123',
-            'modality' => 'fluvial',
-            'base_city' => 'Iquitos',
-            'commission_rate' => 8,
-            'admin_name' => 'Responsable',
-            'admin_email' => 'responsable@example.test',
-            'admin_password' => 'password123',
-            'admin_password_confirmation' => 'password123',
-        ])->assertSessionHasErrors(['ruc', 'phone']);
+        $this->actingAs($admin)->get(route('admin.companies.create'))
+            ->assertRedirect(route('company.registration'));
+
+        $this->assertFalse(Route::has('admin.companies.store'));
     }
 
     public function test_regional_supervision_combines_river_and_air_operators(): void
@@ -137,8 +131,8 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Capacidad y comercio por operador')
             ->assertSee('Expreso Fluvial Marañón')
             ->assertSee('Selva Air Taxi')
-            ->assertSee('Transporte Fluvial (Rutas Amazónicas)')
-            ->assertSee('Transporte Aéreo (Aerotaxis y Vuelos Regionales)')
+            ->assertSee('Operación fluvial')
+            ->assertSee('Operación aérea')
             ->assertSee('Operador fluvial')
             ->assertSee('Operador aéreo')
             ->assertSee('Fluvial')
@@ -282,8 +276,8 @@ class AdminGovernanceTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.companies.index'))
             ->assertOk()
-            ->assertSee(route('admin.companies.show', ['organization' => $riverOperator, 'tab' => 'flota']))
-            ->assertSee('Ver flota')
+            ->assertSee(route('admin.companies.show', $riverOperator))
+            ->assertSee('unidad(es)')
             ->assertDontSee('Ver dossier');
 
         $this->get(route('admin.companies.show', $riverOperator))

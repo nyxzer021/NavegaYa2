@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\CompanyProvisioningService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class CompanyProvisioningTest extends TestCase
@@ -62,38 +63,17 @@ class CompanyProvisioningTest extends TestCase
         $this->get(route('company.pos.index'))->assertOk();
     }
 
-    public function test_super_admin_channel_returns_one_time_login_credentials(): void
+    public function test_super_admin_is_redirected_to_the_self_service_affiliation_channel(): void
     {
         $superAdmin = User::factory()->create();
         $role = Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super Admin']);
         $superAdmin->roles()->attach($role);
 
         $this->actingAs($superAdmin)->get(route('admin.companies.create'))
-            ->assertOk()
-            ->assertSee('Registrar y activar empresa');
+            ->assertRedirect(route('company.registration'));
 
-        $this->actingAs($superAdmin)->post(route('admin.companies.store'), [
-            'company_name' => 'Aéreo Loreto SAC',
-            'commercial_name' => 'Loreto Air',
-            'ruc' => '20777777776',
-            'modality' => 'aereo',
-            'base_city' => 'Iquitos',
-            'phone' => '965123456',
-            'commission_rate' => 5,
-            'admin_name' => 'Luis Aviador',
-            'admin_email' => 'luis@loretoair.test',
-            'admin_password' => 'ClaveAerea123',
-            'admin_password_confirmation' => 'ClaveAerea123',
-        ])->assertRedirect(route('admin.companies.index'))
-            ->assertSessionHas('provisioned_credentials.email', 'luis@loretoair.test')
-            ->assertSessionHas('provisioned_credentials.password', 'ClaveAerea123');
-
-        $this->assertDatabaseHas('organizations', ['ruc' => '20777777776', 'status' => 'active', 'commission_rate' => 5]);
-
-        $this->get(route('admin.companies.index'))
-            ->assertOk()
-            ->assertSee('Loreto Air')
-            ->assertSee('Credenciales iniciales');
+        $this->assertFalse(Route::has('admin.companies.store'));
+        $this->assertDatabaseMissing('organizations', ['ruc' => '20777777776']);
     }
 
     private function payload(): array

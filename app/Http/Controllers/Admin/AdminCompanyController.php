@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreCompanyRequest;
 use App\Models\Organization;
 use App\Models\Payment;
-use App\Services\CompanyProvisioningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +54,7 @@ class AdminCompanyController extends Controller
             ->count();
 
         $companies = Organization::query()->where('type', 'transport_company')
+            ->whereIn('status', ['active', 'suspended'])
             ->with([
                 'users.roles',
                 'routeDepartures' => fn ($query) => $query->whereDate('departure_at', $today)->with(['vessel', 'reservations.seats']),
@@ -116,27 +115,6 @@ class AdminCompanyController extends Controller
             'airTicketsToday' => $airTicketsToday,
             'activeOperatorsToday' => $activeOperatorsToday,
             'commissionSummary' => $commissionSummary,
-        ]);
-    }
-
-    public function create(): View
-    {
-        return view('admin.companies.create');
-    }
-
-    public function store(StoreCompanyRequest $request, CompanyProvisioningService $provisioning): RedirectResponse
-    {
-        $data = $request->validated();
-        $plainPassword = $data['admin_password'];
-        [$organization, $user] = $provisioning->provision($data, true);
-
-        return redirect()->route('admin.companies.index')->with([
-            'success' => 'Empresa activa y administrador raíz creados correctamente.',
-            'provisioned_credentials' => [
-                'company' => $organization->commercial_name ?: $organization->legal_name,
-                'email' => $user->email,
-                'password' => $plainPassword,
-            ],
         ]);
     }
 

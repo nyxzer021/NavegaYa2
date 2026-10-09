@@ -160,7 +160,9 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/empresas/create', fn () => redirect()->route('company.registration'))->name('companies.create');
     Route::resource('/empresas', AdminCompanyController::class)
+        ->except(['create', 'store'])
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
     Route::get('/flota-unidades', fn () => redirect()->route('admin.companies.index'))->name('fleet.index');
@@ -240,7 +242,6 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/salidas/{departure}/manifiesto/csv', [AdminManifestController::class, 'csv'])->name('manifests.csv');
     Route::resource('/usuarios', AdminUserController::class)->parameters(['usuarios' => 'user'])->names('users');
     Route::get('/solicitudes-empresa', [AdminOrganizationReviewController::class, 'index'])->name('organizations.index');
-    Route::post('/solicitudes-empresa/provisionar', [AdminOrganizationReviewController::class, 'storeManual'])->name('organizations.provision');
     Route::get('/empresas-agencias', [AdminOrganizationDirectoryController::class, 'index'])->name('organization-directory.index');
     Route::get('/operacion-transporte', [AdminOperationController::class, 'index'])->name('operation.index');
     Route::get('/puertos-terminales', [AdminPortController::class, 'index'])->name('ports.index');
