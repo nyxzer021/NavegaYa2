@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             ['code' => 'passenger', 'name' => 'Pasajero (legado)', 'description' => 'Alias compatible para cuentas de pasajeros creadas anteriormente.'],
         ], ['code'], ['name', 'description']);
 
+        $this->call(LoretoGeographySeeder::class);
         $this->call(AirOperatorSeeder::class);
         $this->call(MarketplaceDashboardSeeder::class);
     }
