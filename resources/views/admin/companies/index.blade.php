@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-<div x-data="{ tab: @js(request('tab', 'solicitudes')) }" class="mx-auto max-w-[1600px] space-y-5">
+<div x-data="{ tab: @js(request('tab', 'solicitudes')) }" class="w-full min-w-0 space-y-5">
     <section class="relative overflow-hidden rounded-3xl bg-[#062c21] px-6 py-7 text-white shadow-xl sm:px-8">
         <div class="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-emerald-500/10 to-transparent"></div>
         <div class="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
