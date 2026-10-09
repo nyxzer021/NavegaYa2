@@ -9,7 +9,7 @@
                 <h3 class="mt-1 text-lg font-black text-slate-950">Cada empresa registra su propia solicitud</h3>
                 <p class="mt-1 max-w-2xl text-sm text-slate-600">El equipo de NavegaYA revisa los datos y documentos antes de habilitar el panel administrativo de la empresa.</p>
             </div>
-            <a href="{{ route('company.registration') }}" target="_blank" rel="noopener" class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-emerald-800 px-5 text-sm font-black text-white transition hover:bg-emerald-900">Abrir afiliación pública ↗</a>
+            <a href="{{ route('company.registration') }}" class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-emerald-800 px-5 text-sm font-black text-white transition hover:bg-emerald-900">Abrir afiliación pública →</a>
         </section>
         <div class="overflow-hidden rounded-xl bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-[#12372d] text-white"><tr><th class="px-5 py-3 text-left">Empresa</th><th class="px-5 py-3 text-left">RUC</th><th class="px-5 py-3 text-left">Contacto</th><th class="px-5 py-3 text-left">Correo confirmado</th><th class="px-5 py-3 text-right">Acciones</th></tr></thead>
