@@ -5,7 +5,7 @@
     'initialTab' => 'resumen',
 ])
 
-<div x-data="{ copied: false }" {{ $attributes->class(['w-full min-w-0']) }}>
+<div {{ $attributes->class(['w-full min-w-0']) }}>
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <header class="flex min-h-28 flex-col justify-between gap-5 border-b border-slate-200 px-5 py-5 lg:flex-row lg:items-center lg:px-6">
             <div class="min-w-0">
