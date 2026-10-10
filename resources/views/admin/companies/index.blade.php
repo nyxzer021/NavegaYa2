@@ -1,13 +1,6 @@
 @extends('layouts.admin')
 
 @section('title', 'Empresas y Afiliaciones · NavegaYA')
-@section('header')
-<div>
-    <p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Empresas y gobernanza</p>
-    <h1 class="ny-page-title">Empresas y afiliaciones</h1>
-</div>
-@endsection
-
 @section('content')
 @php
     $activeTab = in_array(request('tab'), ['solicitudes', 'rendimiento', 'comisiones'], true) ? request('tab') : 'solicitudes';

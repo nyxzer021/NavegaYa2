@@ -35,7 +35,6 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminVesselController;
 use App\Http\Controllers\AdminVesselSeatController;
 use App\Http\Controllers\AirBookingController;
-use App\Http\Controllers\Auth\CompanyRegisterController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Company\CompanyBoardingController;
@@ -153,9 +152,8 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/registro-empresa', [CompanyRegistrationController::class, 'create'])->name('company.registration');
-Route::post('/registro-empresa', [CompanyRegisterController::class, 'register'])->name('company.registration.store');
-Route::get('/afiliate', [CompanyRegisterController::class, 'create'])->name('company.register');
-Route::post('/afiliate', [CompanyRegisterController::class, 'register'])->name('company.register.store');
+Route::post('/registro-empresa', [CompanyRegistrationController::class, 'store'])->name('company.registration.store');
+Route::redirect('/afiliate', '/registro-empresa')->name('company.register');
 Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationController::class, 'verify'])->middleware('signed')->name('company.registration.verify');
 
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -165,6 +163,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
         ->except(['create', 'store'])
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
+    Route::get('/empresas/{organization}/documentos/{document}', [AdminCompanyController::class, 'downloadDocument'])->name('companies.documents.download');
     Route::get('/flota-unidades', fn () => redirect()->route('admin.companies.index'))->name('fleet.index');
     Route::patch('/flota-unidades/embarcaciones/{vessel}/estado', [AdminFleetController::class, 'updateVesselStatus'])->name('fleet.vessels.status');
     Route::patch('/flota-unidades/aeronaves/{aircraft}/estado', [AdminFleetController::class, 'updateAircraftStatus'])->name('fleet.aircraft.status');

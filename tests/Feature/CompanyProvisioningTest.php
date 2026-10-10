@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CompanyProvisioningService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CompanyProvisioningTest extends TestCase
@@ -38,10 +42,11 @@ class CompanyProvisioningTest extends TestCase
         $this->assertSame('active', $user->organizations()->first()->pivot->status);
     }
 
-    public function test_public_channel_logs_in_pending_admin_with_isolated_portal_access(): void
+    public function test_public_channel_creates_a_pending_application_without_an_account(): void
     {
-        $response = $this->post(route('company.register.store'), [
-            'type' => 'transport_company',
+        Storage::fake('local');
+        Notification::fake();
+        $response = $this->post(route('company.registration.store'), [
             'legal_name' => 'Ríos del Oriente SAC',
             'commercial_name' => 'Oriente Fluvial',
             'ruc' => '20888888888',
@@ -51,16 +56,19 @@ class CompanyProvisioningTest extends TestCase
             'address' => 'Puerto de Iquitos',
             'modality' => 'fluvial',
             'base_city' => 'Iquitos',
-            'admin_password' => 'ClaveSegura123',
-            'admin_password_confirmation' => 'ClaveSegura123',
+            'terms' => '1',
+            'ruc_document' => UploadedFile::fake()->create('ruc.pdf', 50, 'application/pdf'),
+            'representative_document' => UploadedFile::fake()->image('dni.jpg'),
+            'operating_permit' => UploadedFile::fake()->create('permiso.pdf', 50, 'application/pdf'),
         ]);
 
-        $response->assertRedirect(route('company.departures.index'));
-        $this->assertAuthenticated();
-        $this->get(route('company.departures.index'))->assertOk()->assertSee('pendiente de verificación');
-        $this->get(route('company.fleet.index'))->assertOk();
-        $this->get(route('company.sales.index'))->assertOk();
-        $this->get(route('company.pos.index'))->assertOk();
+        $response->assertOk()->assertSee('Solicitud registrada');
+        $this->assertGuest();
+        $organization = Organization::where('ruc', '20888888888')->firstOrFail();
+        $this->assertSame('pending', $organization->status);
+        $this->assertCount(3, $organization->documents);
+        $this->assertDatabaseMissing('users', ['email' => 'duena@oriente.test']);
+        Notification::assertCount(1);
     }
 
     public function test_super_admin_is_redirected_to_the_self_service_affiliation_channel(): void

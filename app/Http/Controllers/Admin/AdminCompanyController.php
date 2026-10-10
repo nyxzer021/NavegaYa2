@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\OrganizationDocument;
 use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminCompanyController extends Controller
 {
@@ -120,9 +123,16 @@ class AdminCompanyController extends Controller
 
     public function edit(Organization $organization): View
     {
-        $organization->load(['users.roles']);
+        $organization->load(['users.roles', 'documents']);
 
         return view('admin.companies.edit', compact('organization'));
+    }
+
+    public function downloadDocument(Organization $organization, OrganizationDocument $document): StreamedResponse
+    {
+        abort_unless($document->organization_id === $organization->id, 404);
+
+        return Storage::download($document->path, $document->original_name);
     }
 
     public function show(Organization $organization): View

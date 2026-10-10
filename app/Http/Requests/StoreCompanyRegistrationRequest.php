@@ -15,7 +15,6 @@ class StoreCompanyRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', Rule::in(['transport_company', 'agency'])],
             'legal_name' => ['required', 'string', 'max:180'],
             'contact_name' => ['required', 'string', 'max:180'],
             'commercial_name' => ['nullable', 'string', 'max:180'],
@@ -27,7 +26,10 @@ class StoreCompanyRegistrationRequest extends FormRequest
             'modality' => ['required', Rule::in(['fluvial', 'aereo', 'mixto'])],
             'base_city' => ['required', 'string', 'max:100'],
             'website' => ['nullable', 'url', 'max:255'],
-            'admin_password' => ['required', 'string', 'min:8', 'confirmed'],
+            'ruc_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'representative_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'operating_permit' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'terms' => ['accepted'],
         ];
     }
 }

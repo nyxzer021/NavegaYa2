@@ -10,6 +10,26 @@ use Illuminate\Support\Facades\Hash;
 
 class CompanyProvisioningService
 {
+    public function submitApplication(array $data): Organization
+    {
+        return DB::transaction(fn (): Organization => Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => $data['legal_name'],
+            'commercial_name' => $data['commercial_name'] ?? null,
+            'contact_name' => $data['contact_name'],
+            'ruc' => $data['ruc'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'whatsapp' => $data['whatsapp'] ?? null,
+            'address' => $data['address'],
+            'website' => $data['website'] ?? null,
+            'modality' => $data['modality'],
+            'base_city' => $data['base_city'],
+            'commission_rate' => 8,
+            'status' => 'pending',
+        ]));
+    }
+
     public function provision(array $data, bool $isAdminInitiated = false): array
     {
         return DB::transaction(function () use ($data, $isAdminInitiated): array {
