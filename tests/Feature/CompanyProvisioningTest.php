@@ -71,15 +71,14 @@ class CompanyProvisioningTest extends TestCase
         Notification::assertCount(1);
     }
 
-    public function test_super_admin_is_redirected_to_the_self_service_affiliation_channel(): void
+    public function test_super_admin_has_no_manual_company_creation_route(): void
     {
         $superAdmin = User::factory()->create();
         $role = Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super Admin']);
         $superAdmin->roles()->attach($role);
 
-        $this->actingAs($superAdmin)->get(route('admin.companies.create'))
-            ->assertRedirect(route('company.registration'));
-
+        $this->actingAs($superAdmin);
+        $this->assertFalse(Route::has('admin.companies.create'));
         $this->assertFalse(Route::has('admin.companies.store'));
         $this->assertDatabaseMissing('organizations', ['ruc' => '20777777776']);
     }

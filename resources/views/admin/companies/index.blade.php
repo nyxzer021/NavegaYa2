@@ -12,7 +12,6 @@
 >
     <x-slot:actions>
         <a href="{{ route('admin.master-routes.index') }}" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800">🧭 Catálogo de rutas</a>
-        <a href="{{ route('company.registration') }}" class="inline-flex h-10 items-center rounded-xl bg-[#062c21] px-4 text-xs font-black text-white transition hover:bg-emerald-900">Formulario de afiliación →</a>
     </x-slot:actions>
 
     <x-slot:metrics>

@@ -158,7 +158,6 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/empresas/create', fn () => redirect()->route('company.registration'))->name('companies.create');
     Route::resource('/empresas', AdminCompanyController::class)
         ->except(['create', 'store'])
         ->parameters(['empresas' => 'organization'])->names('companies');
