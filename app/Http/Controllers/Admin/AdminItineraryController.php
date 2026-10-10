@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\RouteDeparture;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -18,31 +19,39 @@ class AdminItineraryController extends AdminSupervisionController
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'modality' => ['nullable', 'in:fluvial,aereo,mixto'],
+            'date' => ['nullable', 'date'],
+            'status' => ['nullable', 'in:published,without_inventory,paused'],
         ]);
+        $selectedDate = isset($filters['date']) ? Carbon::parse($filters['date'])->startOfDay() : today();
 
         $riverDepartures = RouteDeparture::query()
             ->with(['transportRoute.organization', 'transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])
-            ->whereDate('departure_at', today())
+            ->whereDate('departure_at', $selectedDate)
             ->get()
             ->groupBy(fn (RouteDeparture $departure) => $departure->transportRoute?->organization_id);
 
         $airDepartures = AirDeparture::query()
             ->with(['airRoute.organization', 'aircraft', 'reservations.seats'])
-            ->whereDate('departure_at', today())
+            ->whereDate('departure_at', $selectedDate)
             ->get()
             ->groupBy(fn (AirDeparture $departure) => $departure->airRoute?->organization_id);
 
         $payments = Payment::query()
             ->with(['reservation.departure.transportRoute', 'reservation.airDeparture.airRoute'])
             ->whereIn('status', ['succeeded', 'confirmed'])
-            ->whereDate('paid_at', today())
+            ->whereDate('paid_at', $selectedDate)
             ->get()
             ->groupBy(function (Payment $payment) {
                 $reservation = $payment->reservation;
 
                 return $reservation?->departure?->transportRoute?->organization_id
                     ?? $reservation?->airDeparture?->airRoute?->organization_id;
-            });
+            })
+            ->when($filters['status'] ?? null, fn ($items, string $status) => $items->filter(fn ($operator) => match ($status) {
+                'published' => $operator->published_departures_count > 0 && ! $operator->is_paused,
+                'without_inventory' => $operator->published_departures_count === 0,
+                'paused' => $operator->is_paused,
+            })->values());
 
         $operators = Organization::query()
             ->where('type', 'transport_company')
@@ -124,10 +133,11 @@ class AdminItineraryController extends AdminSupervisionController
             'fluvialOperators' => $fluvialOperators,
             'airOperators' => $airOperators,
             'totalPublishedSeats' => $operators->sum('capacity'),
+            'totalPublishedDepartures' => $operators->sum('published_departures_count'),
             'totalSoldSeats' => $operators->sum('sold_seats'),
-            'totalCommissionToday' => $operators->sum('commission'),
-            'activeOperatorsCount' => $operators->where('published_departures_count', '>', 0)->count(),
+            'pausedOperatorsCount' => $operators->where('is_paused', true)->count(),
             'operatorsCount' => $operators->count(),
+            'selectedDate' => $selectedDate,
         ]);
     }
 

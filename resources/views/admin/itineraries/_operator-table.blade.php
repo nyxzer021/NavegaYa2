@@ -5,10 +5,10 @@
                 <th class="px-4 py-3">{{ $operatorHeading }}</th>
                 <th class="px-4 py-3">{{ $routesHeading }}</th>
                 <th class="px-4 py-3 text-center">{{ $departuresHeading }}</th>
-                <th class="px-4 py-3">Asientos en web</th>
-                <th class="px-4 py-3 text-right">Recaudación hoy</th>
-                <th class="px-4 py-3 text-right">Comisión NavegaYA (8%)</th>
-                <th class="px-4 py-3 text-center">Estado & control web</th>
+                <th class="px-4 py-3">Ocupación y disponibilidad</th>
+                <th class="px-4 py-3 text-right">Ventas confirmadas</th>
+                <th class="px-4 py-3 text-center">Estado de publicación</th>
+                <th class="px-4 py-3 text-center">Supervisión</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -25,7 +25,7 @@
                 <td class="px-4 py-4 text-center"><strong class="text-lg text-slate-900">{{ $operator->departures_count }}</strong><span class="block text-[10px] text-slate-400">{{ $operator->published_departures_count }} publicadas</span></td>
                 <td class="px-4 py-4"><div class="flex items-center justify-between gap-3"><span class="font-bold text-slate-800">{{ $operator->sold_seats }}/{{ $operator->capacity }}</span><span class="text-[10px] text-slate-400">{{ $occupancy }}%</span></div><div class="mt-1.5 h-1.5 w-32 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $isAirSection ? 'bg-sky-500' : 'bg-emerald-600' }}" style="width:{{ $occupancy }}%"></div></div><span class="mt-1 block text-[10px] text-slate-400">{{ max(0, $operator->capacity - $operator->sold_seats) }} disponibles</span></td>
                 <td class="px-4 py-4 text-right font-black text-slate-900">S/ {{ number_format($operator->gmv, 2) }}</td>
-                <td class="px-4 py-4 text-right"><strong class="block text-emerald-800">S/ {{ number_format($operator->commission, 2) }}</strong><span class="text-[10px] text-slate-400">{{ number_format($operator->commission_rate, 2) }}%</span></td>
+                <td class="px-4 py-4 text-center"><span class="inline-flex rounded-full px-3 py-1 text-[10px] font-black {{ $operator->is_paused ? 'bg-rose-50 text-rose-700' : ($operator->published_departures_count ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500') }}">{{ $operator->is_paused ? 'Ventas pausadas' : ($operator->published_departures_count ? 'Publicado' : 'Sin inventario') }}</span></td>
                 <td class="px-4 py-4 text-center">
                     <form method="POST" action="{{ route('admin.itineraries.operator-sales', $operator->id) }}">@csrf @method('PATCH')
                         @if($operator->is_paused)

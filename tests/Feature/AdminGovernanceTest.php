@@ -33,7 +33,7 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Lodges, Hoteles y Rest.')
             ->assertSee('Reembolsos y Soporte');
         $this->actingAs($admin)->get(route('admin.companies.index'))->assertOk()->assertSee('Red de empresas transportistas');
-        $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Capacidad y comercio por operador');
+        $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Supervisión de itinerarios');
         $this->get(route('admin.fleet.index'))->assertRedirect(route('admin.companies.index'));
         $this->get(route('admin.settlements.index'))->assertOk()->assertSee('Liquidaciones y comisiones');
         $this->get(route('admin.sales.index'))->assertOk();
@@ -111,13 +111,12 @@ class AdminGovernanceTest extends TestCase
         $this->actingAs($companyAdmin)->get(route('admin.itineraries.index'))->assertForbidden();
     }
 
-    public function test_super_admin_company_creation_redirects_to_public_affiliation(): void
+    public function test_super_admin_has_no_company_creation_route(): void
     {
         $admin = $this->userWithRole('super_admin');
 
-        $this->actingAs($admin)->get(route('admin.companies.create'))
-            ->assertRedirect(route('company.registration'));
-
+        $this->actingAs($admin);
+        $this->assertFalse(Route::has('admin.companies.create'));
         $this->assertFalse(Route::has('admin.companies.store'));
     }
 
@@ -128,12 +127,12 @@ class AdminGovernanceTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.itineraries.index'))
             ->assertOk()
-            ->assertSee('Capacidad y comercio por operador')
+            ->assertSee('Supervisión de itinerarios')
             ->assertSee('Expreso Fluvial Marañón')
             ->assertSee('Selva Air Taxi')
             ->assertSee('Pausar ventas')
-            ->assertSee('Asientos publicados hoy')
-            ->assertSee('Comisión estimada hoy')
+            ->assertSee('Salidas publicadas')
+            ->assertSee('Asientos disponibles')
             ->assertDontSee('DICAPI')
             ->assertDontSee('DGAC')
             ->assertDontSee('Editar');

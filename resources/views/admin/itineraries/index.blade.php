@@ -7,22 +7,21 @@
 @endphp
 <x-admin.module-workspace
     eyebrow="Supervisión operativa"
-    title="Capacidad y comercio por operador"
-    description="Supervisa la oferta publicada por las empresas sin intervenir en la administración diaria de sus itinerarios."
+    title="Supervisión de itinerarios"
+    description="Controla salidas, capacidad publicada, ocupación y disponibilidad del marketplace."
 >
     <x-slot:actions>
-        <span class="inline-flex h-10 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-800">{{ $operatorsCount }} operadores activos</span>
-        <a href="{{ route('admin.companies.index', ['tab' => 'rendimiento']) }}" class="inline-flex h-10 items-center rounded-xl bg-[#062c21] px-4 text-xs font-black text-white transition hover:bg-emerald-900">Ver empresas →</a>
+        <span class="inline-flex h-10 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-800">{{ $operators->where('published_departures_count', '>', 0)->count() }} operadores con salidas</span>
     </x-slot:actions>
 
     <x-slot:metrics>
         @php
             $occupancy = $totalPublishedSeats > 0 ? number_format(($totalSoldSeats / $totalPublishedSeats) * 100, 1) : '0.0';
             $metrics = [
-                ['Asientos publicados hoy', number_format($totalPublishedSeats), 'Capacidad comercial disponible', '▦', 'text-slate-950'],
-                ['Boletos vendidos hoy', number_format($totalSoldSeats), "{$occupancy}% de ocupación", '🎟️', 'text-slate-950'],
-                ['Comisión estimada hoy', 'S/ '.number_format($totalCommissionToday, 2), 'Comisión NavegaYA sobre ventas', '%', 'text-amber-600'],
-                ['Operadores con salidas', number_format($activeOperatorsCount).' de '.number_format($operatorsCount), 'Con inventario publicado hoy', '●', 'text-emerald-700'],
+                ['Salidas publicadas', number_format($totalPublishedDepartures), $selectedDate->translatedFormat('d M Y'), '↗', 'text-slate-950'],
+                ['Asientos disponibles', number_format(max(0, $totalPublishedSeats - $totalSoldSeats)), number_format($totalPublishedSeats).' de capacidad publicada', '▦', 'text-emerald-700'],
+                ['Boletos vendidos', number_format($totalSoldSeats), "{$occupancy}% de ocupación", '🎟️', 'text-slate-950'],
+                ['Ventas pausadas', number_format($pausedOperatorsCount), 'Operadores que requieren revisión', '!', $pausedOperatorsCount ? 'text-amber-600' : 'text-slate-950'],
             ];
         @endphp
         @foreach($metrics as $metric)
@@ -42,7 +41,9 @@
         <form method="GET" class="flex flex-wrap items-center gap-2">
             <input type="hidden" name="tab" value="{{ $activeTab }}">
             <input name="search" value="{{ request('search') }}" class="h-10 min-w-64 flex-1 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs" placeholder="Buscar empresa o RUC">
+            <input type="date" name="date" value="{{ request('date', $selectedDate->toDateString()) }}" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700" aria-label="Fecha de salida">
             <select name="modality" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"><option value="">Todas las modalidades</option><option value="fluvial" @selected(request('modality') === 'fluvial')>Fluvial</option><option value="aereo" @selected(request('modality') === 'aereo')>Aéreo</option><option value="mixto" @selected(request('modality') === 'mixto')>Mixto</option></select>
+            <select name="status" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"><option value="">Todos los estados</option><option value="published" @selected(request('status') === 'published')>Con salidas publicadas</option><option value="without_inventory" @selected(request('status') === 'without_inventory')>Sin inventario</option><option value="paused" @selected(request('status') === 'paused')>Ventas pausadas</option></select>
             <button class="h-10 rounded-xl bg-[#062c21] px-5 text-xs font-black text-white hover:bg-emerald-900">Aplicar filtros</button>
             <a href="{{ route('admin.itineraries.index') }}" class="inline-flex h-10 items-center px-3 text-xs font-bold text-emerald-700">Limpiar</a>
             <span class="ml-auto text-[10px] font-semibold text-slate-400">Actualizado {{ now()->translatedFormat('d M Y · H:i') }}</span>
@@ -51,7 +52,7 @@
 
     @if($activeTab === 'resumen')
     <section class="min-h-[360px]">
-        <header class="flex items-center justify-between border-b border-slate-100 px-5 py-4 lg:px-6"><div><h3 class="font-black text-slate-950">Todos los operadores</h3><p class="text-xs text-slate-500">Vista consolidada de capacidad, ventas y control del marketplace.</p></div><span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black text-slate-600">{{ $operators->count() }} resultados</span></header>
+        <header class="flex items-center justify-between border-b border-slate-100 px-5 py-4 lg:px-6"><div><h3 class="font-black text-slate-950">Itinerarios por operador</h3><p class="text-xs text-slate-500">Salidas y capacidad publicadas para {{ $selectedDate->translatedFormat('d \d\e F \d\e Y') }}.</p></div><span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black text-slate-600">{{ $operators->count() }} resultados</span></header>
         @include('admin.itineraries._operator-table', ['sectionOperators' => $operators, 'isAirSection' => false, 'operatorHeading' => 'Operador', 'routesHeading' => 'Destinos principales', 'departuresHeading' => 'Salidas hoy', 'emptyMessage' => 'No hay operadores para los filtros seleccionados.'])
     </section>
 @endif
