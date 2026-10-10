@@ -131,18 +131,24 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Capacidad y comercio por operador')
             ->assertSee('Expreso Fluvial Marañón')
             ->assertSee('Selva Air Taxi')
-            ->assertSee('Operación fluvial')
-            ->assertSee('Operación aérea')
-            ->assertSee('Operador fluvial')
-            ->assertSee('Operador aéreo')
-            ->assertSee('Fluvial')
-            ->assertSee('Aéreo')
             ->assertSee('Pausar ventas')
             ->assertSee('Asientos publicados hoy')
             ->assertSee('Comisión estimada hoy')
             ->assertDontSee('DICAPI')
             ->assertDontSee('DGAC')
             ->assertDontSee('Editar');
+
+        $this->get(route('admin.itineraries.index', ['tab' => 'fluvial']))
+            ->assertOk()
+            ->assertSee('Operación fluvial')
+            ->assertSee('Operador fluvial')
+            ->assertDontSee('Operación aérea');
+
+        $this->get(route('admin.itineraries.index', ['tab' => 'aereo']))
+            ->assertOk()
+            ->assertSee('Operación aérea')
+            ->assertSee('Operador aéreo')
+            ->assertDontSee('Operación fluvial');
 
         $this->get(route('admin.supervision.index'))->assertRedirect(route('admin.itineraries.index'));
 

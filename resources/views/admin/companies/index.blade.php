@@ -9,8 +9,10 @@
 @endsection
 
 @section('content')
+@php
+    $activeTab = in_array(request('tab'), ['solicitudes', 'rendimiento', 'comisiones'], true) ? request('tab') : 'solicitudes';
+@endphp
 <x-admin.module-workspace
-    :initial-tab="request('tab', 'solicitudes')"
     eyebrow="Gobernanza comercial"
     title="Red de empresas transportistas"
     description="Revisa afiliaciones, supervisa operadores habilitados y administra sus condiciones comerciales."
@@ -36,14 +38,15 @@
     </x-slot:metrics>
 
     <x-slot:navigation>
-        <button type="button" @click="tab='solicitudes'" :class="tab==='solicitudes' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition">Solicitudes <span class="ml-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] text-slate-950">{{ $pendingAffiliations->count() }}</span></button>
-        <button type="button" @click="tab='rendimiento'" :class="tab==='rendimiento' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition">Empresas afiliadas</button>
-        <button type="button" @click="tab='comisiones'" :class="tab==='comisiones' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition">Comisiones y acuerdos</button>
+        <a href="{{ route('admin.companies.index', ['tab' => 'solicitudes']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'solicitudes' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">Solicitudes <span class="ml-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] text-slate-950">{{ $pendingAffiliations->count() }}</span></a>
+        <a href="{{ route('admin.companies.index', ['tab' => 'rendimiento']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'rendimiento' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">Empresas afiliadas</a>
+        <a href="{{ route('admin.companies.index', ['tab' => 'comisiones']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'comisiones' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">Comisiones y acuerdos</a>
     </x-slot:navigation>
 
     @if(session('success'))<div class="m-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">✓ {{ session('success') }}</div>@endif
 
-    <section x-show="tab==='solicitudes'" x-cloak class="min-h-[540px]">
+    @if($activeTab === 'solicitudes')
+    <section class="min-h-[360px]">
         <header class="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center"><div><p class="text-[10px] font-black uppercase tracking-wider text-amber-600">Bandeja comercial</p><h3 class="text-lg font-black text-slate-950">Solicitudes pendientes de validación</h3><p class="text-xs text-slate-500">Revisa identidad, RUC y responsable antes de habilitar ventas.</p></div><span class="w-fit rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black text-amber-700">{{ $pendingAffiliations->count() }} por revisar</span></header>
         <div class="overflow-x-auto"><table class="w-full min-w-[900px] text-left text-xs"><thead class="bg-slate-50 text-[9px] font-black uppercase tracking-wider text-slate-400"><tr><th class="p-4">Empresa solicitante</th><th class="p-4">Representante y acceso</th><th class="p-4">Modalidad</th><th class="p-4">Verificación</th><th class="p-4">Fecha</th><th class="p-4 text-right">Acciones</th></tr></thead><tbody class="divide-y divide-slate-100">
         @forelse($pendingAffiliations as $company)
@@ -61,8 +64,10 @@
         @endforelse
         </tbody></table></div>
     </section>
+@endif
 
-    <section x-show="tab==='rendimiento'" x-cloak class="min-h-[540px]">
+@if($activeTab === 'rendimiento')
+    <section class="min-h-[360px]">
         <form method="GET" action="{{ route('admin.companies.index') }}" class="flex flex-wrap gap-3 border-b border-slate-200 p-4 lg:px-6">
             <input type="hidden" name="tab" value="rendimiento"><input type="search" name="search" value="{{ request('search') }}" placeholder="Buscar empresa o RUC" class="h-10 min-w-64 flex-1 rounded-xl border-slate-200 bg-slate-50 text-xs">
             <select name="status" class="h-10 rounded-xl border-slate-200 bg-slate-50 text-xs"><option value="">Todos los estados</option><option value="active" @selected(request('status')==='active')>Activos</option><option value="pending_verification" @selected(request('status')==='pending_verification')>Pendientes</option><option value="suspended" @selected(request('status')==='suspended')>Suspendidos</option></select><button class="rounded-xl bg-[#062c21] px-5 text-xs font-bold text-white">Filtrar</button><a href="{{ route('admin.companies.index', ['tab' => 'rendimiento']) }}" class="px-3 py-3 text-xs font-bold text-emerald-700">Limpiar</a>
@@ -88,14 +93,17 @@
             </tbody></table></div><div class="border-t border-slate-100 p-4">{{ $companies->links() }}</div>
         </div>
     </section>
+@endif
 
-    <section x-show="tab==='comisiones'" x-cloak class="grid min-h-[540px] gap-4 p-5 md:grid-cols-2 lg:p-6">
+@if($activeTab === 'comisiones')
+    <section class="grid min-h-[360px] gap-4 p-5 md:grid-cols-2 lg:p-6">
         @foreach(['fluvial' => ['🚤', 'Pasajes fluviales'], 'aereo' => ['✈️', 'Pasajes aéreos']] as $channel => $meta)
             @php($summary = $commissionSummary->get($channel))
             <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div class="flex items-center justify-between"><span class="text-2xl">{{ $meta[0] }}</span><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-700">{{ $summary?->operators_count ?? 0 }} operadores activos</span></div><h3 class="mt-4 text-lg font-black text-slate-950">{{ $meta[1] }}</h3><p class="mt-1 text-xs text-slate-500">Promedio contractual vigente sobre cada boleto procesado en la plataforma.</p><p class="mt-5 text-3xl font-black text-[#062c21]">{{ number_format((float) ($summary?->average_rate ?? 0), 2) }}%</p><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Comisión promedio configurada</span></article>
         @endforeach
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 md:col-span-2"><strong>Modelo comercial:</strong> la comisión se calcula sobre pagos confirmados. Cada operador puede tener una tasa propia administrada desde “Permisos / Editar”.</div>
     </section>
+@endif
 </x-admin.module-workspace>
 @endsection
 
