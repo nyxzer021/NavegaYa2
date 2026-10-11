@@ -70,7 +70,7 @@
         : $approvedAmazonImage;
 @endphp
 
-<section {{ $attributes->except('class')->merge(['class' => 'relative mx-auto mb-6 min-h-[300px] max-w-[1600px] overflow-hidden bg-slate-950 text-white sm:min-h-[320px] '.$class]) }} data-amazon-theme="{{ $theme }}">
+<section {{ $attributes->except('class')->merge(['class' => 'relative mx-auto mb-6 min-h-[300px] max-w-[1600px] overflow-hidden rounded-b-[2rem] bg-slate-950 text-white shadow-xl sm:min-h-[320px] sm:rounded-b-[2.5rem] '.$class]) }} data-amazon-theme="{{ $theme }}">
     <img
         src="{{ $source }}"
         alt="{{ $selected['title'] }}"
@@ -79,6 +79,7 @@
     >
     <div class="absolute inset-0 bg-gradient-to-r {{ $overlay }}"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(251,191,36,.12),transparent_34%)]"></div>
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent via-slate-50/10 to-slate-50/90 sm:h-20"></div>
 
     @if($slot->isEmpty())
         <div class="relative z-10 max-w-3xl px-6 py-8 sm:px-10">
