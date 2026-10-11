@@ -10,7 +10,7 @@
 
     $backgrounds = [
         'home' => [
-            'local_file' => 'images/navegaya-hero-rio.png',
+            'local_file' => 'images/branding/banner-home-viajeros-amazonia.webp',
             'badge' => 'Pasajes Fluviales y Aéreos en Loreto',
             'title' => 'Viaja por la Amazonía con Total Confianza',
             'subtitle' => 'Compara rutas oficiales, consulta horarios y compra tus boletos con confirmación inmediata.',
@@ -92,3 +92,4 @@
         <div class="relative z-10 mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{{ $slot }}</div>
     @endif
 </section>
+

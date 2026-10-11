@@ -9,7 +9,7 @@
 <x-slot:head><style>#resultados,footer>div{max-width:72rem!important}[hidden]{display:none!important}.ny-modal-open{display:grid!important}</style></x-slot:head>
 <div class="min-h-screen w-full overflow-x-hidden bg-slate-50">
  <main class="mx-auto min-h-screen w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-  <x-amazon-hero-bg theme="home" :image="$heroImage" class="min-h-[340px] w-full text-center shadow-2xl" overlay="from-slate-950/78 via-[#062c21]/56 to-slate-900/20">
+  <x-amazon-hero-bg theme="home" class="min-h-[340px] w-full text-center shadow-2xl" overlay="from-slate-950/72 via-[#062c21]/48 to-slate-900/12">
    <div class="flex w-full flex-col items-center px-4 pb-16 pt-12 sm:pb-20 sm:pt-16">
     <span class="rounded-full border border-emerald-500/30 bg-emerald-900/70 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-300 backdrop-blur-sm">Pasajes fluviales y aéreos en Loreto</span>
     <h1 class="mt-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">{{$heroTitle}}</h1>
