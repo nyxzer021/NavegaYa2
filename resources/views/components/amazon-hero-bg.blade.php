@@ -1,5 +1,6 @@
 @props([
     'theme' => 'routes',
+    'image' => null,
     'class' => 'min-h-[220px]',
     'overlay' => 'from-slate-950/90 via-slate-900/70 to-slate-950/50',
 ])
@@ -65,9 +66,9 @@
     ];
 
     $selected = $backgrounds[$theme] ?? $backgrounds['routes'];
-    $source = file_exists(public_path($selected['local_file']))
-        ? asset($selected['local_file'])
-        : $approvedAmazonImage;
+    $source = $image
+        ? (str_starts_with($image, 'http') ? $image : asset(ltrim($image, '/')))
+        : (file_exists(public_path($selected['local_file'])) ? asset($selected['local_file']) : $approvedAmazonImage);
 @endphp
 
 <section {{ $attributes->except('class')->merge(['class' => 'relative mx-auto mb-6 min-h-[300px] max-w-[1600px] overflow-hidden rounded-b-[2rem] bg-slate-950 text-white shadow-xl sm:min-h-[320px] sm:rounded-b-[2.5rem] '.$class]) }} data-amazon-theme="{{ $theme }}">
