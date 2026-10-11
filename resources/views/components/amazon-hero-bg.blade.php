@@ -15,7 +15,7 @@
             'subtitle' => 'Compara rutas oficiales, consulta horarios y compra tus boletos con confirmación inmediata.',
         ],
         'routes' => [
-            'local_file' => 'images/branding/banner-rutas-rio.jpg',
+            'local_file' => 'images/navegaya-hero-amazonas.png',
             'title' => 'Rutas Fluviales y Vuelos en Loreto',
             'badge' => 'Rutas Fluviales y Aéreas de Loreto',
             'subtitle' => 'Itinerarios de zarpe y conexiones bimodales entre Iquitos, Yurimaguas, Nauta y la frontera amazónica.',
@@ -74,12 +74,12 @@
     <img
         src="{{ $source }}"
         alt="{{ $selected['title'] }}"
-        class="absolute inset-0 h-full w-full object-cover object-center brightness-[.70]"
+        class="absolute inset-0 h-full w-full object-cover object-center brightness-[.88] saturate-[1.08]"
         fetchpriority="{{ $theme === 'home' ? 'high' : 'auto' }}"
     >
     <div class="absolute inset-0 bg-gradient-to-r {{ $overlay }}"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(251,191,36,.12),transparent_34%)]"></div>
-    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent via-slate-50/10 to-slate-50/90 sm:h-20"></div>
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent to-slate-50/55 sm:h-12"></div>
 
     @if($slot->isEmpty())
         <div class="relative z-10 max-w-3xl px-6 py-8 sm:px-10">
