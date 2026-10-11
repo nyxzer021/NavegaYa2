@@ -27,9 +27,13 @@ class CompanyPublicProfileController extends Controller
             $data['logo_path'] = Storage::url($request->file('logo')->store('company-profiles', 'public'));
         }if ($request->hasFile('cover')) {
             $data['cover_image_path'] = Storage::url($request->file('cover')->store('company-profiles', 'public'));
-        }unset($data['logo'],$data['cover']);
+        }
+        if ($request->hasFile('logo') || $request->hasFile('cover')) {
+            $data['profile_content_status'] = 'pending';
+        }
+        unset($data['logo'], $data['cover']);
         $organization->update($data);
 
-        return back()->with('success', 'Perfil público actualizado.');
+        return back()->with('success', $request->hasFile('logo') || $request->hasFile('cover') ? 'Perfil actualizado. Las nuevas imágenes están pendientes de revisión.' : 'Perfil público actualizado.');
     }
 }

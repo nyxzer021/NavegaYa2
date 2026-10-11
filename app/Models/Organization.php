@@ -18,7 +18,7 @@ class Organization extends Model
         'type', 'modality', 'base_city', 'legal_name', 'commercial_name', 'contact_name', 'ruc', 'email', 'phone', 'whatsapp',
         'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
-        'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path',
+        'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path', 'profile_content_status',
     ];
 
     protected function casts(): array

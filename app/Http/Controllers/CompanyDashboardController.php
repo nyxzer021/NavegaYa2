@@ -123,10 +123,13 @@ class CompanyDashboardController extends Controller
         if ($request->hasFile('cover')) {
             $data['cover_image_path'] = Storage::url($request->file('cover')->store('company-profiles', 'public'));
         }
+        if ($request->hasFile('logo') || $request->hasFile('cover')) {
+            $data['profile_content_status'] = 'pending';
+        }
         unset($data['logo'], $data['cover']);
         $organization->update($data);
 
-        return back()->with('success', 'Tu perfil público se actualizó correctamente.');
+        return back()->with('success', $request->hasFile('logo') || $request->hasFile('cover') ? 'Perfil actualizado. Las nuevas imágenes están pendientes de revisión.' : 'Tu perfil público se actualizó correctamente.');
     }
 
     private function organization()
