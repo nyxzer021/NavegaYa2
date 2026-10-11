@@ -31,3 +31,6 @@ Homestead.yaml
 Thumbs.db
 
 /.npm-cache
+
+# Fuentes PNG de banners generados; la aplicación usa las versiones WebP optimizadas
+public/images/branding/*.png

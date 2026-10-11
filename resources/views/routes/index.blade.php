@@ -3,8 +3,8 @@
     $searched = request()->hasAny(['origin','destination','date']);
 @endphp
 <div class="min-h-screen bg-slate-50">
-<div class="mx-auto max-w-7xl px-4 pb-4 pt-4 sm:px-6 lg:px-8">
-<x-amazon-hero-bg theme="routes" class="flex min-h-[220px] w-full items-center justify-center rounded-3xl shadow-lg md:rounded-[2.5rem]" overlay="from-slate-950/90 via-[#062c21]/85 to-[#062c21]/75">
+<div class="mx-auto max-w-7xl px-4 pb-4 sm:px-6 lg:px-8">
+<x-amazon-hero-bg theme="routes" class="flex w-full items-center justify-center shadow-lg" overlay="from-slate-950/90 via-[#062c21]/85 to-[#062c21]/75">
 <div class="mx-auto max-w-4xl px-4 pb-14 pt-4 text-center sm:pb-16">
 <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3.5 py-1 text-[11px] font-bold text-emerald-200 backdrop-blur-sm"><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span><span>Rutas Fluviales y Aéreas de Loreto</span></div>
 <h1 class="text-3xl font-black tracking-tight text-white drop-shadow-md sm:text-4xl">Rutas Fluviales y Vuelos en Loreto</h1>

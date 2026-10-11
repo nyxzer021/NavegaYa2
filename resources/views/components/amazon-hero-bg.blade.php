@@ -5,7 +5,7 @@
 ])
 
 @php
-    $approvedAmazonImage = asset('images/navegaya-hero-amazonas.png');
+    $approvedAmazonImage = asset('images/navegaya-hero-amazonas.webp');
 
     $backgrounds = [
         'home' => [
@@ -20,38 +20,44 @@
             'badge' => 'Rutas Fluviales y Aéreas de Loreto',
             'subtitle' => 'Itinerarios de zarpe y conexiones bimodales entre Iquitos, Yurimaguas, Nauta y la frontera amazónica.',
         ],
+        'air' => [
+            'local_file' => 'images/branding/banner-vuelos-amazonia.webp',
+            'badge' => 'Conexiones Aéreas de la Amazonía',
+            'title' => 'Vuelos Regionales en Loreto',
+            'subtitle' => 'Horarios, aerotaxis e hidroaviones para conectar Iquitos con comunidades y destinos amazónicos.',
+        ],
         'advertise' => [
-            'local_file' => 'images/branding/banner-afiliar.jpg',
+            'local_file' => 'images/branding/banner-afiliar-empresa.webp',
             'badge' => 'Red Comercial NavegaYA',
             'title' => 'Haz Visible tu Negocio en Loreto',
             'subtitle' => 'Vende pasajes en el marketplace o anuncia tu hotel, lodge o restaurante ante miles de viajeros.',
         ],
         'companies' => [
-            'local_file' => 'images/branding/banner-empresas.jpg',
+            'local_file' => 'images/branding/banner-empresas-amazonia.webp',
             'badge' => 'Operadores Fluviales y Aéreos',
             'title' => 'Empresas de Transporte Certificadas',
             'subtitle' => 'Flota de embarcaciones rápidas, motonaves, aerotaxis e hidroaviones en la región Loreto.',
         ],
         'ports' => [
-            'local_file' => 'images/branding/banner-puertos.jpg',
+            'local_file' => 'images/branding/banner-puertos-nauta.webp',
             'badge' => 'Infraestructura Ribereña y Aérea',
             'title' => 'Puertos, Embarcaderos y Pistas de Aterrizaje',
             'subtitle' => 'Puntos de embarque oficiales: Puerto Enapu, Masusa, Embarcadero de Nauta y aeródromos locales.',
         ],
         'guide' => [
-            'local_file' => 'images/branding/banner-guia.jpg',
+            'local_file' => 'images/branding/banner-guia-loreto.webp',
             'badge' => 'Turismo y Destinos Amazónicos',
             'title' => 'Guía de Viaje y Conectividad en Loreto',
             'subtitle' => 'Recomendaciones, tiempos de navegación por río y conexiones con lodges y reservas naturales.',
         ],
         'check_ticket' => [
-            'local_file' => 'images/branding/banner-tickets.jpg',
+            'local_file' => 'images/branding/banner-consultar-pasaje.webp',
             'badge' => 'Servicio al Pasajero',
             'title' => 'Consulta y Descarga tu Pasaje',
             'subtitle' => 'Ingresa tu código de reserva o DNI para verificar el estado de tu boleto y el muelle de embarque.',
         ],
         'affiliate' => [
-            'local_file' => 'images/branding/banner-afiliar.jpg',
+            'local_file' => 'images/branding/banner-afiliar-empresa.webp',
             'badge' => 'Red Comercial NavegaYA',
             'title' => 'Haz Visible tu Negocio en Loreto',
             'subtitle' => 'Vende pasajes en el marketplace o anuncia tu hotel, lodge o restaurante ante miles de viajeros.',
@@ -64,7 +70,7 @@
         : $approvedAmazonImage;
 @endphp
 
-<section {{ $attributes->except('class')->merge(['class' => 'relative mx-auto mt-2 mb-6 max-w-[1600px] overflow-hidden rounded-2xl bg-slate-950 text-white '.$class]) }} data-amazon-theme="{{ $theme }}">
+<section {{ $attributes->except('class')->merge(['class' => 'relative mx-auto mb-6 min-h-[300px] max-w-[1600px] overflow-hidden bg-slate-950 text-white sm:min-h-[320px] '.$class]) }} data-amazon-theme="{{ $theme }}">
     <img
         src="{{ $source }}"
         alt="{{ $selected['title'] }}"
