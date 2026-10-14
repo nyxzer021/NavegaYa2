@@ -13,11 +13,12 @@ class GuideController extends Controller
     public function index(Request $request): View
     {
         $cityId = $request->integer('ciudad') ?: null;
-        $type = in_array($request->string('tipo')->toString(), ['lodging', 'gastronomy', 'attraction'], true)
+        $type = in_array($request->string('tipo')->toString(), array_keys(MarketplaceBusinessController::TYPES), true)
             ? $request->string('tipo')->toString() : null;
 
         $listings = DestinationListing::with(['city', 'images'])
             ->where('is_active', true)
+            ->where('status', 'published')
             ->when($cityId, fn ($query) => $query->where('destination_city_id', $cityId))
             ->when($type, fn ($query) => $query->where('type', $type))
             // Five directory entries + the permanent advertising card + up to three
@@ -33,5 +34,11 @@ class GuideController extends Controller
         $ads->each(fn ($ad) => $ad->increment('views'));
 
         return view('guide.index', compact('listings', 'cities', 'ads', 'cityId', 'type'));
+    }
+
+    public function show(DestinationListing $listing): View
+    {
+        abort_unless($listing->is_active && $listing->status === 'published', 404);
+        return view('guide.show', ['listing' => $listing->load(['city','images']), 'types' => MarketplaceBusinessController::TYPES]);
     }
 }

@@ -3,15 +3,9 @@
 namespace App\Providers;
 
 use App\Models\AuditLog;
-use App\Models\CargoShipment;
-use App\Models\Organization;
-use App\Models\Port;
-use App\Models\RouteDeparture;
-use App\Models\Ticket;
-use App\Models\TransportRoute;
-use App\Models\Vessel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,17 +14,38 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        foreach ([Organization::class, Port::class, Vessel::class, TransportRoute::class, RouteDeparture::class, CargoShipment::class, Ticket::class] as $class) {
-            $class::created(fn (Model $m) => $this->audit('created', $m, $m->getAttributes()));
-            $class::updated(fn (Model $m) => $this->audit('updated', $m, $m->getChanges()));
-            $class::deleted(fn (Model $m) => $this->audit('deleted', $m, []));
-        }
+        Event::listen('eloquent.created: *', fn (string $event, array $models) => $this->capture('created', $models[0] ?? null));
+        Event::listen('eloquent.updated: *', fn (string $event, array $models) => $this->capture('updated', $models[0] ?? null));
+        Event::listen('eloquent.deleted: *', fn (string $event, array $models) => $this->capture('deleted', $models[0] ?? null));
     }
 
-    private function audit(string $event, Model $model, array $changes): void
+    private function capture(string $event, mixed $subject): void
     {
+        if (! $subject instanceof Model || $subject instanceof AuditLog || ! str_starts_with($subject::class, 'App\\Models\\')) {
+            return;
+        }
+
         if (app()->runningInConsole() && ! app()->runningUnitTests()) {
             return;
-        }AuditLog::create(['user_id' => Auth::id(), 'event' => $event, 'subject_type' => $model::class, 'subject_id' => $model->getKey(), 'changes' => $changes, 'ip_address' => request()?->ip(), 'user_agent' => substr((string) request()?->userAgent(), 0, 500), 'created_at' => now()]);
+        }
+
+        $changes = match ($event) {
+            'created' => ['new' => $this->safe($subject->getAttributes())],
+            'updated' => ['old' => $this->safe(array_intersect_key($subject->getOriginal(), $subject->getChanges())), 'new' => $this->safe($subject->getChanges())],
+            'deleted' => ['old' => $this->safe($subject->getOriginal())],
+        };
+
+        AuditLog::create([
+            'user_id' => Auth::id(), 'event' => $event, 'subject_type' => $subject::class, 'subject_id' => $subject->getKey(),
+            'changes' => $changes, 'ip_address' => request()?->ip(), 'user_agent' => substr((string) request()?->userAgent(), 0, 500),
+            'route_name' => request()?->route()?->getName(), 'http_method' => request()?->method(), 'created_at' => now(),
+        ]);
+    }
+
+    private function safe(array $values): array
+    {
+        $sensitive = ['password', 'remember_token', 'token', 'secret', 'api_key', 'cvv', 'card_number'];
+
+        return collect($values)->reject(fn (mixed $value, string $key) => collect($sensitive)->contains(fn (string $word) => str_contains(strtolower($key), $word)))->all();
     }
 }

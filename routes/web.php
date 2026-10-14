@@ -55,6 +55,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscoverController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MarketplaceBusinessController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ProfileController;
@@ -81,6 +82,9 @@ Route::get('/rutas-fluviales', [PublicRouteCatalogController::class, 'index'])->
 Route::get('/empresas', [PublicCompanyController::class, 'index'])->name('companies.index');
 Route::get('/puertos-y-muelles', [PublicPortController::class, 'index'])->name('ports.public');
 Route::get('/guia-loreto', [GuideController::class, 'index'])->name('guide.index');
+Route::get('/guia-loreto/negocio/{listing}', [GuideController::class, 'show'])->name('guide.show');
+Route::get('/negocios/registro', [MarketplaceBusinessController::class, 'create'])->middleware('guest')->name('marketplace.register');
+Route::post('/negocios/registro', [MarketplaceBusinessController::class, 'store'])->middleware(['guest','throttle:5,1'])->name('marketplace.register.store');
 Route::get('/empresas/{organization}', [PublicCompanyController::class, 'show'])->name('companies.show');
 Route::post('/empresas/{organization}/valoraciones', [PublicCompanyController::class, 'review'])->middleware(['auth', 'verified'])->name('companies.review');
 Route::post('/empresas/{organization}/reportar-perfil', [PublicContentReportController::class, 'profile'])->middleware('auth')->name('companies.profile.report');
@@ -150,6 +154,9 @@ Route::post('/mis-viajes/buscar', [TravelController::class, 'search'])->name('tr
 Route::post('/mis-viajes/consulta', [TravelController::class, 'lookup'])->name('travels.lookup');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/mi-negocio', [MarketplaceBusinessController::class, 'dashboard'])->middleware('role:marketplace_admin')->name('marketplace.dashboard');
+    Route::patch('/mi-negocio/ficha', [MarketplaceBusinessController::class, 'update'])->middleware('role:marketplace_admin')->name('marketplace.update');
+    Route::delete('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'deleteImage'])->middleware('role:marketplace_admin')->name('marketplace.images.destroy');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -190,6 +197,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/ventas-globales', [AdminSalesController::class, 'index'])->name('sales.index');
     Route::get('/tours-experiencias', [AdminTourController::class, 'index'])->name('tours.index');
     Route::get('/aliados-turisticos', [AdminTourismPartnerController::class, 'index'])->name('tourism-partners.index');
+    Route::patch('/aliados-turisticos/{listing}/moderacion', [AdminTourismPartnerController::class, 'moderate'])->name('tourism-partners.moderate');
     Route::get('/publicidad-pautas', [AdminAdvertisementController::class, 'index'])->name('advertisements.index');
     Route::post('/publicidad-pautas', [AdminAdvertisementController::class, 'store'])->name('advertisements.store');
     Route::patch('/publicidad-pautas/{ad}', [AdminAdvertisementController::class, 'update'])->name('advertisements.update');

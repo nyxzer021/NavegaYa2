@@ -26,6 +26,9 @@ class DashboardController extends Controller
         if ($roles->contains('company_admin')) {
             return redirect()->route('company.departures.index');
         }
+        if ($roles->contains('marketplace_admin')) {
+            return redirect()->route('marketplace.dashboard');
+        }
         if ($roles->intersect(['customer', 'traveler', 'passenger'])->isNotEmpty()) {
             return redirect()->route('travels.index');
         }

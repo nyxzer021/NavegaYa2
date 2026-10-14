@@ -12,7 +12,7 @@ use Illuminate\View\View;
 
 class AdminDestinationListingController
 {
-    private const TYPES = ['attraction' => 'Lugares turísticos', 'lodging' => 'Hoteles y hospedajes', 'gastronomy' => 'Gastronomía'];
+    private const TYPES = MarketplaceBusinessController::TYPES;
 
     public function index(string $type): View
     {
@@ -103,6 +103,7 @@ class AdminDestinationListingController
 
     private function images(Request $r, DestinationListing $item): void
     {
+        abort_if($item->images()->count() + count($r->file('images', [])) > 6, 422, 'La galería admite como máximo 6 imágenes.');
         foreach ($r->file('images', []) as $index => $image) {
             $item->images()->create(['path' => Storage::url($image->store('destination-listings', 'public')), 'sort_order' => $item->images()->max('sort_order') + $index + 1, 'is_cover' => $item->images()->count() === 0 && $index === 0]);
         }

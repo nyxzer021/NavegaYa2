@@ -9,7 +9,7 @@ class AuditLog extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['user_id', 'event', 'subject_type', 'subject_id', 'changes', 'ip_address', 'user_agent', 'created_at'];
+    protected $fillable = ['user_id', 'event', 'subject_type', 'subject_id', 'changes', 'ip_address', 'user_agent', 'route_name', 'http_method', 'created_at'];
 
     protected function casts(): array
     {

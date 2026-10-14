@@ -44,6 +44,11 @@ class Organization extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    public function marketplaceListings(): HasMany
+    {
+        return $this->hasMany(DestinationListing::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(OrganizationDocument::class);

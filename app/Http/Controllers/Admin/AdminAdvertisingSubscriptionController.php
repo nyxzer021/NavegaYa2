@@ -26,7 +26,10 @@ class AdminAdvertisingSubscriptionController extends Controller
         return view('admin.advertising-subscriptions.index', [
             'subscriptions' => $query->paginate(20)->withQueryString(),
             'plans' => SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get(),
-            'organizations' => Organization::where('status', 'active')->orderBy('commercial_name')->get(),
+            'organizations' => Organization::query()
+                ->where(fn ($query) => $query->where('status', 'active')
+                    ->orWhere(fn ($business) => $business->where('type', 'marketplace_business')->where('status', 'pending')))
+                ->orderBy('commercial_name')->get(),
             'statusCounts' => Subscription::selectRaw('status, count(*) total')->groupBy('status')->pluck('total','status'),
             'monthlyRevenue' => (float) Subscription::where('status','active')->sum('monthly_price'),
             'annualRevenue' => (float) Subscription::where('status','active')->sum('monthly_price') * 12,
