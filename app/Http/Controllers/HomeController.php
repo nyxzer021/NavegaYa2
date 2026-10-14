@@ -48,7 +48,14 @@ class HomeController
             ->when($date, fn ($q) => $q->whereDate('departure_at', $date))
             ->orderBy('departure_at')->limit(12)->get();
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
-        $ads = Advertisement::with('city')->active()->forPlacement('home_hero')->inRandomOrder()->limit(2)->get();
+        $ads = Advertisement::with('city')
+            ->active()
+            ->forPlacement('home_hero')
+            ->orderByDesc('starts_on')
+            ->orderBy('id')
+            ->limit(3)
+            ->get();
+        $ads->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
         $riverCities = Port::query()->where('is_active', true)->pluck('city');
         $airCities = AirRoute::query()->get(['origin_city', 'destination_city'])->flatMap(fn ($route) => [$route->origin_city, $route->destination_city]);
         $citiesForSearch = $riverCities->merge($airCities)->filter()->unique()->sort()->values();

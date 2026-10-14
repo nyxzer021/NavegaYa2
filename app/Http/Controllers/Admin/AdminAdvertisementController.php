@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminAdvertisementController extends Controller
@@ -40,6 +41,9 @@ class AdminAdvertisementController extends Controller
         $data['status'] ??= 'lead_pending';
         $data['category'] = Advertisement::BUSINESS_TYPES[$data['business_type']];
         $data['title'] = $data['title'] ?: $data['business_name'];
+        if ($request->hasFile('banner_image')) {
+            $data['banner_image_path'] = $request->file('banner_image')->store('advertisements', 'public');
+        }
         Advertisement::create($data);
 
         return back()->with('success', 'Campaña registrada.');
@@ -50,6 +54,12 @@ class AdminAdvertisementController extends Controller
         $data = $this->validated($request);
         $data['category'] = Advertisement::BUSINESS_TYPES[$data['business_type']];
         $data['title'] = $data['title'] ?: $data['business_name'];
+        if ($request->hasFile('banner_image')) {
+            if ($ad->banner_image_path) {
+                Storage::disk('public')->delete($ad->banner_image_path);
+            }
+            $data['banner_image_path'] = $request->file('banner_image')->store('advertisements', 'public');
+        }
         $ad->update($data);
 
         return back()->with('success', 'Campaña actualizada.');
@@ -89,6 +99,7 @@ class AdminAdvertisementController extends Controller
             'placements.*' => ['in:'.implode(',', array_keys(Advertisement::PLACEMENTS))],
             'title' => ['nullable', 'string', 'max:160'], 'description' => ['nullable', 'string', 'max:1000'],
             'target_url' => ['nullable', 'url', 'max:500'], 'image_url' => ['nullable', 'url', 'max:500'],
+            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'category' => ['nullable', 'string', 'max:40'], 'monthly_fee' => ['nullable', 'numeric', 'min:0'], 'starts_on' => ['nullable', 'date'],
             'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
             'status' => ['nullable', 'in:lead_pending,active,paused,expired'], 'admin_notes' => ['nullable', 'string', 'max:2000'],

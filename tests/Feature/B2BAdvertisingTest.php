@@ -6,6 +6,8 @@ use App\Models\Advertisement;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class B2BAdvertisingTest extends TestCase
@@ -45,6 +47,8 @@ class B2BAdvertisingTest extends TestCase
 
     public function test_only_active_current_campaigns_are_selected_for_a_placement(): void
     {
+        Advertisement::query()->delete();
+
         Advertisement::create([
             'business_name' => 'Tour Amazonas', 'business_type' => 'tour_operator', 'contact_name' => 'Ventas',
             'phone_whatsapp' => '999999999', 'city_destination' => 'Iquitos', 'placements' => ['home_hero'],
@@ -75,5 +79,44 @@ class B2BAdvertisingTest extends TestCase
 
         $this->actingAs($admin)->patch(route('admin.ads.approve', $ad))->assertRedirect();
         $this->assertDatabaseHas('advertisements', ['id' => $ad->id, 'status' => 'active']);
+    }
+
+    public function test_super_admin_can_register_and_publish_a_home_campaign_with_an_image(): void
+    {
+        Storage::fake('public');
+        Advertisement::query()->delete();
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super Admin']));
+
+        $this->actingAs($admin)->get(route('admin.ads.index'))
+            ->assertOk()
+            ->assertSee('Registrar campaña publicitaria')
+            ->assertSee('Recomendaciones patrocinadas de portada');
+
+        $this->actingAs($admin)->post(route('admin.ads.store'), [
+            'business_name' => 'Lodge de prueba',
+            'business_type' => 'lodge_hotel',
+            'contact_name' => 'María Pérez',
+            'phone_whatsapp' => '999999999',
+            'city_destination' => 'Nauta',
+            'placements' => ['home_hero'],
+            'title' => 'Hospedaje frente al río',
+            'description' => 'Campaña creada desde el panel administrativo.',
+            'target_url' => 'https://example.test/lodge',
+            'starts_on' => today()->toDateString(),
+            'ends_on' => today()->addMonth()->toDateString(),
+            'status' => 'active',
+            'banner_image' => UploadedFile::fake()->image('lodge.webp', 1200, 700),
+        ])->assertRedirect();
+
+        $campaign = Advertisement::where('business_name', 'Lodge de prueba')->firstOrFail();
+        $this->assertSame('active', $campaign->status);
+        $this->assertSame(['home_hero'], $campaign->placements);
+        Storage::disk('public')->assertExists($campaign->banner_image_path);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Hospedaje frente al río')
+            ->assertSee('Patrocinado');
     }
 }
