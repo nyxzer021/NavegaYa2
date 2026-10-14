@@ -16,7 +16,8 @@ class PublicPoliciesTest extends TestCase
             ->assertSee('Privacidad y datos personales')
             ->assertSee('Cookies')
             ->assertSee('Seguridad digital')
-            ->assertDontSee('open-legal-policy');
+            ->assertSee('showModal()')
+            ->assertSee('legal-privacidad');
 
         foreach (['privacidad', 'terminos', 'cookies', 'seguridad'] as $slug) {
             $this->get(route('pages.show', $slug))
