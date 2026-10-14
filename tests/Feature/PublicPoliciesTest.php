@@ -16,14 +16,13 @@ class PublicPoliciesTest extends TestCase
             ->assertSee('Privacidad y datos personales')
             ->assertSee('Cookies')
             ->assertSee('Seguridad digital')
-            ->assertSee('open-legal-policy')
-            ->assertSee('Información legal de NavegaYA')
-            ->assertSee('Política de privacidad y protección de datos personales')
-            ->assertSee('Cerrar')
-            ->assertDontSee('Abrir en página completa');
+            ->assertDontSee('open-legal-policy');
 
         foreach (['privacidad', 'terminos', 'cookies', 'seguridad'] as $slug) {
-            $this->get(route('pages.show', $slug))->assertOk();
+            $this->get(route('pages.show', $slug))
+                ->assertOk()
+                ->assertSee('Información legal de NavegaYA')
+                ->assertSee('Volver a NavegaYA');
         }
     }
 

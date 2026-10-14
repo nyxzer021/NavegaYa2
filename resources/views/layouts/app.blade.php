@@ -15,7 +15,6 @@
     @include('layouts.partials.header', ['current' => $current ?? ''])
     <main class="w-full flex-grow">{{ $slot ?? '' }}@yield('content')</main>
     @include('layouts.partials.footer')
-    <x-legal-policy-modal />
     <x-public-i18n />@stack('scripts')
 </body>
 </html>
