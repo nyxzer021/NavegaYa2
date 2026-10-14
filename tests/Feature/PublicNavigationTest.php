@@ -12,9 +12,18 @@ class PublicNavigationTest extends TestCase
 
     public function test_public_pages_share_navigation_for_guests(): void
     {
-        foreach (['home', 'routes.index', 'discover.index'] as $route) {
+        foreach (['home', 'routes.index', 'discover.index', 'about'] as $route) {
             $this->get(route($route))->assertOk()->assertSee('Rutas y horarios')->assertSee('Empresas')->assertSee('Puertos y muelles')->assertSee('Consultar pasaje')->assertSee('Guía Loreto')->assertSee('Afiliar tu empresa')->assertSee('Iniciar sesión');
         }
+    }
+
+    public function test_about_page_uses_the_public_responsive_layout(): void
+    {
+        $this->get(route('about'))
+            ->assertOk()
+            ->assertSee('Conectamos viajes, ríos y personas')
+            ->assertSee('Información clara para viajar mejor')
+            ->assertSee('Explorar rutas');
     }
 
     public function test_public_navigation_shows_account_access_with_an_active_session(): void
