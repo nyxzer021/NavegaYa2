@@ -346,7 +346,7 @@ window.initDashboardTab = function(tab) {
     if(tab==='carga') window.makeChart('cargoChart',{type:'bar',data:{labels:['Envíos','Remitentes','Paquetes'],datasets:[{data:d.cargo,backgroundColor:['#0f766e','#0891b2','#d97706'],borderRadius:8}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
     if(tab==='publicidad') {
         window.makeChart('subscriptionRevenueChart',{type:'bar',data:{labels:['Esencial','Destacado','Cobertura total'],datasets:[{data:d.subscriptionRevenue,backgroundColor:['#38bdf8','#8b5cf6','#f59e0b'],borderRadius:8}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
-        window.makeChart('subscriptionClientsChart',{type:'doughnut',data:{labels:['Básico','Profesional','Enterprise'],datasets:[{data:d.subscriptionClients.some(Number)?d.advertisingPipeline:[1],backgroundColor:d.advertisingPipeline.some(Number)?['#10b981','#f59e0b','#8b5cf6','#94a3b8']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}});
+        window.makeChart('subscriptionClientsChart',{type:'doughnut',data:{labels:['Básico','Profesional','Enterprise'],datasets:[{data:d.subscriptionClients.some(Number)?d.subscriptionClients:[1],backgroundColor:d.subscriptionClients.some(Number)?['#10b981','#f59e0b','#8b5cf6']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}});
     }
 };
 window.initModeMap = function(elementId, modality) {
@@ -481,3 +481,4 @@ document.addEventListener('turbo:before-cache',()=>{
 });
 </script>
 @endsection
+

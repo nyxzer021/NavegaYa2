@@ -27,19 +27,20 @@ class AdminGovernanceTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Centro de Control Comercial y Financiero')
-            ->assertSee('Rendimiento por Empresa de Transporte')
-            ->assertSee('Ecosistema B2B y Aliados Turísticos')
-            ->assertSee('Lodges, Hoteles y Rest.')
-            ->assertSee('Reembolsos y Soporte');
+            ->assertSee('Panorama corporativo')
+            ->assertSee('Rendimiento financiero por operador')
+            ->assertSee('Publicidad y anunciantes')
+            ->assertSee('Auditoría de Actividad')
+            ->assertSee('Menú y Páginas');
         $this->actingAs($admin)->get(route('admin.companies.index'))->assertOk()->assertSee('Red de empresas transportistas');
         $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Supervisión de itinerarios');
         $this->get(route('admin.fleet.index'))->assertRedirect(route('admin.companies.index'));
-        $this->get(route('admin.settlements.index'))->assertOk()->assertSee('Liquidaciones y comisiones');
+        $this->get(route('admin.settlements.index'))->assertRedirect(route('admin.commissions.index'));
+        $this->get(route('admin.commissions.index'))->assertOk()->assertSee('Comisiones y Facturación');
         $this->get(route('admin.sales.index'))->assertOk();
         $this->get(route('admin.ports.index'))->assertOk();
         $this->get(route('admin.master-routes.index'))->assertOk();
-        $this->get(route('admin.tourism-partners.index'))->assertOk()->assertSee('Aliados turísticos de Loreto');
+        $this->get(route('admin.tourism-partners.index'))->assertOk()->assertSee('Negocios, fichas y moderación');
         $this->get(route('admin.advertisements.index'))->assertOk()->assertSee('Publicidad y pautas B2B');
         $this->get(route('admin.refunds.index'))->assertOk()->assertSee('Reembolsos e incidencias de pago');
         $this->get('/admin/carga-general')->assertRedirect(route('admin.cargo.index'));
@@ -67,17 +68,17 @@ class AdminGovernanceTest extends TestCase
         $this->seed(MarketplaceDashboardSeeder::class);
         $admin = $this->userWithRole('super_admin');
 
-        $this->actingAs($admin)->get(route('admin.dashboard', ['timeframe' => 'month']))
+        $this->actingAs($admin)->get(route('admin.dashboard', ['period' => 'month']))
             ->assertOk()
             ->assertSee('S/ 490.00')
-            ->assertSee('Este Mes');
+            ->assertSee('Este mes');
 
-        $this->get(route('admin.dashboard', ['timeframe' => 'year']))
+        $this->get(route('admin.dashboard', ['period' => 'week']))
             ->assertOk()
-            ->assertSee('Año');
+            ->assertSee('7 días');
     }
 
-    public function test_daily_dashboard_uses_six_time_blocks_and_includes_b2b_revenue_in_profit(): void
+    public function test_daily_dashboard_uses_six_time_blocks_and_reports_daily_commission(): void
     {
         $this->seed(MarketplaceDashboardSeeder::class);
         $admin = $this->userWithRole('super_admin');
@@ -98,9 +99,9 @@ class AdminGovernanceTest extends TestCase
             'starts_on' => today()->subDay(),
         ]);
 
-        $this->actingAs($admin)->get(route('admin.dashboard', ['timeframe' => 'day']))
+        $this->actingAs($admin)->get(route('admin.dashboard', ['period' => 'today']))
             ->assertOk()
-            ->assertSee('S/ 49.20')
+            ->assertSee('S/ 39.20')
             ->assertSeeTextInOrder(['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']);
     }
 
@@ -279,9 +280,8 @@ class AdminGovernanceTest extends TestCase
         $admin = $this->userWithRole('super_admin');
         $riverOperator = Organization::where('ruc', '20556677889')->firstOrFail();
 
-        $this->actingAs($admin)->get(route('admin.companies.index'))
+        $this->actingAs($admin)->get(route('admin.companies.index', ['tab' => 'rendimiento']))
             ->assertOk()
-            ->assertSee(route('admin.companies.show', $riverOperator))
             ->assertSee('unidad(es)')
             ->assertDontSee('Ver dossier');
 
@@ -292,10 +292,10 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Rápido Marañón II')
             ->assertDontSee('Selva Caravan I');
 
-        $this->get(route('admin.companies.show', ['organization' => $riverOperator, 'tab' => 'rutas']))
+        $this->get(route('admin.companies.show', $riverOperator))
             ->assertOk()
-            ->assertSee('Nauta')
-            ->assertSee('Requena');
+            ->assertSee('Supervisión de embarcaciones fluviales')
+            ->assertSee('Revisión DICAPI pendiente');
     }
 
     private function userWithRole(string $code): User
