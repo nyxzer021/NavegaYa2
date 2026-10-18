@@ -43,7 +43,7 @@ class MasterRouteTest extends TestCase
         $this->actingAs($admin)->post(route('admin.master-routes.store'), [
             'code' => 'TRM-GEO-BAD', 'modality' => 'fluvial', 'origin_city' => 'Iquitos',
             'destination_city' => 'Nauta', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id,
-            'status' => 'active',
+            'estimated_duration_text' => '1 h 45 min', 'status' => 'active',
         ])->assertRedirect(route('admin.master-routes.index'));
 
         $this->assertDatabaseHas('master_routes', ['code' => 'TRM-GEO-BAD']);
@@ -56,7 +56,7 @@ class MasterRouteTest extends TestCase
 
         $this->actingAs($admin)->from(route('admin.master-routes.create'))->post(route('admin.master-routes.store'), [
             'code' => 'TRM-BAD', 'modality' => 'fluvial', 'origin_city' => 'Iquitos', 'destination_city' => 'Iquitos',
-            'origin_port_id' => $origin->id, 'destination_port_id' => $origin->id, 'status' => 'active',
+            'origin_port_id' => $origin->id, 'destination_port_id' => $origin->id, 'estimated_duration_text' => '1 h', 'status' => 'active',
         ])->assertRedirect(route('admin.master-routes.create'))->assertSessionHasErrors(['destination_city', 'destination_port_id']);
 
         $this->assertDatabaseCount('master_routes', 0);

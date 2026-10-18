@@ -162,7 +162,7 @@
                 <article class="rounded-xl border border-slate-200 p-4">
                     <div class="flex items-center justify-between"><div><p class="text-[9px] font-black uppercase tracking-wider text-emerald-700">Pulso de hoy</p><h4 class="text-sm font-black text-slate-900">Continuidad del marketplace</h4></div><a href="{{ route('admin.itineraries.index') }}" class="text-[9px] font-black text-emerald-700">Abrir operación →</a></div>
                     <div class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-                        @foreach([['Salidas',$todaysDeparturesCount,'🕒'],['En río',$riverUnitsInTransit,'🚤'],['En vuelo',$airUnitsInFlight,'✈️'],['Canceladas',$cancelledDeparturesToday,'⛔'],['Alertas',$technicalAlerts,'🛡️'],['Ocupación',number_format($todayOccupancyRate,1).'%','◔']] as $pulse)
+                        @foreach([['Salidas del día',$todaysDeparturesCount,'🕒'],['Realizadas',$departedDeparturesToday,'✓'],['Pendientes',$pendingDeparturesToday,'◷'],['Canceladas',$cancelledDeparturesToday,'⛔'],['Reprogramadas',$rescheduledDeparturesToday,'↻'],['Ocupación',number_format($todayOccupancyRate,1).'%','◔']] as $pulse)
                             <div class="rounded-xl bg-slate-50 px-2 py-3 text-center"><span>{{ $pulse[2] }}</span><strong class="mt-1 block text-lg font-black">{{ $pulse[1] }}</strong><span class="text-[8px] font-bold uppercase text-slate-400">{{ $pulse[0] }}</span></div>
                         @endforeach
                     </div>

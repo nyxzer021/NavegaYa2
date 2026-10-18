@@ -180,9 +180,17 @@ class AdminDashboardController extends Controller
 
         $riverUnitsInTransit = $todayFluvialDepartures->where('status', 'in_transit')->count();
         $airUnitsInFlight = $todayAirDepartures->where('status', 'in_transit')->count();
+        $departedDeparturesToday = $todayFluvialDepartures->whereIn('status', ['departed', 'in_transit', 'completed'])->count()
+            + $todayAirDepartures->whereIn('status', ['departed', 'in_transit', 'completed'])->count();
+        $pendingDeparturesToday = $todayFluvialDepartures->whereIn('status', ['scheduled', 'boarding'])->count()
+            + $todayAirDepartures->whereIn('status', ['scheduled', 'boarding'])->count();
 
         $cancelledDeparturesToday = RouteDeparture::query()->whereDate('departure_at', $today)->where('status', 'cancelled')->count()
             + AirDeparture::query()->whereDate('departure_at', $today)->where('status', 'cancelled')->count();
+        $rescheduledDeparturesToday = $todayFluvialDepartures
+            ->filter(fn (RouteDeparture $departure) => $departure->status === 'rescheduled' || str_contains(mb_strtolower((string) $departure->notes), 'reprogram'))->count()
+            + $todayAirDepartures
+                ->filter(fn (AirDeparture $departure) => $departure->status === 'rescheduled' || str_contains(mb_strtolower((string) $departure->notes), 'reprogram'))->count();
         $cancelledDeparturesInPeriod = RouteDeparture::query()->whereBetween('departure_at', [$from, $to])->where('status', 'cancelled')->count()
             + AirDeparture::query()->whereBetween('departure_at', [$from, $to])->where('status', 'cancelled')->count();
         $rescheduledDeparturesInPeriod = RouteDeparture::query()
@@ -485,6 +493,9 @@ class AdminDashboardController extends Controller
             'airUnitsInFlight',
             'technicalAlerts',
             'cancelledDeparturesToday',
+            'departedDeparturesToday',
+            'pendingDeparturesToday',
+            'rescheduledDeparturesToday',
             'cancelledDeparturesInPeriod',
             'rescheduledDeparturesInPeriod',
             'culqiOperational',

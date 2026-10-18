@@ -43,7 +43,7 @@ class StoreMasterRouteRequest extends FormRequest
             'destination_port_id' => ['required', 'integer', 'exists:ports,id', 'different:origin_port_id'],
             'river_basin' => ['nullable', 'string', 'max:160'],
             'corridor' => ['nullable', 'string', 'max:160'],
-            'estimated_duration_text' => ['nullable', 'string', 'max:80'],
+            'estimated_duration_text' => ['required', 'string', 'max:80', 'regex:/^(?:\d+ h(?: \d+ min)?|\d+ min)$/'],
             'path_geojson' => ['nullable', 'array'],
             'path_geojson.type' => ['required_with:path_geojson', Rule::in(['LineString'])],
             'path_geojson.coordinates' => ['required_with:path_geojson', 'array', 'min:2'],
