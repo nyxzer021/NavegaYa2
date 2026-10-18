@@ -165,6 +165,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/mi-negocio', [MarketplaceBusinessController::class, 'dashboard'])->middleware('role:marketplace_admin')->name('marketplace.dashboard');
     Route::patch('/mi-negocio/ficha', [MarketplaceBusinessController::class, 'update'])->middleware('role:marketplace_admin')->name('marketplace.update');
     Route::delete('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'deleteImage'])->middleware('role:marketplace_admin')->name('marketplace.images.destroy');
+    Route::post('/mi-negocio/campanas', [MarketplaceBusinessController::class, 'storeCampaign'])->middleware('role:marketplace_admin')->name('marketplace.campaigns.store');
+    Route::patch('/mi-negocio/campanas/{advertisement}/pausar', [MarketplaceBusinessController::class, 'pauseCampaign'])->middleware('role:marketplace_admin')->name('marketplace.campaigns.pause');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

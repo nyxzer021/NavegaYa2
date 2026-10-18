@@ -21,7 +21,7 @@ class Advertisement extends Model
         'ticket_voucher' => 'Boleto digital',
     ];
 
-    protected $fillable = ['destination_city_id', 'business_name', 'business_type', 'contact_name', 'phone_whatsapp', 'email', 'city_destination', 'ruc', 'placements', 'category', 'title', 'description', 'target_url', 'image_url', 'banner_image_path', 'starts_on', 'ends_on', 'monthly_fee', 'status', 'admin_notes', 'views', 'clicks'];
+    protected $fillable = ['organization_id', 'destination_city_id', 'business_name', 'business_type', 'contact_name', 'phone_whatsapp', 'email', 'city_destination', 'ruc', 'placements', 'category', 'title', 'description', 'target_url', 'image_url', 'banner_image_path', 'starts_on', 'ends_on', 'monthly_fee', 'status', 'admin_notes', 'views', 'clicks'];
 
     protected function casts(): array
     {
@@ -31,6 +31,11 @@ class Advertisement extends Model
     public function city(): BelongsTo
     {
         return $this->belongsTo(DestinationCity::class, 'destination_city_id');
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function scopeActive(Builder $query): Builder

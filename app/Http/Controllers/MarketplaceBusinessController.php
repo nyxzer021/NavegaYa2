@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{BusinessCategory,DestinationCity,DestinationListing,DestinationListingImage,Organization,Role,Subscription,SubscriptionPlan,User};
+use App\Models\{Advertisement,BusinessCategory,DestinationCity,DestinationListing,DestinationListingImage,Organization,Role,Subscription,SubscriptionPlan,User};
 use Illuminate\Http\{RedirectResponse,Request};
 use Illuminate\Support\Facades\{Auth,DB,Hash,Storage};
 use Illuminate\Validation\Rule;
@@ -20,7 +20,7 @@ class MarketplaceBusinessController extends Controller
         Auth::login($user); return redirect()->route('marketplace.dashboard')->with('success','Cuenta creada. Completa tu ficha mientras validamos tu suscripción.');
     }
 
-    public function dashboard(Request $request): View { [$org,$listing]=$this->owned($request); return view('marketplace.dashboard',['organization'=>$org,'listing'=>$listing->load('images','businessCategory'),'subscription'=>$org->subscriptions()->with('plan')->latest()->first(),'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),'types'=>self::TYPES,'categories'=>BusinessCategory::where('is_active',true)->orderBy('sort_order')->get()]); }
+    public function dashboard(Request $request): View { [$org,$listing]=$this->owned($request); return view('marketplace.dashboard',['organization'=>$org,'listing'=>$listing->load('images','businessCategory'),'subscription'=>$org->subscriptions()->with('plan')->latest()->first(),'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),'types'=>self::TYPES,'categories'=>BusinessCategory::where('is_active',true)->orderBy('sort_order')->get(),'campaigns'=>$org->advertisements()->latest()->get(),'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations']))]); }
 
     public function update(Request $request): RedirectResponse
     {
@@ -34,6 +34,55 @@ class MarketplaceBusinessController extends Controller
         return back()->with('success',$data['status']==='pending_review'?'Ficha enviada a revisión.':'Borrador guardado.');
     }
 
+    public function storeCampaign(Request $request): RedirectResponse
+    {
+        [$org, $listing] = $this->owned($request);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:160'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'target_url' => ['required', 'url', 'max:500'],
+            'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations'])],
+            'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+
+        $activeSubscription = $org->subscriptions()->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))->exists();
+        if (! $activeSubscription) {
+            return back()->withErrors(['campaign' => 'Tu plan debe estar activo antes de enviar una campaña.']);
+        }
+
+        $org->advertisements()->create([
+            'destination_city_id' => $listing->destination_city_id,
+            'business_name' => $listing->name,
+            'business_type' => match ($listing->type) {
+                'gastronomy' => 'restaurant', 'attraction' => 'tour_operator',
+                'tourist_transport' => 'charter_transport', default => 'lodge_hotel',
+            },
+            'contact_name' => $org->contact_name,
+            'phone_whatsapp' => $listing->contact_phone ?: $org->whatsapp,
+            'email' => $org->email,
+            'city_destination' => $listing->city?->name ?: $org->base_city,
+            'ruc' => $org->ruc,
+            'placements' => [$data['placement']],
+            'category' => $listing->category ?: $listing->type,
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'target_url' => $data['target_url'],
+            'banner_image_path' => $request->file('banner_image')->store('advertisements', 'public'),
+            'status' => 'lead_pending',
+        ]);
+
+        return back()->with('success', 'Campaña enviada a revisión. El superadministrador verá la solicitud.');
+    }
+
+    public function pauseCampaign(Request $request, Advertisement $advertisement): RedirectResponse
+    {
+        [$org] = $this->owned($request);
+        abort_unless($advertisement->organization_id === $org->id, 404);
+        $advertisement->update(['status' => 'paused']);
+
+        return back()->with('success', 'Campaña pausada.');
+    }
     public function deleteImage(Request $request,DestinationListingImage $image): RedirectResponse { [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404); $image->delete(); return back()->with('success','Imagen eliminada.'); }
     private function owned(Request $request): array { $org=$request->user()->organizations()->where('organizations.type','marketplace_business')->firstOrFail(); return [$org,DestinationListing::where('organization_id',$org->id)->where('owner_user_id',$request->user()->id)->firstOrFail()]; }
 }
