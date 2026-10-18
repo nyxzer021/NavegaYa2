@@ -8,6 +8,7 @@ use App\Models\OrganizationDocument;
 use App\Models\Payment;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vessel;
 use App\Services\CompanyProvisioningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,8 +97,11 @@ class AdminCompanyController extends Controller
                 'airDepartures' => fn ($query) => $query->whereDate('departure_at', $today)->with(['aircraft', 'reservations.seats']),
             ])
             ->withCount([
+                'vessels as registered_vessels_count',
+                'aircraft as registered_aircraft_count',
                 'vessels as active_vessels_count' => fn ($query) => $query->where('status', 'ready'),
                 'aircraft as active_aircraft_count' => fn ($query) => $query->where('status', 'ready'),
+                'vessels as pending_vessels_count' => fn ($query) => $query->where('status', 'pending_review'),
                 'routeDepartures',
                 'airDepartures',
             ])
@@ -132,6 +136,12 @@ class AdminCompanyController extends Controller
             ->take(8)
             ->get();
 
+        $pendingVesselReviews = Vessel::query()
+            ->with(['organization', 'seats'])
+            ->where('status', 'pending_review')
+            ->oldest('submitted_for_review_at')
+            ->get();
+
         $commissionSummary = Organization::query()
             ->where('type', 'transport_company')
             ->where('status', 'active')
@@ -143,6 +153,7 @@ class AdminCompanyController extends Controller
         return view('admin.companies.index', [
             'companies' => $companies,
             'pendingAffiliations' => $pendingAffiliations,
+            'pendingVesselReviews' => $pendingVesselReviews,
             'gmvToday' => $gmvToday,
             'commissionToday' => $commissionToday,
             'ticketsToday' => $ticketsToday,

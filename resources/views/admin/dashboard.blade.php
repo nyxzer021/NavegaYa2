@@ -122,6 +122,10 @@
         </div>
     </section>
 
+    @if($pendingFleetReviewsCount > 0)
+    <a href="{{ route('admin.fleet-compliance.index') }}" class="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm transition hover:border-amber-500 sm:flex-row sm:items-center sm:justify-between"><div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-xl bg-amber-400 text-xl">📥</span><div><span class="text-[10px] font-black uppercase tracking-wider text-amber-700">Solicitud operativa recibida</span><h3 class="text-sm font-black text-slate-950">{{ $pendingFleetReviewsCount }} embarcación(es) esperan aprobación</h3><p class="text-[10px] text-slate-600">Revisa plano de asientos, capacidad, matrícula y documentación antes de habilitarlas.</p></div></div><span class="rounded-xl bg-[#062c21] px-4 py-2.5 text-xs font-black text-white">Abrir bandeja →</span></a>
+    @endif
+
     <section class="w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="grid gap-2 border-b border-slate-200 bg-slate-50 p-3 sm:grid-cols-2" role="tablist" aria-label="Líneas de negocio">
             <a href="{{ route('admin.dashboard',['area'=>'transporte','period'=>$period]) }}" aria-current="{{ $isAdvertisingDashboard ? 'false' : 'page' }}" class="flex min-h-16 items-center gap-3 rounded-2xl border px-4 text-left transition {{ $isAdvertisingDashboard ? 'border-transparent text-slate-700 hover:border-emerald-300 hover:bg-white' : 'border-emerald-600 bg-emerald-950 text-white shadow-lg' }}"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-xl">🚤</span><span><strong class="block text-sm font-black">Transporte de pasajeros</strong><small class="block text-[9px] font-semibold opacity-70">Fluvial, aéreo, empresas, carga y finanzas</small></span><span class="ml-auto">→</span></a>

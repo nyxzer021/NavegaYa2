@@ -179,14 +179,12 @@
                                                             <p class="mt-1 text-[10px] text-slate-400">El operador todavía no ha cargado un archivo documental descargable.</p>
                                                         </div>
                                                     </details>
-                                                    <form method="POST" action="{{ route('admin.fleet.vessels.status', $vessel) }}">
+                                                    @if($vessel->status === 'ready')<form method="POST" action="{{ route('admin.fleet.vessels.status', $vessel) }}">
                                                         @csrf
                                                         @method('PATCH')
-                                                        <input type="hidden" name="status" value="{{ $vessel->status === 'ready' ? 'maintenance' : 'ready' }}">
-                                                        <button class="rounded-lg px-3 py-2 text-[10px] font-black {{ $vessel->status === 'ready' ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-emerald-600 text-white hover:bg-emerald-700' }}">
-                                                            {{ $vessel->status === 'ready' ? 'Suspender / observar' : 'Habilitar para venta' }}
-                                                        </button>
-                                                    </form>
+                                                        <input type="hidden" name="status" value="maintenance">
+                                                        <button class="rounded-lg bg-rose-50 px-3 py-2 text-[10px] font-black text-rose-700 hover:bg-rose-100">Suspender operación</button>
+                                                    </form>@else<a href="{{ route('admin.fleet-compliance.index') }}" class="rounded-lg bg-amber-100 px-3 py-2 text-[10px] font-black text-amber-900">Revisar solicitud →</a>@endif
                                                 </div>
                                             </td>
                                         </tr>

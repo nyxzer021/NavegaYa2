@@ -154,6 +154,7 @@ class AdminDashboardController extends Controller
             ->values();
         $registeredVesselsCount = (int) $fleetByOperator->sum('vessels');
         $registeredAircraftCount = (int) $fleetByOperator->sum('aircraft');
+        $pendingFleetReviewsCount = Vessel::query()->where('status', 'pending_review')->count();
 
         $todayFluvialDepartures = RouteDeparture::query()
             ->whereDate('departure_at', $today)
@@ -470,6 +471,7 @@ class AdminDashboardController extends Controller
             'fleetByOperator',
             'registeredVesselsCount',
             'registeredAircraftCount',
+            'pendingFleetReviewsCount',
             'totalTicketsSold',
             'fluvialTicketsSold',
             'airTicketsSold',

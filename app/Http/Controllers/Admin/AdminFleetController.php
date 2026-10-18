@@ -13,7 +13,7 @@ class AdminFleetController extends Controller
 {
     public function updateVesselStatus(Request $request, Vessel $vessel): RedirectResponse
     {
-        $vessel->update($request->validate(['status' => ['required', Rule::in(['ready', 'maintenance', 'inactive'])]]));
+        $vessel->update($request->validate(['status' => ['required', Rule::in(['maintenance', 'inactive'])]]));
 
         return back()->with('success', 'Estado operativo de la embarcación actualizado.');
     }
