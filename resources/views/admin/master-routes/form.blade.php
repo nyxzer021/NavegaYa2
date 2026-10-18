@@ -1,6 +1,6 @@
 <x-app-layout>
-@php($editing=(bool) $masterRoute)
 @php
+ $editing = (bool) $masterRoute;
  $durationValue = old('estimated_duration_text', $masterRoute->estimated_duration_text ?? '1 h');
  preg_match('/(\d+)\s*h/i', $durationValue, $durationHourParts);
  preg_match('/(\d+)\s*min/i', $durationValue, $durationMinuteParts);
