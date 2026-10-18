@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CompanyReview extends Model
 {
-    protected $fillable = ['organization_id', 'user_id', 'rating', 'comment', 'status'];
+    protected $fillable = ['organization_id', 'user_id', 'reservation_id', 'rating', 'comment', 'status'];
 
     public function organization(): BelongsTo
     {
@@ -17,5 +17,10 @@ class CompanyReview extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 }

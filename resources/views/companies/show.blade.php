@@ -47,13 +47,15 @@
 
 <div class="min-h-screen bg-slate-50 pb-20">
 <main class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8" x-data="{
-    tab:'salidas',
+    tab:['salidas','carga','flota','opiniones','politicas'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'salidas',
     cargoType:'caja',
     cargoWeight:5,
     cargoPrice(){if(this.cargoType==='sobre')return 15;if(this.cargoType==='caja')return 20+Math.max(0,this.cargoWeight-5)*2;return 35+Math.max(0,this.cargoWeight-15)*1.5},
     cargoMessage(){return encodeURIComponent('Hola, deseo confirmar una cotización de '+this.cargoType+' de aproximadamente '+this.cargoWeight+' kg con este operador.')}
 }">
     <div class="mb-4 flex items-center justify-between text-xs"><a href="{{route('companies.index')}}" class="font-bold text-emerald-800 transition hover:text-emerald-950">← Volver a empresas autorizadas</a><span class="hidden font-medium text-slate-400 sm:block">Registro oficial NavegaYA · Loreto</span></div>
+    @if(session('success'))<div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-900">✓ {{session('success')}}</div>@endif
+    @if($errors->any())<div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800"><strong>No pudimos enviar la opinión:</strong><ul class="mt-1 list-disc pl-5">@foreach($errors->all() as $error)<li>{{$error}}</li>@endforeach</ul></div>@endif
 
     <section class="mb-8 overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xl">
         <div class="relative flex min-h-[240px] items-center bg-[#062c21] px-6 py-10 text-white sm:px-10">
@@ -124,6 +126,39 @@
             </section>
 
             <section id="opiniones" x-show="tab==='opiniones'" class="space-y-4">
+                <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-white p-6">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Experiencias verificadas</span>
+                        <h2 class="mt-1 text-lg font-extrabold text-slate-900">Comparte tu experiencia de viaje</h2>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-500">Cada opinión queda vinculada a una reserva completada y pasa por moderación antes de publicarse.</p>
+                    </div>
+                    <div class="p-6">
+                        @guest
+                            <div class="flex flex-col justify-between gap-4 rounded-2xl bg-slate-50 p-5 sm:flex-row sm:items-center"><div><strong class="text-sm text-slate-900">Inicia sesión para verificar tu viaje</strong><p class="mt-1 text-xs text-slate-500">Usa la cuenta asociada al correo de tu reserva.</p></div><a href="{{route('login')}}" class="shrink-0 rounded-xl bg-[#062c21] px-5 py-3 text-center text-xs font-black text-white">Iniciar sesión</a></div>
+                        @else
+                            @forelse($completedReservations as $reservation)
+                                @php
+                                    $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
+                                    $route = $reservation->isAir() ? $trip?->airRoute : $trip?->transportRoute;
+                                    $origin = $reservation->isAir() ? $route?->origin_city : $route?->originPort?->city;
+                                    $destination = $reservation->isAir() ? $route?->destination_city : $route?->destinationPort?->city;
+                                    $travelerReview = $reservation->companyReview;
+                                    $reviewLabels = ['pending' => 'Pendiente de revisión', 'published' => 'Publicada', 'rejected' => 'No publicada'];
+                                @endphp
+                                <article class="mb-4 rounded-2xl border {{$travelerReview ? 'border-slate-200 bg-slate-50' : 'border-emerald-200 bg-emerald-50/40'}} p-5 last:mb-0">
+                                    <div class="flex flex-wrap items-start justify-between gap-3"><div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Reserva {{$reservation->code}}</span><h3 class="mt-1 text-sm font-extrabold text-slate-900">{{$origin}} → {{$destination}}</h3><p class="mt-1 text-xs text-slate-500">Viaje completado {{$trip?->departure_at?->translatedFormat('d M Y · H:i')}}</p></div>@if($travelerReview)<span class="rounded-full px-3 py-1 text-[10px] font-black {{$travelerReview->status === 'published' ? 'bg-emerald-100 text-emerald-800' : ($travelerReview->status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800')}}">{{$reviewLabels[$travelerReview->status] ?? strtoupper($travelerReview->status)}}</span>@endif</div>
+                                    @if($travelerReview)
+                                        <div class="mt-4 border-t border-slate-200 pt-4"><div class="text-sm text-amber-500">{{str_repeat('★',$travelerReview->rating)}}{{str_repeat('☆',5-$travelerReview->rating)}}</div><p class="mt-2 text-xs leading-relaxed text-slate-600">{{$travelerReview->comment}}</p>@if($travelerReview->status === 'pending')<p class="mt-3 text-[11px] font-semibold text-amber-800">NavegaYA está revisando tu opinión. Se mostrará públicamente después de aprobarla.</p>@endif</div>
+                                    @else
+                                        <form method="POST" action="{{route('companies.review',$organization)}}" class="mt-5 space-y-4 border-t border-emerald-100 pt-4">@csrf<input type="hidden" name="reservation_id" value="{{$reservation->id}}"><fieldset><legend class="text-xs font-bold text-slate-700">Califica este viaje</legend><div class="mt-2 flex flex-wrap gap-2">@for($rating=1;$rating<=5;$rating++)<label class="cursor-pointer"><input required type="radio" name="rating" value="{{$rating}}" class="peer sr-only"><span class="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:text-amber-800">{{$rating}} ★</span></label>@endfor</div></fieldset><label class="block text-xs font-bold text-slate-700">Cuéntanos cómo fue el servicio<textarea required minlength="10" maxlength="1000" name="comment" rows="4" placeholder="Describe la atención, puntualidad, comodidad y embarque." class="mt-2 w-full rounded-xl border-slate-200 text-sm focus:border-emerald-600 focus:ring-emerald-600">{{old('comment')}}</textarea></label><div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><p class="text-[10px] leading-relaxed text-slate-400">No publiques teléfonos, documentos ni otros datos personales.</p><button class="rounded-xl bg-amber-400 px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-amber-300">Enviar opinión</button></div></form>
+                                    @endif
+                                </article>
+                            @empty
+                                @if($hasUpcomingTrip)<div class="rounded-2xl border border-amber-200 bg-amber-50 p-5"><strong class="text-sm text-amber-950">Podrás opinar después de completar el viaje</strong><p class="mt-1 text-xs text-amber-800">Tu reserva está registrada, pero la salida todavía no ha sido marcada como completada.</p></div>@else<div class="rounded-2xl bg-slate-50 p-5"><strong class="text-sm text-slate-900">Solo pueden opinar pasajeros verificados</strong><p class="mt-1 text-xs text-slate-500">No encontramos un viaje completado con esta empresa asociado a tu cuenta o correo.</p></div>@endif
+                            @endforelse
+                        @endguest
+                    </div>
+                </div>
                 @if($reviews->count())<div class="flex items-center gap-5 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm"><div class="border-r border-slate-100 pr-6 text-center"><strong class="text-4xl text-slate-900">{{number_format($average,1)}}</strong><div class="text-sm text-amber-400">★★★★★</div><span class="text-[10px] text-slate-400">{{$reviews->count()}} viajero(s) verificado(s)</span></div><p class="text-xs leading-relaxed text-slate-500">Opiniones publicadas por viajeros con una reserva confirmada y un viaje completado con este operador.</p></div><div class="grid gap-3">@foreach($reviews as $review)<article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"><div class="flex items-center justify-between gap-3"><div class="flex items-center gap-2.5"><span class="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800">{{mb_strtoupper(mb_substr($review->user->name,0,1))}}</span><strong class="text-xs text-slate-900">{{$review->user->name}}</strong></div><span class="text-xs text-amber-400">{{str_repeat('★',$review->rating)}}</span></div><p class="mt-3 text-xs leading-relaxed text-slate-600">{{$review->comment}}</p>@auth<details class="mt-3"><summary class="cursor-pointer list-none text-[10px] font-bold text-slate-400 hover:text-rose-600">⚑ Reportar opinión</summary><form method="POST" action="{{route('companies.reviews.report',[$organization,$review])}}" class="mt-2 flex flex-wrap gap-2 rounded-xl bg-slate-50 p-3">@csrf<select name="reason" required class="h-9 flex-1 rounded-lg border-slate-200 text-xs"><option value="harassment">Insultos o acoso</option><option value="false_information">Información falsa</option><option value="spam">Spam</option><option value="personal_data">Datos personales</option><option value="other">Otro motivo</option></select><button class="rounded-lg bg-rose-600 px-3 text-xs font-black text-white">Reportar</button></form></details>@endauth</article>@endforeach</div>@else<div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-7"><h2 class="text-base font-extrabold text-emerald-950">Opiniones vinculadas a viajes reales</h2><p class="mt-2 text-xs text-emerald-900/75">Esta sección publica únicamente experiencias de pasajeros que completaron una reserva confirmada.</p></div>@endif
             </section>
 
