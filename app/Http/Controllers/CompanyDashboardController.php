@@ -21,17 +21,17 @@ class CompanyDashboardController extends Controller
     {
         $organization = $this->organization()->load(['vessels.basePort', 'aircraft']);
 
-        $riverDepartures = RouteDeparture::query()
+        $riverDepartures = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organization->id))
             ->whereDate('departure_at', today())
             ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])
-            ->orderBy('departure_at')->get();
+            ->orderBy('departure_at')->get() : collect();
 
-        $airDepartures = AirDeparture::query()
+        $airDepartures = in_array($organization->modality, ['aereo', 'mixto'], true) ? AirDeparture::query()
             ->whereHas('airRoute', fn ($query) => $query->where('organization_id', $organization->id))
             ->whereDate('departure_at', today())
             ->with(['airRoute', 'aircraft', 'reservations.seats'])
-            ->orderBy('departure_at')->get();
+            ->orderBy('departure_at')->get() : collect();
 
         $todayDepartures = $riverDepartures->map(fn ($departure) => $this->departureRow($departure, false))
             ->concat($airDepartures->map(fn ($departure) => $this->departureRow($departure, true)))

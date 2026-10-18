@@ -24,7 +24,7 @@ class DashboardController extends Controller
             return redirect()->route('company.counter.index');
         }
         if ($roles->contains('company_admin')) {
-            return redirect()->route('company.departures.index');
+            return redirect()->route('company.dashboard');
         }
         if ($roles->contains('marketplace_admin')) {
             return redirect()->route('marketplace.dashboard');

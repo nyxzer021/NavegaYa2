@@ -95,7 +95,7 @@ Route::get('/destinos/{city}', [DiscoverController::class, 'show'])->name('disco
 Route::post('/destinos/{city}/valoraciones', [DiscoverController::class, 'review'])->middleware(['auth', 'verified'])->name('discover.review');
 
 Route::get('/dashboard', DashboardController::class)->middleware('auth')->name('dashboard');
-Route::redirect('/empresa/panel', '/empresa/salidas')->middleware(['auth', 'role:company_admin'])->name('company.dashboard');
+Route::get('/empresa/panel', [CompanyDashboardController::class, 'index'])->middleware(['auth', 'role:company_admin'])->name('company.dashboard');
 Route::patch('/empresa/panel/perfil', [CompanyDashboardController::class, 'updateProfile'])->middleware(['auth', 'role:company_admin'])->name('company.dashboard.profile');
 Route::post('/empresa/personal', [CompanyStaffController::class, 'store'])->middleware(['auth', 'role:company_admin'])->name('company.staff.store');
 Route::patch('/empresa/personal/{user}/estado', [CompanyStaffController::class, 'toggle'])->middleware(['auth', 'role:company_admin'])->name('company.staff.toggle');

@@ -12,12 +12,12 @@ class CompanyCounterController extends Controller
     public function index(): View
     {
         $company = auth()->user()->organizations()->wherePivot('status', 'active')->where('organizations.status', 'active')->firstOrFail();
-        $river = RouteDeparture::whereHas('transportRoute', fn ($query) => $query->where('organization_id', $company->id))
+        $river = in_array($company->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::whereHas('transportRoute', fn ($query) => $query->where('organization_id', $company->id))
             ->whereDate('departure_at', today())->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])->orderBy('departure_at')->get()
-            ->map(fn ($item) => $this->row($item, false));
-        $air = AirDeparture::whereHas('airRoute', fn ($query) => $query->where('organization_id', $company->id))
+            ->map(fn ($item) => $this->row($item, false)) : collect();
+        $air = in_array($company->modality, ['aereo', 'mixto'], true) ? AirDeparture::whereHas('airRoute', fn ($query) => $query->where('organization_id', $company->id))
             ->whereDate('departure_at', today())->with(['airRoute', 'aircraft', 'reservations.seats'])->orderBy('departure_at')->get()
-            ->map(fn ($item) => $this->row($item, true));
+            ->map(fn ($item) => $this->row($item, true)) : collect();
         $departures = $river->concat($air)->sortBy('departure_at')->values();
         $base = $company->vessels()->with('basePort')->first()?->basePort?->name ?? $company->address ?? 'Base operativa';
 

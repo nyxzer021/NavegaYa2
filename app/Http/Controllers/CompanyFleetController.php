@@ -21,8 +21,8 @@ class CompanyFleetController extends Controller
 
         return view('company.fleet.index', [
             'organization' => $organization,
-            'vessels' => Vessel::with(['basePort'])->where('organization_id', $organization->id)->latest()->get(),
-            'aircraft' => Aircraft::where('organization_id', $organization->id)->latest()->get(),
+            'vessels' => Vessel::with(['basePort', 'seats' => fn ($query) => $query->orderBy('deck')->orderBy('row_position')->orderBy('column_position')])->where('organization_id', $organization->id)->latest()->get(),
+            'aircraft' => Aircraft::with(['seats' => fn ($query) => $query->orderBy('row_position')->orderBy('column_position')])->where('organization_id', $organization->id)->latest()->get(),
             'ports' => Port::where('is_active', true)->orderBy('city')->orderBy('name')->get(),
         ]);
     }
@@ -30,6 +30,7 @@ class CompanyFleetController extends Controller
     public function storeVessel(Request $request): RedirectResponse
     {
         $organization = $this->organization();
+        abort_unless(in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true), 403, 'La empresa no tiene habilitada la operación fluvial.');
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'], 'registration_number' => ['required', 'string', 'max:80', 'unique:vessels,registration_number'],
             'vessel_type' => ['required', Rule::in(['lancha', 'motonave', 'rapido', 'ferry', 'otro'])],
@@ -43,6 +44,7 @@ class CompanyFleetController extends Controller
     public function storeAircraft(Request $request): RedirectResponse
     {
         $organization = $this->organization();
+        abort_unless(in_array($organization->modality ?: 'fluvial', ['aereo', 'mixto'], true), 403, 'La empresa no tiene habilitada la operación aérea.');
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'], 'registration_number' => ['required', 'string', 'max:80', 'unique:aircraft,registration_number'],
             'model' => ['nullable', 'string', 'max:120'], 'seat_capacity' => ['required', 'integer', 'min:1', 'max:900'],

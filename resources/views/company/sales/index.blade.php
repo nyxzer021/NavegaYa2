@@ -51,7 +51,7 @@
                 <thead class="bg-slate-50 text-[9px] font-bold uppercase tracking-wider text-slate-400"><tr><th class="px-5 py-3">N° boleto</th><th class="px-4 py-3">Fecha / hora</th><th class="px-4 py-3">Pasajero y DNI</th><th class="px-4 py-3">Tramo / salida</th><th class="px-4 py-3">Asiento</th><th class="px-4 py-3">Canal</th><th class="px-4 py-3 text-right">Monto</th><th class="px-5 py-3">Estado</th></tr></thead>
                 <tbody class="divide-y divide-slate-100">
                 @forelse($tickets as $ticket)
-                    @php($row = AppHttpControllersCompanyCompanySalesController::present($ticket))
+                    @php($row = \App\Http\Controllers\Company\CompanySalesController::present($ticket))
                     <tr class="hover:bg-slate-50/70">
                         <td class="px-5 py-4 font-black text-slate-900">{{ $ticket->code }}</td>
                         <td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ $ticket->created_at->format('d/m/Y') }}<span class="block text-[10px] text-slate-400">{{ $ticket->created_at->format('H:i') }} h</span></td>
@@ -63,7 +63,7 @@
                         <td class="px-5 py-4"><span class="rounded-full px-2.5 py-1 text-[9px] font-bold {{ in_array($ticket->status, ['confirmed','boarded'], true) ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700' }}">{{ in_array($ticket->status, ['confirmed','boarded'], true) ? 'Pagado' : ucfirst($ticket->status) }}</span></td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="px-5 py-14 text-center text-sm text-slate-400">No existen ventas confirmadas en el periodo seleccionado.</td></tr>
+                    <tr><td colspan="8" class="px-5 py-14 text-center"><span class="text-3xl">💳</span><strong class="mt-3 block text-sm text-slate-700">Aún no hay ventas en este periodo</strong><span class="mt-1 block text-xs text-slate-400">Las compras web y las ventas realizadas en muelle aparecerán aquí cuando el pago quede confirmado.</span><a href="{{ route('company.pos.index') }}" class="mt-4 inline-flex rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950">Registrar venta en muelle</a></td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     new Chart(context, {
         type: 'bar',
         data: {
-            labels: @json($dailySales->keys()->map(fn ($date) => CarbonCarbon::parse($date)->format('d/m'))->values()),
+            labels: @json($dailySales->keys()->map(fn ($date) => \Carbon\Carbon::parse($date)->format('d/m'))->values()),
             datasets: [{ label: 'Ingresos S/', data: @json($dailySales->values()->map(fn ($value) => (float) $value)->values()), backgroundColor: '#059669', borderColor: '#062c21', borderWidth: 1, borderRadius: 8, maxBarThickness: 42 }],
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: item => ' S/ ' + Number(item.raw).toFixed(2) } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: value => 'S/ ' + value } } } },

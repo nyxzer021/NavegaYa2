@@ -20,6 +20,8 @@
     $isCounter = auth()->user()->roles()->where('code', 'company_counter')->exists();
     $companyName = $organization->commercial_name ?: $organization->legal_name;
     $basePort = $organization->vessels->first()?->basePort?->name ?? $organization->address ?? 'Base operativa por registrar';
+    $hasRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
+    $hasAir = in_array($organization->modality ?: 'fluvial', ['aereo', 'mixto'], true);
 @endphp
 <body class="min-h-full bg-slate-50 text-slate-800 antialiased">
     <div class="company-shell min-h-screen bg-slate-50 flex flex-row">
@@ -42,6 +44,7 @@
             <nav class="flex flex-1 flex-col gap-5">
                 <div class="space-y-1">
                     <p class="px-3 pb-1 text-[9px] font-bold uppercase tracking-[.18em] text-emerald-400">Operación</p>
+                    @unless($isCounter)<a href="{{ route('company.dashboard') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.dashboard') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"><span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">▦</span><span>Dashboard</span></a>@endunless
                     <a href="{{ route('company.departures.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.departures.*') && !request()->routeIs('company.boarding.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                         <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">🗓️</span><span>Salidas y despacho</span>
                     </a>
@@ -61,7 +64,7 @@
                     <div class="space-y-1">
                         <p class="px-3 pb-1 text-[9px] font-bold uppercase tracking-[.18em] text-emerald-400">Gestión de empresa</p>
                         <a href="{{ route('company.fleet.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.fleet.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">🚤</span><span>Flota y capacidad</span>
+                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">{{ $hasAir && !$hasRiver ? '✈️' : '🚤' }}</span><span>Flota y capacidad</span>
                         </a>
                         <a href="{{ route('company.staff.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.staff.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">👥</span><span>Personal y accesos</span>

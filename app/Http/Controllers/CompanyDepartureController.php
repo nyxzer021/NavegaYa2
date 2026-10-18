@@ -23,7 +23,7 @@ class CompanyDepartureController extends Controller
         $organizationId = $organization->id;
         $organization->loadMissing('vessels.basePort');
         $filter = $request->string('filter')->toString();
-        $river = RouteDeparture::query()
+        $river = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query
                 ->where('organization_id', $organizationId)
                 ->whereNotNull('master_route_id')
@@ -32,15 +32,15 @@ class CompanyDepartureController extends Controller
                 ->whereHas('destinationPort'))
             ->when($filter === 'today', fn ($query) => $query->whereDate('departure_at', today()))
             ->with(['transportRoute.masterRoute', 'transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])
-            ->orderBy('departure_at')->get()->map(fn (RouteDeparture $departure) => $this->riverRow($departure));
-        $air = AirDeparture::query()
+            ->orderBy('departure_at')->get()->map(fn (RouteDeparture $departure) => $this->riverRow($departure)) : collect();
+        $air = in_array($organization->modality, ['aereo', 'mixto'], true) ? AirDeparture::query()
             ->whereHas('airRoute', fn ($query) => $query
                 ->where('organization_id', $organizationId)
                 ->whereNotNull('master_route_id')
                 ->whereColumn('origin_city', '<>', 'destination_city'))
             ->when($filter === 'today', fn ($query) => $query->whereDate('departure_at', today()))
             ->with(['airRoute.masterRoute', 'aircraft', 'reservations.seats'])
-            ->orderBy('departure_at')->get()->map(fn (AirDeparture $departure) => $this->airRow($departure));
+            ->orderBy('departure_at')->get()->map(fn (AirDeparture $departure) => $this->airRow($departure)) : collect();
         $rows = $river->concat($air)->sortBy('departure_at')->values();
         $page = max(1, $request->integer('page', 1));
         $departures = new LengthAwarePaginator($rows->forPage($page, 15), $rows->count(), 15, $page, [
