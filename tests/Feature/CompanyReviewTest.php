@@ -19,7 +19,13 @@ class CompanyReviewTest extends TestCase
 
     public function test_passenger_can_submit_one_pending_review_after_completed_trip(): void
     {
-        $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Amazonas SAC', 'ruc' => '20999999991', 'email' => 'amazonas@example.test', 'status' => 'active']);
+        $company = Organization::create([
+            'type' => 'transport_company', 'legal_name' => 'Amazonas SAC', 'ruc' => '20999999991',
+            'email' => 'amazonas@example.test', 'status' => 'active',
+            'public_description' => 'Operador regional con atención diaria.',
+            'cover_image_path' => '/storage/company-profiles/amazonas.jpg',
+            'profile_content_status' => 'published',
+        ]);
         $origin = Port::create(['name' => 'Puerto Iquitos', 'city' => 'Iquitos', 'region' => 'Loreto']);
         $destination = Port::create(['name' => 'Puerto Nauta', 'city' => 'Nauta', 'region' => 'Loreto']);
         $vessel = Vessel::create(['organization_id' => $company->id, 'name' => 'Amazonas', 'registration_number' => 'AM-001', 'vessel_type' => 'lancha', 'seat_capacity' => 10, 'status' => 'ready']);
@@ -32,6 +38,13 @@ class CompanyReviewTest extends TestCase
         $this->assertDatabaseHas('company_reviews', ['organization_id' => $company->id, 'user_id' => $user->id, 'rating' => 5, 'status' => 'pending']);
 
         CompanyReview::firstOrFail()->update(['status' => 'published']);
-        $this->get(route('companies.show', $company))->assertOk()->assertSee('5.0')->assertSee('Excelente atención');
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('5.0')
+            ->assertSee('Excelente atención')
+            ->assertSee('Información de la empresa')
+            ->assertSee('Operador regional con atención diaria.')
+            ->assertSee('href="#flota"', false)
+            ->assertSee('/storage/company-profiles/amazonas.jpg', false);
     }
 }
