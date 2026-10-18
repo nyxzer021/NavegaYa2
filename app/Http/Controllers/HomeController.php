@@ -48,13 +48,34 @@ class HomeController
             ->when($date, fn ($q) => $q->whereDate('departure_at', $date))
             ->orderBy('departure_at')->limit(12)->get();
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
-        $ads = Advertisement::with('city')
+        $carouselAds = Advertisement::with('city')
             ->active()
-            ->forPlacement('home_hero')
+            ->where(function ($query) {
+                $query->whereJsonContains('placements', 'home_carousel')
+                    ->orWhereJsonContains('placements', 'home_hero');
+            })
             ->orderByDesc('starts_on')
             ->orderBy('id')
-            ->limit(3)
+            ->limit(5)
             ->get();
+        $sidebarQuery = Advertisement::with('city')->active()->forPlacement('home_sidebar')
+            ->whereNotIn('id', $carouselAds->pluck('id'))
+            ->whereNotIn('business_name', $carouselAds->pluck('business_name'));
+        $sideAd = null;
+        $sessionSideAdId = $request->session()->get('home_sidebar_ad_id');
+        if ($sessionSideAdId) {
+            $sideAd = (clone $sidebarQuery)->whereKey($sessionSideAdId)->first();
+        }
+        if (! $sideAd) {
+            $sideAd = (clone $sidebarQuery)->orderBy('views')->inRandomOrder()->first();
+            $request->session()->put('home_sidebar_ad_id', $sideAd?->id);
+        }
+        $ads = Advertisement::with('city')->active()->forPlacement('home_recommendations')
+            ->whereNotIn('id', $carouselAds->pluck('id')->push($sideAd?->id)->filter())
+            ->whereNotIn('business_name', $carouselAds->pluck('business_name')->push($sideAd?->business_name)->filter())
+            ->orderBy('views')->limit(3)->get();
+        $carouselAds->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
+        $sideAd?->increment('views');
         $ads->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
         $riverCities = Port::query()->where('is_active', true)->pluck('city');
         $airCities = AirRoute::query()->get(['origin_city', 'destination_city'])->flatMap(fn ($route) => [$route->origin_city, $route->destination_city]);
@@ -79,6 +100,6 @@ class HomeController
             ['date' => 'FEB', 'name' => 'Carnaval Amazónico', 'place' => 'Amazonía peruana', 'description' => 'Comparsas, danzas y expresiones culturales de la selva.'],
         ]);
 
-        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'carouselAds', 'sideAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
     }
 }

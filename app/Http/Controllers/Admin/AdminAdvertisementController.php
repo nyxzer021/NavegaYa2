@@ -36,7 +36,7 @@ class AdminAdvertisementController extends Controller
         $data['contact_name'] ??= $data['business_name'];
         $data['phone_whatsapp'] ??= 'Sin registrar';
         $data['city_destination'] ??= 'Iquitos';
-        $data['placements'] ??= ['home_hero'];
+        $data['placements'] ??= ['home_carousel'];
         $data['monthly_fee'] ??= 300;
         $data['status'] ??= 'lead_pending';
         $data['category'] = Advertisement::BUSINESS_TYPES[$data['business_type']];

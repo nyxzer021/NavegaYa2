@@ -38,6 +38,35 @@
   </div>
  </div>
 
+ <section class="mx-auto mt-8 max-w-6xl" aria-label="Publicidad destacada">
+  <div class="mb-2 flex items-center justify-between"><span class="text-[9px] font-black uppercase tracking-[.2em] text-slate-400">Publicidad</span><a href="{{route('advertising.create')}}" class="text-[10px] font-bold text-emerald-700 hover:text-emerald-900">Anuncia aquí →</a></div>
+  <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
+   <div data-ad-carousel class="relative min-h-[285px] overflow-hidden rounded-3xl bg-[#062c21] shadow-xl sm:min-h-[330px]">
+    @forelse($carouselAds as $index => $ad)
+     <article data-ad-slide class="absolute inset-0 {{$index ? 'hidden' : ''}}">
+      @if($ad->creative_url)<img src="{{$ad->creative_url}}" alt="Promoción de {{$ad->business_name}}" class="absolute inset-0 h-full w-full object-cover">@endif
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-emerald-950/75 to-slate-900/20"></div>
+      <div class="relative flex h-full max-w-xl flex-col justify-center p-7 text-white sm:p-10"><span class="w-fit rounded-full border border-amber-300/40 bg-amber-300/15 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300">Patrocinado · {{$ad->city_destination ?: ($ad->city?->name ?? 'Loreto')}}</span><h2 class="mt-4 text-2xl font-black leading-tight sm:text-3xl">{{$ad->title ?: $ad->business_name}}</h2><p class="mt-3 line-clamp-3 text-xs leading-6 text-emerald-50/85 sm:text-sm">{{$ad->description ?: 'Conoce esta promoción seleccionada para viajeros de NavegaYA.'}}</p><a href="{{route('discover.ad',$ad)}}" target="_blank" rel="sponsored noopener" class="mt-5 inline-flex w-fit rounded-xl bg-amber-400 px-5 py-3 text-xs font-black text-emerald-950 transition hover:bg-amber-300">Ver promoción →</a></div>
+     </article>
+    @empty
+     <div class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white"><span class="text-4xl">📣</span><h2 class="mt-3 text-xl font-black">Espacio destacado para negocios de Loreto</h2><p class="mt-2 max-w-md text-xs text-emerald-100/75">Publica una campaña visual frente a viajeros que ya están buscando rutas y destinos.</p><a href="{{route('advertising.create')}}" class="mt-5 rounded-xl bg-amber-400 px-5 py-3 text-xs font-black text-emerald-950">Conocer planes</a></div>
+    @endforelse
+    @if($carouselAds->count()>1)<button type="button" data-ad-prev class="absolute bottom-5 right-16 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-slate-950/40 text-white backdrop-blur" aria-label="Anuncio anterior">‹</button><button type="button" data-ad-next class="absolute bottom-5 right-5 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-slate-950/40 text-white backdrop-blur" aria-label="Siguiente anuncio">›</button><div class="absolute bottom-6 left-7 z-10 flex gap-1.5 sm:left-10">@foreach($carouselAds as $index=>$ad)<button type="button" data-ad-dot="{{$index}}" class="h-1.5 rounded-full bg-white/50 transition-all {{$index===0?'w-6 bg-white':'w-2'}}" aria-label="Ver anuncio {{$index+1}}"></button>@endforeach</div>@endif
+   </div>
+
+   @if($sideAd)
+    <aside class="group relative min-h-[240px] overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-lg lg:min-h-[330px]" aria-label="Banner patrocinado">
+     @if($sideAd->creative_url)<img src="{{$sideAd->creative_url}}" alt="Promoción de {{$sideAd->business_name}}" class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105">@endif
+     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-5 text-white"><span class="rounded-full bg-amber-400 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-950">Publicidad</span><h3 class="mt-3 text-lg font-black leading-tight">{{$sideAd->title ?: $sideAd->business_name}}</h3><p class="mt-1 line-clamp-2 text-[10px] text-slate-200">{{$sideAd->description}}</p><a href="{{route('discover.ad',$sideAd)}}" target="_blank" rel="sponsored noopener" class="mt-3 inline-flex text-xs font-black text-amber-300">Ver oferta →</a></div>
+    </aside>
+   @else
+    <aside class="flex min-h-[240px] flex-col justify-center rounded-3xl border border-dashed border-emerald-300 bg-emerald-50 p-6 lg:min-h-[330px]"><span class="text-[9px] font-black uppercase tracking-wider text-emerald-600">Espacio lateral disponible</span><h3 class="mt-2 text-lg font-black text-emerald-950">Haz visible tu negocio</h3><p class="mt-2 text-xs leading-5 text-emerald-800/75">Un solo anunciante por sesión para evitar saturación.</p><a href="{{route('advertising.create')}}" class="mt-5 rounded-xl bg-emerald-900 px-4 py-3 text-center text-xs font-black text-white">Solicitar banner</a></aside>
+   @endif
+  </div>
+ </section>
+
+ <script>document.addEventListener('DOMContentLoaded',()=>{const root=document.querySelector('[data-ad-carousel]'),slides=[...document.querySelectorAll('[data-ad-slide]')],dots=[...document.querySelectorAll('[data-ad-dot]')];if(!root||slides.length<2)return;let active=0,timer;const show=index=>{active=(index+slides.length)%slides.length;slides.forEach((slide,i)=>slide.classList.toggle('hidden',i!==active));dots.forEach((dot,i)=>{dot.classList.toggle('w-6',i===active);dot.classList.toggle('w-2',i!==active);dot.classList.toggle('bg-white',i===active);dot.classList.toggle('bg-white/50',i!==active)})};const start=()=>{clearInterval(timer);timer=setInterval(()=>show(active+1),6000)};root.querySelector('[data-ad-next]')?.addEventListener('click',()=>{show(active+1);start()});root.querySelector('[data-ad-prev]')?.addEventListener('click',()=>{show(active-1);start()});dots.forEach(dot=>dot.addEventListener('click',()=>{show(Number(dot.dataset.adDot));start()}));root.addEventListener('mouseenter',()=>clearInterval(timer));root.addEventListener('mouseleave',start);document.addEventListener('visibilitychange',()=>document.hidden?clearInterval(timer):start());start()});</script>
+
  <script>document.addEventListener('DOMContentLoaded',()=>{const input=document.getElementById('tripTypeInput'),buttons=[...document.querySelectorAll('[data-trip-type]')];if(!input)return;const select=value=>{input.value=value;buttons.forEach(button=>{const active=button.dataset.tripType===value;button.classList.toggle('bg-emerald-800',active);button.classList.toggle('text-white',active);button.classList.toggle('shadow-sm',active);button.classList.toggle('text-slate-600',!active);button.classList.toggle('hover:text-slate-900',!active)})};buttons.forEach(button=>button.addEventListener('click',()=>select(button.dataset.tripType)));select(input.value)});</script>
 
  @if(false)

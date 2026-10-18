@@ -11,7 +11,15 @@ class Advertisement extends Model
 {
     public const BUSINESS_TYPES = ['lodge_hotel' => 'Lodge / hotel', 'restaurant' => 'Restaurante', 'tour_operator' => 'Operador de tours', 'charter_transport' => 'Transporte chárter'];
 
-    public const PLACEMENTS = ['home_hero' => 'Recomendaciones patrocinadas de portada', 'routes_sidebar' => 'Catálogo de rutas', 'company_footer' => 'Perfil de empresas', 'ticket_voucher' => 'Boleto digital'];
+    public const PLACEMENTS = [
+        'home_carousel' => 'Portada · carrusel principal',
+        'home_sidebar' => 'Portada · banner lateral',
+        'home_recommendations' => 'Portada · recomendaciones patrocinadas',
+        'home_hero' => 'Portada · ubicación anterior',
+        'routes_sidebar' => 'Catálogo de rutas',
+        'company_footer' => 'Perfil de empresas',
+        'ticket_voucher' => 'Boleto digital',
+    ];
 
     protected $fillable = ['destination_city_id', 'business_name', 'business_type', 'contact_name', 'phone_whatsapp', 'email', 'city_destination', 'ruc', 'placements', 'category', 'title', 'description', 'target_url', 'image_url', 'banner_image_path', 'starts_on', 'ends_on', 'monthly_fee', 'status', 'admin_notes', 'views', 'clicks'];
 

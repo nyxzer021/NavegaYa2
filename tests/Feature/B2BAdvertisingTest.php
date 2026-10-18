@@ -91,7 +91,8 @@ class B2BAdvertisingTest extends TestCase
         $this->actingAs($admin)->get(route('admin.ads.index'))
             ->assertOk()
             ->assertSee('Registrar campaña publicitaria')
-            ->assertSee('Recomendaciones patrocinadas de portada');
+            ->assertSee('Portada · carrusel principal')
+            ->assertSee('Portada · banner lateral');
 
         $this->actingAs($admin)->post(route('admin.ads.store'), [
             'business_name' => 'Lodge de prueba',
@@ -118,5 +119,33 @@ class B2BAdvertisingTest extends TestCase
             ->assertOk()
             ->assertSee('Hospedaje frente al río')
             ->assertSee('Patrocinado');
+    }
+
+    public function test_home_displays_a_carousel_and_one_stable_sidebar_ad_without_duplicates(): void
+    {
+        Advertisement::query()->delete();
+        $carousel = Advertisement::create([
+            'business_name' => 'Hotel Carrusel', 'business_type' => 'lodge_hotel', 'contact_name' => 'Ventas',
+            'phone_whatsapp' => '999999999', 'city_destination' => 'Iquitos',
+            'placements' => ['home_carousel', 'home_sidebar'], 'category' => 'Hotel',
+            'title' => 'Descansa junto al Amazonas', 'target_url' => 'https://example.test/hotel', 'status' => 'active',
+        ]);
+        $sidebar = Advertisement::create([
+            'business_name' => 'Restaurante Lateral', 'business_type' => 'restaurant', 'contact_name' => 'Ventas',
+            'phone_whatsapp' => '988888888', 'city_destination' => 'Iquitos',
+            'placements' => ['home_sidebar'], 'category' => 'Restaurante',
+            'title' => 'Sabores de Loreto', 'target_url' => 'https://example.test/restaurante', 'status' => 'active',
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Descansa junto al Amazonas')
+            ->assertSee('Sabores de Loreto');
+
+        $this->assertSame($sidebar->id, session('home_sidebar_ad_id'));
+        $this->assertSame(1, $carousel->fresh()->views);
+        $this->assertSame(1, $sidebar->fresh()->views);
+        $this->get(route('home'))->assertOk()->assertSee('Sabores de Loreto');
+        $this->assertSame($sidebar->id, session('home_sidebar_ad_id'));
     }
 }
