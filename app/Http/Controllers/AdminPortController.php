@@ -18,7 +18,11 @@ class AdminPortController extends Controller
     public function index(Request $request): View
     {
         return view('admin.ports.index', $this->formData([
-            'ports' => Port::with(['department', 'province', 'district'])->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))->orderBy('city')->orderBy('name')->paginate(10)->withQueryString(),
+            'ports' => Port::with(['department', 'province', 'district'])
+                ->withCount(['originMasterRoutes', 'destinationMasterRoutes', 'originRoutes', 'destinationRoutes', 'baseVessels'])
+                ->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))
+                ->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))
+                ->orderBy('city')->orderBy('name')->paginate(10)->withQueryString(),
         ]));
     }
 
@@ -67,9 +71,13 @@ class AdminPortController extends Controller
 
     public function destroy(Port $port): RedirectResponse
     {
-        $inUse = $port->originRoutes()->exists() || $port->destinationRoutes()->exists() || Vessel::where('base_port_id', $port->id)->exists();
+        $inUse = $port->originMasterRoutes()->exists()
+            || $port->destinationMasterRoutes()->exists()
+            || $port->originRoutes()->exists()
+            || $port->destinationRoutes()->exists()
+            || Vessel::where('base_port_id', $port->id)->exists();
         if ($inUse) {
-            return back()->with('error', 'No se puede eliminar este puerto porque ya está asignado a una ruta o embarcación. Edita sus datos o actualiza esas relaciones primero.');
+            return back()->with('error', 'No se puede eliminar este terminal porque está vinculado a un tramo, una ruta operativa o una embarcación. Elimina o reasigna primero esos registros.');
         } $port->delete();
 
         return redirect()->route('admin.ports.index')->with('success', 'Puerto eliminado correctamente.');

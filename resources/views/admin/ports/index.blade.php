@@ -54,6 +54,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($ports as $port)
+                            @php($portInUse = ($port->origin_master_routes_count + $port->destination_master_routes_count + $port->origin_routes_count + $port->destination_routes_count + $port->base_vessels_count) > 0)
                             <tr class="hover:bg-slate-50">
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $port->name }}</td>
                                 <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $port->modality==='aereo'?'bg-violet-50 text-violet-700':'bg-sky-50 text-sky-700' }}">{{ $port->modality==='aereo'?'✈ Aéreo':'⚓ Fluvial' }}</span></td>
@@ -62,11 +63,11 @@
                                 <td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold {{ $port->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $port->is_active ? 'Activo' : 'Inactivo' }}</span></td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="{{ route('admin.ports.edit', $port) }}" class="font-bold text-[#146e60]">Editar</a>
-                                    <form method="POST" action="{{ route('admin.ports.destroy', $port) }}" class="ml-3 inline" onsubmit="return confirm('¿Eliminar este puerto? Esta acción no se puede deshacer.')">
+                                    @if($portInUse)<button type="button" disabled title="Primero elimina o reasigna sus tramos, rutas y embarcaciones" class="ml-3 cursor-not-allowed font-bold text-slate-300">Eliminar</button>@else<form method="POST" action="{{ route('admin.ports.destroy', $port) }}" class="ml-3 inline" onsubmit="return confirm('¿Eliminar este puerto? Esta acción no se puede deshacer.')">
                                         @csrf
                                         @method('DELETE')
                                         <button class="font-bold text-rose-700">Eliminar</button>
-                                    </form>
+                                    </form>@endif
                                 </td>
                             </tr>
                         @empty

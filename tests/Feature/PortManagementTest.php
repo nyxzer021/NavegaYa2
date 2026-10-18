@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\GeographicDepartment;
 use App\Models\GeographicDistrict;
 use App\Models\GeographicProvince;
+use App\Models\MasterRoute;
 use App\Models\Organization;
 use App\Models\Port;
 use App\Models\Role;
@@ -42,7 +43,7 @@ class PortManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.ports.create'))->assertRedirect(route('admin.ports.index', ['nuevo' => 1]).'#nuevo-puerto');
         $this->actingAs($admin)->get(route('admin.locations.provinces', $department))->assertOk()->assertJsonFragment(['name' => 'Maynas']);
         $this->actingAs($admin)->get(route('admin.locations.districts', $province))->assertOk()->assertJsonFragment(['name' => 'Iquitos']);
-        $this->actingAs($admin)->get(route('admin.ports.index'))->assertOk()->assertSee('Puertos de embarque')->assertSee('Nuevo puerto, terminal o aeródromo')->assertSee('Maynas')->assertSee('Editar');
+        $this->actingAs($admin)->get(route('admin.ports.index'))->assertOk()->assertSee('Puertos y aeródromos')->assertSee('Nuevo puerto, terminal o aeródromo')->assertSee('Maynas')->assertSee('Editar');
         $this->actingAs($admin)->patch(route('admin.ports.update', $port), ['department_id' => $department->id, 'province_id' => $province->id, 'district_id' => $district->id, 'name' => 'Puerto Actualizado', 'modality' => 'fluvial', 'port_type' => 'embarcadero', 'river' => 'Amazonas', 'operator_name' => 'Operador de prueba', 'contact_phone' => '999999999'])->assertRedirect(route('admin.ports.index'));
         $this->assertDatabaseHas('ports', ['id' => $port->id, 'name' => 'Puerto Actualizado', 'city' => 'Iquitos', 'region' => 'Loreto']);
         $this->actingAs($admin)->delete(route('admin.ports.destroy', $port))->assertRedirect(route('admin.ports.index'));
@@ -57,5 +58,16 @@ class PortManagementTest extends TestCase
         Vessel::create(['organization_id' => $company->id, 'base_port_id' => $port->id, 'name' => 'Nave Protegida', 'registration_number' => 'PA-9900', 'vessel_type' => 'lancha', 'seat_capacity' => 10]);
         $this->actingAs($this->admin())->from(route('admin.ports.index'))->delete(route('admin.ports.destroy', $port))->assertRedirect(route('admin.ports.index'))->assertSessionHas('error');
         $this->assertDatabaseHas('ports', ['id' => $port->id]);
+    }
+
+    public function test_port_in_use_by_master_route_cannot_be_deleted(): void
+    {
+        [$department, $province, $district] = $this->location();
+        $origin = Port::create(['department_id' => $department->id, 'province_id' => $province->id, 'district_id' => $district->id, 'name' => 'Puerto Origen', 'city' => 'Iquitos', 'region' => 'Loreto', 'modality' => 'fluvial']);
+        $destination = Port::create(['department_id' => $department->id, 'province_id' => $province->id, 'district_id' => $district->id, 'name' => 'Puerto Destino', 'city' => 'Nauta', 'region' => 'Loreto', 'modality' => 'fluvial']);
+        MasterRoute::create(['code' => 'TRM-IQT-NAU', 'modality' => 'fluvial', 'origin_city' => 'Iquitos', 'destination_city' => 'Nauta', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id, 'status' => 'active']);
+
+        $this->actingAs($this->admin())->from(route('admin.ports.index'))->delete(route('admin.ports.destroy', $origin))->assertRedirect(route('admin.ports.index'))->assertSessionHas('error');
+        $this->assertDatabaseHas('ports', ['id' => $origin->id]);
     }
 }
