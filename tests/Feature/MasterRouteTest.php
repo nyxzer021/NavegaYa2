@@ -27,35 +27,26 @@ class MasterRouteTest extends TestCase
             'destination_city' => 'Nauta', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id,
             'river_basin' => 'Río Amazonas / Marañón', 'corridor' => 'Corredor Loreto',
             'estimated_duration_text' => '1 h 45 min', 'status' => 'active',
-            'path_geojson' => json_encode([
-                'type' => 'LineString',
-                'coordinates' => [[-73.2516, -3.7437], [-73.5757, -4.5051]],
-            ]),
         ])->assertRedirect(route('admin.master-routes.index'));
 
         $this->assertDatabaseHas('master_routes', ['code' => 'TRM-IQT-NAU', 'status' => 'active']);
-        $this->assertSame(
-            [[-73.2516, -3.7437], [-73.5757, -4.5051]],
-            MasterRoute::where('code', 'TRM-IQT-NAU')->firstOrFail()->path_geojson['coordinates'],
-        );
+        $this->assertNull(MasterRoute::where('code', 'TRM-IQT-NAU')->firstOrFail()->path_geojson);
         $this->actingAs($admin)->get(route('admin.master-routes.index'))->assertOk()->assertSee('Iquitos')->assertSee('Nauta');
     }
 
-    public function test_master_route_rejects_invalid_geojson_coordinates(): void
+    public function test_master_route_does_not_require_terminal_coordinates(): void
     {
         $admin = $this->userWithRole('super_admin');
-        [$origin, $destination] = $this->ports();
+        [$origin] = $this->ports();
+        $destination = Port::create(['name' => 'Terminal sin ubicación', 'city' => 'Nauta', 'region' => 'Loreto', 'modality' => 'fluvial', 'is_active' => true]);
 
         $this->actingAs($admin)->post(route('admin.master-routes.store'), [
             'code' => 'TRM-GEO-BAD', 'modality' => 'fluvial', 'origin_city' => 'Iquitos',
             'destination_city' => 'Nauta', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id,
-            'status' => 'active', 'path_geojson' => json_encode([
-                'type' => 'LineString',
-                'coordinates' => [[-200, -3.7437]],
-            ]),
-        ])->assertSessionHasErrors(['path_geojson.coordinates', 'path_geojson.coordinates.0.0']);
+            'status' => 'active',
+        ])->assertRedirect(route('admin.master-routes.index'));
 
-        $this->assertDatabaseMissing('master_routes', ['code' => 'TRM-GEO-BAD']);
+        $this->assertDatabaseHas('master_routes', ['code' => 'TRM-GEO-BAD']);
     }
 
     public function test_master_route_rejects_equal_origin_and_destination(): void

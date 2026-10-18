@@ -11,14 +11,16 @@ class StoreMasterRouteRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
-        $pathGeoJson = $this->input('path_geojson');
+        $origin = Port::find($this->integer('origin_port_id'));
+        $destination = Port::find($this->integer('destination_port_id'));
 
-        if (is_string($pathGeoJson)) {
-            $decodedPath = json_decode($pathGeoJson, true);
+        if ($origin && $destination) {
             $this->merge([
-                'path_geojson' => $pathGeoJson === ''
-                    ? null
-                    : (json_last_error() === JSON_ERROR_NONE ? $decodedPath : $pathGeoJson),
+                'origin_city' => $origin->city,
+                'destination_city' => $destination->city,
+                'modality' => $origin->modality,
+                // Two endpoints do not describe the real river or air trajectory.
+                'path_geojson' => null,
             ]);
         }
     }
@@ -66,6 +68,9 @@ class StoreMasterRouteRequest extends FormRequest
             }
             if ($destination && mb_strtolower(trim($destination->city)) !== mb_strtolower(trim((string) $this->input('destination_city')))) {
                 $validator->errors()->add('destination_port_id', 'El terminal de destino debe pertenecer a la ciudad de destino.');
+            }
+            if ($origin && $destination && $origin->modality !== $destination->modality) {
+                $validator->errors()->add('destination_port_id', 'El origen y destino deben tener la misma modalidad.');
             }
         }];
     }

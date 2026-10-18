@@ -12,13 +12,12 @@
             <div class="mb-5 rounded-xl bg-rose-50 px-5 py-4 font-semibold text-rose-800">{{ session('error') }}</div>
         @endif
 
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-[#10352f] to-[#1d6457] p-7 text-white">
+        <div class="mb-4 rounded-2xl bg-gradient-to-r from-[#10352f] to-[#1d6457] px-6 py-5 text-white">
             <div>
                 <p class="text-xs font-bold uppercase tracking-[.16em] text-emerald-200">Catálogo operativo</p>
-                <h1 class="mt-2 text-3xl font-bold">Puertos de embarque</h1>
-                <p class="mt-2 text-emerald-50">Cada puerto puede ser salida o llegada según la ruta. Se registra una sola vez para ida y regreso.</p>
+                <h1 class="mt-1 text-2xl font-bold">Puertos y aeródromos</h1>
+                <p class="mt-1 text-sm text-emerald-50">Catálogo maestro de terminales que luego se seleccionan al crear los tramos.</p>
             </div>
-            <a href="{{ route('admin.ports.index', ['nuevo' => 1]) }}#nuevo-puerto" class="rounded-xl bg-amber-400 px-5 py-3 font-bold text-[#12372d]">+ Registrar puerto</a>
         </div>
 
         <details id="nuevo-puerto" class="mb-4 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm" @if(request('nuevo') || $errors->any()) open @endif>
@@ -44,12 +43,6 @@
                 <div class="mt-4 flex justify-end"><button class="rounded-lg bg-emerald-800 px-5 py-2.5 text-xs font-black text-white hover:bg-emerald-900">Guardar terminal</button></div>
             </form>
         </details>
-
-        <form method="GET" class="mb-4 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-            <input type="search" name="search" value="{{ request('search') }}" placeholder="Buscar terminal o ciudad" class="h-10 min-w-64 rounded-xl border-slate-200 bg-slate-50 text-xs">
-            <select name="modality" class="h-10 rounded-xl border-slate-200 bg-slate-50 text-xs"><option value="">Todas las modalidades</option><option value="fluvial" @selected(request('modality')==='fluvial')>Fluvial</option><option value="aereo" @selected(request('modality')==='aereo')>Aérea</option></select>
-            <button class="rounded-xl bg-[#062c21] px-5 text-xs font-bold text-white">Filtrar catálogo</button>
-        </form>
 
         <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
             <div class="overflow-x-auto">
