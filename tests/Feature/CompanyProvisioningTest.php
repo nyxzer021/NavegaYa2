@@ -71,16 +71,26 @@ class CompanyProvisioningTest extends TestCase
         Notification::assertCount(1);
     }
 
-    public function test_super_admin_has_no_manual_company_creation_route(): void
+    public function test_super_admin_can_create_company_and_administrator_manually(): void
     {
         $superAdmin = User::factory()->create();
         $role = Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super Admin']);
         $superAdmin->roles()->attach($role);
 
-        $this->actingAs($superAdmin);
-        $this->assertFalse(Route::has('admin.companies.create'));
-        $this->assertFalse(Route::has('admin.companies.store'));
-        $this->assertDatabaseMissing('organizations', ['ruc' => '20777777776']);
+        $payload = $this->payload();
+        $payload['ruc'] = '20777777776';
+        $payload['admin_email'] = 'manual@selva.test';
+        $payload['admin_password_confirmation'] = $payload['admin_password'];
+
+        $this->actingAs($superAdmin)
+            ->post(route('admin.companies.store'), $payload)
+            ->assertRedirect(route('admin.companies.index', ['tab' => 'rendimiento']));
+
+        $organization = Organization::where('ruc', '20777777776')->firstOrFail();
+        $user = User::where('email', 'manual@selva.test')->firstOrFail();
+        $this->assertSame('active', $organization->status);
+        $this->assertTrue($user->organizations()->whereKey($organization->id)->exists());
+        $this->assertTrue($user->roles()->where('code', 'company_admin')->wherePivot('organization_id', $organization->id)->exists());
     }
 
     private function payload(): array

@@ -10,22 +10,22 @@
 @media(max-width:920px){.layout{grid-template-columns:1fr}.panel{position:static}.hero{align-items:flex-start}}@media(max-width:620px){.hero{display:block;padding:24px}.stats{margin-top:18px}.tabs,.fields{grid-template-columns:1fr}.map-head{display:block}.legend{margin-top:12px}.map{padding:14px}}
 </style>
 <div class="sp">
-<a class="back" href="{{route('admin.vessels.index')}}">← Volver a embarcaciones</a>
+<a class="back" href="{{ $seatRoutePrefix === 'company' ? route('company.fleet.index') : route('admin.vessels.index') }}">← Volver a embarcaciones</a>
 <section class="hero"><div><p class="eyebrow">CONFIGURACIÓN DE EMBARCACIÓN</p><h1>{{$vessel->name}}</h1><p>Matrícula {{$vessel->registration_number}} · Diseña cada cubierta y controla los asientos habilitados.</p></div><div class="stats"><div class="stat"><b>{{$vessel->seat_capacity}}</b><span>Capacidad máxima</span></div><div class="stat"><b>{{($deckCounts['principal']??0)+($deckCounts['superior']??0)}}</b><span>Asientos creados</span></div></div></section>
-<nav class="tabs"><a class="tab {{$deck==='principal'?'active':''}}" href="{{route('admin.vessels.seats.edit',['vessel'=>$vessel,'deck'=>'principal'])}}"><span>▰ Cubierta principal</span><small>{{$deckCounts['principal']??0}}</small></a><a class="tab {{$deck==='superior'?'active':''}}" href="{{route('admin.vessels.seats.edit',['vessel'=>$vessel,'deck'=>'superior'])}}"><span>▱ Cubierta superior</span><small>{{$deckCounts['superior']??0}}</small></a></nav>
+<nav class="tabs"><a class="tab {{$deck==='principal'?'active':''}}" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>'principal'])}}"><span>▰ Cubierta principal</span><small>{{$deckCounts['principal']??0}}</small></a><a class="tab {{$deck==='superior'?'active':''}}" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>'superior'])}}"><span>▱ Cubierta superior</span><small>{{$deckCounts['superior']??0}}</small></a></nav>
 @if(session('success'))<p class="ok">✓ {{session('success')}}</p>@endif
 <div class="layout">
 <section class="panel">
 @if($seats->isEmpty()||$isEditing)
 <h2>{{$isEditing?'Editar':'Crear'}} {{$deck==='principal'?'cubierta principal':'cubierta superior'}}</h2><p>Indica filas y asientos a cada lado. El sistema reservará automáticamente el pasillo central.</p>
 @if($isEditing)<p class="note">Guardar reemplazará únicamente esta cubierta. La otra conservará su plano.</p>@endif
-<form method="POST" action="{{route('admin.vessels.seats.generate',$vessel)}}">@csrf @if($isEditing)<input type="hidden" name="replace_existing" value="1">@endif
+<form method="POST" action="{{route($seatRoutePrefix.'.vessels.seats.generate',$vessel)}}">@csrf @if($isEditing)<input type="hidden" name="replace_existing" value="1">@endif
 <div class="fields"><label>Filas<input id="rows" type="number" name="rows" value="{{old('rows',max(1,$seats->max('row_position')?:10))}}" min="1" max="100" required></label><label>Categoría<select name="seat_class"><option value="standard">Estándar</option><option value="premium">Premium</option><option value="business">Business</option></select></label><label>Asientos izquierda<input id="leftSeats" type="number" name="left_seats" value="{{old('left_seats',2)}}" min="1" max="6" required></label><label>Asientos derecha<input id="rightSeats" type="number" name="right_seats" value="{{old('right_seats',2)}}" min="1" max="6" required></label><label class="full">Nivel<input value="{{$deck==='principal'?'Cubierta principal':'Cubierta superior'}}" disabled><input type="hidden" name="deck" value="{{$deck}}"></label></div>
 <div id="seatPreview" class="capacity" data-limit="{{$vessel->seat_capacity}}" data-other="{{$otherDeckSeats}}">Esta cubierta: <strong id="seatCount">0</strong> asientos<br>Otras cubiertas: <strong>{{$otherDeckSeats}}</strong> · Total: <strong id="totalSeatCount">{{$otherDeckSeats}}</strong> de {{$vessel->seat_capacity}}</div>
 @if($errors->any())<div style="color:#be123c;font-size:12px">@foreach($errors->all() as $error)<p>{{$error}}</p>@endforeach</div>@endif
 <button id="generateButton" class="button" style="width:100%;margin-top:18px">{{$isEditing?'Guardar nuevo plano':'Generar plano de cubierta'}}</button></form>
 @else
-<h2>Plano configurado</h2><p>La {{$deck==='principal'?'cubierta principal':'cubierta superior'}} tiene <strong>{{$seats->count()}} asientos</strong>. Pulsa cada asiento para bloquearlo o habilitarlo.</p><div class="actions"><a class="button" href="{{route('admin.vessels.seats.edit',['vessel'=>$vessel,'deck'=>$deck,'edit'=>1])}}">Editar distribución</a><form method="POST" action="{{route('admin.vessels.seats.destroy-deck',$vessel)}}" onsubmit="return confirm('¿Eliminar el plano de esta cubierta?')">@csrf @method('DELETE')<input type="hidden" name="deck" value="{{$deck}}"><button class="button warn">Eliminar</button></form></div>
+<h2>Plano configurado</h2><p>La {{$deck==='principal'?'cubierta principal':'cubierta superior'}} tiene <strong>{{$seats->count()}} asientos</strong>. Pulsa cada asiento para bloquearlo o habilitarlo.</p><div class="actions"><a class="button" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>$deck,'edit'=>1])}}">Editar distribución</a><form method="POST" action="{{route($seatRoutePrefix.'.vessels.seats.destroy-deck',$vessel)}}" onsubmit="return confirm('¿Eliminar el plano de esta cubierta?')">@csrf @method('DELETE')<input type="hidden" name="deck" value="{{$deck}}"><button class="button warn">Eliminar</button></form></div>
 @endif
 </section>
 <section class="map"><div class="map-head"><div><h2>{{$deck==='principal'?'Cubierta principal':'Cubierta superior'}}</h2><p>Vista desde arriba · toca un asiento para cambiar su disponibilidad.</p></div><div class="legend"><span><i style="background:#ccece3"></i>Disponible</span><span><i style="background:#e5eaeb"></i>Bloqueado</span></div></div>
@@ -35,7 +35,7 @@
 @foreach($seats->groupBy('row_position') as $row=>$rowSeats)
 <div class="row" style="grid-template-columns:28px repeat({{$maxColumn}},40px)"><span class="rowno">{{str_pad($row,2,'0',STR_PAD_LEFT)}}</span>
 @for($column=1;$column<=$maxColumn;$column++) @php($seat=$rowSeats->firstWhere('column_position',$column))
-@if($seat)<form class="sf" method="POST" action="{{route('admin.vessels.seats.toggle',[$vessel,$seat])}}">@csrf @method('PATCH')<button title="{{$seat->is_available?'Asiento disponible':'Asiento bloqueado'}}" class="seat {{$seat->is_available?'':'blocked'}}">{{$seat->code}}</button></form>@else<span class="aisle"></span>@endif
+@if($seat)<form class="sf" method="POST" action="{{route($seatRoutePrefix.'.vessels.seats.toggle',[$vessel,$seat])}}">@csrf @method('PATCH')<button title="{{$seat->is_available?'Asiento disponible':'Asiento bloqueado'}}" class="seat {{$seat->is_available?'':'blocked'}}">{{$seat->code}}</button></form>@else<span class="aisle"></span>@endif
 @endfor</div>
 @endforeach
 </div><div class="exit">SALIDA</div><p class="stern">POPA · PARTE POSTERIOR</p></div></div>

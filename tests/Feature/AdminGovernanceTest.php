@@ -14,6 +14,7 @@ use App\Models\Vessel;
 use Database\Seeders\MarketplaceDashboardSeeder;
 use Database\Seeders\RegionalSupervisionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -117,13 +118,14 @@ class AdminGovernanceTest extends TestCase
         $this->actingAs($companyAdmin)->get(route('admin.itineraries.index'))->assertForbidden();
     }
 
-    public function test_super_admin_has_no_company_creation_route(): void
+    public function test_super_admin_can_open_company_creation_route(): void
     {
         $admin = $this->userWithRole('super_admin');
 
         $this->actingAs($admin);
-        $this->assertFalse(Route::has('admin.companies.create'));
-        $this->assertFalse(Route::has('admin.companies.store'));
+        $this->assertTrue(Route::has('admin.companies.create'));
+        $this->assertTrue(Route::has('admin.companies.store'));
+        $this->get(route('admin.companies.create'))->assertOk()->assertSee('Nueva empresa de transporte');
     }
 
     public function test_regional_supervision_combines_river_and_air_operators(): void
@@ -312,6 +314,39 @@ class AdminGovernanceTest extends TestCase
             ->assertOk()
             ->assertSee('Supervisión de embarcaciones fluviales')
             ->assertSee('Revisión DICAPI pendiente');
+    }
+
+    public function test_super_admin_can_create_an_access_account_for_an_existing_company(): void
+    {
+        $superAdmin = $this->userWithRole('super_admin');
+        $organization = Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => 'Amazonía Express SAC',
+            'commercial_name' => 'Amazonía Express',
+            'ruc' => '20987654321',
+            'email' => 'contacto@amazonia.test',
+            'phone' => '999888777',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superAdmin)->put(route('admin.companies.update', $organization), [
+            'legal_name' => $organization->legal_name,
+            'commercial_name' => $organization->commercial_name,
+            'phone' => $organization->phone,
+            'base_city' => 'Iquitos',
+            'modality' => 'fluvial',
+            'commission_rate' => 8,
+            'commercial_plan' => 'standard',
+            'admin_name' => 'Administrador Amazonía',
+            'admin_email' => 'admin@amazonia.test',
+            'admin_password' => 'Temporal123!',
+            'admin_password_confirmation' => 'Temporal123!',
+        ])->assertRedirect(route('admin.companies.index'));
+
+        $companyAdmin = User::where('email', 'admin@amazonia.test')->firstOrFail();
+        $this->assertTrue(Hash::check('Temporal123!', $companyAdmin->password));
+        $this->assertTrue($companyAdmin->organizations()->whereKey($organization->id)->exists());
+        $this->assertTrue($companyAdmin->roles()->where('code', 'company_admin')->exists());
     }
 
     private function userWithRole(string $code): User

@@ -119,6 +119,12 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::get('/ventas/exportar', [CompanySalesController::class, 'export'])->name('sales.export');
     Route::post('/flota/embarcaciones', [CompanyFleetController::class, 'storeVessel'])->name('fleet.vessels.store');
     Route::post('/flota/aeronaves', [CompanyFleetController::class, 'storeAircraft'])->name('fleet.aircraft.store');
+    Route::get('/flota/embarcaciones/{vessel}/asientos', [AdminVesselSeatController::class, 'edit'])->name('vessels.seats.edit');
+    Route::post('/flota/embarcaciones/{vessel}/asientos/generar', [AdminVesselSeatController::class, 'generate'])->name('vessels.seats.generate');
+    Route::patch('/flota/embarcaciones/{vessel}/asientos/{seat}/estado', [AdminVesselSeatController::class, 'toggle'])->name('vessels.seats.toggle');
+    Route::delete('/flota/embarcaciones/{vessel}/asientos/cubierta', [AdminVesselSeatController::class, 'destroyDeck'])->name('vessels.seats.destroy-deck');
+    Route::get('/flota/aeronaves/{aircraft}/asientos', [AdminAircraftController::class, 'seats'])->name('aircraft.seats');
+    Route::post('/flota/aeronaves/{aircraft}/asientos/generar', [AdminAircraftController::class, 'generateSeats'])->name('aircraft.seats.generate');
     Route::get('/equipo', fn () => redirect()->route('company.staff.index'))->name('personnel.index');
     Route::get('/finanzas', fn () => redirect()->route('company.commissions.index'))->name('finance.index');
 });
@@ -171,7 +177,6 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('/empresas', AdminCompanyController::class)
-        ->except(['create', 'store'])
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
     Route::get('/empresas/{organization}/documentos/{document}', [AdminCompanyController::class, 'downloadDocument'])->name('companies.documents.download');

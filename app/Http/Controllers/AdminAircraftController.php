@@ -102,7 +102,10 @@ class AdminAircraftController extends Controller
     {
         $this->authorizeAircraft($aircraft);
 
-        return view('admin.aircraft.seats', compact('aircraft'));
+        return view('admin.aircraft.seats', [
+            'aircraft' => $aircraft,
+            'seatRoutePrefix' => str_starts_with((string) request()->route()?->getName(), 'company.') ? 'company' : 'admin',
+        ]);
     }
 
     public function generateSeats(Request $request, Aircraft $aircraft): RedirectResponse

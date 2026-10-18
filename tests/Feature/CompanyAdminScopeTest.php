@@ -39,4 +39,23 @@ class CompanyAdminScopeTest extends TestCase
 
         $this->actingAs($user)->get(route('admin.organization-directory.show', $second))->assertForbidden();
     }
+
+    public function test_company_administrator_can_manage_only_its_own_seat_layout(): void
+    {
+        $first = Organization::create(['type' => 'transport_company', 'legal_name' => 'Fluvial Uno SAC', 'ruc' => '20111111111', 'email' => 'uno@test.pe', 'status' => 'active']);
+        $second = Organization::create(['type' => 'transport_company', 'legal_name' => 'Fluvial Dos SAC', 'ruc' => '20222222222', 'email' => 'dos@test.pe', 'status' => 'active']);
+        $ownVessel = Vessel::create(['organization_id' => $first->id, 'name' => 'Nave Uno', 'registration_number' => 'N-001', 'vessel_type' => 'lancha', 'seat_capacity' => 20]);
+        $otherVessel = Vessel::create(['organization_id' => $second->id, 'name' => 'Nave Dos', 'registration_number' => 'N-002', 'vessel_type' => 'lancha', 'seat_capacity' => 20]);
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador de empresa']), ['organization_id' => $first->id]);
+        $user->organizations()->attach($first->id, ['status' => 'active']);
+
+        $this->actingAs($user)
+            ->get(route('company.vessels.seats.edit', $ownVessel))
+            ->assertOk()
+            ->assertSee('Plano de asientos')
+            ->assertSee('Nave Uno');
+
+        $this->get(route('company.vessels.seats.edit', $otherVessel))->assertForbidden();
+    }
 }

@@ -11,6 +11,7 @@
     description="Revisa afiliaciones, supervisa operadores habilitados y administra sus condiciones comerciales."
 >
     <x-slot:actions>
+        <a href="{{ route('admin.companies.create') }}" class="inline-flex h-10 items-center rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950 transition hover:bg-amber-300">＋ Registrar empresa</a>
         <a href="{{ route('admin.master-routes.index') }}" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800">🧭 Catálogo de rutas</a>
     </x-slot:actions>
 

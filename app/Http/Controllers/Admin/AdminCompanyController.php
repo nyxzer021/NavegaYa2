@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\Payment;
+use App\Models\Role;
+use App\Models\User;
+use App\Services\CompanyProvisioningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +20,35 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminCompanyController extends Controller
 {
+    public function create(): View
+    {
+        return view('admin.companies.create');
+    }
+
+    public function store(Request $request, CompanyProvisioningService $provisioning): RedirectResponse
+    {
+        $data = $request->validate([
+            'company_name' => ['required', 'string', 'max:255'],
+            'commercial_name' => ['nullable', 'string', 'max:255'],
+            'ruc' => ['required', 'digits:11', 'unique:organizations,ruc'],
+            'phone' => ['required', 'string', 'max:30'],
+            'whatsapp' => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'url', 'max:255'],
+            'modality' => ['required', 'in:fluvial,aereo,mixto'],
+            'base_city' => ['required', 'string', 'max:100'],
+            'commission_rate' => ['required', 'numeric', 'between:0,100'],
+            'admin_name' => ['required', 'string', 'max:255'],
+            'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'admin_password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $provisioning->provision($data, true);
+
+        return redirect()->route('admin.companies.index', ['tab' => 'rendimiento'])
+            ->with('success', 'Empresa y cuenta administradora creadas correctamente.');
+    }
+
     public function index(Request $request): View
     {
         $today = today();
@@ -162,7 +194,7 @@ class AdminCompanyController extends Controller
             'commission_notes' => ['nullable', 'string', 'max:2000'],
             'admin_name' => ['required', 'string', 'max:255'],
             'admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($admin)],
-            'admin_password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'admin_password' => [$admin ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
         ]);
 
         DB::transaction(function () use ($organization, $admin, $data): void {
@@ -176,6 +208,16 @@ class AdminCompanyController extends Controller
                     'email' => $data['admin_email'],
                     ...($data['admin_password'] ? ['password' => Hash::make($data['admin_password'])] : []),
                 ]);
+            } else {
+                $admin = User::create([
+                    'name' => $data['admin_name'],
+                    'email' => $data['admin_email'],
+                    'password' => Hash::make($data['admin_password']),
+                    'email_verified_at' => now(),
+                ]);
+                $role = Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador de empresa']);
+                $admin->organizations()->attach($organization->id, ['status' => 'active']);
+                $admin->roles()->attach($role->id, ['organization_id' => $organization->id]);
             }
         });
 

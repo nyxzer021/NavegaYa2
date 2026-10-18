@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Admin\GenerateVesselSeatLayoutRequest;
 use App\Models\Vessel;
 use App\Models\VesselSeat;
+use App\Support\AdminScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ class AdminVesselSeatController extends Controller
 {
     public function edit(Request $request, Vessel $vessel): View
     {
+        $this->authorizeVessel($vessel);
         $deck = $request->string('deck', 'principal')->value();
         abort_unless(in_array($deck, ['principal', 'superior'], true), 404);
         $vessel->load('organization');
@@ -30,11 +32,13 @@ class AdminVesselSeatController extends Controller
             'deckCounts' => $deckCounts,
             'isEditing' => $isEditing,
             'otherDeckSeats' => $otherDeckSeats,
+            'seatRoutePrefix' => $this->routePrefix($request),
         ]);
     }
 
     public function generate(GenerateVesselSeatLayoutRequest $request, Vessel $vessel): RedirectResponse
     {
+        $this->authorizeVessel($vessel);
         $data = $request->validated();
         $total = $data['rows'] * ($data['left_seats'] + $data['right_seats']);
         $existing = $vessel->seats()->where('deck', $data['deck'])->exists();
@@ -66,22 +70,24 @@ class AdminVesselSeatController extends Controller
             $vessel->update(['status' => 'ready']);
         });
 
-        return redirect()->route('admin.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $data['deck']])->with('success', "Plano de cubierta {$data['deck']} creado con {$total} asientos.");
+        return redirect()->route($this->routePrefix($request).'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $data['deck']])->with('success', "Plano de cubierta {$data['deck']} creado con {$total} asientos.");
     }
 
     public function destroyDeck(Request $request, Vessel $vessel): RedirectResponse
     {
+        $this->authorizeVessel($vessel);
         $deck = $request->validate(['deck' => ['required', 'in:principal,superior']])['deck'];
         $vessel->seats()->where('deck', $deck)->delete();
         if (! $vessel->seats()->exists()) {
             $vessel->update(['status' => 'draft']);
         }
 
-        return redirect()->route('admin.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $deck])->with('success', 'El plano de la cubierta fue eliminado.');
+        return redirect()->route($this->routePrefix($request).'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $deck])->with('success', 'El plano de la cubierta fue eliminado.');
     }
 
-    public function toggle(Vessel $vessel, VesselSeat $seat): RedirectResponse
+    public function toggle(Request $request, Vessel $vessel, VesselSeat $seat): RedirectResponse
     {
+        $this->authorizeVessel($vessel);
         abort_unless($seat->vessel_id === $vessel->id, 404);
         $seat->update(['is_available' => ! $seat->is_available]);
 
@@ -91,5 +97,17 @@ class AdminVesselSeatController extends Controller
     private function seatData(int $vesselId, int $row, int $column, string $letter, array $data): array
     {
         return ['vessel_id' => $vesselId, 'code' => $row.$letter, 'deck' => $data['deck'], 'seat_class' => $data['seat_class'], 'row_position' => $row, 'column_position' => $column, 'is_available' => true, 'created_at' => now(), 'updated_at' => now()];
+    }
+
+    private function authorizeVessel(Vessel $vessel): void
+    {
+        if ($organizationId = AdminScope::organizationId(auth()->user())) {
+            abort_unless($vessel->organization_id === $organizationId, 403);
+        }
+    }
+
+    private function routePrefix(Request $request): string
+    {
+        return str_starts_with((string) $request->route()?->getName(), 'company.') ? 'company' : 'admin';
     }
 }
