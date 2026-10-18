@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\AirDeparture;
+use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\RouteDeparture;
@@ -39,19 +40,17 @@ class AdminItineraryController extends AdminSupervisionController
         $payments = Payment::query()
             ->with(['reservation.departure.transportRoute', 'reservation.airDeparture.airRoute'])
             ->whereIn('status', ['succeeded', 'confirmed'])
-            ->whereDate('paid_at', $selectedDate)
+            ->where(function ($query) use ($selectedDate) {
+                $query->whereHas('reservation.departure', fn ($departure) => $departure->whereDate('departure_at', $selectedDate))
+                    ->orWhereHas('reservation.airDeparture', fn ($departure) => $departure->whereDate('departure_at', $selectedDate));
+            })
             ->get()
             ->groupBy(function (Payment $payment) {
                 $reservation = $payment->reservation;
 
                 return $reservation?->departure?->transportRoute?->organization_id
                     ?? $reservation?->airDeparture?->airRoute?->organization_id;
-            })
-            ->when($filters['status'] ?? null, fn ($items, string $status) => $items->filter(fn ($operator) => match ($status) {
-                'published' => $operator->published_departures_count > 0 && ! $operator->is_paused,
-                'without_inventory' => $operator->published_departures_count === 0,
-                'paused' => $operator->is_paused,
-            })->values());
+            });
 
         $operators = Organization::query()
             ->where('type', 'transport_company')
@@ -69,8 +68,10 @@ class AdminItineraryController extends AdminSupervisionController
             ->map(function (Organization $organization) use ($riverDepartures, $airDepartures, $payments) {
                 $river = $riverDepartures->get($organization->id, collect());
                 $air = $airDepartures->get($organization->id, collect());
-                $publishedRiver = $river->where('is_published', true);
-                $publishedAir = $air->where('is_published', true);
+                $publishedRiver = $river->filter(fn (RouteDeparture $departure) => $departure->is_published
+                    && in_array($departure->status, ['scheduled', 'boarding'], true));
+                $publishedAir = $air->filter(fn (AirDeparture $departure) => $departure->is_published
+                    && in_array($departure->status, ['scheduled', 'boarding'], true));
 
                 $riverCapacity = $publishedRiver->sum(fn (RouteDeparture $departure) => (int) ($departure->vessel?->seat_capacity ?? 0));
                 $airCapacity = $publishedAir->sum(fn (AirDeparture $departure) => (int) ($departure->aircraft?->seat_capacity ?? 0));
@@ -119,7 +120,12 @@ class AdminItineraryController extends AdminSupervisionController
                     'commission_rate' => $commissionRate,
                     'is_paused' => (bool) $organization->is_marketplace_paused,
                 ];
-            });
+            })
+            ->when($filters['status'] ?? null, fn ($items, string $status) => $items->filter(fn ($operator) => match ($status) {
+                'published' => $operator->published_departures_count > 0 && ! $operator->is_paused,
+                'without_inventory' => $operator->published_departures_count === 0,
+                'paused' => $operator->is_paused,
+            })->values());
 
         $fluvialOperators = $operators
             ->filter(fn ($operator) => in_array($operator->modality_key, ['fluvial', 'mixto'], true))
@@ -127,6 +133,26 @@ class AdminItineraryController extends AdminSupervisionController
         $airOperators = $operators
             ->filter(fn ($operator) => in_array($operator->modality_key, ['aereo', 'air'], true))
             ->values();
+
+        $riverForDay = $riverDepartures->flatten(1);
+        $airForDay = $airDepartures->flatten(1);
+        $dayDepartures = $riverForDay->concat($airForDay);
+        $departedStatuses = ['departed', 'in_transit', 'completed'];
+        $pendingStatuses = ['scheduled', 'boarding'];
+        $rescheduledFromNotes = $dayDepartures->filter(fn ($departure) => $departure->status === 'rescheduled'
+            || str_contains(mb_strtolower((string) $departure->notes), 'reprogram'));
+        $rescheduledFromAudit = AuditLog::query()
+            ->where('event', 'updated')
+            ->where(function ($query) use ($riverForDay, $airForDay) {
+                $query->where(fn ($river) => $river->where('subject_type', RouteDeparture::class)->whereIn('subject_id', $riverForDay->pluck('id')))
+                    ->orWhere(fn ($air) => $air->where('subject_type', AirDeparture::class)->whereIn('subject_id', $airForDay->pluck('id')));
+            })
+            ->get(['subject_type', 'subject_id', 'changes'])
+            ->filter(fn (AuditLog $log) => array_key_exists('departure_at', $log->changes['old'] ?? [])
+                && array_key_exists('departure_at', $log->changes['new'] ?? []))
+            ->map(fn (AuditLog $log) => $log->subject_type.':'.$log->subject_id);
+        $rescheduledKeys = $rescheduledFromNotes->map(fn ($departure) => $departure::class.':'.$departure->id)
+            ->concat($rescheduledFromAudit)->unique();
 
         return view('admin.itineraries.index', [
             'operators' => $operators,
@@ -138,6 +164,11 @@ class AdminItineraryController extends AdminSupervisionController
             'pausedOperatorsCount' => $operators->where('is_paused', true)->count(),
             'operatorsCount' => $operators->count(),
             'selectedDate' => $selectedDate,
+            'scheduledDeparturesCount' => $dayDepartures->count(),
+            'departedDeparturesCount' => $dayDepartures->whereIn('status', $departedStatuses)->count(),
+            'pendingDeparturesCount' => $dayDepartures->whereIn('status', $pendingStatuses)->count(),
+            'cancelledDeparturesCount' => $dayDepartures->where('status', 'cancelled')->count(),
+            'rescheduledDeparturesCount' => $rescheduledKeys->count(),
         ]);
     }
 

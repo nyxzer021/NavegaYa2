@@ -134,6 +134,11 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Pausar ventas')
             ->assertSee('Salidas publicadas')
             ->assertSee('Asientos disponibles')
+            ->assertSee('Salidas del día')
+            ->assertSee('Salidas realizadas')
+            ->assertSee('Pendientes')
+            ->assertSee('Canceladas')
+            ->assertSee('Reprogramadas')
             ->assertDontSee('DICAPI')
             ->assertDontSee('DGAC')
             ->assertDontSee('Editar');
@@ -149,6 +154,12 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Operación aérea')
             ->assertSee('Operador aéreo')
             ->assertDontSee('Operación fluvial');
+
+        Organization::where('ruc', '20443322110')->update(['is_marketplace_paused' => true]);
+        $this->get(route('admin.itineraries.index', ['status' => 'paused']))
+            ->assertOk()
+            ->assertSee('Selva Air Taxi')
+            ->assertDontSee('Expreso Fluvial Marañón');
 
         $this->get(route('admin.supervision.index'))->assertRedirect(route('admin.itineraries.index'));
 

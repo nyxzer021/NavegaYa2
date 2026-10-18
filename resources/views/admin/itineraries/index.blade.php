@@ -37,6 +37,18 @@
 
     @if(session('success'))<div class="mx-5 mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">✓ {{ session('success') }}</div>@endif
 
+    <section class="grid border-b border-slate-200 bg-white sm:grid-cols-2 xl:grid-cols-5" aria-label="Resultado operativo de la fecha">
+        @foreach([
+            ['Salidas del día', $scheduledDeparturesCount, 'Operaciones registradas', 'text-slate-900'],
+            ['Salidas realizadas', $departedDeparturesCount, 'Zarparon, en tránsito o completadas', 'text-emerald-700'],
+            ['Pendientes', $pendingDeparturesCount, 'Programadas o en embarque', 'text-sky-700'],
+            ['Canceladas', $cancelledDeparturesCount, 'No realizaron la salida', 'text-rose-700'],
+            ['Reprogramadas', $rescheduledDeparturesCount, 'Cambio de fecha u hora registrado', 'text-amber-700'],
+        ] as $operation)
+            <article class="border-r border-slate-100 px-5 py-3"><span class="text-[9px] font-black uppercase tracking-wider text-slate-400">{{ $operation[0] }}</span><div class="mt-1 text-xl font-black {{ $operation[3] }}">{{ number_format($operation[1]) }}</div><p class="text-[9px] text-slate-400">{{ $operation[2] }}</p></article>
+        @endforeach
+    </section>
+
     <div class="border-b border-slate-200 p-4 lg:px-6">
         <form method="GET" class="flex flex-wrap items-center gap-2">
             <input type="hidden" name="tab" value="{{ $activeTab }}">
