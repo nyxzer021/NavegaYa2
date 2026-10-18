@@ -55,6 +55,28 @@ class CompanyFleetController extends Controller
         return back()->with('success', 'Aeronave registrada correctamente.');
     }
 
+    public function submitVesselForReview(Vessel $vessel): RedirectResponse
+    {
+        $organization = $this->organization();
+        abort_unless($vessel->organization_id === $organization->id, 403);
+
+        $seatCount = $vessel->seats()->count();
+        if ($seatCount !== $vessel->seat_capacity) {
+            return back()->withErrors(['review' => "Completa el plano: hay {$seatCount} de {$vessel->seat_capacity} asientos configurados."]);
+        }
+
+        abort_unless(in_array($vessel->status, ['draft', 'changes_requested', 'rejected'], true), 422);
+        $vessel->update([
+            'status' => 'pending_review',
+            'review_notes' => null,
+            'submitted_for_review_at' => now(),
+            'reviewed_at' => null,
+            'reviewed_by' => null,
+        ]);
+
+        return back()->with('success', 'Embarcación enviada a revisión. NavegaYA notificará aquí el resultado.');
+    }
+
     private function organization(): Organization
     {
         return Organization::query()->whereKey(AdminScope::organizationId(auth()->user()))->whereIn('status', ['active', 'pending'])->firstOrFail();

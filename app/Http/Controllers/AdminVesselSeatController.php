@@ -44,6 +44,7 @@ class AdminVesselSeatController extends Controller
         $this->authorizeVessel($vessel);
         $data = $request->validated();
         $routePrefix = $this->routePrefix($request);
+        abort_if($routePrefix === 'company' && in_array($vessel->status, ['pending_review', 'ready'], true), 422, 'No puedes modificar el plano mientras está en revisión o habilitado.');
         $total = $data['rows'] * ($data['left_seats'] + $data['right_seats']);
         $existing = $vessel->seats()->where('deck', $data['deck'])->exists();
 
@@ -87,6 +88,7 @@ class AdminVesselSeatController extends Controller
     public function destroyDeck(Request $request, Vessel $vessel): RedirectResponse
     {
         $this->authorizeVessel($vessel);
+        abort_if($this->routePrefix($request) === 'company' && in_array($vessel->status, ['pending_review', 'ready'], true), 422, 'No puedes modificar el plano mientras está en revisión o habilitado.');
         $deck = $request->validate(['deck' => ['required', 'in:principal,superior']])['deck'];
         $vessel->seats()->where('deck', $deck)->delete();
         if (! $vessel->seats()->exists()) {
@@ -99,6 +101,7 @@ class AdminVesselSeatController extends Controller
     public function toggle(Request $request, Vessel $vessel, VesselSeat $seat): RedirectResponse
     {
         $this->authorizeVessel($vessel);
+        abort_if($this->routePrefix($request) === 'company' && in_array($vessel->status, ['pending_review', 'ready'], true), 422, 'No puedes modificar el plano mientras está en revisión o habilitado.');
         abort_unless($seat->vessel_id === $vessel->id, 404);
         $seat->update(['is_available' => ! $seat->is_available]);
 

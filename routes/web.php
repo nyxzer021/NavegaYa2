@@ -118,6 +118,7 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::get('/ventas', [CompanySalesController::class, 'index'])->name('sales.index');
     Route::get('/ventas/exportar', [CompanySalesController::class, 'export'])->name('sales.export');
     Route::post('/flota/embarcaciones', [CompanyFleetController::class, 'storeVessel'])->name('fleet.vessels.store');
+    Route::post('/flota/embarcaciones/{vessel}/enviar-revision', [CompanyFleetController::class, 'submitVesselForReview'])->name('fleet.vessels.submit-review');
     Route::post('/flota/aeronaves', [CompanyFleetController::class, 'storeAircraft'])->name('fleet.aircraft.store');
     Route::get('/flota/embarcaciones/{vessel}/asientos', [AdminVesselSeatController::class, 'edit'])->name('vessels.seats.edit');
     Route::post('/flota/embarcaciones/{vessel}/asientos/generar', [AdminVesselSeatController::class, 'generate'])->name('vessels.seats.generate');

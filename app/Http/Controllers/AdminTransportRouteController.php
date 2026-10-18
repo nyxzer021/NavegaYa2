@@ -192,6 +192,7 @@ class AdminTransportRouteController extends Controller
         $data = $request->validated();
         $masterRoute = MasterRoute::query()->where('status', 'active')->where('modality', 'fluvial')->findOrFail($data['master_route_id']);
         $vessel = Vessel::findOrFail($data['vessel_id']);
+        abort_unless($vessel->status === 'ready', 422, 'La embarcación debe estar aprobada y habilitada antes de programar una salida.');
         $organizationId = AdminScope::organizationId(auth()->user());
         if ($organizationId) {
             abort_unless($vessel->organization_id === $organizationId, 403);

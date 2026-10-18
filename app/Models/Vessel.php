@@ -17,7 +17,7 @@ class Vessel extends Model
         'organization_id', 'base_port_id', 'name', 'registration_number', 'vessel_type', 'hull_material',
         'seat_capacity', 'crew_capacity', 'gross_tonnage', 'length_m', 'beam_m', 'draft_m',
         'engine_description', 'manufacture_year', 'insurance_policy', 'dicapi_certificate_number', 'life_vest_count', 'emergency_equipment', 'insurance_expires_at',
-        'inspection_expires_at', 'status', 'description', 'cover_image_path',
+        'inspection_expires_at', 'status', 'review_notes', 'submitted_for_review_at', 'reviewed_at', 'reviewed_by', 'description', 'cover_image_path',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class Vessel extends Model
             'seat_capacity' => 'integer', 'crew_capacity' => 'integer', 'manufacture_year' => 'integer', 'life_vest_count' => 'integer',
             'gross_tonnage' => 'decimal:2', 'length_m' => 'decimal:2', 'beam_m' => 'decimal:2', 'draft_m' => 'decimal:2',
             'insurance_expires_at' => 'date', 'inspection_expires_at' => 'date',
+            'submitted_for_review_at' => 'datetime', 'reviewed_at' => 'datetime',
         ];
     }
 
