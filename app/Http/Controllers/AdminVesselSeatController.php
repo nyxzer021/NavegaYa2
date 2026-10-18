@@ -28,6 +28,7 @@ class AdminVesselSeatController extends Controller
         $routePrefix = $this->routePrefix($request);
 
         return view($routePrefix === 'company' ? 'company.fleet.seats' : 'admin.vessels.seats', [
+            'organization' => $vessel->organization,
             'vessel' => $vessel,
             'seats' => $seats,
             'deck' => $deck,
@@ -42,6 +43,7 @@ class AdminVesselSeatController extends Controller
     {
         $this->authorizeVessel($vessel);
         $data = $request->validated();
+        $routePrefix = $this->routePrefix($request);
         $total = $data['rows'] * ($data['left_seats'] + $data['right_seats']);
         $existing = $vessel->seats()->where('deck', $data['deck'])->exists();
 
@@ -54,7 +56,7 @@ class AdminVesselSeatController extends Controller
             return back()->withInput()->withErrors(['rows' => "Esta cubierta genera {$total} asientos y, junto con las otras cubiertas ({$otherDeckSeats}), sumaría {$finalTotal}. El máximo permitido es {$vessel->seat_capacity}."]);
         }
 
-        DB::transaction(function () use ($vessel, $data) {
+        DB::transaction(function () use ($vessel, $data, $routePrefix) {
             $vessel->seats()->where('deck', $data['deck'])->delete();
             $letters = range('A', 'L');
             $seats = [];
@@ -69,10 +71,17 @@ class AdminVesselSeatController extends Controller
                 }
             }
             VesselSeat::insert($seats);
-            $vessel->update(['status' => 'ready']);
+            if ($routePrefix === 'admin') {
+                $vessel->update(['status' => 'ready']);
+            }
         });
 
-        return redirect()->route($this->routePrefix($request).'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $data['deck']])->with('success', "Plano de cubierta {$data['deck']} creado con {$total} asientos.");
+        $message = "Plano de cubierta {$data['deck']} creado con {$total} asientos.";
+        if ($routePrefix === 'company' && $vessel->status === 'draft') {
+            $message .= ' La embarcación permanece pendiente de habilitación por NavegaYA.';
+        }
+
+        return redirect()->route($routePrefix.'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $data['deck']])->with('success', $message);
     }
 
     public function destroyDeck(Request $request, Vessel $vessel): RedirectResponse
