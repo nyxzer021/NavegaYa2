@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{DestinationCity,DestinationListing,Organization,Role,Subscription,SubscriptionPlan,User};
+use App\Models\{BusinessCategory,DestinationCity,DestinationListing,Organization,Role,Subscription,SubscriptionPlan,User};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -42,9 +42,10 @@ class TourismMarketplaceTest extends TestCase
         $owner->roles()->attach($role->id,['organization_id'=>$org->id]);
         Subscription::create(['organization_id'=>$org->id,'subscription_plan_id'=>$plan->id,'status'=>'active','monthly_price'=>$plan->monthly_price,'currency'=>'PEN','starts_on'=>today(),'ends_on'=>today()->addMonth()]);
         $listing=DestinationListing::create(['organization_id'=>$org->id,'owner_user_id'=>$owner->id,'destination_city_id'=>$city->id,'type'=>'gastronomy','status'=>'draft','name'=>'Sabores Loreto','sort_order'=>99,'is_active'=>false]);
+        $category=BusinessCategory::where('listing_type','gastronomy')->firstOrFail();
         $files=collect(range(1,6))->map(fn($n)=>UploadedFile::fake()->image("foto{$n}.jpg"))->all();
         $this->actingAs($owner)->patch(route('marketplace.update'),[
-            'destination_city_id'=>$city->id,'type'=>'gastronomy','name'=>'Sabores Loreto','description'=>'Cocina amazónica con insumos regionales.','services'=>'Menú regional y reservas','contact_phone'=>'999222333','action'=>'submit','images'=>$files,
+            'destination_city_id'=>$city->id,'type'=>'gastronomy','business_category_id'=>$category->id,'name'=>'Sabores Loreto','description'=>'Cocina amazónica con insumos regionales.','services'=>'Menú regional y reservas','contact_phone'=>'999222333','action'=>'submit','images'=>$files,
         ])->assertSessionHasNoErrors();
         $listing->refresh();
         $this->assertSame('pending_review',$listing->status);
@@ -58,5 +59,24 @@ class TourismMarketplaceTest extends TestCase
         $this->assertTrue($listing->is_active);
         $this->assertSame('published',$listing->status);
         $this->get(route('guide.show',$listing))->assertOk()->assertSee('Sabores Loreto')->assertSee('Cocina amazónica');
+    }
+
+    public function test_superadmin_manages_master_categories_and_assisted_form_cannot_publish_directly(): void
+    {
+        $admin=User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code'=>'super_admin'],['name'=>'Superadministrador']));
+
+        $this->actingAs($admin)->post(route('admin.business-categories.store'),[
+            'code'=>'eco_lodge','listing_type'=>'lodging','name'=>'Eco lodge','icon'=>'🛖','description'=>'Hospedaje sostenible','sort_order'=>15,'is_active'=>1,
+        ])->assertSessionHasNoErrors();
+        $category=BusinessCategory::where('code','eco_lodge')->firstOrFail();
+        $this->get(route('admin.business-categories.index'))->assertOk()->assertSee('Eco lodge');
+
+        $city=DestinationCity::where('name','Iquitos')->firstOrFail();
+        $this->post(route('admin.destination-listings.store','lodging'),[
+            'destination_city_id'=>$city->id,'business_category_id'=>$category->id,'name'=>'Lodge asistido','description'=>'Borrador creado con asistencia.',
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('destination_listings',['name'=>'Lodge asistido','status'=>'draft','is_active'=>false,'is_featured'=>false]);
+        $this->get(route('admin.destination-listings.create','lodging'))->assertOk()->assertDontSee('Mostrar destacado en portada')->assertDontSee('> Publicar<',false);
     }
 }

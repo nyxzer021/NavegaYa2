@@ -18,6 +18,7 @@ use App\Http\Controllers\AdminAircraftController;
 use App\Http\Controllers\AdminAirRouteController;
 use App\Http\Controllers\AdminAuditLogController;
 use App\Http\Controllers\AdminBoardingController;
+use App\Http\Controllers\AdminBusinessCategoryController;
 use App\Http\Controllers\AdminCargoShipmentController;
 use App\Http\Controllers\AdminDestinationController;
 use App\Http\Controllers\AdminDestinationListingController;
@@ -198,6 +199,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/tours-experiencias', [AdminTourController::class, 'index'])->name('tours.index');
     Route::get('/aliados-turisticos', [AdminTourismPartnerController::class, 'index'])->name('tourism-partners.index');
     Route::patch('/aliados-turisticos/{listing}/moderacion', [AdminTourismPartnerController::class, 'moderate'])->name('tourism-partners.moderate');
+    Route::get('/categorias-negocios', [AdminBusinessCategoryController::class, 'index'])->name('business-categories.index');
+    Route::post('/categorias-negocios', [AdminBusinessCategoryController::class, 'store'])->name('business-categories.store');
+    Route::patch('/categorias-negocios/{category}', [AdminBusinessCategoryController::class, 'update'])->name('business-categories.update');
+    Route::delete('/categorias-negocios/{category}', [AdminBusinessCategoryController::class, 'destroy'])->name('business-categories.destroy');
     Route::get('/publicidad-pautas', [AdminAdvertisementController::class, 'index'])->name('advertisements.index');
     Route::post('/publicidad-pautas', [AdminAdvertisementController::class, 'store'])->name('advertisements.store');
     Route::patch('/publicidad-pautas/{ad}', [AdminAdvertisementController::class, 'update'])->name('advertisements.update');
