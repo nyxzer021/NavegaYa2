@@ -17,12 +17,14 @@ class AdminPortController extends Controller
 {
     public function index(Request $request): View
     {
-        return view('admin.ports.index', ['ports' => Port::with(['department', 'province', 'district'])->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))->orderBy('city')->orderBy('name')->paginate(15)->withQueryString()]);
+        return view('admin.ports.index', $this->formData([
+            'ports' => Port::with(['department', 'province', 'district'])->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))->orderBy('city')->orderBy('name')->paginate(10)->withQueryString(),
+        ]));
     }
 
-    public function create(): View
+    public function create(): RedirectResponse
     {
-        return view('admin.ports.create', $this->formData());
+        return redirect()->route('admin.ports.index', ['nuevo' => 1])->withFragment('nuevo-puerto');
     }
 
     public function store(StorePortRequest $request): RedirectResponse
@@ -79,7 +81,13 @@ class AdminPortController extends Controller
         $loreto = GeographicDepartment::where('code', '16')->firstOrFail();
         $provinces = ($port?->department_id === $loreto->id ? $port->department->provinces() : $loreto->provinces())->orderBy('name')->get();
 
-        return $extra + ['loreto' => $loreto, 'departments' => collect([$loreto]), 'initialProvinces' => $provinces, 'initialDistricts' => $port?->province?->districts()->orderBy('name')->get() ?? collect()];
+        $locationTree = $loreto->provinces()->with(['districts' => fn ($query) => $query->orderBy('name')])->orderBy('name')->get()->map(fn ($province) => [
+            'id' => $province->id,
+            'name' => $province->name,
+            'districts' => $province->districts->map(fn ($district) => ['id' => $district->id, 'name' => $district->name])->values(),
+        ])->values();
+
+        return $extra + ['loreto' => $loreto, 'departments' => collect([$loreto]), 'initialProvinces' => $provinces, 'initialDistricts' => $port?->province?->districts()->orderBy('name')->get() ?? collect(), 'locationTree' => $locationTree];
     }
 
     private function normalized(StorePortRequest $request): array

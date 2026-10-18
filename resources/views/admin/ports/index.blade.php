@@ -18,8 +18,32 @@
                 <h1 class="mt-2 text-3xl font-bold">Puertos de embarque</h1>
                 <p class="mt-2 text-emerald-50">Cada puerto puede ser salida o llegada según la ruta. Se registra una sola vez para ida y regreso.</p>
             </div>
-            <a href="{{ route('admin.ports.create') }}" class="rounded-xl bg-amber-400 px-5 py-3 font-bold text-[#12372d]">+ Registrar puerto</a>
+            <a href="{{ route('admin.ports.index', ['nuevo' => 1]) }}#nuevo-puerto" class="rounded-xl bg-amber-400 px-5 py-3 font-bold text-[#12372d]">+ Registrar puerto</a>
         </div>
+
+        <details id="nuevo-puerto" class="mb-4 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm" @if(request('nuevo') || $errors->any()) open @endif>
+            <summary class="flex cursor-pointer list-none items-center justify-between bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-900">
+                <span>＋ Nuevo puerto, terminal o aeródromo</span><span class="text-xs font-semibold text-emerald-700">Registrar sin salir del catálogo</span>
+            </summary>
+            <form method="POST" action="{{ route('admin.ports.store') }}" class="border-t border-emerald-100 p-5">
+                @csrf
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="text-xs font-bold text-slate-700">Departamento<input value="{{ $loreto->name }}" readonly class="mt-1 h-10 w-full rounded-lg border-slate-200 bg-slate-100 text-xs"><input type="hidden" name="department_id" value="{{ $loreto->id }}"></label>
+                    <label class="text-xs font-bold text-slate-700">Provincia<select id="newProvince" name="province_id" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="">Selecciona provincia</option>@foreach($initialProvinces as $province)<option value="{{$province->id}}" @selected(old('province_id')==$province->id)>{{$province->name}}</option>@endforeach</select></label>
+                    <label class="text-xs font-bold text-slate-700">Distrito<select id="newDistrict" name="district_id" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="">Selecciona primero la provincia</option></select></label>
+                    <label class="text-xs font-bold text-slate-700">Nombre del terminal<input name="name" value="{{old('name')}}" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs" placeholder="Ej. Puerto La Boca"></label>
+                    <label class="text-xs font-bold text-slate-700">Modalidad<select name="modality" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="fluvial" @selected(old('modality','fluvial')==='fluvial')>🚤 Fluvial</option><option value="aereo" @selected(old('modality')==='aereo')>✈️ Aéreo</option></select></label>
+                    <label class="text-xs font-bold text-slate-700">Tipo de instalación<select name="port_type" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs">@foreach(['terminal'=>'Terminal fluvial','embarcadero'=>'Embarcadero','muelle'=>'Muelle','muelle_flotante'=>'Muelle flotante','privado'=>'Puerto privado','aerodromo'=>'Aeródromo / pista','otro'=>'Otro'] as $value=>$label)<option value="{{$value}}" @selected(old('port_type','embarcadero')===$value)>{{$label}}</option>@endforeach</select></label>
+                    <label class="text-xs font-bold text-slate-700">Río, pista o referencia<input name="river" value="{{old('river')}}" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs" placeholder="Ej. Amazonas"></label>
+                    <label class="text-xs font-bold text-slate-700">Teléfono<input name="contact_phone" value="{{old('contact_phone')}}" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs" placeholder="999 999 999"></label>
+                    <label class="text-xs font-bold text-slate-700 md:col-span-2">Dirección o referencia<input name="address" value="{{old('address')}}" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"></label>
+                    <label class="text-xs font-bold text-slate-700">Latitud (opcional)<input type="number" step="0.0000001" name="latitude" value="{{old('latitude')}}" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"></label>
+                    <label class="text-xs font-bold text-slate-700">Longitud (opcional)<input type="number" step="0.0000001" name="longitude" value="{{old('longitude')}}" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"></label>
+                </div>
+                @if($errors->any())<div class="mt-3 rounded-lg bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">{{$errors->first()}}</div>@endif
+                <div class="mt-4 flex justify-end"><button class="rounded-lg bg-emerald-800 px-5 py-2.5 text-xs font-black text-white hover:bg-emerald-900">Guardar terminal</button></div>
+            </form>
+        </details>
 
         <form method="GET" class="mb-4 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4">
             <input type="search" name="search" value="{{ request('search') }}" placeholder="Buscar terminal o ciudad" class="h-10 min-w-64 rounded-xl border-slate-200 bg-slate-50 text-xs">
@@ -63,4 +87,20 @@
             @endif
         </div>
     </div>
+    <script>
+        (() => {
+            const tree = @json($locationTree);
+            const province = document.getElementById('newProvince');
+            const district = document.getElementById('newDistrict');
+            const selectedDistrict = @json((string) old('district_id'));
+            const loadDistricts = () => {
+                const row = tree.find(item => String(item.id) === String(province.value));
+                const districts = row?.districts ?? [];
+                district.innerHTML = '<option value="">Selecciona distrito</option>' + districts.map(item => `<option value="${item.id}" ${String(item.id) === selectedDistrict ? 'selected' : ''}>${item.name}</option>`).join('');
+                district.disabled = districts.length === 0;
+            };
+            province.addEventListener('change', loadDistricts);
+            if (province.value) loadDistricts();
+        })();
+    </script>
 </x-app-layout>

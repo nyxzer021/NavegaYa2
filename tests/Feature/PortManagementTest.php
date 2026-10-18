@@ -39,10 +39,10 @@ class PortManagementTest extends TestCase
         [$department, $province, $district] = $this->location();
         $port = Port::create(['department_id' => $department->id, 'province_id' => $province->id, 'district_id' => $district->id, 'name' => 'Puerto Inicial', 'city' => 'Iquitos', 'region' => 'Loreto']);
         $admin = $this->admin();
-        $this->actingAs($admin)->get(route('admin.ports.create'))->assertOk()->assertSee('Departamento')->assertSee('Distrito')->assertSee('Maynas');
+        $this->actingAs($admin)->get(route('admin.ports.create'))->assertRedirect(route('admin.ports.index', ['nuevo' => 1]).'#nuevo-puerto');
         $this->actingAs($admin)->get(route('admin.locations.provinces', $department))->assertOk()->assertJsonFragment(['name' => 'Maynas']);
         $this->actingAs($admin)->get(route('admin.locations.districts', $province))->assertOk()->assertJsonFragment(['name' => 'Iquitos']);
-        $this->actingAs($admin)->get(route('admin.ports.index'))->assertOk()->assertSee('Puertos de embarque')->assertSee('Editar');
+        $this->actingAs($admin)->get(route('admin.ports.index'))->assertOk()->assertSee('Puertos de embarque')->assertSee('Nuevo puerto, terminal o aeródromo')->assertSee('Maynas')->assertSee('Editar');
         $this->actingAs($admin)->patch(route('admin.ports.update', $port), ['department_id' => $department->id, 'province_id' => $province->id, 'district_id' => $district->id, 'name' => 'Puerto Actualizado', 'modality' => 'fluvial', 'port_type' => 'embarcadero', 'river' => 'Amazonas', 'operator_name' => 'Operador de prueba', 'contact_phone' => '999999999'])->assertRedirect(route('admin.ports.index'));
         $this->assertDatabaseHas('ports', ['id' => $port->id, 'name' => 'Puerto Actualizado', 'city' => 'Iquitos', 'region' => 'Loreto']);
         $this->actingAs($admin)->delete(route('admin.ports.destroy', $port))->assertRedirect(route('admin.ports.index'));
