@@ -25,14 +25,16 @@ class AdminVesselSeatController extends Controller
 
         $otherDeckSeats = $deckCounts->except($deck)->sum();
 
-        return view('admin.vessels.seats', [
+        $routePrefix = $this->routePrefix($request);
+
+        return view($routePrefix === 'company' ? 'company.fleet.seats' : 'admin.vessels.seats', [
             'vessel' => $vessel,
             'seats' => $seats,
             'deck' => $deck,
             'deckCounts' => $deckCounts,
             'isEditing' => $isEditing,
             'otherDeckSeats' => $otherDeckSeats,
-            'seatRoutePrefix' => $this->routePrefix($request),
+            'seatRoutePrefix' => $routePrefix,
         ]);
     }
 

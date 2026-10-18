@@ -35,10 +35,12 @@ class CompanyPortalTest extends TestCase
         [, $other] = $this->companyAdmin('Operador Ajeno', '20444444444');
         $port = Port::create(['name' => 'Puerto Silico', 'city' => 'Iquitos', 'region' => 'Loreto', 'is_active' => true]);
 
-        $this->actingAs($admin)->post(route('company.fleet.vessels.store'), [
+        $response = $this->actingAs($admin)->post(route('company.fleet.vessels.store'), [
             'name' => 'Rápida Segura', 'registration_number' => 'DICAPI-001', 'vessel_type' => 'rapido',
             'seat_capacity' => 24, 'base_port_id' => $port->id, 'organization_id' => $other->id,
-        ])->assertRedirect();
+        ]);
+        $vessel = Vessel::where('name', 'Rápida Segura')->firstOrFail();
+        $response->assertRedirect(route('company.vessels.seats.edit', $vessel));
         $this->assertDatabaseHas('vessels', ['name' => 'Rápida Segura', 'organization_id' => $organization->id]);
         $this->assertDatabaseMissing('vessels', ['name' => 'Rápida Segura', 'organization_id' => $other->id]);
 

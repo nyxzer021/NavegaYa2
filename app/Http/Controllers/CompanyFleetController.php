@@ -36,9 +36,10 @@ class CompanyFleetController extends Controller
             'vessel_type' => ['required', Rule::in(['lancha', 'motonave', 'rapido', 'ferry', 'otro'])],
             'seat_capacity' => ['required', 'integer', 'min:1', 'max:2000'], 'base_port_id' => ['nullable', 'exists:ports,id'],
         ]);
-        Vessel::create($data + ['organization_id' => $organization->id, 'status' => 'draft']);
+        $vessel = Vessel::create($data + ['organization_id' => $organization->id, 'status' => 'draft']);
 
-        return back()->with('success', 'Embarcación registrada. Completa sus permisos y plano de asientos antes de operar.');
+        return redirect()->route('company.vessels.seats.edit', $vessel)
+            ->with('success', 'Embarcación registrada. Ahora configura la distribución de sus asientos.');
     }
 
     public function storeAircraft(Request $request): RedirectResponse
