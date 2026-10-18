@@ -21,9 +21,11 @@ class HomePageTest extends TestCase
         $destination = Port::create(['name' => 'Puerto Nauta', 'city' => 'Nauta', 'region' => 'Loreto']);
         $vessel = Vessel::create(['organization_id' => $company->id, 'name' => 'Nave Inicio', 'registration_number' => 'IN-01', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
         $route = TransportRoute::create(['organization_id' => $company->id, 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id, 'status' => 'active']);
-        RouteDeparture::create(['transport_route_id' => $route->id, 'vessel_id' => $vessel->id, 'departure_at' => now()->addDay(), 'boarding_starts_at' => now()->addDay()->subHour(), 'fare' => 65, 'status' => 'scheduled']);
+        $departure = RouteDeparture::create(['transport_route_id' => $route->id, 'vessel_id' => $vessel->id, 'departure_at' => now()->addDay(), 'boarding_starts_at' => now()->addDay()->subHour(), 'fare' => 65, 'status' => 'scheduled']);
         $this->get(route('home'))->assertOk()->assertSee('Viaja por la Amazonía con total confianza')->assertSee('Iquitos')->assertSee('Nauta')
-            ->assertSee('action="'.route('home').'#resultados"', false);
+            ->assertSee('action="'.route('home').'#resultados"', false)
+            ->assertSee('Elegir asiento')
+            ->assertSee('href="'.route('bookings.create', $departure).'"', false);
 
         $this->get(route('home', ['transport' => 'river', 'origin' => 'Iquitos', 'destination' => 'Nauta', 'passengers' => 2]))
             ->assertOk()->assertSee('Resultados de tu búsqueda')->assertSee('Iquitos')->assertSee('Nauta')
