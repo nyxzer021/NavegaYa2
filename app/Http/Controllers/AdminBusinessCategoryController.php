@@ -13,7 +13,9 @@ class AdminBusinessCategoryController extends Controller
     public function index(): View
     {
         return view('admin.business-categories.index', [
-            'categories' => BusinessCategory::withCount('listings')->orderBy('sort_order')->orderBy('name')->get(),
+            'categories' => BusinessCategory::withCount('listings')->orderBy('sort_order')->orderBy('name')->paginate(10)->withQueryString(),
+            'categoriesCount' => BusinessCategory::count(),
+            'activeCategoriesCount' => BusinessCategory::where('is_active', true)->count(),
             'types' => MarketplaceBusinessController::TYPES,
         ]);
     }

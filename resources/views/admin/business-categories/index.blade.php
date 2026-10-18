@@ -12,8 +12,8 @@
                 <p class="mt-3 max-w-3xl text-sm leading-6 text-emerald-50/80">Administra las opciones que podrán seleccionar los hoteles, restaurantes, tours y servicios al crear su ficha comercial.</p>
             </div>
             <div class="flex gap-3 text-center">
-                <div class="min-w-24 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15"><strong class="block text-2xl">{{$categories->count()}}</strong><span class="text-xs text-emerald-100/75">Categorías</span></div>
-                <div class="min-w-24 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15"><strong class="block text-2xl">{{$categories->where('is_active', true)->count()}}</strong><span class="text-xs text-emerald-100/75">Activas</span></div>
+                <div class="min-w-24 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15"><strong class="block text-2xl">{{$categoriesCount}}</strong><span class="text-xs text-emerald-100/75">Categorías</span></div>
+                <div class="min-w-24 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15"><strong class="block text-2xl">{{$activeCategoriesCount}}</strong><span class="text-xs text-emerald-100/75">Activas</span></div>
             </div>
         </div>
     </section>
@@ -21,30 +21,27 @@
     @if(session('success'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-800">✓ {{session('success')}}</div>@endif
     @if($errors->any())<div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-800">{{$errors->first()}}</div>@endif
 
-    <section class="grid items-start gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
-        <form method="POST" action="{{route('admin.business-categories.store')}}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm xl:sticky xl:top-6">
+    <section class="space-y-6">
+        <form method="POST" action="{{route('admin.business-categories.store')}}" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             @csrf
-            <div class="border-b border-slate-100 pb-4">
-                <p class="text-xs font-black uppercase tracking-wider text-emerald-700">Nuevo registro</p>
-                <h3 class="mt-1 text-xl font-black text-slate-950">Crear categoría</h3>
-                <p class="mt-1 text-sm leading-5 text-slate-500">Aparecerá como opción en el panel de los negocios.</p>
+            <div class="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div><p class="text-xs font-black uppercase tracking-wider text-emerald-700">Nuevo registro</p><h3 class="mt-1 text-lg font-black text-slate-950">Crear categoría</h3></div>
+                <p class="text-sm text-slate-500">Completa los datos y agrégala al listado maestro.</p>
             </div>
-            <div class="mt-5 space-y-4">
-                <label class="block text-sm font-bold text-slate-700">Grupo comercial<select name="listing_type" required class="mt-2 w-full rounded-xl border-slate-300 text-sm focus:border-emerald-600 focus:ring-emerald-600">@foreach($types as $key=>$label)<option value="{{$key}}">{{$label}}</option>@endforeach</select></label>
-                <label class="block text-sm font-bold text-slate-700">Nombre<input name="name" required maxlength="100" class="mt-2 w-full rounded-xl border-slate-300 text-sm" placeholder="Ej. Lodge ecológico"></label>
-                <div class="grid grid-cols-[100px_1fr] gap-3">
-                    <label class="block text-sm font-bold text-slate-700">Ícono<input name="icon" maxlength="12" class="mt-2 w-full rounded-xl border-slate-300 text-center text-lg" placeholder="🛖"></label>
-                    <label class="block text-sm font-bold text-slate-700">Código<input name="code" required maxlength="60" class="mt-2 w-full rounded-xl border-slate-300 text-sm" placeholder="lodge_ecologico"></label>
-                </div>
-                <label class="block text-sm font-bold text-slate-700">Descripción<textarea name="description" rows="3" class="mt-2 w-full rounded-xl border-slate-300 text-sm" placeholder="Explica qué negocios pertenecen a esta categoría."></textarea></label>
-                <label class="block text-sm font-bold text-slate-700">Orden de aparición<input type="number" name="sort_order" value="99" min="1" max="999" class="mt-2 w-full rounded-xl border-slate-300 text-sm"></label>
-                <label class="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700"><input type="checkbox" name="is_active" value="1" checked class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-600">Disponible en formularios</label>
+            <div class="mt-4 grid gap-3 lg:grid-cols-12 lg:items-end">
+                <label class="block text-sm font-bold text-slate-700 lg:col-span-3">Grupo comercial<select name="listing_type" required class="mt-1.5 w-full rounded-xl border-slate-300 text-sm">@foreach($types as $key=>$label)<option value="{{$key}}">{{$label}}</option>@endforeach</select></label>
+                <label class="block text-sm font-bold text-slate-700 lg:col-span-3">Nombre<input name="name" required maxlength="100" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm" placeholder="Ej. Lodge ecológico"></label>
+                <label class="block text-sm font-bold text-slate-700 lg:col-span-1">Ícono<input name="icon" maxlength="12" class="mt-1.5 w-full rounded-xl border-slate-300 text-center text-lg" placeholder="🛖"></label>
+                <label class="block text-sm font-bold text-slate-700 lg:col-span-3">Código<input name="code" required maxlength="60" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm" placeholder="lodge_ecologico"></label>
+                <label class="block text-sm font-bold text-slate-700 lg:col-span-2">Orden<input type="number" name="sort_order" value="99" min="1" max="999" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm"></label>
+                <label class="block text-sm font-bold text-slate-700 lg:col-span-7">Descripción<input name="description" maxlength="500" class="mt-1.5 w-full rounded-xl border-slate-300 text-sm" placeholder="Descripción breve de la categoría"></label>
+                <label class="flex h-[42px] items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm font-bold text-slate-700 lg:col-span-3"><input type="checkbox" name="is_active" value="1" checked class="rounded border-slate-300 text-emerald-700 focus:ring-emerald-600">Disponible</label>
+                <button class="h-[42px] rounded-xl bg-emerald-800 px-4 text-sm font-black text-white shadow-sm hover:bg-emerald-900 lg:col-span-2">Crear categoría</button>
             </div>
-            <button class="mt-5 w-full rounded-xl bg-emerald-800 px-4 py-3.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-900">Crear categoría</button>
         </form>
 
         <div class="space-y-4">
-            <div class="flex items-end justify-between px-1"><div><h3 class="text-lg font-black text-slate-950">Categorías registradas</h3><p class="text-sm text-slate-500">Listado maestro disponible para los negocios.</p></div><span class="hidden text-xs font-bold uppercase tracking-wider text-slate-400 sm:block">{{$categories->count()}} registros</span></div>
+            <div class="flex items-end justify-between px-1"><div><h3 class="text-lg font-black text-slate-950">Categorías registradas</h3><p class="text-sm text-slate-500">Listado maestro disponible para los negocios.</p></div><span class="hidden text-xs font-bold uppercase tracking-wider text-slate-400 sm:block">{{$categories->total()}} registros</span></div>
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="hidden grid-cols-[64px_minmax(180px,1.2fr)_minmax(190px,1fr)_90px_190px] gap-4 border-b bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wider text-slate-500 lg:grid"><span>Ícono</span><span>Categoría</span><span>Grupo comercial</span><span>Estado</span><span class="text-right">Acciones</span></div>
             <div class="divide-y divide-slate-100">
@@ -83,6 +80,7 @@
             @endforelse
             </div>
             </div>
+            @if($categories->hasPages())<div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">{{$categories->links()}}</div>@endif
         </div>
     </section>
 </div>
