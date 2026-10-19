@@ -10,5 +10,5 @@ return [
     | de habilitar una pasarela real en producción.
     |
     */
-    'sandbox_enabled' => (bool) env('PAYMENTS_SANDBOX', true),
+    'sandbox_enabled' => (bool) env('PAYMENTS_SANDBOX', false),
 ];
