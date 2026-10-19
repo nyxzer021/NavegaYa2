@@ -55,7 +55,8 @@ class UserRoleRoutingTest extends TestCase
 
         $this->assertSame($customer->id, $ownedReservation->fresh()->user_id);
         $this->actingAs($customer)->get(route('travels.index'))
-            ->assertOk()->assertSee('Mis boletos comprados')->assertSee($ownedTicket->code)->assertDontSee($otherTicket->code);
+            ->assertOk()->assertSee('Mis viajes')->assertSee('Próximos')->assertSee('1')
+            ->assertSee('Mis boletos comprados')->assertSee($ownedTicket->code)->assertDontSee($otherTicket->code);
     }
 
     private function ticketPurchase(string $email, string $ticketCode, string $reservationCode): array

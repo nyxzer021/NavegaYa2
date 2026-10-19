@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Reservation;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,15 +13,32 @@ class TravelController extends Controller
     public function index(): View
     {
         $tickets = collect();
+        $reservations = collect();
+        $travelSummary = ['upcoming' => 0, 'completed' => 0, 'changed' => 0, 'cancelled' => 0];
         $accountMode = auth()->check() && auth()->user()->isCustomer();
         if ($accountMode) {
             auth()->user()->claimGuestPurchases();
             $tickets = $this->ticketQuery()
                 ->whereHas('reservationSeat.reservation', fn ($query) => $query->where('user_id', auth()->id()))
                 ->get()->sortByDesc(fn (Ticket $ticket) => $ticket->issued_at)->values();
+            $reservations = Reservation::query()->where('user_id', auth()->id())
+                ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'airDeparture.airRoute', 'airDeparture.aircraft', 'seats.ticket'])
+                ->latest()->limit(50)->get();
+            foreach ($reservations as $reservation) {
+                $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
+                if (in_array($reservation->status, ['cancelled', 'expired'], true) || $trip?->status === 'cancelled') {
+                    $travelSummary['cancelled']++;
+                } elseif ($trip?->status === 'rescheduled' || str_contains(mb_strtolower((string) $trip?->notes), 'reprogram')) {
+                    $travelSummary['changed']++;
+                } elseif ($trip?->departure_at?->isPast() || in_array($trip?->status, ['departed', 'in_transit', 'completed'], true)) {
+                    $travelSummary['completed']++;
+                } else {
+                    $travelSummary['upcoming']++;
+                }
+            }
         }
 
-        return view('travels.lookup', compact('tickets', 'accountMode') + ['searched' => false, 'document' => '', 'reference' => '']);
+        return view('travels.lookup', compact('tickets', 'accountMode', 'reservations', 'travelSummary') + ['searched' => false, 'document' => '', 'reference' => '']);
     }
 
     public function search(Request $request): View
@@ -29,7 +47,7 @@ class TravelController extends Controller
         $tickets = $this->ticketsFor($data['document'], $data['reference']);
         session(['travels_ticket_codes' => $tickets->pluck('code')->all()]);
 
-        return view('travels.lookup', ['tickets' => $tickets, 'searched' => true, 'accountMode' => false, 'document' => $data['document'], 'reference' => $data['reference']]);
+        return view('travels.lookup', ['tickets' => $tickets, 'reservations' => collect(), 'travelSummary' => [], 'searched' => true, 'accountMode' => false, 'document' => $data['document'], 'reference' => $data['reference']]);
     }
 
     public function lookup(Request $request): JsonResponse

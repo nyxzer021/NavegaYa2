@@ -13,6 +13,8 @@ class ProductionReadiness extends Command
     public function handle(): int
     {
         $failures = [];
+        $filesystem = (string) config('filesystems.default');
+        $mailFrom = (string) config('mail.from.address');
         $checks = [
             'APP_ENV=production' => app()->environment('production'),
             'APP_DEBUG=false' => ! config('app.debug'),
@@ -21,8 +23,11 @@ class ProductionReadiness extends Command
             'Sesión cifrada' => (bool) config('session.encrypt'),
             'Cola asíncrona' => config('queue.default') !== 'sync',
             'Correo transaccional configurado' => config('mail.default') !== 'log',
+            'Remitente de correo real' => $mailFrom !== '' && ! str_ends_with($mailFrom, '@example.com'),
+            'Base de datos persistente' => config('database.default') !== 'sqlite',
+            'Pagos simulados desactivados' => ! config('payments.sandbox_enabled'),
+            'Archivos en almacenamiento persistente' => ! in_array($filesystem, ['local', 'public'], true),
             'Respaldos automáticos activos' => (bool) config('operations.backups.enabled'),
-            'Enlace público de archivos creado' => is_link(public_path('storage')),
         ];
 
         foreach ($checks as $label => $passed) {
@@ -35,9 +40,13 @@ class ProductionReadiness extends Command
         }
 
         if (config('services.culqi.enabled')) {
-            $this->components->twoColumnDetail('Culqi habilitado', config('services.culqi.secret_key') ? '<fg=green>CONFIGURADO</>' : '<fg=red>SIN CLAVE</>');
-            if (! config('services.culqi.secret_key')) {
-                $failures[] = 'Clave secreta de Culqi';
+            $culqiReady = config('services.culqi.environment') === 'production'
+                && config('services.culqi.public_key')
+                && config('services.culqi.secret_key')
+                && config('services.culqi.webhook_secret');
+            $this->components->twoColumnDetail('Culqi de producción', $culqiReady ? '<fg=green>CONFIGURADO</>' : '<fg=red>INCOMPLETO</>');
+            if (! $culqiReady) {
+                $failures[] = 'Culqi (entorno, claves y webhook)';
             }
         } else {
             $this->components->twoColumnDetail('Culqi', '<fg=yellow>PENDIENTE (no bloquea la publicación)</>');
