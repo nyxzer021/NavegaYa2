@@ -64,7 +64,10 @@ class TourismMarketplaceTest extends TestCase
         Storage::disk('public')->assertExists(str_replace('/storage/','',$image->fresh()->path));
 
         $this->actingAs($owner)->get(route('marketplace.dashboard',['tab'=>'profile']))
-            ->assertOk()->assertSee('Horario de atención')->assertSee('Editar foto')
+            ->assertOk()->assertSee('Horario de atención')->assertSee('Horario personalizado')
+            ->assertSee('Cerrar sesión')->assertDontSee('Afiliar tu empresa');
+        $this->actingAs($owner)->get(route('marketplace.dashboard',['tab'=>'gallery']))
+            ->assertOk()->assertSee('Galería de tu negocio')->assertSee('Reemplazar')
             ->assertSee('Cerrar sesión')->assertDontSee('Afiliar tu empresa');
 
         $admin=User::factory()->create();

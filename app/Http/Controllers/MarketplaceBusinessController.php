@@ -37,7 +37,7 @@ class MarketplaceBusinessController extends Controller
             'ratingAverage'=>round((float)$reviews->where('status','approved')->avg('rating'),1),
             'stats'=>['profile_views'=>$listing->views,'contact_clicks'=>$listing->contact_clicks,'campaign_views'=>$campaigns->sum('views'),'campaign_clicks'=>$campaigns->sum('clicks')],
             'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations'])),
-            'activeTab'=>in_array($request->query('tab'),['overview','profile','offers','reviews','campaigns','plan'],true)?$request->query('tab'):'overview',
+            'activeTab'=>in_array($request->query('tab'),['overview','profile','gallery','offers','reviews','campaigns','plan'],true)?$request->query('tab'):'overview',
         ]);
     }
 
@@ -128,6 +128,23 @@ class MarketplaceBusinessController extends Controller
         Storage::disk('public')->delete(str_replace('/storage/','',$image->path));
         $image->update(['path'=>Storage::url($request->file('image')->store('marketplace-gallery','public'))]);
         return back()->with('success','Imagen reemplazada correctamente.');
+    }
+    public function storeMedia(Request $request): RedirectResponse
+    {
+        [, $listing]=$this->owned($request);
+        $request->validate([
+            'banner'=>['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
+            'images'=>['nullable','array','max:6'],
+            'images.*'=>['image','mimes:jpg,jpeg,png,webp','max:5120'],
+        ]);
+        if(!$request->hasFile('banner')&&!$request->hasFile('images')) return back()->withErrors(['images'=>'Selecciona una portada o al menos una fotografía.']);
+        if($listing->images()->count()+count($request->file('images',[]))>6) return back()->withErrors(['images'=>'La galería admite como máximo 6 imágenes.']);
+        if($request->hasFile('banner')){
+            if($listing->banner_path) Storage::disk('public')->delete(str_replace('/storage/','',$listing->banner_path));
+            $listing->update(['banner_path'=>Storage::url($request->file('banner')->store('marketplace-banners','public'))]);
+        }
+        foreach($request->file('images',[]) as $image) $listing->images()->create(['path'=>Storage::url($image->store('marketplace-gallery','public')),'sort_order'=>($listing->images()->max('sort_order')??0)+1,'is_cover'=>$listing->images()->count()===0]);
+        return back()->with('success','Galería actualizada correctamente.');
     }
     public function deleteImage(Request $request,DestinationListingImage $image): RedirectResponse
     {
