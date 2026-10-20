@@ -62,12 +62,17 @@ class TourismMarketplaceTest extends TestCase
             'image'=>UploadedFile::fake()->image('reemplazo.jpg'),
         ])->assertSessionHasNoErrors();
         Storage::disk('public')->assertExists(str_replace('/storage/','',$image->fresh()->path));
+        $newCover=$listing->images()->where('id','!=',$image->id)->firstOrFail();
+        $this->actingAs($owner)->patch(route('marketplace.images.cover',$newCover))->assertSessionHasNoErrors();
+        $this->assertTrue($newCover->fresh()->is_cover);
+        $this->assertSame($newCover->path,$listing->fresh()->banner_path);
 
         $this->actingAs($owner)->get(route('marketplace.dashboard',['tab'=>'profile']))
             ->assertOk()->assertSee('Horario de atención')->assertSee('Horario personalizado')
             ->assertSee('Cerrar sesión')->assertDontSee('Afiliar tu empresa');
         $this->actingAs($owner)->get(route('marketplace.dashboard',['tab'=>'gallery']))
-            ->assertOk()->assertSee('Galería de tu negocio')->assertSee('Reemplazar')
+            ->assertOk()->assertSee('Galería de tu negocio')->assertSee('Usar como portada')
+            ->assertSee('Portada seleccionada')->assertSee('Visor de imágenes')
             ->assertSee('Cerrar sesión')->assertDontSee('Afiliar tu empresa');
 
         $admin=User::factory()->create();

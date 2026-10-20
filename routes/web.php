@@ -169,6 +169,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'deleteImage'])->middleware('role:marketplace_admin')->name('marketplace.images.destroy');
     Route::patch('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'replaceImage'])->middleware('role:marketplace_admin')->name('marketplace.images.update');
     Route::post('/mi-negocio/galeria', [MarketplaceBusinessController::class, 'storeMedia'])->middleware('role:marketplace_admin')->name('marketplace.media.store');
+    Route::patch('/mi-negocio/imagenes/{image}/portada', [MarketplaceBusinessController::class, 'setCover'])->middleware('role:marketplace_admin')->name('marketplace.images.cover');
     Route::post('/mi-negocio/campanas', [MarketplaceBusinessController::class, 'storeCampaign'])->middleware('role:marketplace_admin')->name('marketplace.campaigns.store');
     Route::patch('/mi-negocio/campanas/{advertisement}/pausar', [MarketplaceBusinessController::class, 'pauseCampaign'])->middleware('role:marketplace_admin')->name('marketplace.campaigns.pause');
     Route::post('/mi-negocio/publicaciones', [MarketplaceBusinessController::class, 'storeOffer'])->middleware('role:marketplace_admin')->name('marketplace.offers.store');

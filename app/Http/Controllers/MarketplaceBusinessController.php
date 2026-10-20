@@ -143,15 +143,29 @@ class MarketplaceBusinessController extends Controller
             if($listing->banner_path) Storage::disk('public')->delete(str_replace('/storage/','',$listing->banner_path));
             $listing->update(['banner_path'=>Storage::url($request->file('banner')->store('marketplace-banners','public'))]);
         }
-        foreach($request->file('images',[]) as $image) $listing->images()->create(['path'=>Storage::url($image->store('marketplace-gallery','public')),'sort_order'=>($listing->images()->max('sort_order')??0)+1,'is_cover'=>$listing->images()->count()===0]);
+        foreach($request->file('images',[]) as $image){
+            $isFirst=$listing->images()->count()===0;
+            $created=$listing->images()->create(['path'=>Storage::url($image->store('marketplace-gallery','public')),'sort_order'=>($listing->images()->max('sort_order')??0)+1,'is_cover'=>$isFirst]);
+            if($isFirst&&!$listing->banner_path) $listing->update(['banner_path'=>$created->path]);
+        }
         return back()->with('success','Galería actualizada correctamente.');
+    }
+    public function setCover(Request $request, DestinationListingImage $image): RedirectResponse
+    {
+        [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404);
+        DB::transaction(function() use($listing,$image){
+            $listing->images()->update(['is_cover'=>false]);
+            $image->update(['is_cover'=>true]);
+            $listing->update(['banner_path'=>$image->path]);
+        });
+        return back()->with('success','La fotografía seleccionada ahora es la portada pública.');
     }
     public function deleteImage(Request $request,DestinationListingImage $image): RedirectResponse
     {
         [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404);
         Storage::disk('public')->delete(str_replace('/storage/','',$image->path));
         $wasCover=$image->is_cover; $image->delete();
-        if($wasCover) $listing->images()->orderBy('sort_order')->first()?->update(['is_cover'=>true]);
+        if($wasCover){ $next=$listing->images()->orderBy('sort_order')->first(); $next?->update(['is_cover'=>true]); $listing->update(['banner_path'=>$next?->path]); }
         return back()->with('success','Imagen eliminada.');
     }
     private function owned(Request $request): array { $org=$request->user()->organizations()->where('organizations.type','marketplace_business')->firstOrFail(); return [$org,DestinationListing::where('organization_id',$org->id)->where('owner_user_id',$request->user()->id)->firstOrFail()]; }
