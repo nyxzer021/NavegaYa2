@@ -43,11 +43,15 @@ class MarketplaceBusinessController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        [$org,$listing]=$this->owned($request); $data=$request->validate(['destination_city_id'=>['required','exists:destination_cities,id'],'type'=>['required',Rule::in(array_keys(self::TYPES))],'business_category_id'=>['required','exists:business_categories,id'],'name'=>['required','string','max:150'],'description'=>['required','string','max:3000'],'services'=>['nullable','string','max:3000'],'address'=>['nullable','string','max:250'],'contact_phone'=>['required','string','max:40'],'website_url'=>['nullable','url','max:500'],'price_reference'=>['nullable','string','max:80'],'opening_hours'=>['nullable','string','max:160'],'banner'=>['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],'images'=>['nullable','array','max:6'],'images.*'=>['image','mimes:jpg,jpeg,png,webp','max:5120'],'action'=>['required',Rule::in(['draft','submit'])]]);
+        [$org,$listing]=$this->owned($request); $data=$request->validate(['destination_city_id'=>['required','exists:destination_cities,id'],'type'=>['required',Rule::in(array_keys(self::TYPES))],'business_category_id'=>['required','exists:business_categories,id'],'name'=>['required','string','max:150'],'description'=>['required','string','max:3000'],'services'=>['nullable','string','max:3000'],'address'=>['nullable','string','max:250'],'contact_phone'=>['required','string','max:40'],'website_url'=>['nullable','url','max:500'],'price_reference'=>['nullable','string','max:80'],'schedule'=>['nullable','array'],'schedule.*.closed'=>['nullable','boolean'],'schedule.*.open_1'=>['nullable','date_format:H:i'],'schedule.*.close_1'=>['nullable','date_format:H:i'],'schedule.*.open_2'=>['nullable','date_format:H:i'],'schedule.*.close_2'=>['nullable','date_format:H:i'],'banner'=>['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],'images'=>['nullable','array','max:6'],'images.*'=>['image','mimes:jpg,jpeg,png,webp','max:5120'],'action'=>['required',Rule::in(['draft','submit'])]]);
         $category=BusinessCategory::whereKey($data['business_category_id'])->where('listing_type',$data['type'])->where('is_active',true)->firstOrFail(); $data['category']=$category->name;
         if($listing->images()->count()+count($request->file('images',[]))>6) return back()->withErrors(['images'=>'La galería admite como máximo 6 imágenes.'])->withInput();
         if($request->hasFile('banner')){ if($listing->banner_path) Storage::disk('public')->delete(str_replace('/storage/','',$listing->banner_path)); $data['banner_path']=Storage::url($request->file('banner')->store('marketplace-banners','public')); }
-        unset($data['banner'],$data['images'],$data['action']); $active=$org->subscriptions()->where('status','active')->where(fn($q)=>$q->whereNull('ends_on')->orWhereDate('ends_on','>=',today()))->exists(); if($request->input('action')==='submit'&&!$active) return back()->withErrors(['subscription'=>'El superadministrador debe confirmar el pago y activar tu plan antes de enviar la ficha a revisión.'])->withInput();
+        $days=['mon'=>'Lunes','tue'=>'Martes','wed'=>'Miércoles','thu'=>'Jueves','fri'=>'Viernes','sat'=>'Sábado','sun'=>'Domingo'];
+        $schedule=[]; $summary=[];
+        foreach($days as $key=>$label){ $row=$data['schedule'][$key]??[]; $closed=(bool)($row['closed']??false); $periods=[]; if(!$closed){ foreach([["open_1","close_1"],["open_2","close_2"]] as [$from,$to]) if(!empty($row[$from])&&!empty($row[$to])) $periods[]=['from'=>$row[$from],'to'=>$row[$to]]; } $schedule[$key]=['closed'=>$closed||empty($periods),'periods'=>$periods]; $summary[]=$label.': '.(($closed||empty($periods))?'Cerrado':collect($periods)->map(fn($p)=>$p['from'].'–'.$p['to'])->join(' / ')); }
+        $data['opening_schedule']=$schedule; $data['opening_hours']=implode('; ',$summary);
+        unset($data['schedule'],$data['banner'],$data['images'],$data['action']); $active=$org->subscriptions()->where('status','active')->where(fn($q)=>$q->whereNull('ends_on')->orWhereDate('ends_on','>=',today()))->exists(); if($request->input('action')==='submit'&&!$active) return back()->withErrors(['subscription'=>'El superadministrador debe confirmar el pago y activar tu plan antes de enviar la ficha a revisión.'])->withInput();
         $data['status']=$request->input('action')==='submit'?'pending_review':'draft'; $data['is_active']=false; $data['moderation_notes']=null; $listing->update($data);
         foreach($request->file('images',[]) as $image) $listing->images()->create(['path'=>Storage::url($image->store('marketplace-gallery','public')),'sort_order'=>($listing->images()->max('sort_order')??0)+1,'is_cover'=>$listing->images()->count()===0]);
         return back()->with('success',$data['status']==='pending_review'?'Ficha enviada a revisión.':'Borrador guardado.');
@@ -117,6 +121,21 @@ class MarketplaceBusinessController extends Controller
         if($offer->image_path) Storage::disk('public')->delete(str_replace('/storage/','',$offer->image_path));
         $offer->delete(); return back()->with('success','Publicación eliminada.');
     }
-    public function deleteImage(Request $request,DestinationListingImage $image): RedirectResponse { [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404); $image->delete(); return back()->with('success','Imagen eliminada.'); }
+    public function replaceImage(Request $request, DestinationListingImage $image): RedirectResponse
+    {
+        [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404);
+        $request->validate(['image'=>['required','image','mimes:jpg,jpeg,png,webp','max:5120']]);
+        Storage::disk('public')->delete(str_replace('/storage/','',$image->path));
+        $image->update(['path'=>Storage::url($request->file('image')->store('marketplace-gallery','public'))]);
+        return back()->with('success','Imagen reemplazada correctamente.');
+    }
+    public function deleteImage(Request $request,DestinationListingImage $image): RedirectResponse
+    {
+        [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404);
+        Storage::disk('public')->delete(str_replace('/storage/','',$image->path));
+        $wasCover=$image->is_cover; $image->delete();
+        if($wasCover) $listing->images()->orderBy('sort_order')->first()?->update(['is_cover'=>true]);
+        return back()->with('success','Imagen eliminada.');
+    }
     private function owned(Request $request): array { $org=$request->user()->organizations()->where('organizations.type','marketplace_business')->firstOrFail(); return [$org,DestinationListing::where('organization_id',$org->id)->where('owner_user_id',$request->user()->id)->firstOrFail()]; }
 }

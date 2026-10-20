@@ -46,10 +46,26 @@ class TourismMarketplaceTest extends TestCase
         $files=collect(range(1,6))->map(fn($n)=>UploadedFile::fake()->image("foto{$n}.jpg"))->all();
         $this->actingAs($owner)->patch(route('marketplace.update'),[
             'destination_city_id'=>$city->id,'type'=>'gastronomy','business_category_id'=>$category->id,'name'=>'Sabores Loreto','description'=>'Cocina amazónica con insumos regionales.','services'=>'Menú regional y reservas','contact_phone'=>'999222333','action'=>'submit','images'=>$files,
+            'schedule'=>[
+                'mon'=>['closed'=>0,'open_1'=>'08:00','close_1'=>'12:00','open_2'=>'18:00','close_2'=>'23:00'],
+                'sun'=>['closed'=>1],
+            ],
         ])->assertSessionHasNoErrors();
         $listing->refresh();
         $this->assertSame('pending_review',$listing->status);
         $this->assertCount(6,$listing->images);
+        $this->assertSame('08:00', $listing->opening_schedule['mon']['periods'][0]['from']);
+        $this->assertTrue($listing->opening_schedule['sun']['closed']);
+
+        $image=$listing->images->first();
+        $this->actingAs($owner)->patch(route('marketplace.images.update',$image),[
+            'image'=>UploadedFile::fake()->image('reemplazo.jpg'),
+        ])->assertSessionHasNoErrors();
+        Storage::disk('public')->assertExists(str_replace('/storage/','',$image->fresh()->path));
+
+        $this->actingAs($owner)->get(route('marketplace.dashboard',['tab'=>'profile']))
+            ->assertOk()->assertSee('Horario de atención')->assertSee('Editar foto')
+            ->assertSee('Cerrar sesión')->assertDontSee('Afiliar tu empresa');
 
         $admin=User::factory()->create();
         $adminRole=Role::firstOrCreate(['code'=>'super_admin'],['name'=>'Superadministrador']);
@@ -58,7 +74,7 @@ class TourismMarketplaceTest extends TestCase
         $listing->refresh();
         $this->assertTrue($listing->is_active);
         $this->assertSame('published',$listing->status);
-        $this->get(route('guide.show',$listing))->assertOk()->assertSee('Sabores Loreto')->assertSee('Cocina amazónica');
+        $this->get(route('guide.show',$listing))->assertOk()->assertSee('Sabores Loreto')->assertSee('Cocina amazónica')->assertSee('08:00–12:00');
     }
 
     public function test_superadmin_manages_master_categories_and_assisted_form_cannot_publish_directly(): void
