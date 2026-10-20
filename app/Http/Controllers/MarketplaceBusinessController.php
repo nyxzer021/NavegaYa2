@@ -65,7 +65,6 @@ class MarketplaceBusinessController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
-            'target_url' => ['nullable', 'url', 'max:500'],
             'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations'])],
             'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
@@ -92,13 +91,15 @@ class MarketplaceBusinessController extends Controller
             'category' => $listing->category ?: $listing->type,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'target_url' => $data['target_url'] ?? route('guide.show', $listing),
+            'target_url' => route('guide.show', $listing),
             'banner_image_path' => $request->file('banner_image')->store('advertisements', 'public'),
             'monthly_fee' => self::CAMPAIGN_MONTHLY_FEE,
-            'status' => 'lead_pending',
+            'starts_on' => today(),
+            'ends_on' => today()->addDays(30),
+            'status' => 'active',
         ]);
 
-        return back()->with('success', 'Campaña enviada a revisión. El superadministrador verá la solicitud.');
+        return back()->with('success', 'Campaña publicada. Estará activa durante 30 días.');
     }
 
     public function pauseCampaign(Request $request, Advertisement $advertisement): RedirectResponse
