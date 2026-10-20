@@ -142,13 +142,15 @@ class TourismMarketplaceTest extends TestCase
 
         $this->actingAs($owner)->post(route('marketplace.campaigns.store'), [
             'title' => 'Descansa frente al río', 'description' => 'Promoción de temporada',
-            'target_url' => 'https://example.test/lodge', 'placement' => 'home_carousel',
+            'placement' => 'home_carousel',
             'banner_image' => UploadedFile::fake()->image('campana.jpg', 1200, 700),
         ])->assertSessionHasNoErrors();
 
         $campaign = Advertisement::where('organization_id', $organization->id)->firstOrFail();
         $this->assertSame('lead_pending', $campaign->status);
         $this->assertSame(['home_carousel'], $campaign->placements);
+        $this->assertSame('300.00', $campaign->monthly_fee);
+        $this->assertSame(route('guide.show', $listing), $campaign->target_url);
         Storage::disk('public')->assertExists($campaign->banner_image_path);
 
         $otherOwner = User::factory()->create();

@@ -10,6 +10,7 @@ use Illuminate\View\View;
 class MarketplaceBusinessController extends Controller
 {
     public const TYPES=['lodging'=>'Hoteles, lodges y hospedajes','gastronomy'=>'Restaurantes y gastronomía','attraction'=>'Tours y experiencias','tourist_transport'=>'Transporte turístico','traveler_service'=>'Servicios para viajeros','local_business'=>'Comercios y otros negocios'];
+    public const CAMPAIGN_MONTHLY_FEE = 300;
 
     public function create(Request $request): View { return view('marketplace.register',['plans'=>SubscriptionPlan::where('is_active',true)->orderBy('monthly_price')->get(),'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),'types'=>self::TYPES,'selectedPlan'=>$request->string('plan')->toString()]); }
 
@@ -37,6 +38,7 @@ class MarketplaceBusinessController extends Controller
             'ratingAverage'=>round((float)$reviews->where('status','approved')->avg('rating'),1),
             'stats'=>['profile_views'=>$listing->views,'contact_clicks'=>$listing->contact_clicks,'campaign_views'=>$campaigns->sum('views'),'campaign_clicks'=>$campaigns->sum('clicks')],
             'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations'])),
+            'campaignMonthlyFee'=>self::CAMPAIGN_MONTHLY_FEE,
             'activeTab'=>in_array($request->query('tab'),['overview','profile','gallery','offers','reviews','campaigns','plan'],true)?$request->query('tab'):'overview',
         ]);
     }
@@ -63,7 +65,7 @@ class MarketplaceBusinessController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
-            'target_url' => ['required', 'url', 'max:500'],
+            'target_url' => ['nullable', 'url', 'max:500'],
             'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations'])],
             'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
@@ -90,8 +92,9 @@ class MarketplaceBusinessController extends Controller
             'category' => $listing->category ?: $listing->type,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'target_url' => $data['target_url'],
+            'target_url' => $data['target_url'] ?? route('guide.show', $listing),
             'banner_image_path' => $request->file('banner_image')->store('advertisements', 'public'),
+            'monthly_fee' => self::CAMPAIGN_MONTHLY_FEE,
             'status' => 'lead_pending',
         ]);
 
