@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{Advertisement,BusinessCategory,DestinationCity,DestinationListing,DestinationListingImage,Organization,Role,Subscription,SubscriptionPlan,User};
+use App\Models\{Advertisement,BusinessCategory,DestinationCity,DestinationListing,DestinationListingImage,DestinationListingOffer,Organization,Role,Subscription,SubscriptionPlan,User};
 use Illuminate\Http\{RedirectResponse,Request};
 use Illuminate\Support\Facades\{Auth,DB,Hash,Storage};
 use Illuminate\Validation\Rule;
@@ -20,7 +20,26 @@ class MarketplaceBusinessController extends Controller
         Auth::login($user); return redirect()->route('marketplace.dashboard')->with('success','Cuenta creada. Completa tu ficha mientras validamos tu suscripción.');
     }
 
-    public function dashboard(Request $request): View { [$org,$listing]=$this->owned($request); return view('marketplace.dashboard',['organization'=>$org,'listing'=>$listing->load('images','businessCategory'),'subscription'=>$org->subscriptions()->with('plan')->latest()->first(),'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),'types'=>self::TYPES,'categories'=>BusinessCategory::where('is_active',true)->orderBy('sort_order')->get(),'campaigns'=>$org->advertisements()->latest()->get(),'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations']))]); }
+    public function dashboard(Request $request): View
+    {
+        [$org,$listing]=$this->owned($request);
+        $campaigns=$org->advertisements()->latest()->get();
+        $reviews=$org->reviews()->with('user')->latest()->get();
+        return view('marketplace.dashboard',[
+            'organization'=>$org,
+            'listing'=>$listing->load('images','businessCategory','offers'),
+            'subscription'=>$org->subscriptions()->with('plan')->latest()->first(),
+            'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),
+            'types'=>self::TYPES,
+            'categories'=>BusinessCategory::where('is_active',true)->orderBy('sort_order')->get(),
+            'campaigns'=>$campaigns,
+            'reviews'=>$reviews,
+            'ratingAverage'=>round((float)$reviews->where('status','approved')->avg('rating'),1),
+            'stats'=>['profile_views'=>$listing->views,'contact_clicks'=>$listing->contact_clicks,'campaign_views'=>$campaigns->sum('views'),'campaign_clicks'=>$campaigns->sum('clicks')],
+            'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations'])),
+            'activeTab'=>in_array($request->query('tab'),['overview','profile','offers','reviews','campaigns','plan'],true)?$request->query('tab'):'overview',
+        ]);
+    }
 
     public function update(Request $request): RedirectResponse
     {
@@ -82,6 +101,21 @@ class MarketplaceBusinessController extends Controller
         $advertisement->update(['status' => 'paused']);
 
         return back()->with('success', 'Campaña pausada.');
+    }
+    public function storeOffer(Request $request): RedirectResponse
+    {
+        [, $listing]=$this->owned($request);
+        $data=$request->validate(['title'=>['required','string','max:150'],'offer_type'=>['nullable','string','max:60'],'description'=>['nullable','string','max:1000'],'price'=>['nullable','numeric','min:0'],'price_unit'=>['nullable','string','max:60'],'capacity'=>['nullable','integer','min:1','max:999'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp','max:4096']]);
+        if($request->hasFile('image')) $data['image_path']=Storage::url($request->file('image')->store('marketplace-offers','public'));
+        unset($data['image']);
+        $listing->offers()->create($data+['is_active'=>true,'sort_order'=>($listing->offers()->max('sort_order')??0)+1]);
+        return back()->with('success','Publicación agregada a tu página comercial.');
+    }
+    public function destroyOffer(Request $request, DestinationListingOffer $offer): RedirectResponse
+    {
+        [, $listing]=$this->owned($request); abort_unless($offer->destination_listing_id===$listing->id,404);
+        if($offer->image_path) Storage::disk('public')->delete(str_replace('/storage/','',$offer->image_path));
+        $offer->delete(); return back()->with('success','Publicación eliminada.');
     }
     public function deleteImage(Request $request,DestinationListingImage $image): RedirectResponse { [, $listing]=$this->owned($request); abort_unless($image->destination_listing_id===$listing->id,404); $image->delete(); return back()->with('success','Imagen eliminada.'); }
     private function owned(Request $request): array { $org=$request->user()->organizations()->where('organizations.type','marketplace_business')->firstOrFail(); return [$org,DestinationListing::where('organization_id',$org->id)->where('owner_user_id',$request->user()->id)->firstOrFail()]; }

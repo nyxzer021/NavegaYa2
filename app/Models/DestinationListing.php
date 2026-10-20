@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DestinationListing extends Model
 {
-    protected $fillable = ['organization_id', 'owner_user_id', 'destination_city_id', 'business_category_id', 'type', 'status', 'name', 'category', 'description', 'services', 'address', 'contact_phone', 'website_url', 'price_reference', 'opening_hours', 'banner_path', 'is_featured', 'sort_order', 'is_active', 'moderation_notes'];
+    protected $fillable = ['organization_id', 'owner_user_id', 'destination_city_id', 'business_category_id', 'type', 'status', 'name', 'category', 'description', 'services', 'address', 'contact_phone', 'website_url', 'price_reference', 'opening_hours', 'banner_path', 'is_featured', 'sort_order', 'is_active', 'moderation_notes', 'views', 'contact_clicks'];
 
     protected function casts(): array
     {
@@ -33,5 +33,10 @@ class DestinationListing extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function offers(): HasMany
+    {
+        return $this->hasMany(DestinationListingOffer::class)->orderBy('sort_order');
     }
 }

@@ -84,6 +84,8 @@ Route::get('/empresas', [PublicCompanyController::class, 'index'])->name('compan
 Route::get('/puertos-y-muelles', [PublicPortController::class, 'index'])->name('ports.public');
 Route::get('/guia-loreto', [GuideController::class, 'index'])->name('guide.index');
 Route::get('/guia-loreto/negocio/{listing}', [GuideController::class, 'show'])->name('guide.show');
+Route::get('/guia-loreto/negocio/{listing}/contactar', [GuideController::class, 'contact'])->name('guide.contact');
+Route::post('/guia-loreto/negocio/{listing}/valoraciones', [GuideController::class, 'review'])->middleware(['auth','verified','role:customer|passenger'])->name('guide.reviews.store');
 Route::get('/negocios/registro', [MarketplaceBusinessController::class, 'create'])->middleware('guest')->name('marketplace.register');
 Route::post('/negocios/registro', [MarketplaceBusinessController::class, 'store'])->middleware(['guest','throttle:5,1'])->name('marketplace.register.store');
 Route::get('/empresas/{organization}', [PublicCompanyController::class, 'show'])->name('companies.show');
@@ -167,6 +169,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'deleteImage'])->middleware('role:marketplace_admin')->name('marketplace.images.destroy');
     Route::post('/mi-negocio/campanas', [MarketplaceBusinessController::class, 'storeCampaign'])->middleware('role:marketplace_admin')->name('marketplace.campaigns.store');
     Route::patch('/mi-negocio/campanas/{advertisement}/pausar', [MarketplaceBusinessController::class, 'pauseCampaign'])->middleware('role:marketplace_admin')->name('marketplace.campaigns.pause');
+    Route::post('/mi-negocio/publicaciones', [MarketplaceBusinessController::class, 'storeOffer'])->middleware('role:marketplace_admin')->name('marketplace.offers.store');
+    Route::delete('/mi-negocio/publicaciones/{offer}', [MarketplaceBusinessController::class, 'destroyOffer'])->middleware('role:marketplace_admin')->name('marketplace.offers.destroy');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

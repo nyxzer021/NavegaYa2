@@ -99,11 +99,22 @@ class TourismMarketplaceTest extends TestCase
             'status' => 'active', 'monthly_price' => $plan->monthly_price, 'currency' => 'PEN',
             'starts_on' => today(), 'ends_on' => today()->addMonth(),
         ]);
-        DestinationListing::create([
+        $listing = DestinationListing::create([
             'organization_id' => $organization->id, 'owner_user_id' => $owner->id,
             'destination_city_id' => $city->id, 'type' => 'lodging', 'status' => 'published',
             'name' => 'Lodge Propietario', 'contact_phone' => '999111111', 'is_active' => true,
         ]);
+
+        $this->actingAs($owner)->post(route('marketplace.offers.store'), [
+            'title' => 'Habitación matrimonial', 'offer_type' => 'Habitación',
+            'description' => 'Incluye desayuno y vista al río.', 'price' => 180,
+            'price_unit' => 'por noche', 'capacity' => 2,
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('destination_listing_offers', [
+            'destination_listing_id' => $listing->id, 'title' => 'Habitación matrimonial', 'price' => 180,
+        ]);
+        $this->get(route('guide.show', $listing))->assertOk()->assertSee('Habitación matrimonial');
+        $this->assertSame(1, $listing->fresh()->views);
 
         $this->actingAs($owner)->post(route('marketplace.campaigns.store'), [
             'title' => 'Descansa frente al río', 'description' => 'Promoción de temporada',

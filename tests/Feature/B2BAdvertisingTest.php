@@ -51,20 +51,20 @@ class B2BAdvertisingTest extends TestCase
 
         Advertisement::create([
             'business_name' => 'Tour Amazonas', 'business_type' => 'tour_operator', 'contact_name' => 'Ventas',
-            'phone_whatsapp' => '999999999', 'city_destination' => 'Iquitos', 'placements' => ['home_hero'],
+            'phone_whatsapp' => '999999999', 'city_destination' => 'Iquitos', 'placements' => ['home_carousel'],
             'category' => 'Tour', 'title' => 'Explora el Amazonas', 'status' => 'active',
             'starts_on' => today()->subDay(), 'ends_on' => today()->addDay(),
         ]);
         Advertisement::create([
             'business_name' => 'Campaña vencida', 'business_type' => 'restaurant', 'contact_name' => 'Ventas',
-            'phone_whatsapp' => '988888888', 'city_destination' => 'Iquitos', 'placements' => ['home_hero'],
+            'phone_whatsapp' => '988888888', 'city_destination' => 'Iquitos', 'placements' => ['home_carousel'],
             'category' => 'Restaurante', 'title' => 'Campaña vencida', 'status' => 'active',
             'ends_on' => today()->subDay(),
         ]);
 
-        $this->assertSame(1, Advertisement::currentlyActive()->forPlacement('home_hero')->count());
+        $this->assertSame(1, Advertisement::currentlyActive()->forPlacement('home_carousel')->count());
 
-        $this->get(route('home'))->assertOk()->assertSee('Tour Amazonas')->assertDontSee('Campaña vencida');
+        $this->get(route('home'))->assertOk()->assertSee('Explora el Amazonas')->assertDontSee('Campaña vencida');
     }
 
     public function test_super_admin_can_approve_a_lead(): void
