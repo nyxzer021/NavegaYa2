@@ -79,13 +79,6 @@
                 @endunless
             </nav>
 
-            <div class="mt-auto border-t border-white/10 pt-4">
-                <p class="truncate text-xs font-semibold text-white">{{ auth()->user()->name }}</p>
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                    @csrf
-                    <button class="w-full rounded-lg border border-white/15 px-3 py-2 text-left text-xs font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white">Cerrar sesión</button>
-                </form>
-            </div>
         </aside>
 
         <main class="company-main flex-1 overflow-y-auto p-8">
@@ -93,6 +86,17 @@
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">{{ $isCounter ? 'Terminal / Counter' : 'Administración de empresa' }}</p>
                     <h1 class="text-lg font-bold text-slate-900">@yield('page-title', 'Operación')</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="hidden text-right sm:block">
+                        <strong class="block max-w-52 truncate text-xs text-slate-900">{{ auth()->user()->name }}</strong>
+                        <span class="text-[10px] text-slate-400">{{ $isCounter ? 'Personal Counter' : 'Administrador de empresa' }}</span>
+                    </div>
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-50 font-black text-emerald-800">{{ mb_strtoupper(mb_substr(auth()->user()->name,0,1)) }}</span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">Cerrar sesión</button>
+                    </form>
                 </div>
             </header>
 

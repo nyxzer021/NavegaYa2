@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Advertisement;
+use App\Models\DestinationListing;
+use App\Models\Organization;
+use App\Models\Subscription;
+use App\Models\Vessel;
+use Illuminate\Support\Collection;
+
+class AdminRequestInbox
+{
+    public function items(): Collection
+    {
+        return collect()
+            ->concat(Subscription::query()->where('status', 'pending')->with(['organization', 'plan'])->get()->map(fn ($subscription) => [
+                'type' => 'subscription', 'icon' => '💳', 'area' => 'Planes y pagos',
+                'title' => $subscription->organization?->commercial_name ?: $subscription->organization?->legal_name ?: 'Empresa anunciante',
+                'detail' => 'Solicita activar el plan '.($subscription->plan?->name ?: 'publicitario').' por '.$subscription->currency.' '.number_format((float) $subscription->monthly_price, 2),
+                'status' => 'Pago pendiente', 'created_at' => $subscription->created_at,
+                'url' => route('admin.advertising-subscriptions.index', ['status' => 'pending']), 'action' => 'Revisar pago y plan',
+            ]))
+            ->concat(Organization::query()->where('type', 'transport_company')->where('status', 'pending')->get()->map(fn ($organization) => [
+                'type' => 'organization', 'icon' => '🏢', 'area' => 'Afiliaciones',
+                'title' => $organization->commercial_name ?: $organization->legal_name,
+                'detail' => 'Nueva empresa transportista · RUC '.($organization->ruc ?: 'sin registrar'),
+                'status' => 'Validación pendiente', 'created_at' => $organization->created_at,
+                'url' => route('admin.organizations.index'), 'action' => 'Revisar empresa',
+            ]))
+            ->concat(Vessel::query()->where('status', 'pending_review')->with('organization')->get()->map(fn ($vessel) => [
+                'type' => 'fleet', 'icon' => '🚤', 'area' => 'Flota',
+                'title' => $vessel->name,
+                'detail' => ($vessel->organization?->commercial_name ?: $vessel->organization?->legal_name ?: 'Operador').' · matrícula '.$vessel->registration_number,
+                'status' => 'Revisión técnica pendiente', 'created_at' => $vessel->submitted_for_review_at ?: $vessel->updated_at,
+                'url' => route('admin.fleet-compliance.index'), 'action' => 'Revisar unidad',
+            ]))
+            ->concat(DestinationListing::query()->where('status', 'pending_review')->with('organization')->get()->map(fn ($listing) => [
+                'type' => 'listing', 'icon' => '🏨', 'area' => 'Página pública',
+                'title' => $listing->name,
+                'detail' => ($listing->organization?->commercial_name ?: 'Negocio anunciante').' envió su ficha para publicación',
+                'status' => 'Contenido por moderar', 'created_at' => $listing->updated_at,
+                'url' => route('admin.tourism-partners.index'), 'action' => 'Moderar ficha',
+            ]))
+            ->concat(Advertisement::query()->where('status', 'lead_pending')->get()->map(fn ($advertisement) => [
+                'type' => 'advertisement', 'icon' => '📣', 'area' => 'Publicidad',
+                'title' => $advertisement->business_name,
+                'detail' => $advertisement->title ?: 'Nueva solicitud de campaña publicitaria',
+                'status' => 'Solicitud comercial pendiente', 'created_at' => $advertisement->created_at,
+                'url' => route('admin.advertisements.index', ['status' => 'lead_pending']), 'action' => 'Revisar campaña',
+            ]))
+            ->sortByDesc(fn ($item) => $item['created_at']?->timestamp ?? 0)
+            ->values();
+    }
+
+    public function summary(): array
+    {
+        $items = $this->items();
+
+        return [
+            'total' => $items->count(),
+            'subscriptions' => $items->where('type', 'subscription')->count(),
+            'organizations' => $items->where('type', 'organization')->count(),
+            'fleet' => $items->where('type', 'fleet')->count(),
+            'content' => $items->whereIn('type', ['listing', 'advertisement'])->count(),
+            'latest' => $items->take(5),
+        ];
+    }
+}

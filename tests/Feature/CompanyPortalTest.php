@@ -43,12 +43,24 @@ class CompanyPortalTest extends TestCase
         $response->assertRedirect(route('company.vessels.seats.edit', $vessel));
         $this->assertDatabaseHas('vessels', ['name' => 'Rápida Segura', 'organization_id' => $organization->id]);
         $this->assertDatabaseMissing('vessels', ['name' => 'Rápida Segura', 'organization_id' => $other->id]);
-
         $this->actingAs($admin)->patch(route('company.finance.bank'), [
             'bank_name' => 'Banco de la Nación', 'bank_account' => '001-123456', 'bank_cci' => '01800112345678901234',
         ])->assertRedirect();
         $this->assertDatabaseHas('organizations', ['id' => $organization->id, 'bank_name' => 'Banco de la Nación']);
         $this->assertDatabaseHas('organizations', ['id' => $other->id, 'bank_name' => null]);
+    }
+
+    public function test_company_admin_can_open_the_fleet_page(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Flota', '20333330000');
+        Vessel::create([
+            'organization_id' => $organization->id, 'name' => 'Rápida Segura',
+            'registration_number' => 'DICAPI-FLOTA', 'vessel_type' => 'rapido',
+            'seat_capacity' => 24, 'status' => 'draft',
+        ]);
+
+        $this->actingAs($admin)->get(route('company.fleet.index'))
+            ->assertOk()->assertSee('Rápida Segura')->assertSee('Cerrar sesión')->assertSee($admin->name);
     }
 
     public function test_company_manifest_is_available_only_for_its_own_departure(): void

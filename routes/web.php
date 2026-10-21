@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminFleetController;
 use App\Http\Controllers\Admin\AdminItineraryController;
 use App\Http\Controllers\Admin\AdminModerationController;
 use App\Http\Controllers\Admin\AdminRefundController;
+use App\Http\Controllers\Admin\AdminRequestInboxController;
 use App\Http\Controllers\Admin\AdminSalesController;
 use App\Http\Controllers\Admin\AdminSettlementController;
 use App\Http\Controllers\Admin\AdminSupervisionController;
@@ -187,6 +188,7 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/solicitudes', [AdminRequestInboxController::class, 'index'])->name('requests.index');
     Route::resource('/empresas', AdminCompanyController::class)
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
