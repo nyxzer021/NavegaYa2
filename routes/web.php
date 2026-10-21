@@ -86,6 +86,7 @@ Route::get('/guia-loreto', [GuideController::class, 'index'])->name('guide.index
 Route::get('/guia-loreto/negocio/{listing}', [GuideController::class, 'show'])->name('guide.show');
 Route::get('/guia-loreto/negocio/{listing}/contactar', [GuideController::class, 'contact'])->name('guide.contact');
 Route::post('/guia-loreto/negocio/{listing}/valoraciones', [GuideController::class, 'review'])->middleware(['auth','verified','role:customer|passenger'])->name('guide.reviews.store');
+Route::post('/guia-loreto/negocio/{listing}/fotografias/{image}/valoraciones', [GuideController::class, 'reviewImage'])->middleware(['auth','verified','role:customer|passenger'])->name('guide.images.reviews.store');
 Route::get('/negocios/registro', [MarketplaceBusinessController::class, 'create'])->middleware('guest')->name('marketplace.register');
 Route::post('/negocios/registro', [MarketplaceBusinessController::class, 'store'])->middleware(['guest','throttle:5,1'])->name('marketplace.register.store');
 Route::get('/empresas/{organization}', [PublicCompanyController::class, 'show'])->name('companies.show');

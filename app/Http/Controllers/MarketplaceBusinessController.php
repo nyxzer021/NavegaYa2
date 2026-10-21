@@ -28,7 +28,7 @@ class MarketplaceBusinessController extends Controller
         $reviews=$org->reviews()->with('user')->latest()->get();
         return view('marketplace.dashboard',[
             'organization'=>$org,
-            'listing'=>$listing->load('images','businessCategory','offers'),
+            'listing'=>$listing->load('images.reviews.user','businessCategory','offers'),
             'subscription'=>$org->subscriptions()->with('plan')->latest()->first(),
             'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),
             'types'=>self::TYPES,

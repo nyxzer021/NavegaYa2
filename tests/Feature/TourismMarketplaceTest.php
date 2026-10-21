@@ -83,6 +83,16 @@ class TourismMarketplaceTest extends TestCase
         $this->assertTrue($listing->is_active);
         $this->assertSame('published',$listing->status);
         $this->get(route('guide.show',$listing))->assertOk()->assertSee('Sabores Loreto')->assertSee('Cocina amazónica')->assertSee('08:00–12:00');
+
+        $traveler=User::factory()->create(['email_verified_at'=>now()]);
+        $traveler->roles()->attach(Role::firstOrCreate(['code'=>'customer'],['name'=>'Viajero']));
+        $this->actingAs($traveler)->post(route('guide.images.reviews.store',[$listing,$newCover]),[
+            'rating'=>5,'comment'=>'La habitación y la vista se ven excelentes.',
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('destination_image_reviews',[
+            'destination_listing_image_id'=>$newCover->id,'user_id'=>$traveler->id,'rating'=>5,'status'=>'published',
+        ]);
+        $this->get(route('guide.show',$listing))->assertOk()->assertSee('La habitación y la vista se ven excelentes.');
     }
 
     public function test_superadmin_manages_master_categories_and_assisted_form_cannot_publish_directly(): void
