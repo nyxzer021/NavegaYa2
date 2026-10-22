@@ -110,5 +110,6 @@
             @yield('content')
         </main>
     </div>
+    <x-tracking />
 </body>
 </html>

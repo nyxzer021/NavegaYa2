@@ -17,6 +17,7 @@
     @include('layouts.partials.footer')
     <x-legal-policy-dialogs />
     <x-public-i18n />@stack('scripts')
+    <x-tracking />
 </body>
 </html>
 

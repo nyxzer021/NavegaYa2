@@ -53,4 +53,13 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'tracking' => [
+        'enabled' => (bool) env('TRACKING_ENABLED', false),
+        'authenticated' => (bool) env('TRACKING_AUTHENTICATED', false),
+        'google_analytics_id' => env('GOOGLE_ANALYTICS_ID'),
+        'google_ads_id' => env('GOOGLE_ADS_ID'),
+        'tiktok_pixel_id' => env('TIKTOK_PIXEL_ID'),
+        'clarity_project_id' => env('CLARITY_PROJECT_ID'),
+    ],
+
 ];

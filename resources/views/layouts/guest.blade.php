@@ -21,5 +21,6 @@
             </div></div>
         </div>
     <x-public-i18n />
+    <x-tracking />
     </body>
 </html>
