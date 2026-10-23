@@ -15,6 +15,7 @@ class AdminModerationController extends Controller
 {
     public function index(Request $request): View
     {
+        $tab = in_array($request->string('tab')->toString(), ['reports', 'profiles', 'reviews'], true) ? $request->string('tab')->toString() : 'reports';
         $status = $request->string('status')->toString() ?: 'open';
         $reports = ContentReport::with(['reporter', 'moderator'])
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
@@ -29,6 +30,7 @@ class AdminModerationController extends Controller
         });
 
         return view('admin.moderation.index', [
+            'activeTab' => $tab,
             'reports' => $reports,
             'pendingReviews' => CompanyReview::with(['organization', 'user'])->where('status', 'pending')->latest()->take(20)->get(),
             'openCount' => ContentReport::where('status', 'open')->count(),

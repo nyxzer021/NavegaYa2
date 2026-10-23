@@ -147,6 +147,25 @@ class AdminGovernanceTest extends TestCase
             ->assertOk()->assertSee('Comisión NavegaYA')->assertDontSee('Mensaje inicial');
     }
 
+    public function test_user_access_screen_only_lists_platform_administrators_and_explains_menu_access(): void
+    {
+        $superAdmin = $this->userWithRole('super_admin');
+        $platformAdmin = $this->userWithRole('admin');
+        $platformAdmin->update(['name' => 'Administrador interno']);
+        $traveler = $this->userWithRole('traveler');
+        $traveler->update(['name' => 'Viajero externo']);
+
+        $this->actingAs($superAdmin)->get(route('admin.users.index', ['tab' => 'manage']))
+            ->assertOk()
+            ->assertSee('Administrador interno')
+            ->assertDontSee('Viajero externo');
+        $this->get(route('admin.users.index', ['tab' => 'create']))
+            ->assertOk()
+            ->assertSee('Rutas y corredores')
+            ->assertSee('Revisión de flota')
+            ->assertSee('Integraciones y ajustes');
+    }
+
     public function test_company_admin_cannot_open_super_admin_governance(): void
     {
         $companyAdmin = $this->userWithRole('company_admin');

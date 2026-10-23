@@ -39,6 +39,17 @@ class ContentModerationTest extends TestCase
 
         $this->assertSame('rejected', $review->fresh()->status);
         $this->assertDatabaseHas('content_reports', ['id' => $report->id, 'status' => 'resolved', 'resolution' => 'hide', 'reviewed_by' => $admin->id]);
-        $this->actingAs($admin)->get(route('admin.moderation.index'))->assertOk()->assertSee('Moderación de contenido');
+        $this->actingAs($admin)->get(route('admin.moderation.index'))
+            ->assertOk()
+            ->assertSee('Reportes de usuarios')
+            ->assertDontSee('Imágenes de perfiles pendientes');
+        $this->get(route('admin.moderation.index', ['tab' => 'profiles']))
+            ->assertOk()
+            ->assertSee('Imágenes de perfiles pendientes')
+            ->assertDontSee('Reportes de usuarios');
+        $this->get(route('admin.moderation.index', ['tab' => 'reviews']))
+            ->assertOk()
+            ->assertSee('Opiniones pendientes')
+            ->assertDontSee('Reportes de usuarios');
     }
 }

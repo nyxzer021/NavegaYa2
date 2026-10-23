@@ -13,11 +13,30 @@ use Illuminate\View\View;
 
 class AdminUserController extends Controller
 {
-    private const PLATFORM_PERMISSION_CODES = ['companies', 'routes', 'reports', 'ads', 'audit'];
+    private const PLATFORM_PERMISSION_CODES = ['companies', 'ports', 'routes', 'fleet', 'cargo', 'boarding', 'reports', 'ads', 'audit', 'users', 'settings'];
+
+    private const PERMISSION_PAGES = [
+        'companies' => ['Bandeja de solicitudes', 'Empresas y afiliaciones'],
+        'ports' => ['Puertos y aeródromos'],
+        'routes' => ['Rutas y corredores', 'Supervisión de itinerarios'],
+        'fleet' => ['Revisión de flota', 'Embarcaciones y aeronaves'],
+        'cargo' => ['Carga y encomiendas'],
+        'boarding' => ['Control de embarque'],
+        'reports' => ['Transacciones', 'Comisiones y facturación', 'Reportes'],
+        'ads' => ['Categorías', 'Negocios', 'Experiencias', 'Campañas y planes'],
+        'audit' => ['Moderación de contenido', 'Auditoría de actividad'],
+        'users' => ['Usuarios y permisos'],
+        'settings' => ['Menú y páginas', 'Integraciones y ajustes'],
+    ];
 
     public function index(Request $request): View
     {
-        $users = User::with(['roles', 'organizations', 'permissions'])->orderBy('name')->paginate(25)->withQueryString();
+        $users = User::query()
+            ->whereHas('roles', fn ($query) => $query->whereIn('code', ['super_admin', 'admin']))
+            ->with(['roles', 'organizations', 'permissions'])
+            ->orderBy('name')
+            ->paginate(25)
+            ->withQueryString();
         $tab = in_array($request->string('tab')->toString(), ['overview', 'create', 'manage'], true) ? $request->string('tab')->toString() : 'overview';
 
         return view('admin.users.index', [
@@ -28,6 +47,7 @@ class AdminUserController extends Controller
                 ->get()
                 ->groupBy('group_name'),
             'organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->orderBy('legal_name')->get(),
+            'permissionPages' => self::PERMISSION_PAGES,
             'activeTab' => $tab,
             'selectedUser' => $users->getCollection()->firstWhere('id', $request->integer('user')),
         ]);

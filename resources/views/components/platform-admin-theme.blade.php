@@ -14,7 +14,7 @@
 .ny-main>main input:not([type=checkbox]):not([type=radio]):not([type=color]),.ny-main>main select{min-height:var(--ny-control-height)!important;padding:.5rem .75rem!important;border-color:#cbd5e1!important;border-radius:var(--ny-control-radius)!important;background-color:#fff;font-size:12.5px!important;line-height:1.25!important}
 .ny-main>main textarea{min-height:82px;padding:.65rem .75rem!important;border-color:#cbd5e1!important;border-radius:var(--ny-control-radius)!important;background-color:#fff;font-size:12.5px!important;line-height:1.45!important;resize:vertical}
 .ny-main>main input:focus,.ny-main>main select:focus,.ny-main>main textarea:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important;outline:0!important}
-.ny-main>main input[type=checkbox],.ny-main>main input[type=radio]{width:16px;height:16px;flex:0 0 16px}
+.ny-main>main input[type=checkbox],.ny-main>main input[type=radio]{box-sizing:border-box!important;width:17px!important;min-width:17px!important;max-width:17px!important;height:17px!important;min-height:17px!important;max-height:17px!important;padding:0!important;flex:0 0 17px!important;border:1.5px solid #94a3b8!important;border-radius:4px!important;accent-color:#047857}.ny-main>main input[type=radio]{border-radius:50%!important}.ny-main>main .permission-check:checked{border-color:#047857!important;background-color:#047857!important}
 .ny-main>main button,.ny-main>main a[class*="px-"]{min-height:36px;line-height:1.2}
 .ny-main>main label{line-height:1.35}
 .ny-main>main table{font-size:11.5px}
