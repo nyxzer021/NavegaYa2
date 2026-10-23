@@ -54,9 +54,9 @@ class HomeController
                 $query->whereJsonContains('placements', 'home_carousel')
                     ->orWhereJsonContains('placements', 'home_hero');
             })
-            ->orderByDesc('starts_on')
+            ->orderBy('views')
             ->orderBy('id')
-            ->limit(5)
+            ->limit(6)
             ->get();
         $sidebarQuery = Advertisement::with('city')->active()->forPlacement('home_sidebar')
             ->whereNotIn('id', $carouselAds->pluck('id'))

@@ -22,7 +22,7 @@ class TourismMarketplaceTest extends TestCase
             'contact_name'=>'Ana Torres','email'=>'ana@rioverde.test','phone'=>'+51 999 111 222',
             'password'=>'Password123!','password_confirmation'=>'Password123!',
         ]);
-        $response->assertRedirect(route('marketplace.dashboard'));
+        $response->assertRedirect(route('marketplace.dashboard', ['tab' => 'plan']));
         $organization=Organization::where('ruc','20123456789')->firstOrFail();
         $this->assertSame('marketplace_business',$organization->type);
         $this->assertDatabaseHas('subscriptions',['organization_id'=>$organization->id,'status'=>'pending']);

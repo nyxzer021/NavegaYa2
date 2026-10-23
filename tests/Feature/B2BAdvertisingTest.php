@@ -90,9 +90,9 @@ class B2BAdvertisingTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.ads.index'))
             ->assertOk()
-            ->assertSee('Registrar campaña publicitaria')
-            ->assertSee('Portada · carrusel principal')
-            ->assertSee('Portada · banner lateral');
+            ->assertSee('Carrusel y campañas')
+            ->assertSee('Vista previa del carrusel principal')
+            ->assertDontSee('Registrar campaña publicitaria');
 
         $this->actingAs($admin)->post(route('admin.ads.store'), [
             'business_name' => 'Lodge de prueba',
@@ -147,5 +147,33 @@ class B2BAdvertisingTest extends TestCase
         $this->assertSame(1, $sidebar->fresh()->views);
         $this->get(route('home'))->assertOk()->assertSee('Sabores de Loreto');
         $this->assertSame($sidebar->id, session('home_sidebar_ad_id'));
+    }
+
+    public function test_home_carousel_prioritizes_campaigns_with_less_exposure(): void
+    {
+        Advertisement::query()->delete();
+
+        foreach (range(0, 6) as $views) {
+            Advertisement::create([
+                'business_name' => "Empresa {$views}",
+                'business_type' => 'lodge_hotel',
+                'contact_name' => 'Ventas',
+                'phone_whatsapp' => '999999999',
+                'city_destination' => 'Iquitos',
+                'placements' => ['home_carousel'],
+                'category' => 'Hotel',
+                'title' => "Portada empresa {$views}",
+                'status' => 'active',
+                'views' => $views,
+            ]);
+        }
+
+        $response = $this->get(route('home'))->assertOk();
+
+        foreach (range(0, 5) as $views) {
+            $response->assertSee("Portada empresa {$views}");
+        }
+
+        $response->assertDontSee('Portada empresa 6');
     }
 }

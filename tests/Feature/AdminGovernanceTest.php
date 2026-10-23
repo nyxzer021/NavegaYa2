@@ -48,7 +48,7 @@ class AdminGovernanceTest extends TestCase
         $this->get(route('admin.ports.index'))->assertOk();
         $this->get(route('admin.master-routes.index'))->assertOk();
         $this->get(route('admin.tourism-partners.index'))->assertOk()->assertSee('Negocios, fichas y moderación');
-        $this->get(route('admin.advertisements.index'))->assertOk()->assertSee('Campañas contratadas');
+        $this->get(route('admin.advertisements.index'))->assertOk()->assertSee('Carrusel y campañas');
         $this->get(route('admin.refunds.index'))->assertOk()->assertSee('Reembolsos e incidencias de pago');
         $this->get('/admin/carga-general')->assertRedirect(route('admin.cargo.index'));
     }

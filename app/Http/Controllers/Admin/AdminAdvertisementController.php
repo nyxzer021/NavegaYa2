@@ -26,6 +26,14 @@ class AdminAdvertisementController extends Controller
             'businessTypes' => Advertisement::BUSINESS_TYPES,
             'placements' => Advertisement::PLACEMENTS,
             'pipeline' => Advertisement::query()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
+            'carouselAds' => Advertisement::query()
+                ->active()
+                ->where(fn ($query) => $query
+                    ->whereJsonContains('placements', 'home_carousel')
+                    ->orWhereJsonContains('placements', 'home_hero'))
+                ->orderBy('views')
+                ->orderBy('id')
+                ->get(),
         ]);
     }
 
