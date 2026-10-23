@@ -14,21 +14,6 @@
         <span class="inline-flex h-10 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-800">{{ $operators->where('published_departures_count', '>', 0)->count() }} operadores con salidas</span>
     </x-slot:actions>
 
-    <x-slot:metrics>
-        @php
-            $occupancy = $totalPublishedSeats > 0 ? number_format(($totalSoldSeats / $totalPublishedSeats) * 100, 1) : '0.0';
-            $metrics = [
-                ['Salidas publicadas', number_format($totalPublishedDepartures), $selectedDate->translatedFormat('d M Y'), '↗', 'text-slate-950'],
-                ['Asientos disponibles', number_format(max(0, $totalPublishedSeats - $totalSoldSeats)), number_format($totalPublishedSeats).' de capacidad publicada', '▦', 'text-emerald-700'],
-                ['Boletos vendidos', number_format($totalSoldSeats), "{$occupancy}% de ocupación", '🎟️', 'text-slate-950'],
-                ['Ventas pausadas', number_format($pausedOperatorsCount), 'Operadores que requieren revisión', '!', $pausedOperatorsCount ? 'text-amber-600' : 'text-slate-950'],
-            ];
-        @endphp
-        @foreach($metrics as $metric)
-            <article class="min-h-32 border-b border-r border-slate-200 p-4 xl:border-b-0"><div class="flex items-start justify-between gap-3"><span class="text-[10px] font-black uppercase tracking-wider text-slate-400">{{ $metric[0] }}</span><span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-emerald-700">{{ $metric[3] }}</span></div><p class="mt-3 text-2xl font-black {{ $metric[4] }}">{{ $metric[1] }}</p><span class="text-[10px] font-semibold text-slate-400">{{ $metric[2] }}</span></article>
-        @endforeach
-    </x-slot:metrics>
-
     <x-slot:navigation>
         <a href="{{ route('admin.itineraries.index', ['tab' => 'resumen']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'resumen' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">Resumen</a>
         <a href="{{ route('admin.itineraries.index', ['tab' => 'fluvial']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'fluvial' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">🚤 Fluvial <span class="ml-1 text-[10px] text-slate-400">{{ $fluvialOperators->count() }}</span></a>
@@ -39,9 +24,9 @@
 
     <section class="grid border-b border-slate-200 bg-white sm:grid-cols-2 xl:grid-cols-5" aria-label="Resultado operativo de la fecha">
         @foreach([
-            ['Salidas del día', $scheduledDeparturesCount, 'Operaciones registradas', 'text-slate-900'],
-            ['Salidas realizadas', $departedDeparturesCount, 'Zarparon, en tránsito o completadas', 'text-emerald-700'],
-            ['Pendientes', $pendingDeparturesCount, 'Programadas o en embarque', 'text-sky-700'],
+            ['Programadas', $scheduledDeparturesCount, 'Salidas registradas para la fecha', 'text-slate-900'],
+            ['En curso o completadas', $departedDeparturesCount, 'Operación iniciada o finalizada', 'text-emerald-700'],
+            ['Por iniciar', $pendingDeparturesCount, 'Programadas o en embarque', 'text-sky-700'],
             ['Canceladas', $cancelledDeparturesCount, 'No realizaron la salida', 'text-rose-700'],
             ['Reprogramadas', $rescheduledDeparturesCount, 'Cambio de fecha u hora registrado', 'text-amber-700'],
         ] as $operation)

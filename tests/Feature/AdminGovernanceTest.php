@@ -48,7 +48,7 @@ class AdminGovernanceTest extends TestCase
         $this->get(route('admin.ports.index'))->assertOk();
         $this->get(route('admin.master-routes.index'))->assertOk();
         $this->get(route('admin.tourism-partners.index'))->assertOk()->assertSee('Negocios, fichas y moderación');
-        $this->get(route('admin.advertisements.index'))->assertOk()->assertSee('Publicidad y pautas B2B');
+        $this->get(route('admin.advertisements.index'))->assertOk()->assertSee('Campañas contratadas');
         $this->get(route('admin.refunds.index'))->assertOk()->assertSee('Reembolsos e incidencias de pago');
         $this->get('/admin/carga-general')->assertRedirect(route('admin.cargo.index'));
     }
@@ -194,11 +194,9 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Expreso Fluvial Marañón')
             ->assertSee('Selva Air Taxi')
             ->assertSee('Pausar ventas')
-            ->assertSee('Salidas publicadas')
-            ->assertSee('Asientos disponibles')
-            ->assertSee('Salidas del día')
-            ->assertSee('Salidas realizadas')
-            ->assertSee('Pendientes')
+            ->assertSee('Programadas')
+            ->assertSee('En curso o completadas')
+            ->assertSee('Por iniciar')
             ->assertSee('Canceladas')
             ->assertSee('Reprogramadas')
             ->assertDontSee('DICAPI')

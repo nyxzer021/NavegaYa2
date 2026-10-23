@@ -13,7 +13,6 @@
 @endsection
 
 @section('content')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
     body:has(#executiveDashboard) .ny-main,
     body:has(#executiveDashboard) .ny-main > main,
@@ -135,14 +134,14 @@
             @unless($isAdvertisingDashboard)
             <nav id="transportSubnav" class="flex w-full max-w-full gap-1.5 overflow-x-auto rounded-2xl bg-slate-950 p-1.5 shadow-inner lg:w-auto" role="tablist" aria-label="Áreas de transporte">
                 @foreach([
+                    ['resumen','▦','Resumen','bg-white text-slate-950'],
                     ['fluvial','🚤','Fluvial','bg-emerald-500 text-emerald-950'],
                     ['aereo','✈️','Aéreo','bg-sky-400 text-sky-950'],
-                    ['resumen','▦','Resumen','bg-white text-slate-950'],
                     ['finanzas','S/','Finanzas','bg-amber-400 text-amber-950'],
                     ['empresas','▥','Empresas','bg-violet-400 text-violet-950'],
                     ['carga','◆','Carga','bg-orange-400 text-orange-950']
                 ] as [$key,$icon,$label,$activeClass])
-                    <button type="button" role="tab" data-dashboard-tab="{{ $key }}" data-active-class="{{ $activeClass }}" aria-selected="{{ $key === 'fluvial' ? 'true' : 'false' }}" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-[10px] font-black text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/70">
+                    <button type="button" role="tab" data-dashboard-tab="{{ $key }}" data-active-class="{{ $activeClass }}" aria-selected="{{ $key === 'resumen' ? 'true' : 'false' }}" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-[10px] font-black text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/70">
                         <span class="grid h-6 w-6 place-items-center rounded-lg bg-white/10">{{ $icon }}</span><span>{{ $label }}</span>
                     </button>
                 @endforeach
@@ -151,7 +150,7 @@
         </div>
 
         @unless($isAdvertisingDashboard)
-        <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" hidden class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
+        <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
             <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
                 @foreach([
                     ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'border-cyan-200 bg-cyan-50'],
@@ -178,14 +177,14 @@
             </div>
         </div>
 
-        <div data-dashboard-panel="fluvial" data-dashboard-area="transporte" role="tabpanel" class="grid w-full min-w-0 gap-4 bg-emerald-50/30 p-4 xl:grid-cols-[1fr_1.4fr]">
+        <div data-dashboard-panel="fluvial" data-dashboard-area="transporte" role="tabpanel" hidden class="grid w-full min-w-0 gap-4 bg-emerald-50/30 p-4 xl:grid-cols-[1fr_1.4fr]">
             <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
                 @foreach([['Pasajes fluviales',$fluvialTicketsSold,'Vendidos en el período','🎟️'],['GMV fluvial','S/ '.number_format($fluvialGmv,2),$fluvialDeparturesCount.' salidas programadas','💳'],['Ocupación',number_format($fluvialOccupancyRate,1).'%',number_format($fluvialCapacity).' asientos publicados','◔']] as $item)
                     <article class="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-emerald-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-emerald-800">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
                 @endforeach
             </div>
             <div class="grid min-w-0 gap-4 xl:grid-cols-[1.35fr_1fr]">
-                <article class="overflow-hidden rounded-xl border border-emerald-200 bg-white"><div class="flex justify-between bg-emerald-50 px-4 py-3"><div><h4 class="text-xs font-black">Mapa de rutas fluviales</h4><p class="text-[9px] text-slate-500">Puertos, operadores, demanda y ventas por tramo</p></div><span class="text-[9px] font-bold text-emerald-700">━ Ruta fluvial</span></div><div id="fluvialRoutesMap" class="h-[350px]"></div></article>
+                <article class="overflow-hidden rounded-xl border border-emerald-200 bg-white"><div class="flex justify-between bg-emerald-50 px-4 py-3"><div><h4 class="text-xs font-black">Cobertura fluvial operativa</h4><p class="text-[9px] text-slate-500">Rutas reales ordenadas por demanda del período</p></div><a href="{{ route('admin.itineraries.index',['tab'=>'fluvial']) }}" class="text-[9px] font-black text-emerald-700">Ver operación →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0"><tr><th class="p-3">Ruta</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">Ventas</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Fluvial')->take(8) as $route)<tr><td class="p-3 font-bold">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td></tr>@empty<tr><td colspan="3" class="p-8 text-center text-slate-400">Aún no hay rutas fluviales con actividad en el período.</td></tr>@endforelse</tbody></table></div></article>
                 <article class="rounded-xl border border-emerald-200 bg-white p-4"><h4 class="text-xs font-black">Ventas fluviales en el tiempo</h4><p class="text-[9px] text-slate-400">GMV por fecha del período</p><div class="h-40"><canvas id="fluvialSalesChart"></canvas></div><h4 class="mt-3 border-t pt-3 text-xs font-black">Capacidad y demanda</h4><div class="h-36"><canvas id="fluvialCapacityChart"></canvas></div></article>
             </div>
             <article class="overflow-hidden rounded-xl border border-emerald-200 bg-white xl:col-span-2"><div class="flex justify-between bg-emerald-50 px-4 py-3"><h4 class="text-xs font-black">Rutas fluviales con mayor demanda</h4><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-emerald-700">Ver catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Ruta</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-center">Estado</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Fluvial') as $route)<tr><td class="p-3 font-black">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td><td class="p-3 text-center"><span class="rounded-full bg-emerald-50 px-2 py-1 font-bold text-emerald-700">Activa</span></td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin ventas fluviales en este período.</td></tr>@endforelse</tbody></table></article>
@@ -198,7 +197,7 @@
                 @endforeach
             </div>
             <div class="grid min-w-0 gap-4 xl:grid-cols-[1.35fr_1fr]">
-                <article class="overflow-hidden rounded-xl border border-sky-200 bg-white"><div class="flex justify-between bg-sky-50 px-4 py-3"><div><h4 class="text-xs font-black">Mapa de conexiones aéreas</h4><p class="text-[9px] text-slate-500">Aeródromos, operadores y demanda regional</p></div><span class="text-[9px] font-bold text-sky-700">┄ Ruta aérea</span></div><div id="airRoutesMap" class="h-[350px]"></div></article>
+                <article class="overflow-hidden rounded-xl border border-sky-200 bg-white"><div class="flex justify-between bg-sky-50 px-4 py-3"><div><h4 class="text-xs font-black">Cobertura aérea operativa</h4><p class="text-[9px] text-slate-500">Conexiones reales ordenadas por demanda del período</p></div><a href="{{ route('admin.itineraries.index',['tab'=>'aereo']) }}" class="text-[9px] font-black text-sky-700">Ver operación →</a></div><div class="max-h-72 overflow-auto"><table class="w-full text-left text-[10px]"><thead class="sticky top-0"><tr><th class="p-3">Conexión</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">Ventas</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Aéreo')->take(8) as $route)<tr><td class="p-3 font-bold">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td></tr>@empty<tr><td colspan="3" class="p-8 text-center text-slate-400">Aún no hay conexiones aéreas con actividad en el período.</td></tr>@endforelse</tbody></table></div></article>
                 <article class="rounded-xl border border-sky-200 bg-white p-4"><h4 class="text-xs font-black">Ventas aéreas en el tiempo</h4><p class="text-[9px] text-slate-400">GMV por fecha del período</p><div class="h-40"><canvas id="airSalesChart"></canvas></div><h4 class="mt-3 border-t pt-3 text-xs font-black">Capacidad y demanda</h4><div class="h-36"><canvas id="airCapacityChart"></canvas></div></article>
             </div>
             <article class="overflow-hidden rounded-xl border border-sky-200 bg-white xl:col-span-2"><div class="flex justify-between bg-sky-50 px-4 py-3"><h4 class="text-xs font-black">Conexiones aéreas con mayor demanda</h4><a href="{{ route('admin.master-routes.index') }}" class="text-[9px] font-black text-sky-700">Ver catálogo →</a></div><table class="w-full text-left text-[10px]"><thead class="border-y uppercase text-slate-400"><tr><th class="p-3">Conexión</th><th class="p-3 text-center">Pasajes</th><th class="p-3 text-right">GMV</th><th class="p-3 text-center">Estado</th></tr></thead><tbody class="divide-y">@forelse($topRoutes->where('type','Aéreo') as $route)<tr><td class="p-3 font-black">{{ $route['name'] }}</td><td class="p-3 text-center">{{ $route['tickets'] }}</td><td class="p-3 text-right">S/ {{ number_format($route['sales'],2) }}</td><td class="p-3 text-center"><span class="rounded-full bg-sky-50 px-2 py-1 font-bold text-sky-700">Activa</span></td></tr>@empty<tr><td colspan="4" class="p-8 text-center text-slate-400">Sin ventas aéreas en este período.</td></tr>@endforelse</tbody></table></article>
@@ -286,7 +285,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
 window.dashboardData = {
     chartLabels: @json($chartLabels), fluvialSeries: @json($fluvialSeries), airSeries: @json($airSeries), cargoSeries: @json($cargoSeries),
@@ -334,12 +332,10 @@ window.initDashboardTab = function(tab) {
     if(tab==='fluvial') {
         window.makeChart('fluvialSalesChart',{type:'line',data:{labels:d.chartLabels,datasets:[{data:d.fluvialSeries,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.12)',fill:true,tension:.35}]},options:{...baseOptions,scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
         window.makeChart('fluvialCapacityChart',{type:'doughnut',data:{labels:['Vendidos','Disponibles'],datasets:[{data:d.fluvialCapacity.some(Number)?d.fluvialCapacity:[1],backgroundColor:d.fluvialCapacity.some(Number)?['#059669','#d1fae5']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'62%'}});
-        window.initModeMap('fluvialRoutesMap','Fluvial');
     }
     if(tab==='aereo') {
         window.makeChart('airSalesChart',{type:'line',data:{labels:d.chartLabels,datasets:[{data:d.airSeries,borderColor:'#0284c7',backgroundColor:'rgba(2,132,199,.12)',fill:true,tension:.35}]},options:{...baseOptions,scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
         window.makeChart('airCapacityChart',{type:'doughnut',data:{labels:['Vendidos','Disponibles'],datasets:[{data:d.airCapacity.some(Number)?d.airCapacity:[1],backgroundColor:d.airCapacity.some(Number)?['#0284c7','#e0f2fe']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'62%'}});
-        window.initModeMap('airRoutesMap','Aéreo');
     }
     if(tab==='finanzas') {
         window.makeChart('financeTrendChart',{type:'line',data:{labels:d.chartLabels,datasets:[{label:'Fluvial',data:d.fluvialSeries,borderColor:'#059669',tension:.35},{label:'Aéreo',data:d.airSeries,borderColor:'#0284c7',tension:.35},{label:'Carga',data:d.cargoSeries,borderColor:'#d97706',tension:.35}]},options:{...baseOptions,plugins:{legend:{display:true,labels:{boxWidth:8,font:{size:9}}}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
@@ -351,42 +347,6 @@ window.initDashboardTab = function(tab) {
         window.makeChart('subscriptionRevenueChart',{type:'bar',data:{labels:['Esencial','Destacado','Cobertura total'],datasets:[{data:d.subscriptionRevenue,backgroundColor:['#38bdf8','#8b5cf6','#f59e0b'],borderRadius:8}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
         window.makeChart('subscriptionClientsChart',{type:'doughnut',data:{labels:['Básico','Profesional','Enterprise'],datasets:[{data:d.subscriptionClients.some(Number)?d.subscriptionClients:[1],backgroundColor:d.subscriptionClients.some(Number)?['#10b981','#f59e0b','#8b5cf6']:['#cbd5e1'],borderWidth:0}]},options:{...baseOptions,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:9}}}}}});
     }
-};
-window.initModeMap = function(elementId, modality) {
-    if(typeof L==='undefined') return; const el=document.getElementById(elementId); if(!el) return;
-    window.nyModeMaps = window.nyModeMaps || {};
-    if(window.nyModeMaps[elementId]) {
-        if(window.nyModeMaps[elementId].getContainer() === el) { setTimeout(()=>window.nyModeMaps[elementId].invalidateSize(),50); return; }
-        window.nyModeMaps[elementId].remove(); delete window.nyModeMaps[elementId];
-    }
-    const loretoBounds=L.latLngBounds([[-8.8,-77.2],[-0.8,-68.3]]);
-    const map=L.map(el,{zoomControl:true,maxBoundsViscosity:.65}).setView([-4.7,-73.8],6); map.setMaxBounds(loretoBounds.pad(.2)); window.nyModeMaps[elementId]=map;
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
-    const routes=window.dashboardData.routes.filter(route=>route.type===modality); const bounds=[];
-    const escapeMapHtml=value=>String(value??'').replace(/[&<>'"]/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[character]));
-    const loretoNodes=[['Iquitos',-3.7437,-73.2516],['Nauta',-4.5051,-73.5757],['Yurimaguas',-5.8966,-76.1043],['Requena',-5.0638,-73.8528],['Contamana',-7.3509,-75.0090],['Caballococha',-3.9058,-70.5168],['San Lorenzo',-4.8294,-76.5558]];
-    loretoNodes.forEach(([name,lat,lng])=>L.circleMarker([lat,lng],{radius:5,color:modality==='Aéreo'?'#0369a1':'#047857',fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(name,{direction:'top'}));
-    routes.forEach(route=>{
-        if(!route.origin_coords||!route.destination_coords)return;
-        const color=modality==='Aéreo'?'#0284c7':'#059669';
-        const path=route.path?.type==='LineString' && Array.isArray(route.path.coordinates) && route.path.coordinates.length>1
-            ? route.path.coordinates.map(point=>[Number(point[1]),Number(point[0])])
-            : [route.origin_coords,route.destination_coords];
-        const normalWeight=Math.min(9,3+Number(route.tickets||0)/10);
-        const line=L.polyline(path,{color,weight:normalWeight,dashArray:modality==='Aéreo'?'8 7':null,opacity:.9}).addTo(map);
-        const detail='<strong>'+(modality==='Aéreo'?'✈️':'🚤')+' '+escapeMapHtml(route.origin)+' → '+escapeMapHtml(route.destination)+'</strong><br>'+escapeMapHtml(route.operator)+'<br><b>'+Number(route.tickets||0)+'</b> pasajes · S/ '+Number(route.sales||0).toFixed(2);
-        line.bindTooltip(detail,{sticky:true,direction:'top',className:'ny-route-tooltip'}).bindPopup(detail);
-        line.on('mouseover',()=>{line.setStyle({color:'#f59e0b',weight:normalWeight+4,opacity:1});line.bringToFront();});
-        line.on('mouseout',()=>line.setStyle({color,weight:normalWeight,opacity:.9}));
-        L.circleMarker(route.origin_coords,{radius:5,color,fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(route.origin);
-        L.circleMarker(route.destination_coords,{radius:5,color,fillColor:'#fff',fillOpacity:1,weight:2}).addTo(map).bindTooltip(route.destination);
-        bounds.push(...path);
-    });
-    if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:8}); else {
-        map.setView([-4.65,-73.75],6);
-        const notice=L.control({position:'bottomleft'}); notice.onAdd=()=>{const div=L.DomUtil.create('div','rounded-lg bg-white/95 p-2 text-[9px] font-bold text-slate-600 shadow-lg');div.innerHTML='Puntos de referencia de Loreto<br><span style="color:#64748b;font-weight:500">Las líneas aparecerán al registrar coordenadas en las rutas.</span>';return div;};notice.addTo(map);
-    }
-    setTimeout(()=>map.invalidateSize(),100);
 };
 window.initExecutiveDashboard = function() {
     const root=document.getElementById('executiveDashboard'); if(!root) return;
@@ -415,7 +375,7 @@ window.initExecutiveDashboard = function() {
     const businessPalette=['border-emerald-600','bg-emerald-950','border-fuchsia-500','bg-fuchsia-950','text-white','text-slate-700','shadow-lg'];
 
     const activateTransportTab=(name,updateUrl=true)=>{
-        if(!valid.includes(name)) name='fluvial';
+        if(!valid.includes(name)) name='resumen';
         panels.forEach(panel=>{const show=panel.dataset.dashboardArea==='transporte' && panel.dataset.dashboardPanel===name;panel.hidden=!show;panel.style.display=show?'':'none';});
         buttons.forEach(button=>{
             const selected=button.dataset.dashboardTab===name;
@@ -444,7 +404,7 @@ window.initExecutiveDashboard = function() {
             panels.forEach(panel=>{const show=panel.dataset.dashboardArea==='publicidad';panel.hidden=!show;panel.style.display=show?'':'none';});
             if(updateUrl){const url=new URL(location.href);url.searchParams.set('area','publicidad');url.searchParams.delete('tab');history.replaceState(history.state,'',url);}
             requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab('publicidad'),40));
-        } else activateTransportTab(new URL(location.href).searchParams.get('tab') || 'fluvial',updateUrl);
+        } else activateTransportTab(new URL(location.href).searchParams.get('tab') || 'resumen',updateUrl);
     };
 
     const adButtons=[...root.querySelectorAll('[data-ad-tab]')];
