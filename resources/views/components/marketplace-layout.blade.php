@@ -26,6 +26,5 @@
         </div>
     </header>
     {{ $slot }}
-    <x-tracking />
 </body>
 </html>

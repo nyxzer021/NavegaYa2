@@ -41,6 +41,5 @@
 
     <x-platform-admin-theme />
     <x-public-i18n />
-    <x-tracking />
 </body>
 </html>
