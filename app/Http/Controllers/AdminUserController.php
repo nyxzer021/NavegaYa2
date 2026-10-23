@@ -15,16 +15,21 @@ class AdminUserController extends Controller
 {
     private const PLATFORM_PERMISSION_CODES = ['companies', 'routes', 'reports', 'ads', 'audit'];
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $users = User::with(['roles', 'organizations', 'permissions'])->orderBy('name')->paginate(25)->withQueryString();
+        $tab = in_array($request->string('tab')->toString(), ['overview', 'create', 'manage'], true) ? $request->string('tab')->toString() : 'overview';
+
         return view('admin.users.index', [
-            'users' => User::with(['roles', 'organizations', 'permissions'])->orderBy('name')->paginate(25),
+            'users' => $users,
             'permissions' => Permission::query()
                 ->whereIn('code', self::PLATFORM_PERMISSION_CODES)
                 ->orderByRaw("CASE code WHEN 'companies' THEN 1 WHEN 'routes' THEN 2 WHEN 'reports' THEN 3 WHEN 'ads' THEN 4 WHEN 'audit' THEN 5 ELSE 6 END")
                 ->get()
                 ->groupBy('group_name'),
             'organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->orderBy('legal_name')->get(),
+            'activeTab' => $tab,
+            'selectedUser' => $users->getCollection()->firstWhere('id', $request->integer('user')),
         ]);
     }
 

@@ -12,9 +12,19 @@ use Illuminate\View\View;
 
 class AdminNavigationController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('admin.navigation.index', ['items' => NavigationItem::orderBy('position')->get(), 'pages' => PublicPage::orderBy('title')->get()]);
+        $items = NavigationItem::orderBy('position')->get();
+        $pages = PublicPage::orderBy('title')->get();
+        $tab = in_array($request->string('tab')->toString(), ['overview', 'menu', 'pages'], true) ? $request->string('tab')->toString() : 'overview';
+
+        return view('admin.navigation.index', [
+            'items' => $items,
+            'pages' => $pages,
+            'activeTab' => $tab,
+            'selectedItem' => $items->firstWhere('id', $request->integer('item')),
+            'selectedPage' => $pages->firstWhere('id', $request->integer('page')),
+        ]);
     }
 
     public function storeItem(Request $r): RedirectResponse

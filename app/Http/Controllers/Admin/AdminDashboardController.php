@@ -32,6 +32,7 @@ class AdminDashboardController extends Controller
         $today = today();
 
         $payments = Payment::query()
+            ->where('purpose', 'ticket')
             ->whereIn('status', ['confirmed', 'succeeded'])
             ->whereBetween('paid_at', [$from, $to])
             ->with([
@@ -44,6 +45,7 @@ class AdminDashboardController extends Controller
             ->get();
 
         $successfulPayments = fn () => Payment::query()
+            ->where('purpose', 'ticket')
             ->whereIn('status', ['confirmed', 'succeeded']);
 
         $profitToday = (float) $successfulPayments()

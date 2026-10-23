@@ -9,9 +9,11 @@ use Illuminate\View\View;
 
 class AdminSettingsController
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('admin.settings.index', ['whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.'), 'siteBrand' => SystemSetting::value('site_brand', 'NavegaYA'), 'footerDescription' => SystemSetting::value('footer_description', 'La plataforma para viajes fluviales, empresas verificadas y destinos amazónicos.'), 'footerRights' => SystemSetting::value('footer_rights', 'Todos los derechos reservados.'), 'themeFont' => SystemSetting::value('theme_font', 'elegant'), 'themeForest' => SystemSetting::value('theme_forest', '#103a31'), 'themeGold' => SystemSetting::value('theme_gold', '#f2b624'), 'themeRiver' => SystemSetting::value('theme_river', '#32b6c9'), 'themeHeroHeight' => SystemSetting::value('theme_hero_height', '360'), 'platformFeePercent' => SystemSetting::value('platform_fee_percent', '10')]);
+        $tab = in_array($request->string('tab')->toString(), ['integrations', 'identity', 'payments', 'appearance'], true) ? $request->string('tab')->toString() : 'integrations';
+
+        return view('admin.settings.index', ['activeTab' => $tab, 'culqiConfigured' => filled(config('services.culqi.public_key')) && filled(config('services.culqi.secret_key')) && filled(config('services.culqi.webhook_secret')), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.'), 'siteBrand' => SystemSetting::value('site_brand', 'NavegaYA'), 'footerDescription' => SystemSetting::value('footer_description', 'La plataforma para viajes fluviales, empresas verificadas y destinos amazónicos.'), 'footerRights' => SystemSetting::value('footer_rights', 'Todos los derechos reservados.'), 'themeFont' => SystemSetting::value('theme_font', 'elegant'), 'themeForest' => SystemSetting::value('theme_forest', '#103a31'), 'themeGold' => SystemSetting::value('theme_gold', '#f2b624'), 'themeRiver' => SystemSetting::value('theme_river', '#32b6c9'), 'themeHeroHeight' => SystemSetting::value('theme_hero_height', '360'), 'platformFeePercent' => SystemSetting::value('platform_fee_percent', '10')]);
     }
 
     public function updateWhatsApp(Request $request): RedirectResponse

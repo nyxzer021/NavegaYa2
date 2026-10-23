@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Aircraft;
 use App\Models\MasterRoute;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Role;
 use App\Models\RouteDeparture;
 use App\Models\Subscription;
@@ -109,6 +110,41 @@ class AdminGovernanceTest extends TestCase
             ->assertOk()
             ->assertSee('S/ 39.20')
             ->assertSeeTextInOrder(['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']);
+    }
+
+    public function test_dashboard_ignores_subscription_payments_without_reservations(): void
+    {
+        $admin = $this->userWithRole('super_admin');
+        $organization = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Empresa Suscriptora SAC', 'commercial_name' => 'Empresa Suscriptora',
+            'ruc' => '20666666666', 'email' => 'suscriptora@test.pe', 'contact_name' => 'Rosa', 'status' => 'active',
+        ]);
+        $plan = SubscriptionPlan::create([
+            'code' => 'dashboard-subscription', 'name' => 'Básico', 'monthly_price' => 300, 'currency' => 'PEN', 'is_active' => true,
+        ]);
+        $subscription = Subscription::create([
+            'organization_id' => $organization->id, 'subscription_plan_id' => $plan->id, 'status' => 'active',
+            'monthly_price' => 300, 'currency' => 'PEN', 'starts_on' => today(), 'ends_on' => today()->addMonth(),
+        ]);
+        Payment::create([
+            'subscription_id' => $subscription->id, 'purpose' => 'subscription', 'method' => 'card', 'provider' => 'culqi',
+            'provider_reference' => 'subscription-dashboard-payment', 'amount' => 300, 'currency_code' => 'PEN',
+            'status' => 'confirmed', 'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
+    }
+
+    public function test_configuration_modules_use_focused_subtabs(): void
+    {
+        $admin = $this->userWithRole('super_admin');
+
+        $this->actingAs($admin)->get(route('admin.navigation.index', ['tab' => 'menu']))
+            ->assertOk()->assertSee('Pestañas actuales')->assertDontSee('Páginas creadas');
+        $this->get(route('admin.users.index', ['tab' => 'create']))
+            ->assertOk()->assertSee('Crear administrador')->assertDontSee('Usuarios registrados');
+        $this->get(route('admin.settings.index', ['tab' => 'payments']))
+            ->assertOk()->assertSee('Comisión NavegaYA')->assertDontSee('Mensaje inicial');
     }
 
     public function test_company_admin_cannot_open_super_admin_governance(): void
@@ -300,7 +336,7 @@ class AdminGovernanceTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.companies.index', ['tab' => 'rendimiento']))
             ->assertOk()
-            ->assertSee('unidad(es)')
+            ->assertSee('registrada(s)')
             ->assertDontSee('Ver dossier');
 
         $this->get(route('admin.companies.show', $riverOperator))
