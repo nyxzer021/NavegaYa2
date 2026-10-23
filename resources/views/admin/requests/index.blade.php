@@ -4,12 +4,12 @@
 @section('content')
 <div class="mx-auto max-w-7xl space-y-5">
     <section class="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 to-emerald-800 p-7 text-white shadow-xl">
-        <div class="flex flex-wrap items-center justify-between gap-5"><div><span class="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">Atención administrativa</span><h2 class="mt-2 text-3xl font-black">{{ $summary['total'] }} solicitud(es) por atender</h2><p class="mt-2 max-w-2xl text-sm text-emerald-100/70">Aquí se concentran afiliaciones, pagos de planes, unidades, fichas públicas y campañas. Cada solicitud abre su módulo de revisión correspondiente.</p></div><span class="grid h-20 w-20 place-items-center rounded-3xl bg-white/10 text-4xl">🔔</span></div>
+        <div class="flex flex-wrap items-center justify-between gap-5"><div><span class="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">Atención administrativa</span><h2 class="mt-2 text-3xl font-black">{{ $summary['total'] }} solicitud(es) por atender</h2><p class="mt-2 max-w-2xl text-sm text-emerald-100/70">Solo aparecen casos que necesitan una decisión humana: afiliaciones, excepciones de pago, flota, moderación de contenido y reportes de usuarios. Los pagos confirmados se activan automáticamente.</p></div><span class="grid h-20 w-20 place-items-center rounded-3xl bg-white/10 text-4xl">🔔</span></div>
     </section>
 
-    <nav class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <nav class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         @foreach([
-            ['','Todas',$summary['total'],'📥'],['subscription','Planes y pagos',$summary['subscriptions'],'💳'],['organization','Afiliaciones',$summary['organizations'],'🏢'],['fleet','Flota',$summary['fleet'],'🚤'],['content','Contenido y anuncios',$summary['content'],'📣']
+            ['','Todas',$summary['total'],'📥'],['organization','Afiliaciones',$summary['organizations'],'🏢'],['payment','Excepciones de pago',$summary['payments'],'💳'],['fleet','Flota',$summary['fleet'],'🚤'],['content','Contenido y anuncios',$summary['content'],'📣'],['report','Usuarios e incidencias',$summary['reports'],'⚠️']
         ] as [$key,$label,$count,$icon])
         <a href="{{ route('admin.requests.index',$key?['type'=>$key]:[]) }}" class="rounded-2xl border p-4 shadow-sm transition {{ $activeType===$key?'border-emerald-700 bg-emerald-700 text-white':'border-slate-200 bg-white hover:border-emerald-300' }}"><span class="text-xl">{{ $icon }}</span><strong class="mt-2 block text-2xl font-black">{{ $count }}</strong><span class="text-[10px] font-black uppercase tracking-wide {{ $activeType===$key?'text-emerald-100':'text-slate-500' }}">{{ $label }}</span></a>
         @endforeach

@@ -58,6 +58,7 @@ use App\Http\Controllers\DiscoverController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MarketplaceBusinessController;
+use App\Http\Controllers\MarketplaceSubscriptionPaymentController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ProfileController;
@@ -86,10 +87,10 @@ Route::get('/puertos-y-muelles', [PublicPortController::class, 'index'])->name('
 Route::get('/guia-loreto', [GuideController::class, 'index'])->name('guide.index');
 Route::get('/guia-loreto/negocio/{listing}', [GuideController::class, 'show'])->name('guide.show');
 Route::get('/guia-loreto/negocio/{listing}/contactar', [GuideController::class, 'contact'])->name('guide.contact');
-Route::post('/guia-loreto/negocio/{listing}/valoraciones', [GuideController::class, 'review'])->middleware(['auth','verified','role:customer|passenger'])->name('guide.reviews.store');
-Route::post('/guia-loreto/negocio/{listing}/fotografias/{image}/valoraciones', [GuideController::class, 'reviewImage'])->middleware(['auth','verified','role:customer|passenger'])->name('guide.images.reviews.store');
+Route::post('/guia-loreto/negocio/{listing}/valoraciones', [GuideController::class, 'review'])->middleware(['auth', 'verified', 'role:customer|passenger'])->name('guide.reviews.store');
+Route::post('/guia-loreto/negocio/{listing}/fotografias/{image}/valoraciones', [GuideController::class, 'reviewImage'])->middleware(['auth', 'verified', 'role:customer|passenger'])->name('guide.images.reviews.store');
 Route::get('/negocios/registro', [MarketplaceBusinessController::class, 'create'])->middleware('guest')->name('marketplace.register');
-Route::post('/negocios/registro', [MarketplaceBusinessController::class, 'store'])->middleware(['guest','throttle:5,1'])->name('marketplace.register.store');
+Route::post('/negocios/registro', [MarketplaceBusinessController::class, 'store'])->middleware(['guest', 'throttle:5,1'])->name('marketplace.register.store');
 Route::get('/empresas/{organization}', [PublicCompanyController::class, 'show'])->name('companies.show');
 Route::post('/empresas/{organization}/valoraciones', [PublicCompanyController::class, 'review'])->middleware(['auth', 'verified'])->name('companies.review');
 Route::post('/empresas/{organization}/reportar-perfil', [PublicContentReportController::class, 'profile'])->middleware('auth')->name('companies.profile.report');
@@ -167,6 +168,10 @@ Route::post('/mis-viajes/consulta', [TravelController::class, 'lookup'])->name('
 
 Route::middleware('auth')->group(function () {
     Route::get('/mi-negocio', [MarketplaceBusinessController::class, 'dashboard'])->middleware('role:marketplace_admin')->name('marketplace.dashboard');
+    Route::get('/mi-negocio/suscripcion/pago', [MarketplaceSubscriptionPaymentController::class, 'show'])->middleware('role:marketplace_admin')->name('marketplace.subscription.payment');
+    Route::post('/mi-negocio/suscripcion/pago/prueba', [MarketplaceSubscriptionPaymentController::class, 'sandboxConfirm'])->middleware('role:marketplace_admin')->name('marketplace.subscription.sandbox-confirm');
+    Route::post('/mi-negocio/suscripcion/pago/culqi', [MarketplaceSubscriptionPaymentController::class, 'charge'])->middleware('role:marketplace_admin')->name('marketplace.subscription.culqi.charge');
+    Route::post('/mi-negocio/suscripcion/pago/culqi/orden', [MarketplaceSubscriptionPaymentController::class, 'order'])->middleware('role:marketplace_admin')->name('marketplace.subscription.culqi.order');
     Route::patch('/mi-negocio/ficha', [MarketplaceBusinessController::class, 'update'])->middleware('role:marketplace_admin')->name('marketplace.update');
     Route::delete('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'deleteImage'])->middleware('role:marketplace_admin')->name('marketplace.images.destroy');
     Route::patch('/mi-negocio/imagenes/{image}', [MarketplaceBusinessController::class, 'replaceImage'])->middleware('role:marketplace_admin')->name('marketplace.images.update');
@@ -232,6 +237,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::patch('/suscripciones-publicitarias/{subscription}', [AdminAdvertisingSubscriptionController::class, 'update'])->name('advertising-subscriptions.update');
     Route::patch('/suscripciones-publicitarias/{subscription}/renovar', [AdminAdvertisingSubscriptionController::class, 'renew'])->name('advertising-subscriptions.renew');
     Route::patch('/suscripciones-publicitarias/{subscription}/cancelar', [AdminAdvertisingSubscriptionController::class, 'cancel'])->name('advertising-subscriptions.cancel');
+    Route::patch('/suscripciones-publicitarias/excepciones/{payment}', [AdminAdvertisingSubscriptionController::class, 'resolvePaymentException'])->name('advertising-subscriptions.exceptions.resolve');
     Route::get('/reembolsos-soporte', [AdminRefundController::class, 'index'])->name('refunds.index');
     Route::get('/configuracion', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [AdminSettingsController::class, 'update'])->name('settings.update');

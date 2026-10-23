@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -14,7 +15,7 @@ class AdminRequestInboxTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_super_admin_sees_pending_requests_in_the_unified_inbox(): void
+    public function test_super_admin_sees_pending_affiliations_in_the_unified_inbox(): void
     {
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
@@ -34,29 +35,65 @@ class AdminRequestInboxTest extends TestCase
             ->assertOk()
             ->assertSee('Bandeja de solicitudes')
             ->assertSee('Lodge Sol')
-            ->assertSee('Pago pendiente')
-            ->assertSee('Revisar pago y plan');
+            ->assertSee('Validación pendiente')
+            ->assertSee('Revisar empresa');
     }
 
-    public function test_resolved_subscription_is_removed_from_pending_inbox(): void
+    public function test_ordinary_pending_subscription_does_not_require_admin_review(): void
     {
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
         $business = Organization::create([
-            'type' => 'marketplace_business', 'legal_name' => 'Hotel Activo SAC', 'commercial_name' => 'Hotel Activo',
+            'type' => 'marketplace_business', 'legal_name' => 'Hotel Pendiente SAC', 'commercial_name' => 'Hotel Pendiente',
             'ruc' => '20987654321', 'email' => 'activo@test.pe', 'contact_name' => 'Luis', 'status' => 'active',
         ]);
         $plan = SubscriptionPlan::create([
-            'code' => 'active-test', 'name' => 'Profesional', 'monthly_price' => 500, 'currency' => 'PEN', 'is_active' => true,
+            'code' => 'pending-test', 'name' => 'Profesional', 'monthly_price' => 500, 'currency' => 'PEN', 'is_active' => true,
         ]);
         Subscription::create([
-            'organization_id' => $business->id, 'subscription_plan_id' => $plan->id, 'status' => 'active',
-            'monthly_price' => 500, 'currency' => 'PEN', 'starts_on' => today(), 'ends_on' => today()->addMonth(),
+            'organization_id' => $business->id, 'subscription_plan_id' => $plan->id, 'status' => 'pending',
+            'monthly_price' => 500, 'currency' => 'PEN', 'starts_on' => today(),
         ]);
 
         $this->actingAs($admin)->get(route('admin.requests.index'))
             ->assertOk()
-            ->assertDontSee('Hotel Activo')
+            ->assertDontSee('Hotel Pendiente')
             ->assertSee('No hay solicitudes pendientes');
+    }
+
+    public function test_payment_exception_is_visible_in_the_inbox(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
+        $business = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Lodge Excepción SAC', 'commercial_name' => 'Lodge Excepción',
+            'ruc' => '20111111111', 'email' => 'excepcion@test.pe', 'contact_name' => 'Rosa', 'status' => 'active',
+        ]);
+        $plan = SubscriptionPlan::create([
+            'code' => 'exception-test', 'name' => 'Básico', 'monthly_price' => 300, 'currency' => 'PEN', 'is_active' => true,
+        ]);
+        $subscription = Subscription::create([
+            'organization_id' => $business->id, 'subscription_plan_id' => $plan->id, 'status' => 'pending',
+            'monthly_price' => 300, 'currency' => 'PEN', 'starts_on' => today(),
+        ]);
+        Payment::create([
+            'subscription_id' => $subscription->id, 'purpose' => 'subscription', 'method' => 'card', 'provider' => 'culqi',
+            'provider_reference' => 'review-payment-1', 'amount' => 250, 'currency_code' => 'PEN', 'status' => 'review_required',
+            'requires_review' => true, 'review_reason' => 'El monto confirmado no coincide con el plan.',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.requests.index', ['type' => 'payment']))
+            ->assertOk()
+            ->assertSee('Lodge Excepción')
+            ->assertSee('El monto confirmado no coincide con el plan.');
+
+        $this->actingAs($admin)->patch(route('admin.advertising-subscriptions.exceptions.resolve', Payment::first()), [
+            'resolution' => 'reject',
+            'reason' => 'El monto fue incorrecto y no corresponde aprobarlo.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('payments', ['provider_reference' => 'review-payment-1', 'status' => 'rejected', 'requires_review' => false]);
+        $this->actingAs($admin)->get(route('admin.requests.index', ['type' => 'payment']))
+            ->assertDontSee('Lodge Excepción');
     }
 }

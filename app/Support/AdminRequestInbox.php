@@ -3,9 +3,10 @@
 namespace App\Support;
 
 use App\Models\Advertisement;
+use App\Models\ContentReport;
 use App\Models\DestinationListing;
 use App\Models\Organization;
-use App\Models\Subscription;
+use App\Models\Payment;
 use App\Models\Vessel;
 use Illuminate\Support\Collection;
 
@@ -14,17 +15,17 @@ class AdminRequestInbox
     public function items(): Collection
     {
         return collect()
-            ->concat(Subscription::query()->where('status', 'pending')->with(['organization', 'plan'])->get()->map(fn ($subscription) => [
-                'type' => 'subscription', 'icon' => '💳', 'area' => 'Planes y pagos',
-                'title' => $subscription->organization?->commercial_name ?: $subscription->organization?->legal_name ?: 'Empresa anunciante',
-                'detail' => 'Solicita activar el plan '.($subscription->plan?->name ?: 'publicitario').' por '.$subscription->currency.' '.number_format((float) $subscription->monthly_price, 2),
-                'status' => 'Pago pendiente', 'created_at' => $subscription->created_at,
-                'url' => route('admin.advertising-subscriptions.index', ['status' => 'pending']), 'action' => 'Revisar pago y plan',
+            ->concat(Payment::query()->where('purpose', 'subscription')->where('requires_review', true)->with('subscription.organization')->get()->map(fn ($payment) => [
+                'type' => 'payment', 'icon' => '💳', 'area' => 'Excepciones de pago',
+                'title' => $payment->subscription?->organization?->commercial_name ?: $payment->subscription?->organization?->legal_name ?: 'Empresa anunciante',
+                'detail' => $payment->review_reason ?: 'El proveedor de pagos requiere una validación manual',
+                'status' => 'Revisión necesaria', 'created_at' => $payment->updated_at,
+                'url' => route('admin.advertising-subscriptions.index', ['status' => 'pending']), 'action' => 'Resolver excepción',
             ]))
-            ->concat(Organization::query()->where('type', 'transport_company')->where('status', 'pending')->get()->map(fn ($organization) => [
+            ->concat(Organization::query()->whereIn('type', ['transport_company', 'marketplace_business'])->where('status', 'pending')->get()->map(fn ($organization) => [
                 'type' => 'organization', 'icon' => '🏢', 'area' => 'Afiliaciones',
                 'title' => $organization->commercial_name ?: $organization->legal_name,
-                'detail' => 'Nueva empresa transportista · RUC '.($organization->ruc ?: 'sin registrar'),
+                'detail' => ($organization->type === 'transport_company' ? 'Nueva empresa transportista' : 'Nuevo negocio anunciante').' · RUC '.($organization->ruc ?: 'sin registrar'),
                 'status' => 'Validación pendiente', 'created_at' => $organization->created_at,
                 'url' => route('admin.organizations.index'), 'action' => 'Revisar empresa',
             ]))
@@ -49,6 +50,13 @@ class AdminRequestInbox
                 'status' => 'Solicitud comercial pendiente', 'created_at' => $advertisement->created_at,
                 'url' => route('admin.advertisements.index', ['status' => 'lead_pending']), 'action' => 'Revisar campaña',
             ]))
+            ->concat(ContentReport::query()->whereIn('status', ['open', 'in_review'])->with('reporter')->get()->map(fn ($report) => [
+                'type' => 'report', 'icon' => '⚠️', 'area' => 'Usuarios e incidencias',
+                'title' => $report->reporter?->name ?: 'Reporte de visitante',
+                'detail' => str_replace('_', ' ', $report->reason).($report->details ? ' · '.$report->details : ''),
+                'status' => $report->priority === 'high' ? 'Prioridad alta' : 'Reporte pendiente', 'created_at' => $report->created_at,
+                'url' => route('admin.moderation.index'), 'action' => 'Revisar reporte',
+            ]))
             ->sortByDesc(fn ($item) => $item['created_at']?->timestamp ?? 0)
             ->values();
     }
@@ -59,10 +67,11 @@ class AdminRequestInbox
 
         return [
             'total' => $items->count(),
-            'subscriptions' => $items->where('type', 'subscription')->count(),
+            'payments' => $items->where('type', 'payment')->count(),
             'organizations' => $items->where('type', 'organization')->count(),
             'fleet' => $items->where('type', 'fleet')->count(),
             'content' => $items->whereIn('type', ['listing', 'advertisement'])->count(),
+            'reports' => $items->where('type', 'report')->count(),
             'latest' => $items->take(5),
         ];
     }
