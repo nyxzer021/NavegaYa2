@@ -7,6 +7,7 @@ use App\Models\ContentReport;
 use App\Models\DestinationListing;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\SupportTicket;
 use App\Models\Vessel;
 use Illuminate\Support\Collection;
 
@@ -67,6 +68,16 @@ class AdminRequestInbox
                 'status' => $report->priority === 'high' ? 'Prioridad alta' : 'Reporte pendiente', 'created_at' => $report->created_at,
                 'url' => route('admin.moderation.index'), 'action' => 'Revisar reporte',
             ]))
+            ->concat(SupportTicket::query()->whereIn('status', ['open', 'in_progress', 'waiting_user'])->with(['user', 'organization'])->get()->map(fn ($ticket) => [
+                'type' => 'support', 'icon' => '💬', 'area' => 'Consultas y soporte',
+                'title' => $ticket->subject,
+                'detail' => ($ticket->organization?->commercial_name ?: $ticket->user?->name ?: 'Usuario').' · '.$ticket->code,
+                'status' => match ($ticket->status) {
+                    'in_progress' => 'En atención', 'waiting_user' => 'Esperando respuesta', default => 'Nueva solicitud'
+                },
+                'created_at' => $ticket->created_at,
+                'url' => route('support.index'), 'action' => 'Responder solicitud',
+            ]))
             ->sortByDesc(fn ($item) => $item['created_at']?->timestamp ?? 0)
             ->values();
     }
@@ -82,6 +93,7 @@ class AdminRequestInbox
             'fleet' => $items->where('type', 'fleet')->count(),
             'content' => $items->whereIn('type', ['listing', 'advertisement'])->count(),
             'reports' => $items->where('type', 'report')->count(),
+            'support' => $items->where('type', 'support')->count(),
             'latest' => $items->take(5),
         ];
     }

@@ -19,6 +19,7 @@ class AirBookingFlowTest extends TestCase
 
     public function test_passenger_can_reserve_multiple_air_seats_and_open_cart(): void
     {
+        config()->set('payments.sandbox_enabled', true);
         $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Aero Amazonía SAC', 'ruc' => '20111111111', 'email' => 'aero@test.pe', 'status' => 'active']);
         $aircraft = Aircraft::create(['organization_id' => $company->id, 'name' => 'Cessna 208B', 'registration_number' => 'OB-AIR-01', 'seat_capacity' => 3, 'status' => 'ready']);
         $seats = collect(['1A', '1B'])->map(fn ($code, $index) => AircraftSeat::create(['aircraft_id' => $aircraft->id, 'code' => $code, 'row_position' => 1, 'column_position' => $index + 1, 'is_available' => true]));

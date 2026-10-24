@@ -69,6 +69,7 @@ use App\Http\Controllers\PublicLocaleController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicPortController;
 use App\Http\Controllers\PublicRouteCatalogController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TravelController;
 use App\Http\Controllers\WeatherController;
 use Illuminate\Support\Facades\Route;
@@ -112,14 +113,14 @@ Route::middleware(['auth', 'role:company_admin|company_counter'])->prefix('empre
     Route::get('/salidas/{departure}/embarque', [CompanyBoardingController::class, 'show'])->name('boarding.show');
     Route::patch('/salidas/{departure}/embarque/{ticket}', [CompanyBoardingController::class, 'toggle'])->name('boarding.toggle');
     Route::get('/salidas/{departure}/manifiesto', [CompanyDepartureController::class, 'manifest'])->name('departures.manifest');
-    Route::get('/flota', [CompanyFleetController::class, 'index'])->name('fleet.index');
-    Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
-    Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');
-    Route::get('/liquidaciones', fn () => redirect()->route('company.commissions.index'))->name('settlements.index');
     Route::get('/pos', [CompanyPosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
 });
 Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('company.')->group(function () {
+    Route::get('/flota', [CompanyFleetController::class, 'index'])->name('fleet.index');
+    Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
+    Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');
+    Route::get('/liquidaciones', fn () => redirect()->route('company.commissions.index'))->name('settlements.index');
     Route::get('/ventas', [CompanySalesController::class, 'index'])->name('sales.index');
     Route::get('/ventas/exportar', [CompanySalesController::class, 'export'])->name('sales.export');
     Route::post('/flota/embarcaciones', [CompanyFleetController::class, 'storeVessel'])->name('fleet.vessels.store');
@@ -133,6 +134,7 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::post('/flota/aeronaves/{aircraft}/asientos/generar', [AdminAircraftController::class, 'generateSeats'])->name('aircraft.seats.generate');
     Route::get('/equipo', fn () => redirect()->route('company.staff.index'))->name('personnel.index');
     Route::get('/finanzas', fn () => redirect()->route('company.commissions.index'))->name('finance.index');
+    Route::patch('/finanzas/cuenta', [CompanyDashboardController::class, 'updateBank'])->name('finance.bank');
 });
 Route::middleware(['auth', 'role:company_admin'])->prefix('empresa/salidas')->name('company.departures.')->group(function () {
     Route::get('/programar', [AdminTransportRouteController::class, 'createDeparture'])->name('create');
@@ -167,6 +169,8 @@ Route::post('/mis-viajes/buscar', [TravelController::class, 'search'])->name('tr
 Route::post('/mis-viajes/consulta', [TravelController::class, 'lookup'])->name('travels.lookup');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/centro-de-solicitudes', [SupportTicketController::class, 'index'])->name('support.index');
+    Route::post('/centro-de-solicitudes', [SupportTicketController::class, 'store'])->name('support.store');
     Route::get('/mi-negocio', [MarketplaceBusinessController::class, 'dashboard'])->middleware('role:marketplace_admin')->name('marketplace.dashboard');
     Route::get('/mi-negocio/suscripcion/pago', [MarketplaceSubscriptionPaymentController::class, 'show'])->middleware('role:marketplace_admin')->name('marketplace.subscription.payment');
     Route::post('/mi-negocio/suscripcion/pago/prueba', [MarketplaceSubscriptionPaymentController::class, 'sandboxConfirm'])->middleware('role:marketplace_admin')->name('marketplace.subscription.sandbox-confirm');
@@ -191,7 +195,8 @@ Route::post('/registro-empresa', [CompanyRegistrationController::class, 'store']
 Route::redirect('/afiliate', '/registro-empresa')->name('company.register');
 Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationController::class, 'verify'])->middleware('signed')->name('company.registration.verify');
 
-Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('admin')->name('admin.')->group(function () {
+    Route::patch('/solicitudes/soporte/{supportTicket}', [SupportTicketController::class, 'respond'])->name('support.respond');
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/solicitudes', [AdminRequestInboxController::class, 'index'])->name('requests.index');
     Route::post('/solicitudes/marcar-revisadas', [AdminRequestInboxController::class, 'markSeen'])->name('requests.mark-seen');

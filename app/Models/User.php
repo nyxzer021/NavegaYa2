@@ -53,6 +53,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Reservation::class);
     }
 
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
     public function isCustomer(): bool
     {
         return $this->roles()->whereIn('code', ['customer', 'traveler', 'passenger'])->exists();

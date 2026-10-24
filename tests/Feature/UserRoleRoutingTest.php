@@ -30,7 +30,7 @@ class UserRoleRoutingTest extends TestCase
         $companyAdmin = User::factory()->create();
         $companyAdmin->roles()->attach(Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador empresa']), ['organization_id' => $organization->id]);
         $companyAdmin->organizations()->attach($organization->id, ['status' => 'active']);
-        $this->actingAs($companyAdmin)->get(route('dashboard'))->assertRedirect(route('company.departures.index'));
+        $this->actingAs($companyAdmin)->get(route('dashboard'))->assertRedirect(route('company.dashboard'));
 
         $counter = User::factory()->create();
         $counter->roles()->attach(Role::firstOrCreate(['code' => 'company_counter'], ['name' => 'Counter']), ['organization_id' => $organization->id]);

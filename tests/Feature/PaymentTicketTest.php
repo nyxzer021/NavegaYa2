@@ -37,6 +37,7 @@ class PaymentTicketTest extends TestCase
 
     public function test_sandbox_payment_confirms_reservation_and_issues_ticket(): void
     {
+        config()->set('payments.sandbox_enabled', true);
         $reservation = $this->reservation();
         $this->get(route('payments.show', $reservation->code))->assertOk()->assertSee('Yape')->assertSee('Plin');
         $this->post(route('payments.sandbox-confirm', $reservation->code), ['method' => 'yape'])->assertRedirect(route('tickets.show', $reservation->code));
@@ -51,7 +52,7 @@ class PaymentTicketTest extends TestCase
         $organization = $reservation->departure->transportRoute->organization;
         $admin->roles()->attach(Role::create(['code' => 'company_admin', 'name' => 'Administrador empresa']), ['organization_id' => $organization->id]);
         $admin->organizations()->attach($organization->id, ['status' => 'active']);
-        $this->actingAs($admin)->patch(route('admin.boarding.board', $ticket))->assertRedirect();
+        $this->actingAs($admin)->patch(route('company.boarding.toggle', [$reservation->departure, $ticket]))->assertRedirect();
         $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'boarded']);
         $this->get(route('tickets.verify', $ticket->boarding_token))->assertOk()->assertSee('Boleto ya utilizado');
     }
@@ -90,17 +91,18 @@ class PaymentTicketTest extends TestCase
         $admin->organizations()->attach($organization->id, ['status' => 'active']);
 
         $this->actingAs($admin)
-            ->get(route('admin.boarding.index', ['departure' => $reservation->route_departure_id]))
+            ->get(route('company.boarding.show', $reservation->departure))
             ->assertOk()
             ->assertSee('Iquitos')
             ->assertSee('Nauta')
             ->assertSee('Pablo Pago')
             ->assertSee('BOL-BOARDING-01')
-            ->assertSee('0 de 1 pasajeros a bordo');
+            ->assertSee('0 de 1')
+            ->assertSee('pasajeros a bordo');
 
-        $this->actingAs($admin)->patch(route('admin.boarding.board', $ticket))->assertRedirect();
+        $this->actingAs($admin)->patch(route('company.boarding.toggle', [$reservation->departure, $ticket]))->assertRedirect();
         $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'boarded']);
-        $this->actingAs($admin)->patch(route('admin.boarding.board', $ticket))->assertRedirect();
+        $this->actingAs($admin)->patch(route('company.boarding.toggle', [$reservation->departure, $ticket]))->assertRedirect();
         $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'confirmed', 'boarded_at' => null]);
     }
 

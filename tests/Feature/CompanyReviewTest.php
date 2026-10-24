@@ -32,7 +32,7 @@ class CompanyReviewTest extends TestCase
         $route = TransportRoute::create(['organization_id' => $company->id, 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id, 'code' => 'IQT-NAU-REV']);
         $departure = RouteDeparture::create(['transport_route_id' => $route->id, 'vessel_id' => $vessel->id, 'departure_at' => now()->subDay(), 'fare' => 50, 'status' => 'completed']);
         $user = User::factory()->create(['email' => 'viajero@example.test']);
-        Reservation::create(['route_departure_id' => $departure->id, 'code' => 'NY-REVIEW', 'contact_name' => $user->name, 'contact_email' => $user->email, 'contact_phone' => '999888777', 'total_amount' => 50, 'status' => 'confirmed']);
+        $reservation = Reservation::create(['route_departure_id' => $departure->id, 'code' => 'NY-REVIEW', 'contact_name' => $user->name, 'contact_email' => $user->email, 'contact_phone' => '999888777', 'total_amount' => 50, 'status' => 'confirmed']);
 
         $this->actingAs($user)->post(route('companies.review', $company), [
             'reservation_id' => $reservation->id,

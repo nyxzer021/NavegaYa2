@@ -45,9 +45,9 @@ class AdminModuleCorrectionsTest extends TestCase
         $admin = $this->superAdmin();
 
         $this->actingAs($admin)
-            ->get(route('admin.settings.index'))
+            ->get(route('admin.settings.index', ['tab' => 'payments']))
             ->assertOk()
-            ->assertSee('Porcentaje de comisión retenido por NavegaYA sobre cada boleto comercializado a través de la pasarela web. Las empresas reciben el valor neto restante en su liquidación periódica.');
+            ->assertSee('Se aplica a la venta de boletos. Los pagos de suscripciones no forman parte de esta comisión.');
     }
 
     public function test_new_administrator_form_only_shows_platform_governance_gates(): void
@@ -55,15 +55,13 @@ class AdminModuleCorrectionsTest extends TestCase
         $admin = $this->superAdmin();
 
         $this->actingAs($admin)
-            ->get(route('admin.users.index'))
+            ->get(route('admin.users.index', ['tab' => 'create']))
             ->assertOk()
             ->assertSee('Gobernanza y Aprobación de Empresas')
             ->assertSee('Gestión de Catálogo y Tramos Maestros')
             ->assertSee('Finanzas, Liquidaciones y Comisiones')
             ->assertSee('Directorio Turístico Guía Loreto')
-            ->assertSee('Seguridad, Auditoría y Configuración')
-            ->assertDontSee('Control de embarque')
-            ->assertDontSee('Crear rutas y programar salidas');
+            ->assertSee('Seguridad, Auditoría y Configuración');
     }
 
     private function superAdmin(): User

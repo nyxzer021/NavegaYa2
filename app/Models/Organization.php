@@ -17,6 +17,7 @@ class Organization extends Model
     protected $fillable = [
         'type', 'modality', 'base_city', 'legal_name', 'commercial_name', 'contact_name', 'ruc', 'email', 'phone', 'whatsapp',
         'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
+        'bank_name', 'bank_account', 'bank_cci',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
         'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path', 'profile_content_status',
     ];

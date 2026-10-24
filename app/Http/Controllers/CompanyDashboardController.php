@@ -136,4 +136,16 @@ class CompanyDashboardController extends Controller
     {
         return auth()->user()->organizations()->where('organizations.type', 'transport_company')->where('organizations.status', 'active')->firstOrFail();
     }
+
+    public function updateBank(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'bank_name' => ['required', 'string', 'max:120'],
+            'bank_account' => ['required', 'string', 'max:40'],
+            'bank_cci' => ['nullable', 'regex:/^[0-9]{20}$/'],
+        ]);
+        $this->organization()->update($data);
+
+        return back()->with('success', 'Cuenta bancaria actualizada de forma segura.');
+    }
 }

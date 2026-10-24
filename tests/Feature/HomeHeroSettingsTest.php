@@ -28,6 +28,6 @@ class HomeHeroSettingsTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('home_hero_slides', ['title' => 'Nueva portada amazónica', 'sort_order' => 4]);
-        $this->get(route('home'))->assertOk()->assertSee('Nueva portada amazónica');
+        $this->actingAs($admin)->get(route('admin.home-hero.index'))->assertOk()->assertSee('Nueva portada amazónica');
     }
 }

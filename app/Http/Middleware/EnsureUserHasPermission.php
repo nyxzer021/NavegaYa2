@@ -16,12 +16,18 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureUserHasPermission
 {
     private const ROUTE_PERMISSIONS = [
-        'admin.organizations.' => 'companies', 'admin.organization-directory.' => 'companies', 'admin.operation.' => 'routes',
-        'admin.ports.' => 'ports', 'admin.transport-routes.' => 'routes', 'admin.vessels.' => 'fleet', 'admin.aircraft.' => 'fleet',
+        'admin.requests.' => 'companies', 'admin.support.' => 'companies', 'admin.companies.' => 'companies',
+        'admin.organizations.' => 'companies', 'admin.organization-directory.' => 'companies', 'admin.fleet-compliance.' => 'fleet',
+        'admin.operation.' => 'routes', 'admin.itineraries.' => 'routes', 'admin.supervision.' => 'routes',
+        'admin.ports.' => 'ports', 'admin.master-routes.' => 'routes', 'admin.transport-routes.' => 'routes',
+        'admin.air-routes.' => 'routes', 'admin.vessels.' => 'fleet', 'admin.aircraft.' => 'fleet', 'admin.fleet.' => 'fleet',
         'admin.manifests.' => 'boarding',
-        'admin.cargo.' => 'cargo', 'admin.boarding.' => 'boarding', 'admin.reports.' => 'reports', 'admin.ads.' => 'ads',
-        'admin.destinations.' => 'ads',
-        'admin.audit.' => 'audit', 'admin.users.' => 'users',
+        'admin.cargo.' => 'cargo', 'admin.boarding.' => 'boarding', 'admin.reports.' => 'reports',
+        'admin.sales.' => 'reports', 'admin.commissions.' => 'reports', 'admin.settlements.' => 'reports', 'admin.refunds.' => 'reports',
+        'admin.ads.' => 'ads', 'admin.advertisements.' => 'ads', 'admin.advertising-subscriptions.' => 'ads',
+        'admin.destinations.' => 'ads', 'admin.destination-listings.' => 'ads', 'admin.business-categories.' => 'ads',
+        'admin.tours.' => 'ads', 'admin.tourism-partners.' => 'ads',
+        'admin.moderation.' => 'audit', 'admin.audit.' => 'audit', 'admin.users.' => 'users',
         'admin.settings.' => 'settings',
         'admin.home-hero.' => 'settings',
         'admin.navigation.' => 'settings',
@@ -33,6 +39,11 @@ class EnsureUserHasPermission
         abort_unless($user, 403);
         if ($user->roles()->where('code', 'super_admin')->exists()) {
             abort_if($request->routeIs('admin.boarding.*'), 403, 'El embarque corresponde al operador de transporte.');
+
+            return $next($request);
+        }
+        if ($request->routeIs('admin.dashboard')) {
+            abort_unless($user->permissions()->exists(), 403);
 
             return $next($request);
         }

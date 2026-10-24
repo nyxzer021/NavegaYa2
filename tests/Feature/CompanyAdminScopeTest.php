@@ -21,11 +21,9 @@ class CompanyAdminScopeTest extends TestCase
         Vessel::create(['organization_id' => $first->id, 'name' => 'Nave Uno', 'registration_number' => 'N-001', 'vessel_type' => 'lancha', 'seat_capacity' => 20]);
         Vessel::create(['organization_id' => $second->id, 'name' => 'Nave Dos', 'registration_number' => 'N-002', 'vessel_type' => 'lancha', 'seat_capacity' => 20]);
         $user = User::factory()->create();
-        $user->roles()->attach(Role::where('code', 'admin')->firstOrFail(), ['organization_id' => $first->id]);
+        $user->roles()->attach(Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador de empresa']), ['organization_id' => $first->id]);
         $user->organizations()->attach($first->id, ['status' => 'active']);
-        $user->permissions()->attach(Permission::where('code', 'fleet')->firstOrFail());
-
-        $this->actingAs($user)->get(route('admin.vessels.index'))->assertOk()->assertSee('Nave Uno')->assertDontSee('Nave Dos');
+        $this->actingAs($user)->get(route('company.fleet.index'))->assertOk()->assertSee('Nave Uno')->assertDontSee('Nave Dos');
     }
 
     public function test_affiliated_administrator_cannot_open_another_company_profile(): void

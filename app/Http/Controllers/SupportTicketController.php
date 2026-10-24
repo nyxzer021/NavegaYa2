@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\SupportTicket;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+
+class SupportTicketController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $isAdmin = $request->user()->roles()->where('code', 'super_admin')->exists();
+        $tickets = SupportTicket::query()
+            ->with(['user', 'organization', 'responder'])
+            ->when(! $isAdmin, fn ($query) => $query->where('user_id', $request->user()->id))
+            ->latest()
+            ->paginate(20);
+
+        return view('support.index', compact('tickets', 'isAdmin'));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'category' => ['required', 'in:reservation,payment,refund,operation,fleet,advertising,account,technical,other'],
+            'priority' => ['required', 'in:normal,high'],
+            'subject' => ['required', 'string', 'max:140'],
+            'description' => ['required', 'string', 'max:3000'],
+        ]);
+        $user = $request->user();
+        $roleCodes = $user->roles()->pluck('code');
+        $requesterType = $roleCodes->contains('company_admin') ? 'transport_company'
+            : ($roleCodes->contains('marketplace_admin') ? 'advertiser' : 'customer');
+
+        SupportTicket::create($data + [
+            'user_id' => $user->id,
+            'organization_id' => $user->organizations()->value('organizations.id'),
+            'requester_type' => $requesterType,
+            'code' => 'SOL-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),
+        ]);
+
+        return back()->with('success', 'Solicitud enviada. Puedes seguir su estado en esta bandeja.');
+    }
+
+    public function respond(Request $request, SupportTicket $supportTicket): RedirectResponse
+    {
+        abort_unless($request->user()->roles()->where('code', 'super_admin')->exists(), 403);
+        $data = $request->validate([
+            'status' => ['required', 'in:in_progress,waiting_user,resolved,closed'],
+            'admin_response' => ['required', 'string', 'max:3000'],
+        ]);
+        $supportTicket->update($data + [
+            'responded_by' => $request->user()->id,
+            'responded_at' => now(),
+            'closed_at' => in_array($data['status'], ['resolved', 'closed'], true) ? now() : null,
+        ]);
+
+        return back()->with('success', 'Solicitud actualizada y respuesta registrada.');
+    }
+}
