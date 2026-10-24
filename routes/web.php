@@ -194,6 +194,7 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/solicitudes', [AdminRequestInboxController::class, 'index'])->name('requests.index');
+    Route::post('/solicitudes/marcar-revisadas', [AdminRequestInboxController::class, 'markSeen'])->name('requests.mark-seen');
     Route::resource('/empresas', AdminCompanyController::class)
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
@@ -338,6 +339,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::patch('/empresas-agencias/{organization}/valoraciones/{review}/aprobar', [AdminOrganizationDirectoryController::class, 'approveReview'])->name('organization-directory.reviews.approve');
     Route::patch('/solicitudes-empresa/{organization}/aprobar', [AdminOrganizationReviewController::class, 'approve'])->name('organizations.approve');
     Route::patch('/solicitudes-empresa/{organization}/rechazar', [AdminOrganizationReviewController::class, 'reject'])->name('organizations.reject');
+    Route::post('/solicitudes-empresa/{organization}/reenviar-verificacion', [AdminOrganizationReviewController::class, 'resendVerification'])->name('organizations.resend-verification');
 });
 
 Route::get('/activar-empresa/{token}', [CompanyActivationController::class, 'create'])->name('company.activation');

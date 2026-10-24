@@ -8,7 +8,9 @@ use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Notifications\VerifyOrganizationContactEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class AdminRequestInboxTest extends TestCase
@@ -95,5 +97,45 @@ class AdminRequestInboxTest extends TestCase
         $this->assertDatabaseHas('payments', ['provider_reference' => 'review-payment-1', 'status' => 'rejected', 'requires_review' => false]);
         $this->actingAs($admin)->get(route('admin.requests.index', ['type' => 'payment']))
             ->assertDontSee('Lodge Excepción');
+    }
+
+    public function test_opening_the_inbox_marks_current_notifications_as_seen(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
+        Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => 'Transportes Pendientes SAC',
+            'ruc' => '20123450001',
+            'email' => 'pendiente@test.pe',
+            'contact_name' => 'Rosa',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.dashboard'))->assertSee('<span data-unread-badge', false);
+        $this->get(route('admin.requests.index'))->assertOk();
+        $this->get(route('admin.dashboard'))->assertDontSee('<span data-unread-badge', false);
+    }
+
+    public function test_super_admin_can_resend_the_company_contact_verification(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
+        $business = Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => 'Rutas Amazónicas SAC',
+            'ruc' => '20123450002',
+            'email' => 'contacto@rutas.test',
+            'contact_name' => 'Ana',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.organizations.resend-verification', $business))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        Notification::assertSentOnDemand(VerifyOrganizationContactEmail::class);
     }
 }

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Support\AdminRequestInbox;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class AdminRequestInboxController extends Controller
 {
     public function index(Request $request, AdminRequestInbox $inbox): View
     {
+        $request->session()->put('admin_inbox_seen_signature', $inbox->signature());
         $items = $inbox->items();
         $type = $request->string('type')->toString();
 
@@ -25,5 +27,12 @@ class AdminRequestInboxController extends Controller
             'summary' => $inbox->summary(),
             'activeType' => $type,
         ]);
+    }
+
+    public function markSeen(Request $request, AdminRequestInbox $inbox): Response
+    {
+        $request->session()->put('admin_inbox_seen_signature', $inbox->signature());
+
+        return response()->noContent();
     }
 }

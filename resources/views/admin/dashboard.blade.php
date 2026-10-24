@@ -151,16 +151,19 @@
 
         @unless($isAdvertisingDashboard)
         <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
-            <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div class="ny-layout-full grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 @foreach([
-                    ['Pasajes vendidos', number_format($totalTicketsSold), 'Fluvial '.$fluvialTicketsSold.' · Aéreo '.$airTicketsSold, '🎟️', 'border-cyan-200 bg-cyan-50'],
-                    ['Empresas activas', number_format($activeOperatorsCount), $pendingOperatorsCount.' solicitudes por evaluar', '🏢', 'border-violet-200 bg-violet-50'],
-                    ['Alertas pendientes', number_format($technicalAlerts + $cancelledDeparturesToday), 'Técnicas y operativas', '⚠️', 'border-rose-200 bg-rose-50']
+                    ['Fluvial', number_format($fluvialTicketsSold).' pasajes', 'S/ '.number_format($fluvialGmv,2).' vendidos · '.$fluvialDeparturesCount.' salidas', '🚤', 'border-emerald-200 bg-emerald-50'],
+                    ['Aéreo', number_format($airTicketsSold).' pasajes', 'S/ '.number_format($airGmv,2).' vendidos · '.$airDeparturesCount.' vuelos', '✈️', 'border-sky-200 bg-sky-50'],
+                    ['GMV transporte', 'S/ '.number_format($grossSales,2), 'Total cobrado por pasajes; no es ingreso neto', '💳', 'border-indigo-200 bg-indigo-50'],
+                    ['Ingreso NavegaYA', 'S/ '.number_format($netCommission,2), 'Comisiones generadas en el período', '📈', 'border-amber-200 bg-amber-50'],
+                    ['Publicidad', 'S/ '.number_format($monthlyAdvertisingRevenue,2), $activeAdvertisersCount.' anunciantes · '.$activeCampaignsCount.' campañas', '📣', 'border-fuchsia-200 bg-fuchsia-50'],
+                    ['Alcance publicitario', number_format($advertisingViews), 'Impresiones de campañas; visitas web requieren Analytics', '👁️', 'border-cyan-200 bg-cyan-50']
                 ] as $item)
-                    <article class="rounded-2xl border p-5 {{ $item[4] }}"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-slate-700">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
+                    <article class="rounded-2xl border p-4 {{ $item[4] }}"><div class="flex items-center justify-between"><span class="text-[9px] font-black uppercase tracking-wider text-slate-600">{{ $item[0] }}</span><span class="text-xl">{{ $item[3] }}</span></div><strong class="mt-3 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><p class="mt-1 text-[9px] leading-4 text-slate-500">{{ $item[2] }}</p></article>
                 @endforeach
             </div>
-            <div class="grid min-w-0 gap-4 xl:grid-cols-1">
+            <div class="ny-layout-full grid min-w-0 gap-4 xl:grid-cols-[1.6fr_1fr]">
                 <article class="rounded-xl border border-slate-200 p-4">
                     <div class="flex items-center justify-between"><div><p class="text-[9px] font-black uppercase tracking-wider text-emerald-700">Pulso de hoy</p><h4 class="text-sm font-black text-slate-900">Continuidad del marketplace</h4></div><a href="{{ route('admin.itineraries.index') }}" class="text-[9px] font-black text-emerald-700">Abrir operación →</a></div>
                     <div class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
@@ -169,7 +172,7 @@
                         @endforeach
                     </div>
                 </article>
-                <article class="flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50 p-4"><div><p class="text-[9px] font-black uppercase text-cyan-700">Clima y navegabilidad</p><h4 class="mt-1 text-sm font-black">Condiciones de Loreto</h4><p class="mt-1 text-[10px] text-slate-500">Lluvia, temperatura y nivel del río.</p><a href="{{ route('weather.index') }}" target="_blank" class="mt-3 inline-flex text-[10px] font-black text-cyan-800">Abrir monitoreo →</a></div><span class="text-4xl">🌦️</span></article>
+                <article class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2"><div><p class="text-[9px] font-black uppercase text-cyan-700">Clima y navegabilidad</p><h4 class="mt-1 text-sm font-black">Condiciones de Loreto</h4><a href="{{ route('weather.index') }}" target="_blank" class="mt-3 inline-flex text-[10px] font-black text-cyan-800">Abrir monitoreo →</a></div><div class="border-t border-slate-200 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0"><p class="text-[9px] font-black uppercase text-fuchsia-700">Analítica del sitio</p><h4 class="mt-1 text-sm font-black">Visitas web por conectar</h4><p class="mt-1 text-[9px] leading-4 text-slate-500">Configura GA4 o Clarity para sesiones, usuarios y páginas visitadas.</p><a href="{{ route('admin.settings.index',['tab'=>'integrations']) }}" class="mt-2 inline-flex text-[10px] font-black text-fuchsia-700">Abrir integraciones →</a></div></article>
             </div>
             <div class="ny-layout-full grid min-w-0 gap-4 xl:grid-cols-[1.7fr_1fr]">
                 <article class="rounded-xl border border-slate-200 p-4"><h4 class="text-xs font-black uppercase">Evolución general de ventas</h4><p class="text-[9px] text-slate-400">Fluvial, aéreo y carga durante el período</p><div class="h-52"><canvas id="revenueTrendChart"></canvas></div></article>
@@ -226,7 +229,7 @@
         <div data-dashboard-panel="publicidad" data-dashboard-area="publicidad" role="tabpanel" class="w-full min-w-0 bg-fuchsia-50/40 p-4">
             <nav class="mb-4 flex w-full max-w-full gap-1 overflow-x-auto rounded-2xl border border-fuchsia-200 bg-white p-1.5" aria-label="Secciones de publicidad">
                 @foreach([['resumen','▦','Resumen'],['anunciantes','🏨','Anunciantes'],['solicitudes','⏳','Solicitudes'],['campanas','📦','Planes y suscripciones'],['directorio','🗺️','Directorio'],['rendimiento','📈','Rendimiento']] as [$key,$icon,$label])
-                    <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='campanas'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
+                    <button type="button" data-ad-tab="{{ $key }}" aria-selected="{{ $key==='resumen'?'true':'false' }}" class="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[9px] font-black text-slate-500 hover:bg-fuchsia-50"><span>{{ $icon }}</span>{{ $label }}</button>
                 @endforeach
             </nav>
             <div data-ad-panel="resumen" hidden class="space-y-4">
@@ -366,7 +369,7 @@ window.initExecutiveDashboard = function() {
             if(name==='campanas') requestAnimationFrame(()=>setTimeout(()=>window.initDashboardTab('publicidad'),40));
         };
         adButtons.forEach(button=>button.addEventListener('click',()=>activateAd(button.dataset.adTab)));
-        activateAd('campanas');
+        activateAd('resumen');
         return;
     }
     if(!buttons.length || !panels.length) return;

@@ -12,6 +12,16 @@ use Illuminate\Support\Collection;
 
 class AdminRequestInbox
 {
+    public function signature(): string
+    {
+        return hash('sha256', $this->items()->map(fn (array $item) => [
+            $item['type'],
+            $item['title'],
+            $item['status'],
+            $item['created_at']?->timestamp,
+        ])->toJson());
+    }
+
     public function items(): Collection
     {
         return collect()

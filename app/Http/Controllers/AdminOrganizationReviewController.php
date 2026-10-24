@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Notifications\OrganizationActivationInvitation;
+use App\Notifications\VerifyOrganizationContactEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -41,5 +43,17 @@ class AdminOrganizationReviewController extends Controller
         $organization->update(['status' => 'rejected']);
 
         return back()->with('status', 'Solicitud rechazada.');
+    }
+
+    public function resendVerification(Organization $organization): RedirectResponse
+    {
+        if ($organization->contact_verified_at) {
+            return back()->with('status', 'El correo de contacto ya está confirmado.');
+        }
+
+        $url = URL::temporarySignedRoute('company.registration.verify', now()->addHours(48), ['organization' => $organization->id]);
+        Notification::route('mail', $organization->email)->notify(new VerifyOrganizationContactEmail($organization, $url));
+
+        return back()->with('status', 'Enviamos nuevamente el enlace de confirmación a '.$organization->email.'.');
     }
 }
