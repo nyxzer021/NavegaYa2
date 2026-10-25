@@ -17,7 +17,9 @@ class AdminOrganizationReviewController extends Controller
     public function index(): View
     {
         return view('admin.organization-reviews', [
-            'organizations' => Organization::where('status', 'pending')->latest()->get(),
+            'organizations' => Organization::where('status', 'pending')
+                ->whereIn('type', ['transport_company', 'agency'])
+                ->latest()->get(),
         ]);
     }
 

@@ -43,7 +43,7 @@ class AdminAdvertisingSubscriptionController extends Controller
 
         return view('admin.advertising-subscriptions.index', [
             'subscriptions' => $query->paginate(20)->withQueryString(),
-            'plans' => SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get(),
+            'plans' => SubscriptionPlan::orderBy('monthly_price')->get(),
             'organizations' => Organization::query()
                 ->where(fn ($query) => $query->where('status', 'active')
                     ->orWhere(fn ($business) => $business->where('type', 'marketplace_business')->where('status', 'pending')))
@@ -64,7 +64,7 @@ class AdminAdvertisingSubscriptionController extends Controller
         $plan = SubscriptionPlan::findOrFail($data['subscription_plan_id']);
         $startsOn = now()->parse($data['starts_on']);
         $subscription = Subscription::query()->where('organization_id', $data['organization_id'])->latest()->first();
-        $values = ['subscription_plan_id' => $plan->id, 'monthly_price' => $plan->monthly_price, 'currency' => $plan->currency, 'starts_on' => $startsOn, 'ends_on' => $startsOn->copy()->addMonths((int) $data['months']), 'status' => 'active', 'cancelled_at' => null];
+        $values = ['subscription_plan_id' => $plan->id, 'monthly_price' => $plan->monthly_price, 'currency' => $plan->currency, 'benefits_snapshot' => $plan->benefits, 'starts_on' => $startsOn, 'ends_on' => $startsOn->copy()->addMonths((int) $data['months']), 'status' => 'active', 'cancelled_at' => null];
         if ($subscription) {
             $subscription->update($values);
         } else {
@@ -79,7 +79,7 @@ class AdminAdvertisingSubscriptionController extends Controller
     {
         $data = $request->validate(['subscription_plan_id' => ['required', 'exists:subscription_plans,id'], 'status' => ['required', Rule::in(['active', 'overdue', 'cancelled', 'expired'])]]);
         $plan = SubscriptionPlan::findOrFail($data['subscription_plan_id']);
-        $subscription->update($data + ['monthly_price' => $plan->monthly_price, 'currency' => $plan->currency, 'cancelled_at' => $data['status'] === 'cancelled' ? now() : null]);
+        $subscription->update($data + ['monthly_price' => $plan->monthly_price, 'currency' => $plan->currency, 'benefits_snapshot' => $plan->benefits, 'cancelled_at' => $data['status'] === 'cancelled' ? now() : null]);
 
         return back()->with('success', 'Suscripción actualizada.');
     }
@@ -88,7 +88,7 @@ class AdminAdvertisingSubscriptionController extends Controller
     {
         $months = $request->validate(['months' => ['required', 'integer', 'min:1', 'max:24']])['months'];
         $base = $subscription->ends_on && $subscription->ends_on->isFuture() ? $subscription->ends_on->copy() : today();
-        $subscription->update(['ends_on' => $base->addMonths($months), 'status' => 'active', 'cancelled_at' => null]);
+        $subscription->loadMissing('plan')->update(['ends_on' => $base->addMonths($months), 'status' => 'active', 'benefits_snapshot' => $subscription->plan?->benefits, 'cancelled_at' => null]);
 
         return back()->with('success', "Suscripción renovada por {$months} mes(es).");
     }
@@ -98,6 +98,25 @@ class AdminAdvertisingSubscriptionController extends Controller
         $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
         return back()->with('success', 'Suscripción cancelada y registrada como baja.');
+    }
+
+    public function updatePlan(Request $request, SubscriptionPlan $plan): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:500'],
+            'monthly_price' => ['required', 'numeric', 'min:0', 'max:99999'], 'ad_limit' => ['required', 'integer', 'min:0', 'max:99'],
+            'campaign_days' => ['required', 'integer', 'min:1', 'max:365'], 'impressions' => ['nullable', 'integer', 'min:0'],
+            'placements' => ['required', 'array', 'min:1'], 'placements.*' => ['in:home_carousel,home_sidebar,home_recommendations'],
+            'features' => ['nullable', 'string', 'max:2000'], 'is_active' => ['nullable', 'boolean'],
+        ]);
+        $features = collect(preg_split('/\r\n|\r|\n/', (string) ($data['features'] ?? '')))->map(fn ($feature) => trim($feature))->filter()->values()->all();
+        $plan->update([
+            'name' => $data['name'], 'description' => $data['description'] ?? null, 'monthly_price' => $data['monthly_price'],
+            'is_active' => (bool) ($data['is_active'] ?? false),
+            'benefits' => ['ad_limit' => (int) $data['ad_limit'], 'campaign_days' => (int) $data['campaign_days'], 'impressions' => (int) ($data['impressions'] ?? 0), 'allowed_placements' => $data['placements'], 'features' => $features],
+        ]);
+
+        return back()->with('success', 'Plan actualizado. Los cambios se aplicarán a nuevas compras y renovaciones.');
     }
 
     public function resolvePaymentException(Request $request, Payment $payment, SubscriptionPaymentService $payments): RedirectResponse

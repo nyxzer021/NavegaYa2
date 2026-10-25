@@ -39,6 +39,7 @@ use App\Http\Controllers\AdminVesselController;
 use App\Http\Controllers\AdminVesselSeatController;
 use App\Http\Controllers\AirBookingController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BusinessMessageController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyDepartureController;
@@ -169,6 +170,10 @@ Route::post('/mis-viajes/buscar', [TravelController::class, 'search'])->name('tr
 Route::post('/mis-viajes/consulta', [TravelController::class, 'lookup'])->name('travels.lookup');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/mensajes-empresas', [BusinessMessageController::class, 'index'])->name('messages.index');
+    Route::post('/mensajes-empresas', [BusinessMessageController::class, 'store'])->name('messages.store');
+    Route::post('/mensajes-empresas/{conversation}', [BusinessMessageController::class, 'reply'])->name('messages.reply');
+    Route::patch('/mensajes-empresas/{conversation}/cerrar', [BusinessMessageController::class, 'close'])->name('messages.close');
     Route::get('/centro-de-solicitudes', [SupportTicketController::class, 'index'])->name('support.index');
     Route::post('/centro-de-solicitudes', [SupportTicketController::class, 'store'])->name('support.store');
     Route::get('/mi-negocio', [MarketplaceBusinessController::class, 'dashboard'])->middleware('role:marketplace_admin')->name('marketplace.dashboard');
@@ -243,6 +248,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/suscripciones-publicitarias/{subscription}', [AdminAdvertisingSubscriptionController::class, 'update'])->name('advertising-subscriptions.update');
     Route::patch('/suscripciones-publicitarias/{subscription}/renovar', [AdminAdvertisingSubscriptionController::class, 'renew'])->name('advertising-subscriptions.renew');
     Route::patch('/suscripciones-publicitarias/{subscription}/cancelar', [AdminAdvertisingSubscriptionController::class, 'cancel'])->name('advertising-subscriptions.cancel');
+    Route::patch('/suscripciones-publicitarias/planes/{plan}', [AdminAdvertisingSubscriptionController::class, 'updatePlan'])->name('advertising-subscriptions.plans.update');
     Route::patch('/suscripciones-publicitarias/excepciones/{payment}', [AdminAdvertisingSubscriptionController::class, 'resolvePaymentException'])->name('advertising-subscriptions.exceptions.resolve');
     Route::get('/reembolsos-soporte', [AdminRefundController::class, 'index'])->name('refunds.index');
     Route::get('/configuracion', [AdminSettingsController::class, 'index'])->name('settings.index');

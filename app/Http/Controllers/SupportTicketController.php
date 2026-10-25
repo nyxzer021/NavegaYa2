@@ -19,6 +19,13 @@ class SupportTicketController extends Controller
             ->latest()
             ->paginate(20);
 
+        if (! $isAdmin) {
+            SupportTicket::query()->where('user_id', $request->user()->id)
+                ->whereNotNull('admin_response')
+                ->where(fn ($query) => $query->whereNull('requester_viewed_at')->orWhereColumn('requester_viewed_at', '<', 'responded_at'))
+                ->update(['requester_viewed_at' => now()]);
+        }
+
         return view('support.index', compact('tickets', 'isAdmin'));
     }
 

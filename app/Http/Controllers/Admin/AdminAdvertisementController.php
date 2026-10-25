@@ -75,7 +75,11 @@ class AdminAdvertisementController extends Controller
 
     public function approve(Advertisement $ad): RedirectResponse
     {
-        $ad->update(['status' => 'active', 'starts_on' => $ad->starts_on ?: today()]);
+        $startsOn = $ad->starts_on ?: today();
+        $subscription = $ad->organization?->subscriptions()->with('plan')->where('status', 'active')->latest()->first();
+        $benefits = $subscription?->benefits_snapshot ?: ($subscription?->plan?->benefits ?? []);
+        $duration = max(1, (int) data_get($benefits, 'campaign_days', 30));
+        $ad->update(['status' => 'active', 'starts_on' => $startsOn, 'ends_on' => $ad->ends_on ?: $startsOn->copy()->addDays($duration)]);
 
         return back()->with('success', 'Anuncio aprobado y publicado.');
     }

@@ -157,12 +157,12 @@ class TourismMarketplaceTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $campaign = Advertisement::where('organization_id', $organization->id)->firstOrFail();
-        $this->assertSame('active', $campaign->status);
+        $this->assertSame('lead_pending', $campaign->status);
         $this->assertSame(['home_carousel'], $campaign->placements);
-        $this->assertSame('300.00', $campaign->monthly_fee);
+        $this->assertSame('0.00', $campaign->monthly_fee);
         $this->assertSame(route('guide.show', $listing), $campaign->target_url);
-        $this->assertTrue($campaign->starts_on->isToday());
-        $this->assertTrue($campaign->ends_on->isSameDay(today()->addDays(30)));
+        $this->assertNull($campaign->starts_on);
+        $this->assertNull($campaign->ends_on);
         Storage::disk('public')->assertExists($campaign->banner_image_path);
 
         $otherOwner = User::factory()->create();

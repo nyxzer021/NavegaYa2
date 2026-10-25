@@ -48,6 +48,7 @@ class SubscriptionPaymentService
                 'status' => 'active',
                 'starts_on' => $subscription->status === 'active' ? $subscription->starts_on : today(),
                 'ends_on' => $baseDate->addMonths($months),
+                'benefits_snapshot' => $subscription->benefits_snapshot ?: $subscription->plan?->benefits,
                 'cancelled_at' => null,
             ]);
 

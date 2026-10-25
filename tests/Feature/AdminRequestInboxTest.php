@@ -22,7 +22,7 @@ class AdminRequestInboxTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
         $business = Organization::create([
-            'type' => 'marketplace_business', 'legal_name' => 'Lodge Sol SAC', 'commercial_name' => 'Lodge Sol',
+            'type' => 'transport_company', 'legal_name' => 'Transportes Sol SAC', 'commercial_name' => 'Transportes Sol',
             'ruc' => '20123456789', 'email' => 'lodge@test.pe', 'contact_name' => 'Ana', 'status' => 'pending',
         ]);
         $plan = SubscriptionPlan::create([
@@ -36,7 +36,7 @@ class AdminRequestInboxTest extends TestCase
         $this->actingAs($admin)->get(route('admin.requests.index'))
             ->assertOk()
             ->assertSee('Bandeja de solicitudes')
-            ->assertSee('Lodge Sol')
+            ->assertSee('Transportes Sol')
             ->assertSee('Validación pendiente')
             ->assertSee('Revisar empresa');
     }

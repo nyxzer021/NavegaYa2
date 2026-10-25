@@ -33,10 +33,10 @@ class AdminRequestInbox
                 'status' => 'Revisión necesaria', 'created_at' => $payment->updated_at,
                 'url' => route('admin.advertising-subscriptions.index', ['status' => 'pending']), 'action' => 'Resolver excepción',
             ]))
-            ->concat(Organization::query()->whereIn('type', ['transport_company', 'marketplace_business'])->where('status', 'pending')->get()->map(fn ($organization) => [
+            ->concat(Organization::query()->whereIn('type', ['transport_company', 'agency'])->where('status', 'pending')->get()->map(fn ($organization) => [
                 'type' => 'organization', 'icon' => '🏢', 'area' => 'Afiliaciones',
                 'title' => $organization->commercial_name ?: $organization->legal_name,
-                'detail' => ($organization->type === 'transport_company' ? 'Nueva empresa transportista' : 'Nuevo negocio anunciante').' · RUC '.($organization->ruc ?: 'sin registrar'),
+                'detail' => ($organization->type === 'transport_company' ? 'Nueva empresa transportista' : 'Nueva agencia').' · RUC '.($organization->ruc ?: 'sin registrar'),
                 'status' => 'Validación pendiente', 'created_at' => $organization->created_at,
                 'url' => route('admin.organizations.index'), 'action' => 'Revisar empresa',
             ]))

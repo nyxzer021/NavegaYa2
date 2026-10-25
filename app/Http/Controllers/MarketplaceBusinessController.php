@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Advertisement,BusinessCategory,DestinationCity,DestinationListing,DestinationListingImage,DestinationListingOffer,Organization,Role,Subscription,SubscriptionPlan,User};
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\{RedirectResponse,Request};
 use Illuminate\Support\Facades\{Auth,DB,Hash,Storage};
 use Illuminate\Validation\Rule;
@@ -10,15 +11,14 @@ use Illuminate\View\View;
 class MarketplaceBusinessController extends Controller
 {
     public const TYPES=['lodging'=>'Hoteles, lodges y hospedajes','gastronomy'=>'Restaurantes y gastronomía','attraction'=>'Tours y experiencias','tourist_transport'=>'Transporte turístico','traveler_service'=>'Servicios para viajeros','local_business'=>'Comercios y otros negocios'];
-    public const CAMPAIGN_MONTHLY_FEE = 300;
-
     public function create(Request $request): View { return view('marketplace.register',['plans'=>SubscriptionPlan::where('is_active',true)->orderBy('monthly_price')->get(),'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),'types'=>self::TYPES,'selectedPlan'=>$request->string('plan')->toString()]); }
 
     public function store(Request $request): RedirectResponse
     {
         $data=$request->validate(['plan_id'=>['required','exists:subscription_plans,id'],'destination_city_id'=>['required','exists:destination_cities,id'],'type'=>['required',Rule::in(array_keys(self::TYPES))],'business_name'=>['required','string','max:150'],'legal_name'=>['required','string','max:180'],'ruc'=>['required','digits:11','unique:organizations,ruc'],'contact_name'=>['required','string','max:150'],'email'=>['required','email','unique:users,email'],'phone'=>['required','string','max:30'],'password'=>['required','confirmed','min:8']]);
-        $user=DB::transaction(function() use($data){ $plan=SubscriptionPlan::findOrFail($data['plan_id']); $city=DestinationCity::findOrFail($data['destination_city_id']); $category=BusinessCategory::where('listing_type',$data['type'])->where('is_active',true)->orderBy('sort_order')->first(); $org=Organization::create(['type'=>'marketplace_business','legal_name'=>$data['legal_name'],'commercial_name'=>$data['business_name'],'contact_name'=>$data['contact_name'],'ruc'=>$data['ruc'],'email'=>$data['email'],'phone'=>$data['phone'],'whatsapp'=>$data['phone'],'status'=>'pending','base_city'=>$city->name]); $user=User::create(['name'=>$data['contact_name'],'email'=>$data['email'],'phone'=>$data['phone'],'password'=>Hash::make($data['password'])]); $role=Role::firstOrCreate(['code'=>'marketplace_admin'],['name'=>'Administrador de negocio turístico']); $user->organizations()->attach($org->id,['status'=>'pending']); $user->roles()->attach($role->id,['organization_id'=>$org->id]); Subscription::create(['organization_id'=>$org->id,'subscription_plan_id'=>$plan->id,'status'=>'pending','monthly_price'=>$plan->monthly_price,'currency'=>$plan->currency,'starts_on'=>today()]); DestinationListing::create(['organization_id'=>$org->id,'owner_user_id'=>$user->id,'destination_city_id'=>$city->id,'business_category_id'=>$category?->id,'type'=>$data['type'],'category'=>$category?->name,'status'=>'draft','name'=>$data['business_name'],'contact_phone'=>$data['phone'],'sort_order'=>99,'is_active'=>false]); return $user; });
-        Auth::login($user); return redirect()->route('marketplace.dashboard',['tab'=>'plan'])->with('success','Cuenta creada. Paga tu suscripción para activarla inmediatamente.');
+        $user=DB::transaction(function() use($data){ $plan=SubscriptionPlan::findOrFail($data['plan_id']); $city=DestinationCity::findOrFail($data['destination_city_id']); $category=BusinessCategory::where('listing_type',$data['type'])->where('is_active',true)->orderBy('sort_order')->first(); $org=Organization::create(['type'=>'marketplace_business','legal_name'=>$data['legal_name'],'commercial_name'=>$data['business_name'],'contact_name'=>$data['contact_name'],'ruc'=>$data['ruc'],'email'=>$data['email'],'phone'=>$data['phone'],'whatsapp'=>$data['phone'],'status'=>'pending','base_city'=>$city->name]); $user=User::create(['name'=>$data['contact_name'],'email'=>$data['email'],'phone'=>$data['phone'],'password'=>Hash::make($data['password'])]); $role=Role::firstOrCreate(['code'=>'marketplace_admin'],['name'=>'Administrador de negocio turístico']); $user->organizations()->attach($org->id,['status'=>'pending']); $user->roles()->attach($role->id,['organization_id'=>$org->id]); Subscription::create(['organization_id'=>$org->id,'subscription_plan_id'=>$plan->id,'status'=>'pending','monthly_price'=>$plan->monthly_price,'currency'=>$plan->currency,'benefits_snapshot'=>$plan->benefits,'starts_on'=>today()]); DestinationListing::create(['organization_id'=>$org->id,'owner_user_id'=>$user->id,'destination_city_id'=>$city->id,'business_category_id'=>$category?->id,'type'=>$data['type'],'category'=>$category?->name,'status'=>'draft','name'=>$data['business_name'],'contact_phone'=>$data['phone'],'sort_order'=>99,'is_active'=>false]); return $user; });
+        event(new Registered($user));
+        Auth::login($user); return redirect()->route('marketplace.dashboard',['tab'=>'plan'])->with('success','Cuenta creada. Revisa tu correo para confirmar la cuenta y luego administra tu suscripción.');
     }
 
     public function dashboard(Request $request): View
@@ -38,7 +38,6 @@ class MarketplaceBusinessController extends Controller
             'ratingAverage'=>round((float)$reviews->where('status','approved')->avg('rating'),1),
             'stats'=>['profile_views'=>$listing->views,'contact_clicks'=>$listing->contact_clicks,'campaign_views'=>$campaigns->sum('views'),'campaign_clicks'=>$campaigns->sum('clicks')],
             'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations'])),
-            'campaignMonthlyFee'=>self::CAMPAIGN_MONTHLY_FEE,
             'activeTab'=>in_array($request->query('tab'),['overview','profile','gallery','offers','reviews','campaigns','plan'],true)?$request->query('tab'):'overview',
         ]);
     }
@@ -69,11 +68,18 @@ class MarketplaceBusinessController extends Controller
             'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
 
-        $activeSubscription = $org->subscriptions()->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))->exists();
-        if (! $activeSubscription) {
-            return back()->withErrors(['campaign' => 'Tu plan debe estar activo antes de enviar una campaña.']);
+        if (! $request->user()->hasVerifiedEmail()) {
+            return back()->withErrors(['campaign' => 'Confirma tu correo antes de solicitar una campaña publicitaria.']);
         }
+        $activeSubscription = $org->subscriptions()->with('plan')->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))->latest()->first();
+        if (! $activeSubscription) return back()->withErrors(['campaign' => 'Necesitas una suscripción activa para usar las campañas incluidas.']);
+        $benefits = $activeSubscription->benefits_snapshot ?: ($activeSubscription->plan?->benefits ?? []);
+        $limit = (int) data_get($benefits, 'ad_limit', 0);
+        $used = $org->advertisements()->whereIn('status', ['lead_pending', 'active', 'paused'])->count();
+        if ($limit > 0 && $used >= $limit) return back()->withErrors(['campaign' => "Tu plan permite {$limit} campaña(s) simultánea(s)."]);
+        $allowedPlacements = data_get($benefits, 'allowed_placements', ['home_carousel']);
+        if (! in_array($data['placement'], $allowedPlacements, true)) return back()->withErrors(['placement' => 'La ubicación elegida no está incluida en tu plan.']);
 
         $org->advertisements()->create([
             'destination_city_id' => $listing->destination_city_id,
@@ -93,13 +99,13 @@ class MarketplaceBusinessController extends Controller
             'description' => $data['description'] ?? null,
             'target_url' => route('guide.show', $listing),
             'banner_image_path' => $request->file('banner_image')->store('advertisements', 'public'),
-            'monthly_fee' => self::CAMPAIGN_MONTHLY_FEE,
-            'starts_on' => today(),
-            'ends_on' => today()->addDays(30),
-            'status' => 'active',
+            'monthly_fee' => 0,
+            'starts_on' => null,
+            'ends_on' => null,
+            'status' => 'lead_pending',
         ]);
 
-        return back()->with('success', 'Campaña publicada. Estará activa durante 30 días.');
+        return back()->with('success', 'Campaña enviada a revisión usando el cupo incluido en tu plan.');
     }
 
     public function pauseCampaign(Request $request, Advertisement $advertisement): RedirectResponse

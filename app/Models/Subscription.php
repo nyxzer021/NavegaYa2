@@ -10,12 +10,12 @@ class Subscription extends Model
 {
     protected $fillable = [
         'organization_id', 'subscription_plan_id', 'status', 'monthly_price', 'currency',
-        'starts_on', 'ends_on', 'cancelled_at',
+        'starts_on', 'ends_on', 'benefits_snapshot', 'cancelled_at',
     ];
 
     protected function casts(): array
     {
-        return ['monthly_price' => 'decimal:2', 'starts_on' => 'date', 'ends_on' => 'date', 'cancelled_at' => 'datetime'];
+        return ['monthly_price' => 'decimal:2', 'starts_on' => 'date', 'ends_on' => 'date', 'benefits_snapshot' => 'array', 'cancelled_at' => 'datetime'];
     }
 
     public function organization(): BelongsTo
