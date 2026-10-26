@@ -98,6 +98,7 @@ Route::post('/empresas/{organization}/valoraciones', [PublicCompanyController::c
 Route::post('/empresas/{organization}/reportar-perfil', [PublicContentReportController::class, 'profile'])->middleware('auth')->name('companies.profile.report');
 Route::post('/empresas/{organization}/valoraciones/{review}/reportar', [PublicContentReportController::class, 'review'])->middleware('auth')->name('companies.reviews.report');
 Route::get('/anuncio/{ad}', [DiscoverController::class, 'advertisement'])->name('discover.ad');
+Route::post('/anuncio/{ad}/impresion', [DiscoverController::class, 'advertisementImpression'])->middleware('throttle:30,1')->name('discover.ad.impression');
 Route::get('/destinos/{city}', [DiscoverController::class, 'show'])->name('discover.show');
 Route::post('/destinos/{city}/valoraciones', [DiscoverController::class, 'review'])->middleware(['auth', 'verified'])->name('discover.review');
 

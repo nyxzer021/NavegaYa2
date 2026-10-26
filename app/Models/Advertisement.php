@@ -15,6 +15,7 @@ class Advertisement extends Model
         'home_carousel' => 'Portada · carrusel principal',
         'home_sidebar' => 'Portada · banner lateral',
         'home_recommendations' => 'Portada · recomendaciones patrocinadas',
+        'home_popup' => 'Portada · ventana promocional',
         'home_hero' => 'Portada · carrusel anterior',
         'routes_sidebar' => 'Catálogo de rutas',
         'company_footer' => 'Perfil de empresas',

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Advertisement,BusinessCategory,DestinationCity,DestinationListing,DestinationListingImage,DestinationListingOffer,Organization,Role,Subscription,SubscriptionPlan,User};
+use App\Services\AdvertisementImageService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\{RedirectResponse,Request};
 use Illuminate\Support\Facades\{Auth,DB,Hash,Storage};
@@ -37,7 +38,7 @@ class MarketplaceBusinessController extends Controller
             'reviews'=>$reviews,
             'ratingAverage'=>round((float)$reviews->where('status','approved')->avg('rating'),1),
             'stats'=>['profile_views'=>$listing->views,'contact_clicks'=>$listing->contact_clicks,'campaign_views'=>$campaigns->sum('views'),'campaign_clicks'=>$campaigns->sum('clicks')],
-            'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations'])),
+            'placements'=>array_intersect_key(Advertisement::PLACEMENTS,array_flip(['home_carousel','home_sidebar','home_recommendations','home_popup'])),
             'activeTab'=>in_array($request->query('tab'),['overview','profile','gallery','offers','reviews','campaigns','plan'],true)?$request->query('tab'):'overview',
         ]);
     }
@@ -58,14 +59,14 @@ class MarketplaceBusinessController extends Controller
         return back()->with('success',$data['status']==='pending_review'?'Ficha enviada a revisión.':'Borrador guardado.');
     }
 
-    public function storeCampaign(Request $request): RedirectResponse
+    public function storeCampaign(Request $request, AdvertisementImageService $images): RedirectResponse
     {
         [$org, $listing] = $this->owned($request);
         $data = $request->validate([
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
-            'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations'])],
-            'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup'])],
+            'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1536', 'dimensions:min_width=800,min_height=450'],
         ]);
 
         if (! $request->user()->hasVerifiedEmail()) {
@@ -98,7 +99,7 @@ class MarketplaceBusinessController extends Controller
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
             'target_url' => route('guide.show', $listing),
-            'banner_image_path' => $request->file('banner_image')->store('advertisements', 'public'),
+            'banner_image_path' => $images->store($request->file('banner_image')),
             'monthly_fee' => 0,
             'starts_on' => null,
             'ends_on' => null,

@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use App\Models\SystemSetting;
 use App\Models\TransportRoute;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -52,9 +53,21 @@ return view('discover.show', compact('city', 'routes', 'reviews', 'average', 'ca
 
     public function advertisement(Advertisement $ad)
     {
-        abort_unless($ad->status === 'active' && $ad->target_url,404);
+        abort_unless(Advertisement::active()->whereKey($ad)->exists() && $ad->target_url, 404);
         $ad->increment('clicks');
 
         return redirect()->away($ad->target_url);
+    }
+
+    public function advertisementImpression(Request $request, Advertisement $ad): Response
+    {
+        abort_unless(Advertisement::active()->forPlacement('home_popup')->whereKey($ad)->exists(), 404);
+        $sessionKey = 'advertisement_impression_'.$ad->id;
+        if (! $request->session()->has($sessionKey)) {
+            $ad->increment('views');
+            $request->session()->put($sessionKey, true);
+        }
+
+        return response()->noContent();
     }
 }

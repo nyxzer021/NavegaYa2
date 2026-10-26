@@ -117,7 +117,9 @@
 </main>
 </div>
 
-<a href="{{route('advertising.create')}}" class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full border border-emerald-700/50 bg-white px-3.5 py-2.5 text-[11px] font-extrabold text-emerald-950 shadow-xl transition hover:-translate-y-0.5 hover:border-amber-400 lg:inline-flex" aria-label="Consultar planes para publicitar un negocio"><span class="grid h-7 w-7 place-items-center rounded-full bg-amber-400 text-xs text-emerald-950">📣</span> Publicita tu negocio</a>
+<x-promotional-popup :ad="$popupAd" />
+
+<a id="advertise-floating-cta" href="{{route('advertising.create')}}" class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full border border-emerald-700/50 bg-white px-3.5 py-2.5 text-[11px] font-extrabold text-emerald-950 shadow-xl transition hover:-translate-y-0.5 hover:border-amber-400 lg:inline-flex" aria-label="Consultar planes para publicitar un negocio"><span class="grid h-7 w-7 place-items-center rounded-full bg-amber-400 text-xs text-emerald-950">📣</span> Publicita tu negocio</a>
 
 <div id="consulta-pasaje" class="fixed inset-0 z-[10000] hidden place-items-center bg-emerald-950/70 p-4 backdrop-blur-sm" aria-hidden="true"><section class="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl"><button class="ticket-modal-close absolute right-4 top-4 h-9 w-9 rounded-full bg-slate-100 text-xl">×</button><p class="text-xs font-black uppercase tracking-[.18em] text-emerald-700">Consulta rápida</p><h2 class="mt-2 text-2xl font-black text-emerald-950">Busca tu pasaje</h2><p class="mt-2 text-sm text-slate-500">Ingresa el DNI y el código de reserva o boleto.</p><form id="ticketLookupForm" class="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><input id="ticketLookupDocument" required placeholder="DNI o documento" class="rounded-xl border-slate-200"><input id="ticketLookupReference" required placeholder="Reserva RES-... o boleto BOL-..." class="rounded-xl border-slate-200"><button class="rounded-xl bg-amber-400 px-5 py-3 text-sm font-black">Buscar</button></form><div id="ticketLookupResult" class="mt-5"></div></section></div>
 

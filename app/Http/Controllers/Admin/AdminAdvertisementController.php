@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
+use App\Services\AdvertisementImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +38,7 @@ class AdminAdvertisementController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AdvertisementImageService $images): RedirectResponse
     {
         $data = $this->validated($request);
         $data['business_type'] ??= 'lodge_hotel';
@@ -50,23 +51,24 @@ class AdminAdvertisementController extends Controller
         $data['category'] = Advertisement::BUSINESS_TYPES[$data['business_type']];
         $data['title'] = $data['title'] ?: $data['business_name'];
         if ($request->hasFile('banner_image')) {
-            $data['banner_image_path'] = $request->file('banner_image')->store('advertisements', 'public');
+            $data['banner_image_path'] = $images->store($request->file('banner_image'));
         }
         Advertisement::create($data);
 
         return back()->with('success', 'Campaña registrada.');
     }
 
-    public function update(Request $request, Advertisement $ad): RedirectResponse
+    public function update(Request $request, Advertisement $ad, AdvertisementImageService $images): RedirectResponse
     {
         $data = $this->validated($request);
         $data['category'] = Advertisement::BUSINESS_TYPES[$data['business_type']];
         $data['title'] = $data['title'] ?: $data['business_name'];
         if ($request->hasFile('banner_image')) {
+            $newBannerPath = $images->store($request->file('banner_image'));
             if ($ad->banner_image_path) {
                 Storage::disk('public')->delete($ad->banner_image_path);
             }
-            $data['banner_image_path'] = $request->file('banner_image')->store('advertisements', 'public');
+            $data['banner_image_path'] = $newBannerPath;
         }
         $ad->update($data);
 
@@ -111,7 +113,7 @@ class AdminAdvertisementController extends Controller
             'placements.*' => ['in:'.implode(',', array_keys(Advertisement::PLACEMENTS))],
             'title' => ['nullable', 'string', 'max:160'], 'description' => ['nullable', 'string', 'max:1000'],
             'target_url' => ['nullable', 'url', 'max:500'], 'image_url' => ['nullable', 'url', 'max:500'],
-            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1536', 'dimensions:min_width=800,min_height=450'],
             'category' => ['nullable', 'string', 'max:40'], 'monthly_fee' => ['nullable', 'numeric', 'min:0'], 'starts_on' => ['nullable', 'date'],
             'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
             'status' => ['nullable', 'in:lead_pending,active,paused,expired'], 'admin_notes' => ['nullable', 'string', 'max:2000'],

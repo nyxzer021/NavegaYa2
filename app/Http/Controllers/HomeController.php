@@ -74,6 +74,13 @@ class HomeController
             ->whereNotIn('id', $carouselAds->pluck('id')->push($sideAd?->id)->filter())
             ->whereNotIn('business_name', $carouselAds->pluck('business_name')->push($sideAd?->business_name)->filter())
             ->orderBy('views')->limit(3)->get();
+        $popupAd = null;
+        if (! $hasSearch) {
+            $visibleAdIds = $carouselAds->pluck('id')->push($sideAd?->id)->merge($ads->pluck('id'))->filter();
+            $popupAd = Advertisement::with('city')->active()->forPlacement('home_popup')
+                ->whereNotIn('id', $visibleAdIds)
+                ->orderBy('views')->orderBy('id')->first();
+        }
         $carouselAds->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
         $sideAd?->increment('views');
         $ads->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
@@ -100,6 +107,6 @@ class HomeController
             ['date' => 'FEB', 'name' => 'Carnaval Amazónico', 'place' => 'Amazonía peruana', 'description' => 'Comparsas, danzas y expresiones culturales de la selva.'],
         ]);
 
-        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'carouselAds', 'sideAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'carouselAds', 'sideAd', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
     }
 }

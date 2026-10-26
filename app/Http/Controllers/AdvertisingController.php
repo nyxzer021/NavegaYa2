@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Advertisement;
+use App\Services\AdvertisementImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,8 +15,9 @@ class AdvertisingController extends Controller
         return view('advertising.create', ['businessTypes' => Advertisement::BUSINESS_TYPES, 'placements' => Advertisement::PLACEMENTS]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ?AdvertisementImageService $images = null): RedirectResponse
     {
+        $images ??= app(AdvertisementImageService::class);
         $data = $request->validate([
             'business_name' => ['required', 'string', 'max:150'],
             'business_type' => ['required', 'in:'.implode(',', array_keys(Advertisement::BUSINESS_TYPES))],
@@ -27,10 +29,10 @@ class AdvertisingController extends Controller
             'placements' => ['required', 'array', 'min:1'],
             'placements.*' => ['in:'.implode(',', array_keys(Advertisement::PLACEMENTS))],
             'target_url' => ['nullable', 'url', 'max:500'],
-            'banner_image' => ['nullable', 'image', 'max:4096'],
+            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1536', 'dimensions:min_width=800,min_height=450'],
         ]);
 
-        $data['banner_image_path'] = $request->file('banner_image')?->store('advertisements', 'public');
+        $data['banner_image_path'] = $request->hasFile('banner_image') ? $images->store($request->file('banner_image')) : null;
         $data['category'] = Advertisement::BUSINESS_TYPES[$data['business_type']];
         $data['title'] = $data['business_name'];
         $data['status'] = 'lead_pending';

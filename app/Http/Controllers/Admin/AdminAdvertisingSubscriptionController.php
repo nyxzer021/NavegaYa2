@@ -106,7 +106,7 @@ class AdminAdvertisingSubscriptionController extends Controller
             'name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:500'],
             'monthly_price' => ['required', 'numeric', 'min:0', 'max:99999'], 'ad_limit' => ['required', 'integer', 'min:0', 'max:99'],
             'campaign_days' => ['required', 'integer', 'min:1', 'max:365'], 'impressions' => ['nullable', 'integer', 'min:0'],
-            'placements' => ['required', 'array', 'min:1'], 'placements.*' => ['in:home_carousel,home_sidebar,home_recommendations'],
+            'placements' => ['required', 'array', 'min:1'], 'placements.*' => ['in:home_carousel,home_sidebar,home_recommendations,home_popup'],
             'features' => ['nullable', 'string', 'max:2000'], 'is_active' => ['nullable', 'boolean'],
         ]);
         $features = collect(preg_split('/\r\n|\r|\n/', (string) ($data['features'] ?? '')))->map(fn ($feature) => trim($feature))->filter()->values()->all();
