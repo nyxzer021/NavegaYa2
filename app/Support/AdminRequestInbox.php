@@ -26,7 +26,7 @@ class AdminRequestInbox
     public function items(): Collection
     {
         return collect()
-            ->concat(Payment::query()->where('purpose', 'subscription')->where('requires_review', true)->with('subscription.organization')->get()->map(fn ($payment) => [
+            ->concat(Payment::query()->whereIn('purpose', ['subscription', 'subscription_upgrade'])->where('requires_review', true)->with('subscription.organization')->get()->map(fn ($payment) => [
                 'type' => 'payment', 'icon' => '💳', 'area' => 'Excepciones de pago',
                 'title' => $payment->subscription?->organization?->commercial_name ?: $payment->subscription?->organization?->legal_name ?: 'Empresa anunciante',
                 'detail' => $payment->review_reason ?: 'El proveedor de pagos requiere una validación manual',

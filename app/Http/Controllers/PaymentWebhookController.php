@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Services\BookingPaymentService;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Http\JsonResponse;
@@ -40,7 +41,7 @@ class PaymentWebhookController extends Controller
             ->get(rtrim(config('services.culqi.api_url'), '/').'/charges/'.$chargeId)
             ->throw()->json();
         abort_unless(($verified['object'] ?? null) === 'charge' && ($verified['state'] ?? null) === 'Exitosa', 422);
-        if (($verified['metadata']['payment_purpose'] ?? null) === 'subscription') {
+        if (in_array(($verified['metadata']['payment_purpose'] ?? null), ['subscription', 'subscription_upgrade'], true)) {
             return $this->confirmSubscription($verified, $chargeId, $eventId, $subscriptionPayments);
         }
         $code = $verified['metadata']['reservation_code'] ?? $charge['metadata']['reservation_code'] ?? null;
@@ -74,7 +75,7 @@ class PaymentWebhookController extends Controller
         if (($order['state'] ?? null) !== 'paid') {
             return response()->json(['received' => true, 'state' => $order['state'] ?? 'unknown']);
         }
-        if (($order['metadata']['payment_purpose'] ?? null) === 'subscription') {
+        if (in_array(($order['metadata']['payment_purpose'] ?? null), ['subscription', 'subscription_upgrade'], true)) {
             return $this->confirmSubscription($order, $orderId, $eventId, $subscriptionPayments, 'pagoefectivo');
         }
         $code = $order['metadata']['reservation_code'] ?? $order['order_number'] ?? null;
@@ -99,8 +100,12 @@ class PaymentWebhookController extends Controller
         ?string $method = null,
     ): JsonResponse {
         $subscription = Subscription::query()->findOrFail($providerPayload['metadata']['subscription_id'] ?? null);
+        $upgradePlanId = $providerPayload['metadata']['upgrade_plan_id'] ?? null;
+        $upgradePlan = $upgradePlanId ? SubscriptionPlan::where('is_active', true)->findOrFail($upgradePlanId) : null;
         $months = max(1, min(24, (int) ($providerPayload['metadata']['months'] ?? 1)));
-        $expectedAmount = (int) round((float) $subscription->monthly_price * $months * 100);
+        $expectedAmount = $upgradePlan
+            ? (int) round($payments->upgradeQuote($subscription, $upgradePlan)['amount'] * 100)
+            : (int) round((float) $subscription->monthly_price * $months * 100);
         if ((int) ($providerPayload['amount'] ?? 0) !== $expectedAmount) {
             Payment::updateOrCreate(['provider_reference' => $providerReference], [
                 'reservation_id' => null,
@@ -120,14 +125,17 @@ class PaymentWebhookController extends Controller
             return response()->json(['received' => true, 'requires_review' => true], 202);
         }
 
-        $payments->confirm($subscription, [
+        $paymentData = [
             'method' => $method ?? (str_starts_with((string) ($providerPayload['source']['id'] ?? ''), 'ype_') ? 'yape' : 'card'),
             'provider' => 'culqi',
             'provider_reference' => $providerReference,
             'webhook_event_id' => $eventId,
             'provider_payload' => $providerPayload,
-        ], $months);
+        ];
+        $upgradePlan
+            ? $payments->confirmUpgrade($subscription, $upgradePlan, $paymentData)
+            : $payments->confirm($subscription, $paymentData, $months);
 
-        return response()->json(['received' => true, 'subscription_activated' => true]);
+        return response()->json(['received' => true, $upgradePlan ? 'subscription_upgraded' : 'subscription_activated' => true]);
     }
 }

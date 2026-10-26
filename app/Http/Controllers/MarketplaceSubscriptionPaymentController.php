@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,49 +18,59 @@ class MarketplaceSubscriptionPaymentController extends Controller
     public function show(Request $request): View
     {
         $subscription = $this->subscriptionFor($request);
+        $upgradePlan = $request->filled('plan') ? SubscriptionPlan::where('is_active', true)->findOrFail($request->integer('plan')) : null;
+        $upgradeQuote = $upgradePlan ? app(SubscriptionPaymentService::class)->upgradeQuote($subscription, $upgradePlan) : null;
 
         return view('marketplace.subscription-payment', [
             'subscription' => $subscription,
             'organization' => $subscription->organization,
             'sandboxEnabled' => config('payments.sandbox_enabled'),
             'culqiEnabled' => config('services.culqi.enabled'),
+            'upgradePlan' => $upgradePlan,
+            'upgradeQuote' => $upgradeQuote,
         ]);
     }
 
     public function sandboxConfirm(Request $request, SubscriptionPaymentService $payments): RedirectResponse
     {
         abort_unless(config('payments.sandbox_enabled'), 404);
-        $data = $request->validate(['method' => ['required', 'in:yape,plin,card']]);
+        $data = $request->validate(['method' => ['required', 'in:yape,plin,card'], 'plan_id' => ['nullable', 'exists:subscription_plans,id']]);
         $subscription = $this->subscriptionFor($request);
-
-        $payments->confirm($subscription, [
+        $paymentData = [
             'method' => $data['method'],
             'provider' => 'sandbox',
             'provider_reference' => 'SUB-DEMO-'.Str::upper(Str::random(12)),
             'provider_payload' => ['mode' => 'sandbox'],
-        ]);
+        ];
+        if (! empty($data['plan_id'])) {
+            $payments->confirmUpgrade($subscription, SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']), $paymentData);
+        } else {
+            $payments->confirm($subscription, $paymentData);
+        }
 
         return redirect()->route('marketplace.dashboard', ['tab' => 'plan'])
-            ->with('success', 'Pago confirmado. Tu plan ya está activo.');
+            ->with('success', ! empty($data['plan_id']) ? 'Cambio confirmado. Tu plan superior ya está activo.' : 'Pago confirmado. Tu plan ya está activo.');
     }
 
     public function charge(Request $request, SubscriptionPaymentService $payments): JsonResponse
     {
         abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
-        $data = $request->validate(['source_id' => ['required', 'string', 'max:120']]);
+        $data = $request->validate(['source_id' => ['required', 'string', 'max:120'], 'plan_id' => ['nullable', 'exists:subscription_plans,id']]);
         $subscription = $this->subscriptionFor($request);
-        abort_if($subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
+        $upgradePlan = ! empty($data['plan_id']) ? SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']) : null;
+        $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : (float) $subscription->monthly_price;
+        abort_if(! $upgradePlan && $subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
 
         $organization = $subscription->organization;
         $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
             ->post(rtrim(config('services.culqi.api_url'), '/').'/charges', [
-                'amount' => $this->amountInCents($subscription),
+                'amount' => $this->amountInCents($amount),
                 'currency_code' => $subscription->currency,
                 'email' => $organization->email,
                 'source_id' => $data['source_id'],
                 'capture' => true,
                 'description' => "Suscripción NavegaYA {$organization->commercial_name}",
-                'metadata' => ['payment_purpose' => 'subscription', 'subscription_id' => (string) $subscription->id, 'months' => '1'],
+                'metadata' => ['payment_purpose' => $upgradePlan ? 'subscription_upgrade' : 'subscription', 'subscription_id' => (string) $subscription->id, 'upgrade_plan_id' => (string) ($upgradePlan?->id ?? ''), 'months' => '1'],
             ]);
 
         if ($response->failed()) {
@@ -68,30 +79,34 @@ class MarketplaceSubscriptionPaymentController extends Controller
 
         $charge = $response->json();
         abort_unless(($charge['object'] ?? null) === 'charge' && ($charge['state'] ?? null) === 'Exitosa', 422);
-        abort_unless((int) ($charge['amount'] ?? 0) === $this->amountInCents($subscription), 422);
+        abort_unless((int) ($charge['amount'] ?? 0) === $this->amountInCents($amount), 422);
 
-        $payments->confirm($subscription, [
+        $paymentData = [
             'method' => str_starts_with($data['source_id'], 'ype_') ? 'yape' : 'card',
             'provider' => 'culqi',
             'provider_reference' => $charge['id'],
             'provider_payload' => $charge,
-        ]);
+        ];
+        $upgradePlan ? $payments->confirmUpgrade($subscription, $upgradePlan, $paymentData) : $payments->confirm($subscription, $paymentData);
 
         return response()->json(['redirect' => route('marketplace.dashboard', ['tab' => 'plan'])]);
     }
 
-    public function order(Request $request): JsonResponse
+    public function order(Request $request, SubscriptionPaymentService $payments): JsonResponse
     {
         abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
         $subscription = $this->subscriptionFor($request);
-        abort_if($subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
+        $data = $request->validate(['plan_id' => ['nullable', 'exists:subscription_plans,id']]);
+        $upgradePlan = ! empty($data['plan_id']) ? SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']) : null;
+        $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : (float) $subscription->monthly_price;
+        abort_if(! $upgradePlan && $subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
         $organization = $subscription->organization;
         $reference = 'SUB-'.$subscription->id.'-'.now()->format('YmdHis');
         $names = preg_split('/\s+/', trim((string) $organization->contact_name), 2);
 
         $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
             ->post(rtrim(config('services.culqi.api_url'), '/').'/orders', [
-                'amount' => $this->amountInCents($subscription),
+                'amount' => $this->amountInCents($amount),
                 'currency_code' => $subscription->currency,
                 'description' => "Suscripción NavegaYA {$organization->commercial_name}",
                 'order_number' => $reference,
@@ -103,7 +118,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
                 ],
                 'expiration_date' => now()->addDay()->timestamp,
                 'confirm' => true,
-                'metadata' => ['payment_purpose' => 'subscription', 'subscription_id' => (string) $subscription->id, 'months' => '1'],
+                'metadata' => ['payment_purpose' => $upgradePlan ? 'subscription_upgrade' : 'subscription', 'subscription_id' => (string) $subscription->id, 'upgrade_plan_id' => (string) ($upgradePlan?->id ?? ''), 'months' => '1'],
             ]);
 
         if ($response->failed()) {
@@ -115,10 +130,10 @@ class MarketplaceSubscriptionPaymentController extends Controller
         Payment::updateOrCreate(['provider_reference' => $order['id']], [
             'reservation_id' => null,
             'subscription_id' => $subscription->id,
-            'purpose' => 'subscription',
+            'purpose' => $upgradePlan ? 'subscription_upgrade' : 'subscription',
             'method' => 'pagoefectivo',
             'provider' => 'culqi',
-            'amount' => $subscription->monthly_price,
+            'amount' => $amount,
             'currency_code' => $subscription->currency,
             'status' => 'pending',
             'provider_payload' => $order,
@@ -135,8 +150,8 @@ class MarketplaceSubscriptionPaymentController extends Controller
         return $organization->subscriptions()->with(['organization', 'plan'])->latest()->firstOrFail();
     }
 
-    private function amountInCents(Subscription $subscription): int
+    private function amountInCents(float $amount): int
     {
-        return (int) round((float) $subscription->monthly_price * 100);
+        return (int) round($amount * 100);
     }
 }

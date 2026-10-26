@@ -46,4 +46,39 @@ class SubscriptionPaymentServiceTest extends TestCase
             'requires_review' => false,
         ]);
     }
+
+    public function test_upgrade_charges_only_the_prorated_difference_and_keeps_the_billing_date(): void
+    {
+        $organization = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Lodge Upgrade SAC',
+            'commercial_name' => 'Lodge Upgrade', 'ruc' => '20333333333', 'status' => 'active',
+        ]);
+        $basic = SubscriptionPlan::create(['code' => 'basic-upgrade', 'name' => 'Básico', 'monthly_price' => 300, 'currency' => 'PEN', 'is_active' => true]);
+        $professional = SubscriptionPlan::create(['code' => 'professional-upgrade', 'name' => 'Profesional', 'monthly_price' => 600, 'currency' => 'PEN', 'benefits' => ['features' => ['Más campañas']], 'is_active' => true]);
+        $subscription = Subscription::create([
+            'organization_id' => $organization->id, 'subscription_plan_id' => $basic->id,
+            'status' => 'active', 'monthly_price' => 300, 'currency' => 'PEN',
+            'starts_on' => today()->subDays(15), 'ends_on' => today()->addDays(15),
+        ]);
+        $originalEndDate = $subscription->ends_on->copy();
+        $service = app(SubscriptionPaymentService::class);
+        $quote = $service->upgradeQuote($subscription, $professional);
+
+        $service->confirmUpgrade($subscription, $professional, [
+            'method' => 'card', 'provider' => 'culqi', 'provider_reference' => 'upgrade-payment-1',
+        ]);
+
+        $updated = $subscription->fresh();
+        $this->assertSame($professional->id, $updated->subscription_plan_id);
+        $this->assertSame('600.00', $updated->monthly_price);
+        $this->assertTrue($updated->ends_on->equalTo($originalEndDate));
+        $this->assertGreaterThan(0, $quote['amount']);
+        $this->assertLessThan(300, $quote['amount']);
+        $this->assertDatabaseHas('payments', [
+            'subscription_id' => $subscription->id,
+            'purpose' => 'subscription_upgrade',
+            'amount' => $quote['amount'],
+            'status' => 'confirmed',
+        ]);
+    }
 }

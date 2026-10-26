@@ -31,6 +31,7 @@ class MarketplaceBusinessController extends Controller
             'organization'=>$org,
             'listing'=>$listing->load('images.reviews.user','businessCategory','offers'),
             'subscription'=>$org->subscriptions()->with('plan')->latest()->first(),
+            'availablePlans'=>SubscriptionPlan::where('is_active',true)->orderBy('monthly_price')->get(),
             'cities'=>DestinationCity::where('is_active',true)->orderBy('name')->get(),
             'types'=>self::TYPES,
             'categories'=>BusinessCategory::where('is_active',true)->orderBy('sort_order')->get(),

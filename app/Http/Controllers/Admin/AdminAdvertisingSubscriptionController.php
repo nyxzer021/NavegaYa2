@@ -51,7 +51,7 @@ class AdminAdvertisingSubscriptionController extends Controller
             'statusCounts' => Subscription::selectRaw('status, count(*) total')->groupBy('status')->pluck('total', 'status'),
             'monthlyRevenue' => (float) Subscription::where('status', 'active')->sum('monthly_price'),
             'annualRevenue' => (float) Subscription::where('status', 'active')->sum('monthly_price') * 12,
-            'paymentExceptions' => Payment::query()->where('purpose', 'subscription')->where('requires_review', true)->with('subscription.organization', 'subscription.plan')->latest()->get(),
+            'paymentExceptions' => Payment::query()->whereIn('purpose', ['subscription', 'subscription_upgrade'])->where('requires_review', true)->with('subscription.organization', 'subscription.plan')->latest()->get(),
         ]);
     }
 
