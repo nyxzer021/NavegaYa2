@@ -5,7 +5,7 @@
 <x-marketplace-layout title="{{$isUpgrade?'Mejorar plan':'Pagar suscripción'}} · NavegaYA">
 <div class="grid min-h-[calc(100vh-64px)] lg:grid-cols-[270px_minmax(0,1fr)]">
 @include('marketplace._portal-sidebar',['activePortalSection'=>'plan'])
-<main class="min-w-0 bg-slate-50 px-4 py-8"><section class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+<main class="min-w-0 bg-slate-50 px-4 py-6 sm:px-6 lg:px-8"><section class="mx-auto w-full max-w-[1500px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
 <header class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 p-7 text-white"><p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">{{$isUpgrade?'Cambio de suscripción':'Pago seguro'}}</p><h1 class="mt-2 text-3xl font-black">{{$isUpgrade?'Mejora a '.$upgradePlan->name:'Activa tu plan '.$subscription->plan?->name}}</h1><p class="mt-2 text-sm text-emerald-100/70">{{$isUpgrade?'Revisa el prorrateo antes de confirmar. El cambio se aplica inmediatamente.':'NavegaYA habilitará el plan cuando Culqi confirme el pago.'}}</p></header>
 <div class="p-7">
 @if($isUpgrade)
