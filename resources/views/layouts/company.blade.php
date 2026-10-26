@@ -76,7 +76,7 @@
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">📈</span><span>Comisiones NavegaYA</span>
                         </a>
                         <a href="{{ route('support.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('support.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">💬</span><span>Solicitudes y soporte</span>
+                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">🛟</span><span>Soporte e incidencias</span>
                         </a>
                         <a href="{{ route('messages.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('messages.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">✉️</span><span>Mensajes comerciales</span>

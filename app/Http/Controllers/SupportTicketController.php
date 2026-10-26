@@ -12,7 +12,8 @@ class SupportTicketController extends Controller
 {
     public function index(Request $request): View
     {
-        $isAdmin = $request->user()->roles()->where('code', 'super_admin')->exists();
+        $roleCodes = $request->user()->roles()->pluck('code');
+        $isAdmin = $roleCodes->intersect(['super_admin', 'admin'])->isNotEmpty();
         $tickets = SupportTicket::query()
             ->with(['user', 'organization', 'responder'])
             ->when(! $isAdmin, fn ($query) => $query->where('user_id', $request->user()->id))
@@ -26,7 +27,12 @@ class SupportTicketController extends Controller
                 ->update(['requester_viewed_at' => now()]);
         }
 
-        return view('support.index', compact('tickets', 'isAdmin'));
+        $organization = $isAdmin ? null : $request->user()->organizations()->with('vessels.basePort')->first();
+        $view = $isAdmin ? 'support.admin'
+            : ($roleCodes->contains('marketplace_admin') ? 'support.business'
+            : ($roleCodes->contains('company_admin') ? 'support.company' : 'support.customer'));
+
+        return view($view, compact('tickets', 'isAdmin', 'organization'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -54,7 +60,7 @@ class SupportTicketController extends Controller
 
     public function respond(Request $request, SupportTicket $supportTicket): RedirectResponse
     {
-        abort_unless($request->user()->roles()->where('code', 'super_admin')->exists(), 403);
+        abort_unless($request->user()->roles()->whereIn('code', ['super_admin', 'admin'])->exists(), 403);
         $data = $request->validate([
             'status' => ['required', 'in:in_progress,waiting_user,resolved,closed'],
             'admin_response' => ['required', 'string', 'max:3000'],

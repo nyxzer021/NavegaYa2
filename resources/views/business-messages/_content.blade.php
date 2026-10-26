@@ -4,7 +4,7 @@
     $typeLabel = $company ? ($organizationTypes[$company->type] ?? 'Empresa') : null;
 @endphp
 <div class="mx-auto max-w-7xl space-y-4">
-<header class="rounded-2xl bg-gradient-to-r from-emerald-950 to-slate-950 px-6 py-5 text-white"><p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Comunicación empresarial</p><div class="mt-1 flex flex-wrap items-end justify-between gap-3"><div><h1 class="text-xl font-black">Centro de mensajes</h1><p class="mt-1 text-xs text-slate-300">Consultas comerciales y coordinación directa con trazabilidad.</p></div><a href="{{route('support.index')}}" class="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-[10px] font-black hover:bg-white/20">Fallas, pagos o reclamos → Soporte</a></div></header>
+<header class="rounded-2xl bg-gradient-to-r from-emerald-950 to-slate-950 px-6 py-5 text-white"><p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Comunicación empresarial</p><h1 class="mt-1 text-xl font-black">Centro de mensajes</h1><p class="mt-1 text-xs text-slate-300">Consultas comerciales y coordinación directa con trazabilidad.</p></header>
 @if(session('success'))<div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">✓ {{session('success')}}</div>@endif
 @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-700">{{$errors->first()}}</div>@endif
 <div class="grid gap-4 xl:grid-cols-[350px_minmax(0,1fr)]">

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\SupportTicket;
 use App\Models\User;
@@ -35,6 +36,24 @@ class SupportTicketTest extends TestCase
 
         $this->actingAs($admin)->patch(route('admin.support.respond', $ticket), ['status' => 'resolved', 'admin_response' => 'La incidencia fue corregida.'])->assertRedirect();
         $this->assertDatabaseHas('support_tickets', ['id' => $ticket->id, 'status' => 'resolved', 'responded_by' => $admin->id]);
+    }
+
+    public function test_advertiser_sees_support_inside_its_own_portal(): void
+    {
+        $advertiser = User::factory()->create();
+        $organization = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Lodge Portal SAC',
+            'commercial_name' => 'Lodge Portal', 'ruc' => '20111112222', 'status' => 'active',
+        ]);
+        $advertiser->organizations()->attach($organization->id, ['status' => 'active']);
+        $advertiser->roles()->attach(Role::firstOrCreate(['code' => 'marketplace_admin'], ['name' => 'Anunciante']), ['organization_id' => $organization->id]);
+
+        $this->actingAs($advertiser)->get(route('support.index'))
+            ->assertOk()
+            ->assertSee('Plan y facturación')
+            ->assertSee('Soporte e incidencias')
+            ->assertSee('Casos con seguimiento')
+            ->assertDontSee('Panel administrador');
     }
 
     public function test_regular_user_cannot_respond_to_requests(): void
