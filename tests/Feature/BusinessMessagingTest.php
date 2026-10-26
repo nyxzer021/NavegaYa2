@@ -24,10 +24,12 @@ class BusinessMessagingTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach($adminRole->id);
 
-        $this->actingAs($owner)->post(route('messages.store'), ['subject' => 'Consulta de portada', 'body' => '¿Cuándo se publica mi campaña?'])->assertRedirect();
+        $this->actingAs($owner)->post(route('messages.store'), ['assigned_admin_id' => $admin->id, 'subject' => 'Consulta de portada', 'body' => '¿Cuándo se publica mi campaña?'])->assertRedirect();
         $conversation = BusinessConversation::firstOrFail();
+        $this->assertSame($admin->id, $conversation->assigned_admin_id);
         $this->assertDatabaseHas('business_messages', ['business_conversation_id' => $conversation->id, 'sender_id' => $owner->id]);
-        $this->actingAs($admin)->get(route('messages.index', ['conversation' => $conversation]))->assertOk()->assertSee('Consulta de portada');
+        $this->actingAs($owner)->get(route('messages.index', ['conversation' => $conversation]))->assertOk()->assertSee('Plan y facturación')->assertSee('Administrador destinatario');
+        $this->actingAs($admin)->get(route('messages.index', ['conversation' => $conversation]))->assertOk()->assertSee('Consulta de portada')->assertSee('20123456789')->assertSee('Empresa anunciante')->assertSee($owner->name)->assertSee($admin->name);
         $this->actingAs($admin)->post(route('messages.reply', $conversation), ['body' => 'La campaña está en revisión.'])->assertRedirect();
         $this->actingAs($owner)->get(route('messages.index', ['conversation' => $conversation]))->assertOk()->assertSee('La campaña está en revisión.');
 
