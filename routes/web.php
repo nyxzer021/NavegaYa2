@@ -180,6 +180,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/mi-negocio', [MarketplaceBusinessController::class, 'dashboard'])->middleware('role:marketplace_admin')->name('marketplace.dashboard');
     Route::get('/mi-negocio/suscripcion/pago', [MarketplaceSubscriptionPaymentController::class, 'show'])->middleware('role:marketplace_admin')->name('marketplace.subscription.payment');
     Route::post('/mi-negocio/suscripcion/pago/prueba', [MarketplaceSubscriptionPaymentController::class, 'sandboxConfirm'])->middleware('role:marketplace_admin')->name('marketplace.subscription.sandbox-confirm');
+    Route::post('/mi-negocio/suscripcion/cambio-programado', [MarketplaceSubscriptionPaymentController::class, 'scheduleDowngrade'])->middleware('role:marketplace_admin')->name('marketplace.subscription.downgrade');
+    Route::delete('/mi-negocio/suscripcion/cambio-programado', [MarketplaceSubscriptionPaymentController::class, 'cancelScheduledChange'])->middleware('role:marketplace_admin')->name('marketplace.subscription.change.cancel');
     Route::post('/mi-negocio/suscripcion/pago/culqi', [MarketplaceSubscriptionPaymentController::class, 'charge'])->middleware('role:marketplace_admin')->name('marketplace.subscription.culqi.charge');
     Route::post('/mi-negocio/suscripcion/pago/culqi/orden', [MarketplaceSubscriptionPaymentController::class, 'order'])->middleware('role:marketplace_admin')->name('marketplace.subscription.culqi.order');
     Route::patch('/mi-negocio/ficha', [MarketplaceBusinessController::class, 'update'])->middleware('role:marketplace_admin')->name('marketplace.update');

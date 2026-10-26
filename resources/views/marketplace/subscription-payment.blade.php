@@ -1,12 +1,12 @@
 @php
     $isUpgrade = filled($upgradePlan);
-    $amountDue = $isUpgrade ? $upgradeQuote['amount'] : (float)$subscription->monthly_price;
+    $amountDue = $isUpgrade ? $upgradeQuote['amount'] : $renewalAmount;
 @endphp
 <x-marketplace-layout title="{{$isUpgrade?'Mejorar plan':'Pagar suscripción'}} · NavegaYA">
 <div class="grid min-h-[calc(100vh-64px)] lg:grid-cols-[270px_minmax(0,1fr)]">
 @include('marketplace._portal-sidebar',['activePortalSection'=>'plan'])
 <main class="min-w-0 bg-slate-50 px-4 py-6 sm:px-6 lg:px-8"><section class="mx-auto w-full max-w-[1500px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-<header class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 p-7 text-white"><p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">{{$isUpgrade?'Cambio de suscripción':'Pago seguro'}}</p><h1 class="mt-2 text-3xl font-black">{{$isUpgrade?'Mejora a '.$upgradePlan->name:'Activa tu plan '.$subscription->plan?->name}}</h1><p class="mt-2 text-sm text-emerald-100/70">{{$isUpgrade?'Revisa el prorrateo antes de confirmar. El cambio se aplica inmediatamente.':'NavegaYA habilitará el plan cuando Culqi confirme el pago.'}}</p></header>
+<header class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 p-7 text-white"><p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">{{$isUpgrade?'Cambio de suscripción':'Pago seguro'}}</p><h1 class="mt-2 text-3xl font-black">{{$isUpgrade?'Mejora a '.$upgradePlan->name:'Activa tu plan '.$renewalPlan->name}}</h1><p class="mt-2 text-sm text-emerald-100/70">{{$isUpgrade?'Revisa el prorrateo antes de confirmar. El cambio se aplica inmediatamente.':'NavegaYA habilitará el plan cuando Culqi confirme el pago.'}}</p></header>
 <div class="p-7">
 @if($isUpgrade)
 <div class="grid gap-4 md:grid-cols-2"><article class="rounded-2xl border border-slate-200 p-5"><span class="text-[9px] font-black uppercase text-slate-400">Plan actual</span><h2 class="mt-1 text-xl font-black">{{$subscription->plan?->name}}</h2><strong class="mt-3 block text-2xl">S/ {{number_format($upgradeQuote['current_price'],2)}} <small class="text-xs text-slate-400">/ mes</small></strong></article><article class="rounded-2xl border-2 border-violet-300 bg-violet-50 p-5"><span class="text-[9px] font-black uppercase text-violet-600">Nuevo plan</span><h2 class="mt-1 text-xl font-black">{{$upgradePlan->name}}</h2><strong class="mt-3 block text-2xl">S/ {{number_format($upgradeQuote['new_price'],2)}} <small class="text-xs text-slate-400">/ mes</small></strong></article></div>

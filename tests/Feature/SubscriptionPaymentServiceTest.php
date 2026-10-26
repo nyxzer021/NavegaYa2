@@ -81,4 +81,60 @@ class SubscriptionPaymentServiceTest extends TestCase
             'status' => 'confirmed',
         ]);
     }
+
+    public function test_downgrade_is_scheduled_for_renewal_and_can_be_cancelled(): void
+    {
+        $organization = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Lodge Downgrade SAC',
+            'commercial_name' => 'Lodge Downgrade', 'ruc' => '20444444444', 'status' => 'active',
+        ]);
+        $basic = SubscriptionPlan::create(['code' => 'basic-downgrade', 'name' => 'Básico', 'monthly_price' => 300, 'currency' => 'PEN', 'is_active' => true]);
+        $professional = SubscriptionPlan::create(['code' => 'professional-downgrade', 'name' => 'Profesional', 'monthly_price' => 750, 'currency' => 'PEN', 'is_active' => true]);
+        $subscription = Subscription::create([
+            'organization_id' => $organization->id, 'subscription_plan_id' => $professional->id,
+            'status' => 'active', 'monthly_price' => 750, 'currency' => 'PEN',
+            'starts_on' => today(), 'ends_on' => today()->addMonth(),
+        ]);
+
+        $service = app(SubscriptionPaymentService::class);
+        $service->scheduleDowngrade($subscription, $basic);
+        $scheduled = $subscription->fresh();
+
+        $this->assertSame($professional->id, $scheduled->subscription_plan_id);
+        $this->assertSame($basic->id, $scheduled->scheduled_plan_id);
+        $this->assertTrue($scheduled->scheduled_plan_starts_on->equalTo($scheduled->ends_on));
+        $this->assertSame('750.00', $scheduled->monthly_price);
+
+        $service->cancelScheduledChange($scheduled);
+        $this->assertNull($subscription->fresh()->scheduled_plan_id);
+        $this->assertNull($subscription->fresh()->scheduled_plan_starts_on);
+    }
+
+    public function test_scheduled_downgrade_is_applied_when_the_next_cycle_is_paid(): void
+    {
+        $organization = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Lodge Renewal SAC',
+            'commercial_name' => 'Lodge Renewal', 'ruc' => '20555555555', 'status' => 'active',
+        ]);
+        $basic = SubscriptionPlan::create(['code' => 'basic-renewal', 'name' => 'Básico', 'monthly_price' => 300, 'currency' => 'PEN', 'benefits' => ['features' => ['Básico']], 'is_active' => true]);
+        $professional = SubscriptionPlan::create(['code' => 'professional-renewal', 'name' => 'Profesional', 'monthly_price' => 750, 'currency' => 'PEN', 'is_active' => true]);
+        $subscription = Subscription::create([
+            'organization_id' => $organization->id, 'subscription_plan_id' => $professional->id,
+            'scheduled_plan_id' => $basic->id, 'scheduled_plan_starts_on' => today(),
+            'status' => 'active', 'monthly_price' => 750, 'currency' => 'PEN',
+            'starts_on' => today()->subMonth(), 'ends_on' => today(),
+        ]);
+
+        $service = app(SubscriptionPaymentService::class);
+        $this->assertSame(300.0, $service->renewalAmount($subscription));
+        $service->confirm($subscription, [
+            'method' => 'card', 'provider' => 'culqi', 'provider_reference' => 'downgrade-renewal-1',
+        ]);
+
+        $updated = $subscription->fresh();
+        $this->assertSame($basic->id, $updated->subscription_plan_id);
+        $this->assertSame('300.00', $updated->monthly_price);
+        $this->assertNull($updated->scheduled_plan_id);
+        $this->assertDatabaseHas('payments', ['provider_reference' => 'downgrade-renewal-1', 'amount' => 300]);
+    }
 }

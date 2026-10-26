@@ -18,8 +18,9 @@ class MarketplaceSubscriptionPaymentController extends Controller
     public function show(Request $request): View
     {
         $subscription = $this->subscriptionFor($request);
+        $payments = app(SubscriptionPaymentService::class);
         $upgradePlan = $request->filled('plan') ? SubscriptionPlan::where('is_active', true)->findOrFail($request->integer('plan')) : null;
-        $upgradeQuote = $upgradePlan ? app(SubscriptionPaymentService::class)->upgradeQuote($subscription, $upgradePlan) : null;
+        $upgradeQuote = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan) : null;
 
         return view('marketplace.subscription-payment', [
             'subscription' => $subscription,
@@ -28,6 +29,8 @@ class MarketplaceSubscriptionPaymentController extends Controller
             'culqiEnabled' => config('services.culqi.enabled'),
             'upgradePlan' => $upgradePlan,
             'upgradeQuote' => $upgradeQuote,
+            'renewalPlan' => $payments->renewalPlan($subscription),
+            'renewalAmount' => $payments->renewalAmount($subscription),
         ]);
     }
 
@@ -52,20 +55,39 @@ class MarketplaceSubscriptionPaymentController extends Controller
             ->with('success', ! empty($data['plan_id']) ? 'Cambio confirmado. Tu plan superior ya está activo.' : 'Pago confirmado. Tu plan ya está activo.');
     }
 
+    public function scheduleDowngrade(Request $request, SubscriptionPaymentService $payments): RedirectResponse
+    {
+        $data = $request->validate(['plan_id' => ['required', 'exists:subscription_plans,id']]);
+        $subscription = $this->subscriptionFor($request);
+        $plan = SubscriptionPlan::query()->where('is_active', true)->findOrFail($data['plan_id']);
+        $payments->scheduleDowngrade($subscription, $plan);
+
+        return redirect()->route('marketplace.dashboard', ['tab' => 'plan'])
+            ->with('success', "El cambio a {$plan->name} quedó programado para tu próxima renovación.");
+    }
+
+    public function cancelScheduledChange(Request $request, SubscriptionPaymentService $payments): RedirectResponse
+    {
+        $payments->cancelScheduledChange($this->subscriptionFor($request));
+
+        return redirect()->route('marketplace.dashboard', ['tab' => 'plan'])
+            ->with('success', 'Se canceló el cambio de plan programado.');
+    }
+
     public function charge(Request $request, SubscriptionPaymentService $payments): JsonResponse
     {
         abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
         $data = $request->validate(['source_id' => ['required', 'string', 'max:120'], 'plan_id' => ['nullable', 'exists:subscription_plans,id']]);
         $subscription = $this->subscriptionFor($request);
         $upgradePlan = ! empty($data['plan_id']) ? SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']) : null;
-        $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : (float) $subscription->monthly_price;
+        $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : $payments->renewalAmount($subscription);
         abort_if(! $upgradePlan && $subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
 
         $organization = $subscription->organization;
         $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
             ->post(rtrim(config('services.culqi.api_url'), '/').'/charges', [
                 'amount' => $this->amountInCents($amount),
-                'currency_code' => $subscription->currency,
+                'currency_code' => $upgradePlan?->currency ?? $payments->renewalPlan($subscription)->currency,
                 'email' => $organization->email,
                 'source_id' => $data['source_id'],
                 'capture' => true,
@@ -98,7 +120,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
         $subscription = $this->subscriptionFor($request);
         $data = $request->validate(['plan_id' => ['nullable', 'exists:subscription_plans,id']]);
         $upgradePlan = ! empty($data['plan_id']) ? SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']) : null;
-        $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : (float) $subscription->monthly_price;
+        $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : $payments->renewalAmount($subscription);
         abort_if(! $upgradePlan && $subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
         $organization = $subscription->organization;
         $reference = 'SUB-'.$subscription->id.'-'.now()->format('YmdHis');
@@ -107,7 +129,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
         $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
             ->post(rtrim(config('services.culqi.api_url'), '/').'/orders', [
                 'amount' => $this->amountInCents($amount),
-                'currency_code' => $subscription->currency,
+                'currency_code' => $upgradePlan?->currency ?? $payments->renewalPlan($subscription)->currency,
                 'description' => "Suscripción NavegaYA {$organization->commercial_name}",
                 'order_number' => $reference,
                 'client_details' => [
@@ -134,7 +156,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
             'method' => 'pagoefectivo',
             'provider' => 'culqi',
             'amount' => $amount,
-            'currency_code' => $subscription->currency,
+            'currency_code' => $upgradePlan?->currency ?? $payments->renewalPlan($subscription)->currency,
             'status' => 'pending',
             'provider_payload' => $order,
         ]);
@@ -147,7 +169,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
         $organization = $request->user()->organizations()
             ->where('organizations.type', 'marketplace_business')->firstOrFail();
 
-        return $organization->subscriptions()->with(['organization', 'plan'])->latest()->firstOrFail();
+        return $organization->subscriptions()->with(['organization', 'plan', 'scheduledPlan'])->latest()->firstOrFail();
     }
 
     private function amountInCents(float $amount): int

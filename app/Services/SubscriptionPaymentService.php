@@ -9,6 +9,40 @@ use Illuminate\Support\Facades\DB;
 
 class SubscriptionPaymentService
 {
+    public function renewalPlan(Subscription $subscription): SubscriptionPlan
+    {
+        if ($subscription->scheduled_plan_id && $subscription->scheduled_plan_starts_on?->lte(today())) {
+            return SubscriptionPlan::query()->where('is_active', true)->findOrFail($subscription->scheduled_plan_id);
+        }
+
+        return $subscription->plan;
+    }
+
+    public function renewalAmount(Subscription $subscription): float
+    {
+        return (float) $this->renewalPlan($subscription)->monthly_price;
+    }
+
+    public function scheduleDowngrade(Subscription $subscription, SubscriptionPlan $newPlan): Subscription
+    {
+        abort_unless($subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'La suscripción debe estar activa para cambiar de plan.');
+        abort_unless((float) $newPlan->monthly_price < (float) $subscription->monthly_price, 422, 'Selecciona un plan inferior al actual.');
+
+        $subscription->update([
+            'scheduled_plan_id' => $newPlan->id,
+            'scheduled_plan_starts_on' => $subscription->ends_on,
+        ]);
+
+        return $subscription->refresh();
+    }
+
+    public function cancelScheduledChange(Subscription $subscription): Subscription
+    {
+        $subscription->update(['scheduled_plan_id' => null, 'scheduled_plan_starts_on' => null]);
+
+        return $subscription->refresh();
+    }
+
     public function upgradeQuote(Subscription $subscription, SubscriptionPlan $newPlan): array
     {
         abort_unless($subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'La suscripción debe estar activa para cambiar de plan.');
@@ -62,6 +96,8 @@ class SubscriptionPaymentService
 
             $subscription->update([
                 'subscription_plan_id' => $newPlan->id,
+                'scheduled_plan_id' => null,
+                'scheduled_plan_starts_on' => null,
                 'monthly_price' => $newPlan->monthly_price,
                 'currency' => $newPlan->currency,
                 'benefits_snapshot' => $newPlan->benefits,
@@ -79,6 +115,21 @@ class SubscriptionPaymentService
 
             if ($existingPayment?->status === 'confirmed') {
                 return $subscription->refresh();
+            }
+
+            if ($subscription->scheduled_plan_id && $subscription->scheduled_plan_starts_on?->lte(today())) {
+                $scheduledPlan = SubscriptionPlan::query()->where('is_active', true)->find($subscription->scheduled_plan_id);
+                if ($scheduledPlan) {
+                    $subscription->update([
+                        'subscription_plan_id' => $scheduledPlan->id,
+                        'monthly_price' => $scheduledPlan->monthly_price,
+                        'currency' => $scheduledPlan->currency,
+                        'benefits_snapshot' => $scheduledPlan->benefits,
+                        'scheduled_plan_id' => null,
+                        'scheduled_plan_starts_on' => null,
+                    ]);
+                    $subscription->refresh();
+                }
             }
 
             Payment::updateOrCreate(
