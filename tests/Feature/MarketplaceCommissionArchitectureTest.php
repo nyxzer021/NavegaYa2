@@ -26,7 +26,7 @@ class MarketplaceCommissionArchitectureTest extends TestCase
             ->assertDontSee('Registrar transferencia');
     }
 
-    public function test_company_sees_its_contractual_commission_without_bank_settlement_form(): void
+    public function test_company_sees_its_sales_without_internal_commission_details(): void
     {
         $organization = Organization::create([
             'type' => 'transport_company',
@@ -44,8 +44,10 @@ class MarketplaceCommissionArchitectureTest extends TestCase
         $this->actingAs($admin)
             ->get(route('company.commissions.index'))
             ->assertOk()
-            ->assertSee('Comisión vigente: 7.50%')
-            ->assertSee('Sin saldos por transferir')
+            ->assertSee('Ventas y facturación')
+            ->assertSee('Ingresos de tu operación')
+            ->assertDontSee('Comisión vigente')
+            ->assertDontSee('Comisión pendiente')
             ->assertDontSee('Cuenta bancaria')
             ->assertDontSee('CCI');
     }

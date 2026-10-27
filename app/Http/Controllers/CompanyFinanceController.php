@@ -25,13 +25,10 @@ class CompanyFinanceController extends Controller
 
         return view('company.finance.index', [
             'organization' => $organization,
-            'commissionRate' => (float) ($organization->commission_rate ?? 0),
             'grossToday' => (float) $todayPayments->sum('amount'),
-            'commissionToday' => (float) $todayPayments->sum('commission_amount'),
             'grossMonth' => (float) $monthPayments->sum('amount'),
-            'commissionMonth' => (float) $monthPayments->sum('commission_amount'),
-            'commissionCollected' => (float) $payments->where('commission_status', 'paid')->sum('commission_amount'),
-            'commissionPending' => (float) $payments->whereIn('commission_status', ['pending', 'invoiced'])->sum('commission_amount'),
+            'transactionsMonth' => $monthPayments->count(),
+            'averageTicketMonth' => $monthPayments->count() > 0 ? (float) $monthPayments->avg('amount') : 0,
             'recentPayments' => $payments->take(12),
         ]);
     }

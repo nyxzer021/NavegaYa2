@@ -52,6 +52,7 @@ class CompanyBoardingController extends Controller
     public function toggle(Request $request, RouteDeparture $departure, Ticket $ticket): RedirectResponse
     {
         $this->authorizeDeparture($request, $departure);
+        abort_unless(in_array($departure->status, ['scheduled', 'boarding', 'delayed', 'rescheduled'], true), 422, 'El estado de la salida no permite embarcar pasajeros.');
         $ticket->load('reservationSeat.reservation');
         abort_unless($ticket->reservationSeat?->reservation?->route_departure_id === $departure->id, 404);
 
@@ -73,6 +74,7 @@ class CompanyBoardingController extends Controller
             'checked_in_at' => $ticket->checked_in_at ?? now(),
             'boarded_at' => now(),
             'boarded_by_user_id' => $request->user()->id,
+            'boarded_port_id' => $departure->transportRoute()->value('origin_port_id'),
         ]);
 
         return back()->with('success', "Embarque confirmado para {$ticket->code}.");

@@ -17,6 +17,7 @@ use App\Support\AdminScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -181,10 +182,60 @@ class AdminTransportRouteController extends Controller
         $this->authorizeCompanyAdmin();
         $organizationId = AdminScope::organizationId(auth()->user());
         abort_unless($organizationId && $departure->transportRoute()->where('organization_id', $organizationId)->exists(), 403);
-        $data = $request->validate(['status' => ['required', 'in:scheduled,departed,cancelled']]);
-        $departure->update($data);
+        $data = $request->validate(['status' => ['required', 'in:scheduled,boarding,in_transit,completed,cancelled']]);
+        $departure->update($data + ['status_changed_by_user_id' => $request->user()->id, 'status_changed_at' => now()]);
 
         return back()->with('success', 'Estado de la salida actualizado.');
+    }
+
+    public function handleDepartureContingency(Request $request, RouteDeparture $departure): RedirectResponse
+    {
+        $this->authorizeCompanyAdmin();
+        $organizationId = AdminScope::organizationId($request->user());
+        abort_unless($organizationId && $departure->transportRoute()->where('organization_id', $organizationId)->exists(), 403);
+        abort_if(in_array($departure->status, ['completed', 'cancelled'], true), 422, 'Una salida finalizada ya no puede modificarse.');
+
+        $data = $request->validate([
+            'action' => ['required', 'in:delay,reschedule,suspend,cancel,change_vessel,pause_sales,resume_sales'],
+            'reason' => ['required', 'string', 'max:500'],
+            'departure_at' => ['nullable', 'required_if:action,delay,reschedule', 'date', 'after:now'],
+            'vessel_id' => ['nullable', 'required_if:action,change_vessel', 'integer', 'exists:vessels,id'],
+        ]);
+
+        $changes = [
+            'disruption_type' => $data['action'],
+            'disruption_reason' => $data['reason'],
+            'status_changed_by_user_id' => $request->user()->id,
+            'status_changed_at' => now(),
+        ];
+
+        if (in_array($data['action'], ['delay', 'reschedule'], true)) {
+            $newDepartureAt = Carbon::parse($data['departure_at']);
+            $offsetMinutes = $departure->departure_at->diffInMinutes($newDepartureAt, false);
+            $changes['previous_departure_at'] = $departure->departure_at;
+            $changes['departure_at'] = $newDepartureAt;
+            $changes['boarding_starts_at'] = $departure->boarding_starts_at?->copy()->addMinutes($offsetMinutes);
+            $changes['estimated_arrival_at'] = $departure->estimated_arrival_at?->copy()->addMinutes($offsetMinutes);
+            $changes['status'] = $data['action'] === 'delay' ? 'delayed' : 'rescheduled';
+        } elseif ($data['action'] === 'change_vessel') {
+            $vessel = Vessel::query()->where('organization_id', $organizationId)->where('status', 'ready')->findOrFail($data['vessel_id']);
+            $reservedSeats = $departure->reservations()->whereNotIn('status', ['cancelled', 'expired'])->withCount('seats')->get()->sum('seats_count');
+            abort_if($vessel->seat_capacity < $reservedSeats, 422, "La unidad solo tiene {$vessel->seat_capacity} asientos y existen {$reservedSeats} pasajeros reservados.");
+            $changes['vessel_id'] = $vessel->id;
+        } elseif ($data['action'] === 'suspend') {
+            $changes += ['status' => 'suspended', 'is_published' => false];
+        } elseif ($data['action'] === 'cancel') {
+            $changes += ['status' => 'cancelled', 'is_published' => false];
+        } elseif ($data['action'] === 'pause_sales') {
+            $changes['is_published'] = false;
+        } elseif ($data['action'] === 'resume_sales') {
+            abort_unless(in_array($departure->status, ['scheduled', 'delayed', 'rescheduled'], true), 422, 'El estado actual no permite reabrir ventas.');
+            $changes['is_published'] = true;
+        }
+
+        $departure->update($changes);
+
+        return back()->with('success', 'La contingencia fue registrada y la salida se actualizó con trazabilidad.');
     }
 
     private function validatedDepartureData(StoreRouteDepartureRequest $request, ?RouteDeparture $departure = null): array

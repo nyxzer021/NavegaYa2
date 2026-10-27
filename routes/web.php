@@ -126,6 +126,7 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::get('/ventas', [CompanySalesController::class, 'index'])->name('sales.index');
     Route::get('/ventas/exportar', [CompanySalesController::class, 'export'])->name('sales.export');
     Route::post('/flota/embarcaciones', [CompanyFleetController::class, 'storeVessel'])->name('fleet.vessels.store');
+    Route::patch('/flota/embarcaciones/{vessel}', [CompanyFleetController::class, 'updateVessel'])->name('fleet.vessels.update');
     Route::post('/flota/embarcaciones/{vessel}/enviar-revision', [CompanyFleetController::class, 'submitVesselForReview'])->name('fleet.vessels.submit-review');
     Route::post('/flota/aeronaves', [CompanyFleetController::class, 'storeAircraft'])->name('fleet.aircraft.store');
     Route::get('/flota/embarcaciones/{vessel}/asientos', [AdminVesselSeatController::class, 'edit'])->name('vessels.seats.edit');
@@ -143,6 +144,7 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa/salidas')->na
     Route::get('/{departure}/editar', [AdminTransportRouteController::class, 'editDeparture'])->name('edit');
     Route::patch('/{departure}', [AdminTransportRouteController::class, 'updateDeparture'])->name('update');
     Route::patch('/{departure}/estado', [AdminTransportRouteController::class, 'updateDepartureStatus'])->name('status');
+    Route::patch('/{departure}/contingencia', [AdminTransportRouteController::class, 'handleDepartureContingency'])->name('contingency');
 });
 Route::get('/reservar/{departure}', [BookingController::class, 'create'])->name('bookings.create');
 Route::post('/reservar/{departure}', [BookingController::class, 'store'])->name('bookings.store');

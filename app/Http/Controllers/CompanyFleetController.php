@@ -55,6 +55,60 @@ class CompanyFleetController extends Controller
         return back()->with('success', 'Aeronave registrada correctamente.');
     }
 
+    public function updateVessel(Request $request, Vessel $vessel): RedirectResponse
+    {
+        $organization = $this->organization();
+        abort_unless($vessel->organization_id === $organization->id, 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'registration_number' => ['required', 'string', 'max:80', Rule::unique('vessels', 'registration_number')->ignore($vessel->id)],
+            'vessel_type' => ['required', Rule::in(['lancha', 'motonave', 'rapido', 'ferry', 'otro'])],
+            'seat_capacity' => ['required', 'integer', 'min:1', 'max:2000'],
+            'base_port_id' => ['nullable', 'exists:ports,id'],
+        ]);
+
+        $seatCount = $vessel->seats()->count();
+        if ((int) $data['seat_capacity'] < $seatCount) {
+            return back()->withInput()->withErrors([
+                'seat_capacity' => "La capacidad no puede ser menor que los {$seatCount} asientos configurados. Ajusta primero el plano.",
+            ]);
+        }
+
+        $capacityIsReduced = (int) $data['seat_capacity'] < $vessel->seat_capacity;
+        $hasActiveReservations = $capacityIsReduced && $vessel->departures()
+            ->where('departure_at', '>=', now())
+            ->whereHas('reservations', fn ($query) => $query->whereNotIn('status', ['cancelled', 'expired']))
+            ->exists();
+        if ($hasActiveReservations) {
+            return back()->withInput()->withErrors([
+                'seat_capacity' => 'No puedes reducir la capacidad mientras existan reservas vigentes en salidas futuras.',
+            ]);
+        }
+
+        $requiresReview = collect(['registration_number', 'vessel_type', 'seat_capacity'])
+            ->contains(fn ($field) => (string) $vessel->{$field} !== (string) $data[$field]);
+        $wasOperational = in_array($vessel->status, ['ready', 'pending_review'], true);
+        $changes = $data;
+        if ($requiresReview && $wasOperational) {
+            $changes += [
+                'status' => 'draft',
+                'review_notes' => null,
+                'submitted_for_review_at' => null,
+                'reviewed_at' => null,
+                'reviewed_by' => null,
+            ];
+        }
+
+        $vessel->update($changes);
+
+        $message = $requiresReview && $wasOperational
+            ? 'Datos actualizados. Como cambiaste información técnica, debes completar el plano y enviar nuevamente la embarcación a revisión.'
+            : 'Datos de la embarcación actualizados correctamente.';
+
+        return redirect()->route('company.fleet.index')->with('success', $message);
+    }
+
     public function submitVesselForReview(Vessel $vessel): RedirectResponse
     {
         $organization = $this->organization();

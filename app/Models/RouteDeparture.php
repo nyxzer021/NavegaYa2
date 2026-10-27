@@ -22,12 +22,14 @@ class RouteDeparture extends Model
         'transport_route_id', 'vessel_id', 'departure_at', 'boarding_starts_at',
         'cargo_reception_starts_at', 'estimated_arrival_at', 'fare', 'cargo_enabled',
         'included_baggage_kg', 'cargo_payment_location', 'status', 'is_published', 'notes', 'cargo_notes',
+        'previous_departure_at', 'disruption_type', 'disruption_reason', 'status_changed_by_user_id', 'status_changed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'departure_at' => 'datetime',
+            'previous_departure_at' => 'datetime',
             'boarding_starts_at' => 'datetime',
             'cargo_reception_starts_at' => 'datetime',
             'estimated_arrival_at' => 'datetime',
@@ -35,6 +37,7 @@ class RouteDeparture extends Model
             'cargo_enabled' => 'boolean',
             'included_baggage_kg' => 'integer',
             'is_published' => 'boolean',
+            'status_changed_at' => 'datetime',
         ];
     }
 

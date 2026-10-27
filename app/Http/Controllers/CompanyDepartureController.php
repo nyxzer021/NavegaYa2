@@ -6,6 +6,7 @@ use App\Models\Aircraft;
 use App\Models\AirDeparture;
 use App\Models\CargoShipment;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\RouteDeparture;
 use App\Models\Vessel;
@@ -55,10 +56,15 @@ class CompanyDepartureController extends Controller
             ->where('organization_id', $organizationId)
             ->whereNotNull('master_route_id')
             ->whereColumn('origin_city', '<>', 'destination_city'))->whereDate('departure_at', today());
-        $reservationScope = $this->reservationScope($organization);
-        $todayGrossRevenue = (float) (clone $reservationScope)->where('status', 'confirmed')->whereDate('updated_at', today())->sum('total_amount');
-        $todayPassengersCount = (clone $reservationScope)->whereNotIn('status', ['cancelled', 'expired'])->whereDate('created_at', today())->withCount('seats')->get()->sum('seats_count');
-        $commissionRate = (float) ($organization->commission_rate ?? 8);
+        $todayGrossRevenue = (float) Payment::query()->where('status', 'confirmed')->whereDate('paid_at', today())
+            ->whereHas('reservation', fn ($query) => $query->where(function ($scope) use ($organization) {
+                $scope->whereHas('departure.transportRoute', fn ($route) => $route->where('organization_id', $organization->id))
+                    ->orWhereHas('airDeparture.airRoute', fn ($route) => $route->where('organization_id', $organization->id));
+            }))->sum('amount');
+        $todayPassengersCount = (clone $todayRiver)->with(['reservations' => fn ($query) => $query->where('status', 'confirmed')->withCount('seats')])->get()
+            ->sum(fn ($departure) => $departure->reservations->sum('seats_count'))
+            + (clone $todayAir)->with(['reservations' => fn ($query) => $query->where('status', 'confirmed')->withCount('seats')])->get()
+                ->sum(fn ($departure) => $departure->reservations->sum('seats_count'));
 
         return view('company.departures.index', [
             'organization' => $organization,
@@ -67,8 +73,6 @@ class CompanyDepartureController extends Controller
             'todayDeparturesCount' => (clone $todayRiver)->count() + (clone $todayAir)->count(),
             'todayPassengersCount' => $todayPassengersCount,
             'todayGrossRevenue' => $todayGrossRevenue,
-            'commissionRate' => $commissionRate,
-            'todayCommissionRetained' => round(($todayGrossRevenue * $commissionRate) / 100, 2),
             'pendingCargoCount' => CargoShipment::query()->where(function ($query) use ($organization) {
                 $query->whereHas('departure.transportRoute', fn ($route) => $route->where('organization_id', $organization->id))
                     ->orWhereHas('airDeparture.airRoute', fn ($route) => $route->where('organization_id', $organization->id));

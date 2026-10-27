@@ -22,9 +22,12 @@ class CompanyPosController extends Controller
         $organizationId = AdminScope::organizationId($request->user());
         abort_unless($organizationId, 403);
         $organization = Organization::with('vessels.basePort')->findOrFail($organizationId);
+        $expired = Reservation::where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
+        ReservationSeat::whereIn('reservation_id', $expired)->delete();
+        Reservation::whereIn('id', $expired)->update(['status' => 'expired']);
         $departures = RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
-            ->whereDate('departure_at', today())->where('status', 'scheduled')
+            ->whereDate('departure_at', today())->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])->where('is_published', true)
             ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.seats'])
             ->orderBy('departure_at')->get();
         $selectedDeparture = $departures->firstWhere('id', $request->integer('departure')) ?? $departures->first();
@@ -50,6 +53,7 @@ class CompanyPosController extends Controller
         $organizationId = AdminScope::organizationId($request->user());
         $departure = RouteDeparture::with('transportRoute')->findOrFail($data['departure_id']);
         abort_unless((int) $departure->transportRoute->organization_id === (int) $organizationId && $departure->departure_at->isToday(), 403);
+        abort_unless($departure->is_published && in_array($departure->status, ['scheduled', 'delayed', 'rescheduled'], true), 422, 'La salida no está habilitada para ventas.');
 
         $reservation = DB::transaction(function () use ($data, $departure) {
             $expired = Reservation::where('route_departure_id', $departure->id)->where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');

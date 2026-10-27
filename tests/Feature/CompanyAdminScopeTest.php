@@ -56,4 +56,25 @@ class CompanyAdminScopeTest extends TestCase
 
         $this->get(route('company.vessels.seats.edit', $otherVessel))->assertForbidden();
     }
+
+    public function test_company_administrator_can_edit_own_vessel_and_critical_changes_require_review_again(): void
+    {
+        $first = Organization::create(['type' => 'transport_company', 'legal_name' => 'Fluvial Uno SAC', 'ruc' => '20111111111', 'email' => 'uno@test.pe', 'status' => 'active']);
+        $second = Organization::create(['type' => 'transport_company', 'legal_name' => 'Fluvial Dos SAC', 'ruc' => '20222222222', 'email' => 'dos@test.pe', 'status' => 'active']);
+        $ownVessel = Vessel::create(['organization_id' => $first->id, 'name' => 'Nave Uno', 'registration_number' => 'N-001', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
+        $foreignVessel = Vessel::create(['organization_id' => $second->id, 'name' => 'Nave Dos', 'registration_number' => 'N-002', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador de empresa']), ['organization_id' => $first->id]);
+        $user->organizations()->attach($first->id, ['status' => 'active']);
+
+        $this->actingAs($user)->patch(route('company.fleet.vessels.update', $ownVessel), [
+            'name' => 'Nave Uno Renovada', 'registration_number' => 'N-001', 'vessel_type' => 'rapido',
+            'seat_capacity' => 24, 'base_port_id' => null,
+        ])->assertRedirect(route('company.fleet.index'));
+
+        $this->assertDatabaseHas('vessels', ['id' => $ownVessel->id, 'name' => 'Nave Uno Renovada', 'vessel_type' => 'rapido', 'seat_capacity' => 24, 'status' => 'draft']);
+        $this->patch(route('company.fleet.vessels.update', $foreignVessel), [
+            'name' => 'Alterada', 'registration_number' => 'N-002', 'vessel_type' => 'lancha', 'seat_capacity' => 20,
+        ])->assertForbidden();
+    }
 }

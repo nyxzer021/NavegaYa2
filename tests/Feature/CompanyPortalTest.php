@@ -92,6 +92,64 @@ class CompanyPortalTest extends TestCase
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
     }
 
+    public function test_company_admin_can_reprogram_a_departure_with_traceability(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Contingencia', '20888888888');
+        $departure = $this->departure($organization, 'Nave Operativa', 'Iquitos', 'Nauta');
+        $originalDepartureAt = $departure->departure_at;
+        $newDepartureAt = now()->addDays(2)->setTime(10, 30);
+
+        $response = $this->actingAs($admin)->patch(route('company.departures.contingency', $departure), [
+            'action' => 'reschedule',
+            'departure_at' => $newDepartureAt->format('Y-m-d H:i:s'),
+            'reason' => 'Cierre preventivo del puerto por seguridad.',
+        ]);
+
+        $response->assertRedirect()->assertSessionHas('success');
+        $departure->refresh();
+        $this->assertSame('rescheduled', $departure->status);
+        $this->assertSame($originalDepartureAt->format('Y-m-d H:i:s'), $departure->previous_departure_at->format('Y-m-d H:i:s'));
+        $this->assertSame($newDepartureAt->format('Y-m-d H:i:s'), $departure->departure_at->format('Y-m-d H:i:s'));
+        $this->assertSame($admin->id, $departure->status_changed_by_user_id);
+        $this->assertSame('Cierre preventivo del puerto por seguridad.', $departure->disruption_reason);
+    }
+
+    public function test_company_admin_cannot_change_another_company_departure(): void
+    {
+        [$admin] = $this->companyAdmin('Operador Propio', '20999999991');
+        [, $otherOrganization] = $this->companyAdmin('Operador Ajeno', '20999999992');
+        $foreignDeparture = $this->departure($otherOrganization, 'Nave Ajena', 'Nauta', 'Lagunas');
+
+        $response = $this->actingAs($admin)->patch(route('company.departures.contingency', $foreignDeparture), [
+            'action' => 'cancel',
+            'reason' => 'Intento no autorizado.',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertSame('scheduled', $foreignDeparture->fresh()->status);
+    }
+
+    public function test_company_cannot_sell_on_a_cancelled_departure(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Venta Segura', '20999999993');
+        $departure = $this->departure($organization, 'Nave Cerrada', 'Iquitos', 'Pebas');
+        $departure->update(['departure_at' => now()->setTime(15, 0), 'status' => 'cancelled', 'is_published' => false]);
+        $seat = $departure->vessel->seats()->create(['code' => '1A', 'row_position' => 1, 'column_position' => 1, 'deck' => 1, 'is_available' => true]);
+
+        $response = $this->actingAs($admin)->post(route('company.pos.store'), [
+            'departure_id' => $departure->id,
+            'seat_id' => $seat->id,
+            'document_type' => 'DNI',
+            'document_number' => '12345678',
+            'passenger_name' => 'Pasajero Seguro',
+            'passenger_age' => 30,
+            'phone' => '999999999',
+        ]);
+
+        $response->assertUnprocessable();
+        $this->assertDatabaseMissing('reservations', ['route_departure_id' => $departure->id]);
+    }
+
     private function companyAdmin(string $name, string $ruc): array
     {
         $organization = Organization::create(['type' => 'transport_company', 'legal_name' => $name, 'ruc' => $ruc, 'email' => strtolower(str_replace(' ', '', $name)).'@test.pe', 'status' => 'active']);
