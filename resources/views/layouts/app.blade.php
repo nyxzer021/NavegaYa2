@@ -10,7 +10,7 @@
     {{ $head ?? '' }}@stack('styles')
     <style>html,body{background:#f8fafc!important}body{font-family:'Plus Jakarta Sans',sans-serif!important}[x-cloak]{display:none!important}</style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+<body class="ny-public-portal bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
     @include('layouts.partials.topbar')
     @include('layouts.partials.header', ['current' => $current ?? ''])
     <main class="w-full flex-grow">{{ $slot ?? '' }}@yield('content')</main>

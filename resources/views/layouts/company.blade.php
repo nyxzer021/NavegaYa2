@@ -23,7 +23,7 @@
     $hasRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
     $hasAir = in_array($organization->modality ?: 'fluvial', ['aereo', 'mixto'], true);
 @endphp
-<body class="min-h-full bg-slate-50 text-slate-800 antialiased">
+<body class="ny-company-portal min-h-full bg-slate-50 text-slate-800 antialiased">
     <div class="company-shell min-h-screen bg-slate-50 flex flex-row">
         <aside class="company-sidebar flex h-screen min-h-screen w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0 flex-col overflow-y-auto bg-[#062c21] p-4 text-white">
             <a href="{{ route('home') }}" class="mb-6 flex items-center gap-3 border-b border-white/10 pb-5">

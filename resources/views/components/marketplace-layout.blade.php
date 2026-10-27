@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-full bg-slate-50 font-sans text-slate-800 antialiased">
+<body class="ny-marketplace-portal min-h-full bg-slate-50 font-sans text-slate-800 antialiased">
     @php($unreadSupportCount = auth()->check() ? \App\Models\SupportTicket::query()->where('user_id', auth()->id())->whereNotNull('admin_response')->where(fn($query) => $query->whereNull('requester_viewed_at')->orWhereColumn('requester_viewed_at', '<', 'responded_at'))->count() : 0)
     @php($businessOrganizationId = auth()->check() ? auth()->user()->organizations()->value('organizations.id') : null)
     @php($unreadBusinessMessages = $businessOrganizationId ? \App\Models\BusinessConversation::query()->where('organization_id',$businessOrganizationId)->whereHas('messages',fn($query)=>$query->whereHas('sender.roles',fn($roles)=>$roles->whereIn('code',['super_admin','admin']))->where(fn($unread)=>$unread->whereColumn('business_messages.created_at','>','business_conversations.business_last_read_at')->orWhereNull('business_conversations.business_last_read_at')))->count() : 0)

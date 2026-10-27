@@ -25,7 +25,7 @@
         }
     </style>
 </head>
-<body class="ny-app bg-slate-100 font-sans antialiased text-slate-800">
+<body class="ny-app ny-admin-portal bg-slate-100 font-sans antialiased text-slate-800">
     <div class="ny-shell min-h-screen">
         @include('layouts.partials.admin-sidebar')
 

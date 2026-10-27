@@ -1,6 +1,6 @@
 <style>
 /* Compatibility layer for legacy ny-* admin screens. Kept here so every admin route receives the same visual system. */
-.ny-main{--ny-control-height:36px;--ny-control-radius:8px;--ny-panel-radius:14px;--ny-panel-padding:16px;color:#18312b}
+.ny-main{--ny-control-height:42px;--ny-control-radius:12px;--ny-panel-radius:16px;--ny-panel-padding:16px;color:#18312b}
 .ny-main>main{font-size:12.5px;line-height:1.42;color:#334155}
 .ny-main>main h1,.ny-main>main .text-3xl{font-size:22px!important;line-height:1.18!important;letter-spacing:-.025em}
 .ny-main>main h2,.ny-main>main .text-2xl{font-size:18px!important;line-height:1.25!important;letter-spacing:-.015em}
@@ -11,9 +11,10 @@
 .ny-main>main .rounded-2xl{border-radius:14px!important}
 .ny-main>main .rounded-xl{border-radius:var(--ny-control-radius)!important}
 .ny-main>main .p-7{padding:20px!important}.ny-main>main .p-6{padding:18px!important}.ny-main>main .p-5{padding:16px!important}
-.ny-main>main input:not([type=checkbox]):not([type=radio]):not([type=color]),.ny-main>main select{min-height:var(--ny-control-height)!important;padding:.5rem .75rem!important;border-color:#cbd5e1!important;border-radius:var(--ny-control-radius)!important;background-color:#fff;font-size:12.5px!important;line-height:1.25!important}
-.ny-main>main textarea{min-height:64px;max-height:140px;padding:.55rem .7rem!important;border-color:#cbd5e1!important;border-radius:var(--ny-control-radius)!important;background-color:#fff;font-size:12px!important;line-height:1.4!important;resize:vertical}
-.ny-main>main input:focus,.ny-main>main select:focus,.ny-main>main textarea:focus{border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important;outline:0!important}
+.ny-main>main input:not([type=checkbox]):not([type=radio]):not([type=color]),.ny-main>main select{min-height:var(--ny-control-height)!important;padding:.58rem .8rem!important;border-color:#cbdcd6!important;border-radius:var(--ny-control-radius)!important;background-color:#fff;font-size:12.5px!important;line-height:1.25!important;box-shadow:0 1px 2px rgba(15,45,37,.04)!important}
+.ny-main>main select{padding-right:2.5rem!important}
+.ny-main>main textarea{min-height:76px;max-height:160px;padding:.65rem .8rem!important;border-color:#cbdcd6!important;border-radius:var(--ny-control-radius)!important;background-color:#fff;font-size:12px!important;line-height:1.4!important;resize:vertical;box-shadow:0 1px 2px rgba(15,45,37,.04)!important}
+.ny-main>main input:focus,.ny-main>main select:focus,.ny-main>main textarea:focus{border-color:#0f766e!important;box-shadow:0 0 0 4px rgba(15,118,110,.13)!important;outline:0!important}
 .ny-main>main input[type=checkbox],.ny-main>main input[type=radio]{box-sizing:border-box!important;width:17px!important;min-width:17px!important;max-width:17px!important;height:17px!important;min-height:17px!important;max-height:17px!important;padding:0!important;flex:0 0 17px!important;border:1.5px solid #94a3b8!important;border-radius:4px!important;accent-color:#047857}.ny-main>main input[type=radio]{border-radius:50%!important}.ny-main>main .permission-check:checked{border-color:#047857!important;background-color:#047857!important}
 .ny-main>main button,.ny-main>main a[class*="px-"]{min-height:34px;line-height:1.2}
 .ny-main>main label{line-height:1.35}
