@@ -1,6 +1,6 @@
 <style>
 /* Compatibility layer for legacy ny-* admin screens. Kept here so every admin route receives the same visual system. */
-.ny-main{--ny-control-height:42px;--ny-control-radius:12px;--ny-panel-radius:16px;--ny-panel-padding:16px;color:#18312b}
+.ny-main{--ny-control-height:42px;--ny-control-radius:9px;--ny-panel-radius:16px;--ny-panel-padding:16px;color:#18312b}
 .ny-main>main{font-size:12.5px;line-height:1.42;color:#334155}
 .ny-main>main h1,.ny-main>main .text-3xl{font-size:22px!important;line-height:1.18!important;letter-spacing:-.025em}
 .ny-main>main h2,.ny-main>main .text-2xl{font-size:18px!important;line-height:1.25!important;letter-spacing:-.015em}
