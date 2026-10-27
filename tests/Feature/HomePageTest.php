@@ -29,8 +29,8 @@ class HomePageTest extends TestCase
 
         $this->get(route('home', ['transport' => 'river', 'origin' => 'Iquitos', 'destination' => 'Nauta', 'passengers' => 2]))
             ->assertOk()->assertSee('Resultados de tu búsqueda')->assertSee('Iquitos')->assertSee('Nauta')
-            ->assertSee('<option value="Iquitos" selected>', false)
-            ->assertSee('<option value="Nauta" selected>', false)
-            ->assertSee('<option value="2" selected>', false);
+            ->assertSee('id="origin" name="origin" value="Iquitos"', false)
+            ->assertSee('id="destination" name="destination" value="Nauta"', false)
+            ->assertSee('id="passengers" name="passengers" value="2"', false);
     }
 }
