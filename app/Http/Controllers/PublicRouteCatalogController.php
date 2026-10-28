@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AirDeparture;
+use App\Models\AirRoute;
+use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
 use Illuminate\Http\Request;
@@ -21,7 +23,10 @@ class PublicRouteCatalogController
                 ->when($request->filled('destination'), fn ($query) => $query->whereHas('airRoute', fn ($route) => $route->where('destination_city', $request->string('destination')->toString())))
                 ->when($request->date('date'), fn ($query, $date) => $query->whereDate('departure_at', $date))
                 ->orderBy('departure_at')->get();
-            $cities = $airDepartures->flatMap(fn ($departure) => [$departure->airRoute->origin_city, $departure->airRoute->destination_city])->filter()->unique()->sort()->values();
+            $cities = AirRoute::query()->get(['origin_city', 'destination_city'])
+                ->flatMap(fn ($route) => [$route->origin_city, $route->destination_city])
+                ->merge(['Iquitos', 'Nauta', 'Yurimaguas', 'Santa Rosa'])
+                ->filter()->unique()->sort()->values();
             $dateGroups = $airDepartures->groupBy(fn ($departure) => $departure->departure_at->toDateString());
 
             return view('routes.air', compact('airDepartures', 'cities', 'dateGroups'));
@@ -48,7 +53,11 @@ class PublicRouteCatalogController
                 }
             })
             ->orderBy('departure_at')->get()->unique(fn ($departure) => $departure->transport_route_id.'|'.$departure->departure_at->toDateString())->values();
-        $cities = $departures->flatMap(fn ($departure) => [$departure->transportRoute->originPort->city, $departure->transportRoute->destinationPort->city])->filter()->unique()->sort()->values();
+        // El catálogo debe ofrecer ciudades aunque todavía no exista una salida futura.
+        // Las salidas determinan los resultados, no las opciones disponibles del buscador.
+        $cities = Port::query()->where('is_active', true)->pluck('city')
+            ->merge(['Iquitos', 'Nauta', 'Yurimaguas', 'Santa Rosa'])
+            ->filter()->unique()->sort()->values();
         $groups = $departures->groupBy(fn ($departure) => $departure->transportRoute->originPort->city.' → '.$departure->transportRoute->destinationPort->city);
         $dateGroups = $departures->groupBy(fn ($departure) => $departure->departure_at->toDateString());
         $whatsappNumber = SystemSetting::value('whatsapp_number');

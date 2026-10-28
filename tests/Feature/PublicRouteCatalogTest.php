@@ -25,4 +25,17 @@ class PublicRouteCatalogTest extends TestCase
         $this->get(route('routes.index'))->assertOk()->assertSee('Nave Catálogo');
         $this->get(route('routes.index', ['origin' => 'Iquitos']))->assertOk()->assertSee('Iquitos → Nauta');
     }
+
+    public function test_route_search_keeps_master_cities_when_there_are_no_departures(): void
+    {
+        Port::create(['name' => 'Puerto Pebas', 'city' => 'Pebas', 'region' => 'Loreto', 'is_active' => true]);
+
+        $this->get(route('routes.index'))
+            ->assertOk()
+            ->assertSee('data-value="Iquitos"', false)
+            ->assertSee('data-value="Nauta"', false)
+            ->assertSee('data-value="Yurimaguas"', false)
+            ->assertSee('data-value="Santa Rosa"', false)
+            ->assertSee('data-value="Pebas"', false);
+    }
 }
