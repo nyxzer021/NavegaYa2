@@ -9,15 +9,15 @@
 <x-slot:head><style>#resultados,footer>div{max-width:72rem!important}[hidden]{display:none!important}.ny-modal-open{display:grid!important}</style></x-slot:head>
 <div class="min-h-screen w-full overflow-x-hidden bg-slate-50">
  <main class="mx-auto min-h-screen w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-  <x-amazon-hero-bg theme="home" class="mx-auto min-h-[270px] w-full max-w-6xl text-center shadow-xl sm:min-h-[300px]" overlay="from-slate-950/72 via-[#062c21]/48 to-slate-900/12">
-   <div class="flex w-full flex-col items-center px-4 pb-12 pt-10 sm:pb-14 sm:pt-12">
+  <x-amazon-hero-bg theme="home" class="mx-auto min-h-[235px] w-full max-w-5xl text-center shadow-xl sm:min-h-[265px]" overlay="from-slate-950/72 via-[#062c21]/48 to-slate-900/12">
+   <div class="flex w-full flex-col items-center px-4 pb-10 pt-8 sm:pb-11 sm:pt-9">
     <span class="rounded-full border border-emerald-500/30 bg-emerald-900/70 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-300 backdrop-blur-sm">Pasajes fluviales y aéreos en Loreto</span>
-    <h1 class="mt-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">{{$heroTitle}}</h1>
+    <h1 class="mt-3 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl">{{$heroTitle}}</h1>
     <p class="mt-3 max-w-xl text-sm font-normal text-emerald-100/90 md:text-base">{{$heroSubtitle}}</p>
-    <div class="mt-6 flex flex-wrap justify-center gap-3"><a href="#buscar" class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-extrabold text-emerald-950 shadow-lg shadow-black/15 transition hover:bg-amber-300">🔎 Buscar pasajes</a><a href="{{route('guide.index')}}" class="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20">🌿 Explorar Loreto</a></div>
+    <div class="mt-5 flex flex-wrap justify-center gap-3"><a href="#buscar" class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-extrabold text-emerald-950 shadow-lg shadow-black/15 transition hover:bg-amber-300">🔎 Buscar pasajes</a><a href="{{route('guide.index')}}" class="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20">🌿 Explorar Loreto</a></div>
    </div>
   </x-amazon-hero-bg>
- <div id="buscar" class="relative z-20 mx-auto -mt-5 max-w-3xl px-4">
+ <div id="buscar" class="relative z-20 mx-auto -mt-5 w-full max-w-5xl px-0 sm:px-4">
   <div class="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-xl md:p-4">
    <div class="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
     <div class="inline-flex rounded-xl bg-slate-100 p-1" aria-label="Modalidad de transporte"><button type="button" data-transport-tab="river" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"><span>🚤</span> Fluvial</button><button type="button" data-transport-tab="air" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"><span>✈️</span> Aéreo</button></div>
