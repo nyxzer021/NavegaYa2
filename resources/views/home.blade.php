@@ -19,9 +19,9 @@
   </x-amazon-hero-bg>
   <button id="swapRoute" type="button" class="hidden" tabindex="-1" aria-hidden="true">Intercambiar origen y destino</button>
 
- <div id="buscar" class="relative z-20 mx-auto -mt-5 max-w-5xl px-4">
-  <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-xl md:p-6">
-   <div class="mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-3">
+ <div id="buscar" class="relative z-20 mx-auto -mt-5 max-w-4xl px-4">
+  <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-xl md:p-5">
+   <div class="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
     <div class="inline-flex rounded-xl bg-slate-100 p-1" aria-label="Modalidad de transporte"><button type="button" data-transport-tab="river" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"><span>🚤</span> Fluvial</button><button type="button" data-transport-tab="air" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"><span>✈️</span> Aéreo</button></div>
     <div class="flex items-center gap-1 rounded-xl border border-slate-200/60 bg-slate-50 p-1 text-xs"><button type="button" data-trip-type="one_way" class="rounded-lg px-3 py-1 font-semibold transition">Solo ida</button><button type="button" data-trip-type="round_trip" class="rounded-lg px-3 py-1 font-medium transition">Ida y vuelta</button></div>
    </div>
