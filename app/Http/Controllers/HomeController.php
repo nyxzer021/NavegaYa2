@@ -11,11 +11,14 @@ use App\Models\HomeHeroSlide;
 use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
+use App\Services\AdvertisementInventoryService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HomeController
 {
+    public function __construct(private readonly AdvertisementInventoryService $advertising) {}
+
     public function __invoke(Request $request): View
     {
         $search = $request->validate([
@@ -48,42 +51,27 @@ class HomeController
             ->when($date, fn ($q) => $q->whereDate('departure_at', $date))
             ->orderBy('departure_at')->limit(12)->get();
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
-        $carouselAds = Advertisement::with('city')
-            ->active()
-            ->where(function ($query) {
-                $query->whereJsonContains('placements', 'home_carousel')
-                    ->orWhereJsonContains('placements', 'home_hero');
-            })
-            ->orderBy('views')
-            ->orderBy('id')
-            ->limit(6)
-            ->get();
-        $sidebarQuery = Advertisement::with('city')->active()->forPlacement('home_sidebar')
-            ->whereNotIn('id', $carouselAds->pluck('id'))
-            ->whereNotIn('business_name', $carouselAds->pluck('business_name'));
+        $carouselAds = $this->advertising->select('home_carousel', 6);
+        if ($carouselAds->isEmpty()) $carouselAds = $this->advertising->select('home_hero', 6);
         $sideAd = null;
         $sessionSideAdId = $request->session()->get('home_sidebar_ad_id');
         if ($sessionSideAdId) {
-            $sideAd = (clone $sidebarQuery)->whereKey($sessionSideAdId)->first();
+            $sideAd = Advertisement::with('city')->active()->forPlacement('home_sidebar')->whereKey($sessionSideAdId)->first();
+            if ($sideAd && (($sideAd->organization_id && $carouselAds->contains('organization_id', $sideAd->organization_id)) || $carouselAds->contains('business_name', $sideAd->business_name))) $sideAd = null;
         }
         if (! $sideAd) {
-            $sideAd = (clone $sidebarQuery)->orderBy('views')->inRandomOrder()->first();
+            $sideAd = $this->advertising->select('home_sidebar', 1, $carouselAds)->first();
             $request->session()->put('home_sidebar_ad_id', $sideAd?->id);
         }
-        $ads = Advertisement::with('city')->active()->forPlacement('home_recommendations')
-            ->whereNotIn('id', $carouselAds->pluck('id')->push($sideAd?->id)->filter())
-            ->whereNotIn('business_name', $carouselAds->pluck('business_name')->push($sideAd?->business_name)->filter())
-            ->orderBy('views')->limit(3)->get();
+        $visible = $carouselAds->concat([$sideAd])->filter()->values();
+        $ads = $this->advertising->select('home_recommendations', 3, $visible);
         $popupAd = null;
         if (! $hasSearch) {
-            $visibleAdIds = $carouselAds->pluck('id')->push($sideAd?->id)->merge($ads->pluck('id'))->filter();
-            $popupAd = Advertisement::with('city')->active()->forPlacement('home_popup')
-                ->whereNotIn('id', $visibleAdIds)
-                ->orderBy('views')->orderBy('id')->first();
+            $popupAd = $this->advertising->select('home_popup', 1, $visible->merge($ads))->first();
         }
-        $carouselAds->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
-        $sideAd?->increment('views');
-        $ads->each(fn (Advertisement $advertisement) => $advertisement->increment('views'));
+        $this->advertising->register($carouselAds);
+        $this->advertising->register($sideAd);
+        $this->advertising->register($ads);
         $riverCities = Port::query()->where('is_active', true)->pluck('city');
         $airCities = AirRoute::query()->get(['origin_city', 'destination_city'])->flatMap(fn ($route) => [$route->origin_city, $route->destination_city]);
         $citiesForSearch = $riverCities->merge($airCities)->filter()->unique()->sort()->values();

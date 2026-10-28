@@ -17,13 +17,13 @@
     <div class="mt-6 flex flex-wrap justify-center gap-3"><a href="#buscar" class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-extrabold text-emerald-950 shadow-lg shadow-black/15 transition hover:bg-amber-300">🔎 Buscar pasajes</a><a href="{{route('guide.index')}}" class="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20">🌿 Explorar Loreto</a></div>
    </div>
   </x-amazon-hero-bg>
- <div id="buscar" class="relative z-20 mx-auto -mt-5 max-w-4xl px-4">
-  <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-xl md:p-5">
+ <div id="buscar" class="relative z-20 mx-auto -mt-5 max-w-3xl px-4">
+  <div class="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-xl md:p-4">
    <div class="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
     <div class="inline-flex rounded-xl bg-slate-100 p-1" aria-label="Modalidad de transporte"><button type="button" data-transport-tab="river" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"><span>🚤</span> Fluvial</button><button type="button" data-transport-tab="air" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"><span>✈️</span> Aéreo</button></div>
     <div class="flex items-center gap-1 rounded-xl border border-slate-200/60 bg-slate-50 p-1 text-xs"><button type="button" data-trip-type="one_way" class="rounded-lg px-3 py-1 font-semibold transition">Solo ida</button><button type="button" data-trip-type="round_trip" class="rounded-lg px-3 py-1 font-medium transition">Ida y vuelta</button></div>
    </div>
-   <div class="mb-3"><span class="text-[9px] font-black uppercase tracking-[.16em] text-emerald-700">Planifica tu viaje</span><h2 class="mt-0.5 text-lg font-black tracking-tight text-slate-900">¿A dónde quieres ir?</h2></div>
+   <div class="mb-2.5"><span class="text-[8px] font-black uppercase tracking-[.16em] text-emerald-700">Planifica tu viaje</span><h2 class="mt-0.5 text-base font-black tracking-tight text-slate-900">¿A dónde quieres ir?</h2></div>
    <form id="homeSearchForm" action="{{route('home')}}#resultados" method="GET" class="relative grid grid-cols-1 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1.5 sm:grid-cols-2 lg:grid-cols-12">
     <input type="hidden" id="transportInput" name="transport" value="{{$activeTransport}}">
     <input type="hidden" id="tripTypeInput" name="trip_type" value="{{request('trip_type','one_way')}}">

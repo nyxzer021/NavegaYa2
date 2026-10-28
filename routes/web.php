@@ -42,6 +42,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusinessMessageController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Company\CompanyBoardingController;
+use App\Http\Controllers\Company\CompanyAdvertisingController;
 use App\Http\Controllers\Company\CompanyDepartureController;
 use App\Http\Controllers\Company\CompanyFleetController;
 use App\Http\Controllers\Company\CompanyPosController;
@@ -119,6 +120,9 @@ Route::middleware(['auth', 'role:company_admin|company_counter'])->prefix('empre
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
 });
 Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('company.')->group(function () {
+    Route::get('/publicidad', [CompanyAdvertisingController::class, 'index'])->name('advertising.index');
+    Route::post('/publicidad', [CompanyAdvertisingController::class, 'store'])->name('advertising.store');
+    Route::patch('/publicidad/{advertisement}/pausar', [CompanyAdvertisingController::class, 'pause'])->name('advertising.pause');
     Route::get('/flota', [CompanyFleetController::class, 'index'])->name('fleet.index');
     Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
     Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');

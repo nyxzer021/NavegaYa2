@@ -1,14 +1,12 @@
 @props(['placement' => 'home_hero', 'city' => null])
 
 @php
-    $query = \App\Models\Advertisement::query()->active()->forPlacement($placement);
-    if ($city) {
-        $query->where('city_destination', $city);
+    $inventory = app(\App\Services\AdvertisementInventoryService::class);
+    $ads = $inventory->select($placement, 5);
+    if ($city && $ads->contains(fn ($ad) => $ad->city_destination === $city)) {
+        $ads = $ads->sortByDesc(fn ($ad) => $ad->city_destination === $city)->values();
     }
-    $ads = $query->inRandomOrder()->limit(5)->get();
-    if ($ads->isNotEmpty()) {
-        $ads->first()->increment('views');
-    }
+    $inventory->register($ads);
 @endphp
 
 @if($ads->isNotEmpty())
