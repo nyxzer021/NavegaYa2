@@ -1,6 +1,12 @@
 @extends('layouts.admin')
 
 @section('title', 'Inventario e Itinerarios · NavegaYA')
+@section('header')
+    <div>
+        <p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Supervisión operativa</p>
+        <h1 class="ny-page-title">Supervisión de itinerarios</h1>
+    </div>
+@endsection
 @section('content')
 @php
     $activeTab = in_array(request('tab'), ['resumen', 'fluvial', 'aereo'], true) ? request('tab') : 'resumen';
@@ -9,16 +15,13 @@
     eyebrow="Supervisión operativa"
     title="Supervisión de itinerarios"
     description="Controla salidas, capacidad publicada, ocupación y disponibilidad del marketplace."
+    :show-header="false"
 >
-    <x-slot:actions>
-        <a href="{{ route('admin.dashboard') }}" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700">← Dashboard</a>
-        <span class="inline-flex h-10 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-800">{{ $operators->where('published_departures_count', '>', 0)->count() }} operadores con salidas</span>
-    </x-slot:actions>
-
     <x-slot:navigation>
         <a href="{{ route('admin.itineraries.index', ['tab' => 'resumen']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'resumen' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">Resumen</a>
         <a href="{{ route('admin.itineraries.index', ['tab' => 'fluvial']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'fluvial' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">🚤 Fluvial <span class="ml-1 text-[10px] text-slate-400">{{ $fluvialOperators->count() }}</span></a>
         <a href="{{ route('admin.itineraries.index', ['tab' => 'aereo']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'aereo' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">✈️ Aéreo <span class="ml-1 text-[10px] text-slate-400">{{ $airOperators->count() }}</span></a>
+        <span class="ml-auto hidden items-center rounded-lg bg-emerald-50 px-3 text-[10px] font-black text-emerald-800 sm:inline-flex">{{ $operators->where('published_departures_count', '>', 0)->count() }} operadores con salidas</span>
     </x-slot:navigation>
 
     @if(session('success'))<div class="mx-5 mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">✓ {{ session('success') }}</div>@endif

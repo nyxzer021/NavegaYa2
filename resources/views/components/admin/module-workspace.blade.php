@@ -3,10 +3,12 @@
     'title',
     'description',
     'initialTab' => 'resumen',
+    'showHeader' => true,
 ])
 
 <div {{ $attributes->class(['w-full min-w-0']) }}>
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        @if($showHeader)
         <header class="flex min-h-28 flex-col justify-between gap-5 border-b border-slate-200 px-5 py-5 lg:flex-row lg:items-center lg:px-6">
             <div class="min-w-0">
                 <p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">{{ $eyebrow }}</p>
@@ -17,6 +19,7 @@
                 <div class="flex shrink-0 flex-wrap items-center gap-2">{{ $actions }}</div>
             @endisset
         </header>
+        @endif
 
         @isset($metrics)
             <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-50/70 xl:grid-cols-4">{{ $metrics }}</div>
