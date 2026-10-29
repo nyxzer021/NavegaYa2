@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Organization;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SupportTicket;
 use App\Models\User;
@@ -60,5 +61,17 @@ class SupportTicketTest extends TestCase
     {
         $ticket = SupportTicket::create(['user_id' => User::factory()->create()->id, 'code' => 'SOL-DENIED', 'requester_type' => 'customer', 'category' => 'account', 'priority' => 'normal', 'subject' => 'Cuenta', 'description' => 'Detalle.']);
         $this->actingAs(User::factory()->create())->patch(route('admin.support.respond', $ticket), ['status' => 'resolved', 'admin_response' => 'Intento no autorizado.'])->assertForbidden();
+    }
+
+    public function test_limited_admin_needs_companies_permission_to_list_all_requests(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'admin'], ['name' => 'Administrador limitado']));
+
+        $this->actingAs($admin)->get(route('support.index'))->assertForbidden();
+
+        $admin->permissions()->attach(Permission::firstOrCreate(['code' => 'companies'], ['name' => 'Empresas']));
+
+        $this->actingAs($admin)->get(route('support.index'))->assertOk();
     }
 }

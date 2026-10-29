@@ -110,7 +110,7 @@ class PaymentWebhookController extends Controller
             Payment::updateOrCreate(['provider_reference' => $providerReference], [
                 'reservation_id' => null,
                 'subscription_id' => $subscription->id,
-                'purpose' => 'subscription',
+                'purpose' => $upgradePlan ? 'subscription_upgrade' : 'subscription',
                 'method' => $method ?? 'unknown',
                 'provider' => 'culqi',
                 'webhook_event_id' => $eventId,

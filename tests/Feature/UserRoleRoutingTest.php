@@ -24,7 +24,7 @@ class UserRoleRoutingTest extends TestCase
     {
         $super = User::factory()->create();
         $super->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super Admin']));
-        $this->actingAs($super)->get(route('dashboard'))->assertOk();
+        $this->actingAs($super)->get(route('dashboard'))->assertRedirect(route('admin.dashboard'));
 
         $organization = Organization::create(['type' => 'transport_company', 'legal_name' => 'Roles Loreto SAC', 'ruc' => '20999111222', 'email' => 'roles@example.test', 'status' => 'active']);
         $companyAdmin = User::factory()->create();

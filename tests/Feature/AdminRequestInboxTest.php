@@ -99,6 +99,37 @@ class AdminRequestInboxTest extends TestCase
             ->assertDontSee('Lodge Excepción');
     }
 
+    public function test_super_admin_can_approve_an_upgrade_payment_exception(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
+        $business = Organization::create([
+            'type' => 'marketplace_business', 'legal_name' => 'Lodge Upgrade SAC', 'commercial_name' => 'Lodge Upgrade',
+            'ruc' => '20111111112', 'email' => 'upgrade@test.pe', 'contact_name' => 'Rosa', 'status' => 'active',
+        ]);
+        $basic = SubscriptionPlan::create(['code' => 'basic-upgrade-test', 'name' => 'Básico', 'monthly_price' => 300, 'currency' => 'PEN', 'is_active' => true, 'benefits' => ['ad_limit' => 1]]);
+        $professional = SubscriptionPlan::create(['code' => 'professional-upgrade-test', 'name' => 'Profesional', 'monthly_price' => 750, 'currency' => 'PEN', 'is_active' => true, 'benefits' => ['ad_limit' => 3]]);
+        $subscription = Subscription::create([
+            'organization_id' => $business->id, 'subscription_plan_id' => $basic->id, 'status' => 'active',
+            'monthly_price' => 300, 'currency' => 'PEN', 'starts_on' => today()->subDays(3), 'ends_on' => today()->addDays(27),
+            'benefits_snapshot' => $basic->benefits,
+        ]);
+        $payment = Payment::create([
+            'subscription_id' => $subscription->id, 'purpose' => 'subscription_upgrade', 'method' => 'card', 'provider' => 'culqi',
+            'provider_reference' => 'review-upgrade-1', 'amount' => 400, 'currency_code' => 'PEN', 'status' => 'review_required',
+            'requires_review' => true, 'review_reason' => 'Validación manual del cambio de plan.',
+            'provider_payload' => ['metadata' => ['upgrade_plan_id' => (string) $professional->id]],
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.advertising-subscriptions.exceptions.resolve', $payment), [
+            'resolution' => 'approve',
+            'reason' => 'El pago fue contrastado manualmente con Culqi y es correcto.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('subscriptions', ['id' => $subscription->id, 'subscription_plan_id' => $professional->id, 'monthly_price' => 750]);
+        $this->assertDatabaseHas('payments', ['provider_reference' => 'review-upgrade-1', 'status' => 'confirmed', 'requires_review' => false]);
+    }
+
     public function test_opening_the_inbox_marks_current_notifications_as_seen(): void
     {
         $admin = User::factory()->create();

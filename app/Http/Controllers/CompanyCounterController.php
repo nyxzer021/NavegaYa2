@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AirDeparture;
+use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
-use App\Models\Organization;
 use App\Support\AdminScope;
 use Illuminate\View\View;
 
@@ -15,7 +15,7 @@ class CompanyCounterController extends Controller
     {
         $company = Organization::with('vessels.basePort')
             ->whereKey(AdminScope::organizationId(auth()->user()))
-            ->whereIn('status', ['active', 'pending'])
+            ->where('status', 'active')
             ->firstOrFail();
         $river = in_array($company->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::whereHas('transportRoute', fn ($query) => $query->where('organization_id', $company->id))
             ->whereDate('departure_at', today())->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])->orderBy('departure_at')->get()

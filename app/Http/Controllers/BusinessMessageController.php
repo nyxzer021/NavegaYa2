@@ -77,6 +77,14 @@ class BusinessMessageController extends Controller
 
     private function isAdmin(Request $request): bool
     {
-        return $request->user()->roles()->whereIn('code', ['super_admin', 'admin'])->exists();
+        $user = $request->user();
+        $isSuperAdmin = $user->roles()->where('code', 'super_admin')->exists();
+        $isAdmin = $user->roles()->where('code', 'admin')->exists();
+
+        if ($isAdmin && ! $isSuperAdmin) {
+            abort_unless($user->hasPermission('companies'), 403);
+        }
+
+        return $isSuperAdmin || $isAdmin;
     }
 }

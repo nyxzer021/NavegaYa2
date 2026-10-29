@@ -52,6 +52,14 @@ class CompanyAdvertisingTest extends TestCase
         $this->assertDatabaseMissing('advertisements', ['organization_id' => $organization->id, 'title' => 'Campaña no incluida']);
     }
 
+    public function test_pending_transport_company_cannot_access_advertising(): void
+    {
+        [$user, $organization] = $this->company();
+        $organization->update(['status' => 'pending']);
+
+        $this->actingAs($user)->get(route('company.advertising.index'))->assertNotFound();
+    }
+
     private function company(): array
     {
         $organization = Organization::create(['type' => 'transport_company', 'modality' => 'fluvial', 'legal_name' => 'Río Seguro SAC', 'commercial_name' => 'Río Seguro', 'ruc' => '20123456789', 'email' => 'rio@test.pe', 'phone' => '999999999', 'base_city' => 'Iquitos', 'status' => 'active']);
@@ -59,6 +67,7 @@ class CompanyAdvertisingTest extends TestCase
         $role = Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador empresa']);
         $user->roles()->attach($role, ['organization_id' => $organization->id]);
         $user->organizations()->attach($organization, ['status' => 'active']);
+
         return [$user, $organization];
     }
 }

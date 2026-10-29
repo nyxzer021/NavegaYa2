@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\BusinessConversation;
 use App\Models\Organization;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,5 +39,17 @@ class BusinessMessagingTest extends TestCase
         $other->organizations()->attach($otherOrganization->id, ['status' => 'active']);
         $other->roles()->attach($businessRole->id, ['organization_id' => $otherOrganization->id]);
         $this->actingAs($other)->post(route('messages.reply', $conversation), ['body' => 'No autorizado'])->assertForbidden();
+    }
+
+    public function test_limited_admin_needs_companies_permission_to_read_business_messages(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'admin'], ['name' => 'Administrador limitado']));
+
+        $this->actingAs($admin)->get(route('messages.index'))->assertForbidden();
+
+        $admin->permissions()->attach(Permission::firstOrCreate(['code' => 'companies'], ['name' => 'Empresas']));
+
+        $this->actingAs($admin)->get(route('messages.index'))->assertOk();
     }
 }

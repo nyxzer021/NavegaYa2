@@ -147,7 +147,10 @@ class CompanyDashboardController extends Controller
 
     private function organization()
     {
-        return auth()->user()->organizations()->where('organizations.type', 'transport_company')->where('organizations.status', 'active')->firstOrFail();
+        return auth()->user()->organizations()
+            ->where('organizations.type', 'transport_company')
+            ->whereIn('organizations.status', ['active', 'pending'])
+            ->firstOrFail();
     }
 
     public function updateBank(Request $request): RedirectResponse

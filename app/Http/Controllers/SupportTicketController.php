@@ -14,6 +14,9 @@ class SupportTicketController extends Controller
     {
         $roleCodes = $request->user()->roles()->pluck('code');
         $isAdmin = $roleCodes->intersect(['super_admin', 'admin'])->isNotEmpty();
+        if ($roleCodes->contains('admin') && ! $roleCodes->contains('super_admin')) {
+            abort_unless($request->user()->hasPermission('companies'), 403);
+        }
         $tickets = SupportTicket::query()
             ->with(['user', 'organization', 'responder'])
             ->when(! $isAdmin, fn ($query) => $query->where('user_id', $request->user()->id))

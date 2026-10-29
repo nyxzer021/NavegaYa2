@@ -40,12 +40,18 @@ class CompanyAdvertisingController extends Controller
             'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1536', 'dimensions:min_width=800,min_height=450'],
         ]);
         $subscription = $this->subscription($organization);
-        if (! $subscription) return back()->withErrors(['campaign' => 'La empresa necesita un plan publicitario activo. Solicítalo desde Mensajes comerciales.']);
+        if (! $subscription) {
+            return back()->withErrors(['campaign' => 'La empresa necesita un plan publicitario activo. Solicítalo desde Mensajes comerciales.']);
+        }
         $benefits = $subscription->benefits_snapshot ?: ($subscription->plan?->benefits ?? []);
         $limit = (int) data_get($benefits, 'ad_limit', 0);
         $used = $organization->advertisements()->whereIn('status', ['lead_pending', 'active', 'paused'])->count();
-        if ($limit > 0 && $used >= $limit) return back()->withErrors(['campaign' => "Tu plan permite {$limit} campaña(s) simultánea(s)."]);
-        if (! in_array($data['placement'], data_get($benefits, 'allowed_placements', self::PLACEMENTS), true)) return back()->withErrors(['placement' => 'Esta ubicación no está incluida en el plan de tu empresa.']);
+        if ($limit > 0 && $used >= $limit) {
+            return back()->withErrors(['campaign' => "Tu plan permite {$limit} campaña(s) simultánea(s)."]);
+        }
+        if (! in_array($data['placement'], data_get($benefits, 'allowed_placements', self::PLACEMENTS), true)) {
+            return back()->withErrors(['placement' => 'Esta ubicación no está incluida en el plan de tu empresa.']);
+        }
 
         $organization->advertisements()->create([
             'business_name' => $organization->commercial_name ?: $organization->legal_name, 'business_type' => 'charter_transport',
@@ -65,12 +71,17 @@ class CompanyAdvertisingController extends Controller
         $organization = $this->organization($request);
         abort_unless((int) $advertisement->organization_id === (int) $organization->id, 404);
         $advertisement->update(['status' => 'paused']);
+
         return back()->with('success', 'Campaña pausada.');
     }
 
     private function organization(Request $request): Organization
     {
-        return $request->user()->organizations()->where('organizations.type', 'transport_company')->firstOrFail();
+        return $request->user()->organizations()
+            ->where('organizations.type', 'transport_company')
+            ->where('organizations.status', 'active')
+            ->wherePivot('status', 'active')
+            ->firstOrFail();
     }
 
     private function subscription(Organization $organization)

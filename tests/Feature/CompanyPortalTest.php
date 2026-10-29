@@ -150,6 +150,30 @@ class CompanyPortalTest extends TestCase
         $this->assertDatabaseMissing('reservations', ['route_departure_id' => $departure->id]);
     }
 
+    public function test_pending_company_can_prepare_its_profile_and_fleet_but_cannot_operate(): void
+    {
+        $organization = Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => 'Operador en Validación',
+            'ruc' => '20999999994',
+            'email' => 'pendiente@test.pe',
+            'status' => 'pending',
+        ]);
+        $admin = User::factory()->create();
+        $role = Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador empresa']);
+        $admin->roles()->attach($role, ['organization_id' => $organization->id]);
+        $admin->organizations()->attach($organization->id, ['status' => 'pending']);
+
+        $this->actingAs($admin)->get(route('company.dashboard'))
+            ->assertOk()
+            ->assertSee('Validación pendiente')
+            ->assertDontSee('Vender pasaje');
+        $this->actingAs($admin)->get(route('company.fleet.index'))->assertOk();
+        $this->actingAs($admin)->get(route('company.departures.create'))->assertForbidden();
+        $this->actingAs($admin)->get(route('company.counter.index'))->assertNotFound();
+        $this->actingAs($admin)->get(route('company.pos.index'))->assertNotFound();
+    }
+
     private function companyAdmin(string $name, string $ruc): array
     {
         $organization = Organization::create(['type' => 'transport_company', 'legal_name' => $name, 'ruc' => $ruc, 'email' => strtolower(str_replace(' ', '', $name)).'@test.pe', 'status' => 'active']);

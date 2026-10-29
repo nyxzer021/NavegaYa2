@@ -147,6 +147,28 @@ class AdminGovernanceTest extends TestCase
             ->assertOk()->assertSee('Comisión NavegaYA')->assertDontSee('Mensaje inicial');
     }
 
+    public function test_super_admin_can_assign_contextual_placements_to_an_advertising_plan(): void
+    {
+        $admin = $this->userWithRole('super_admin');
+        $plan = SubscriptionPlan::create([
+            'code' => 'contextual-admin-test', 'name' => 'Profesional', 'monthly_price' => 750,
+            'currency' => 'PEN', 'is_active' => true, 'benefits' => [],
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.advertising-subscriptions.plans.update', $plan), [
+            'name' => 'Profesional', 'description' => 'Cobertura contextual', 'monthly_price' => 750,
+            'ad_limit' => 3, 'campaign_days' => 30, 'impressions' => 15000,
+            'placements' => ['home_carousel', 'search_results', 'trip_complete', 'post_purchase'],
+            'features' => "Segmentación por destino\nRecomendaciones posteriores",
+            'is_active' => 1,
+        ])->assertRedirect();
+
+        $this->assertSame(
+            ['home_carousel', 'search_results', 'trip_complete', 'post_purchase'],
+            $plan->refresh()->benefits['allowed_placements'],
+        );
+    }
+
     public function test_user_access_screen_only_lists_platform_administrators_and_explains_menu_access(): void
     {
         $superAdmin = $this->userWithRole('super_admin');

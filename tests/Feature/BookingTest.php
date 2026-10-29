@@ -66,4 +66,17 @@ class BookingTest extends TestCase
         $this->assertDatabaseMissing('reservation_seats', ['reservation_id' => $expired->id]);
         $this->assertDatabaseHas('reservations', ['id' => $expired->id, 'status' => 'expired']);
     }
+
+    public function test_cart_cannot_cancel_a_reservation_from_another_session(): void
+    {
+        [$departure] = $this->departureWithSeats();
+        $ownReservation = Reservation::create(['route_departure_id' => $departure->id, 'code' => 'NY-OWN', 'contact_name' => 'Propia', 'contact_email' => 'own@test.pe', 'contact_phone' => '900', 'total_amount' => 45, 'status' => 'pending_payment', 'expires_at' => now()->addMinutes(10)]);
+        $foreignReservation = Reservation::create(['route_departure_id' => $departure->id, 'code' => 'NY-FOREIGN', 'contact_name' => 'Ajena', 'contact_email' => 'foreign@test.pe', 'contact_phone' => '901', 'total_amount' => 45, 'status' => 'pending_payment', 'expires_at' => now()->addMinutes(10)]);
+
+        $this->withSession(['cart_reservation_ids' => [$ownReservation->id]])
+            ->delete(route('cart.remove', $foreignReservation))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('reservations', ['id' => $foreignReservation->id, 'status' => 'pending_payment']);
+    }
 }

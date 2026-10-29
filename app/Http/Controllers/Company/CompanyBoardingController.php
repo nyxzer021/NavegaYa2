@@ -84,6 +84,7 @@ class CompanyBoardingController extends Controller
     {
         $organizationId = AdminScope::organizationId($request->user());
         abort_unless($organizationId, 403);
+        abort_unless(Organization::query()->whereKey($organizationId)->where('status', 'active')->exists(), 403);
         abort_unless((int) $departure->transportRoute()->value('organization_id') === (int) $organizationId, 403);
 
         return $organizationId;

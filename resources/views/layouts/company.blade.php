@@ -14,6 +14,13 @@
         .company-shell { display: flex; flex-direction: row; height: 100vh; min-height: 100vh; width: 100%; overflow: hidden; }
         .company-sidebar { position: relative; flex: 0 0 16rem; width: 16rem; min-width: 16rem; max-width: 16rem; height: 100vh; overflow-y: auto; }
         .company-main { flex: 1 1 0%; min-width: 0; width: calc(100% - 16rem); height: 100vh; overflow-y: auto; }
+        @media (max-width: 1023px) {
+            .company-shell { display: block; height: auto; min-height: 100vh; overflow: visible; }
+            .company-sidebar { width: 100%; min-width: 0; max-width: none; height: auto; max-height: 24rem; }
+            .company-sidebar nav { flex-direction: row; overflow-x: auto; padding-bottom: .5rem; }
+            .company-sidebar nav > div { min-width: 14rem; }
+            .company-main { width: 100%; height: auto; min-height: 100vh; overflow: visible; padding: 1rem; }
+        }
     </style>
 </head>
 @php
@@ -22,6 +29,7 @@
     $basePort = $organization->vessels->first()?->basePort?->name ?? $organization->address ?? 'Base operativa por registrar';
     $hasRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
     $hasAir = in_array($organization->modality ?: 'fluvial', ['aereo', 'mixto'], true);
+    $isOperational = $organization->status === 'active';
 @endphp
 <body class="ny-company-portal min-h-full bg-slate-50 text-slate-800 antialiased">
     <div class="company-shell min-h-screen bg-slate-50 flex flex-row">
@@ -45,6 +53,7 @@
                 <div class="space-y-1 {{ $isCounter ? '' : 'order-2' }}">
                     <p class="px-3 pb-1 text-[9px] font-bold uppercase tracking-[.18em] text-emerald-400">Operación</p>
                     @unless($isCounter)<a href="{{ route('company.dashboard') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.dashboard') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"><span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">▦</span><span>Dashboard</span></a>@endunless
+                    @if($isOperational)
                     <a href="{{ route('company.departures.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.departures.*') && !request()->routeIs('company.boarding.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                         <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">🗓️</span><span>Salidas y despacho</span>
                     </a>
@@ -59,6 +68,7 @@
                     <a href="{{ route('company.pos.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.pos.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                         <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">🧾</span><span>Venta en muelle</span>
                     </a>
+                    @endif
                 </div>
                 @unless($isCounter)
                     <div class="order-1 space-y-1">
@@ -72,12 +82,15 @@
                     </div>
                     <div class="order-3 space-y-1">
                         <p class="px-3 pb-1 text-[9px] font-bold uppercase tracking-[.18em] text-emerald-400">Comercial</p>
+                        @if($isOperational)
                         <a href="{{ route('company.commissions.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.commissions.*', 'company.settlements.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">📊</span><span>Ventas y facturación</span>
                         </a>
                         <a href="{{ route('company.advertising.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.advertising.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">📣</span><span>Publicidad y campañas</span>
-                        </a>                        <a href="{{ route('support.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('support.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                        </a>
+                        @endif
+                        <a href="{{ route('support.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('support.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">🛟</span><span>Soporte e incidencias</span>
                         </a>
                         <a href="{{ route('messages.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('messages.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">

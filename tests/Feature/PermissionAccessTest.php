@@ -23,4 +23,16 @@ class PermissionAccessTest extends TestCase
         $this->actingAs($user)->get(route('admin.ports.index'))->assertOk();
         $this->actingAs($user)->get(route('admin.transport-routes.index'))->assertForbidden();
     }
+
+    public function test_restricted_administrator_is_sent_to_an_authorized_module_instead_of_executive_dashboard(): void
+    {
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::where('code', 'admin')->firstOrFail());
+        $user->permissions()->attach(Permission::where('code', 'ports')->firstOrFail());
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($user)->get(route('admin.dashboard'))
+            ->assertRedirect(route('admin.ports.index'));
+    }
 }

@@ -20,14 +20,19 @@ use App\Models\TransportRoute;
 use App\Models\Vessel;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class AdminDashboardController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        if (! $request->user()->roles()->where('code', 'super_admin')->exists()) {
+            return $this->redirectRestrictedAdministrator($request);
+        }
+
         [$period, $from, $to] = $this->period($request);
         $today = today();
 
@@ -443,7 +448,7 @@ class AdminDashboardController extends Controller
             $organizationName = $subscription->organization?->commercial_name ?: $subscription->organization?->legal_name ?: 'Empresa';
             $ads = $activeAdvertisements->filter(fn (Advertisement $ad) => mb_strtolower($ad->business_name) === mb_strtolower($organizationName));
 
-            return ['id' => $subscription->id, 'company' => $organizationName, 'modality' => $subscription->organization?->modality, 'plan' => $subscription->plan?->name ?? 'Sin plan', 'plan_code' => $subscription->plan?->code, 'ads' => $ads->count(), 'impressions' => $ads->sum('views'), 'target' => (int) data_get($subscription->plan?->benefits, 'impressions', 0), 'starts_on' => $subscription->starts_on, 'ends_on' => $subscription->ends_on, 'status' => $subscription->status];
+            return ['id' => $subscription->id, 'company' => $organizationName, 'modality' => $subscription->organization?->modality, 'plan' => $subscription->plan?->name ?? 'Sin plan', 'plan_code' => $subscription->plan?->code, 'ads' => $ads->count(), 'impressions' => $ads->sum('views'), 'target' => (int) data_get($subscription->benefits_snapshot ?: $subscription->plan?->benefits, 'impressions', 0), 'starts_on' => $subscription->starts_on, 'ends_on' => $subscription->ends_on, 'status' => $subscription->status];
         });
         $expiringSubscriptionsCount = $advertisingSubscriptions->filter(fn (Subscription $subscription) => $subscription->ends_on && $subscription->ends_on->between(today(), today()->addDays(7)))->count();
         $basicPlan = $subscriptionPlans->firstWhere('code', 'basic');
@@ -541,6 +546,32 @@ class AdminDashboardController extends Controller
             'subscriptionRevenueSeries',
             'subscriptionClientSeries',
         ));
+    }
+
+    private function redirectRestrictedAdministrator(Request $request): RedirectResponse
+    {
+        $destinations = [
+            'companies' => 'admin.companies.index',
+            'ports' => 'admin.ports.index',
+            'routes' => 'admin.itineraries.index',
+            'fleet' => 'admin.fleet-compliance.index',
+            'cargo' => 'admin.cargo.index',
+            'boarding' => 'admin.boarding.index',
+            'reports' => 'admin.sales.index',
+            'ads' => 'admin.advertisements.index',
+            'audit' => 'admin.audit.index',
+            'users' => 'admin.users.index',
+            'settings' => 'admin.settings.index',
+        ];
+
+        $permissionCodes = $request->user()->permissions()->pluck('code');
+        foreach ($destinations as $permission => $route) {
+            if ($permissionCodes->contains($permission)) {
+                return redirect()->route($route);
+            }
+        }
+
+        abort(403);
     }
 
     private function period(Request $request): array

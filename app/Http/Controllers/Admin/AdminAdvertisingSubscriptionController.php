@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Advertisement;
 use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Payment;
@@ -106,7 +107,7 @@ class AdminAdvertisingSubscriptionController extends Controller
             'name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:500'],
             'monthly_price' => ['required', 'numeric', 'min:0', 'max:99999'], 'ad_limit' => ['required', 'integer', 'min:0', 'max:99'],
             'campaign_days' => ['required', 'integer', 'min:1', 'max:365'], 'impressions' => ['nullable', 'integer', 'min:0'],
-            'placements' => ['required', 'array', 'min:1'], 'placements.*' => ['in:home_carousel,home_sidebar,home_recommendations,home_popup'],
+            'placements' => ['required', 'array', 'min:1'], 'placements.*' => ['in:'.implode(',', array_keys(Advertisement::PLACEMENTS))],
             'features' => ['nullable', 'string', 'max:2000'], 'is_active' => ['nullable', 'boolean'],
         ]);
         $features = collect(preg_split('/\r\n|\r|\n/', (string) ($data['features'] ?? '')))->map(fn ($feature) => trim($feature))->filter()->values()->all();
@@ -121,13 +122,21 @@ class AdminAdvertisingSubscriptionController extends Controller
 
     public function resolvePaymentException(Request $request, Payment $payment, SubscriptionPaymentService $payments): RedirectResponse
     {
-        abort_unless($payment->purpose === 'subscription' && $payment->requires_review, 404);
+        abort_unless(in_array($payment->purpose, ['subscription', 'subscription_upgrade'], true) && $payment->requires_review, 404);
         $data = $request->validate(['resolution' => ['required', Rule::in(['approve', 'reject'])], 'reason' => ['required', 'string', 'min:10', 'max:500']]);
         if ($data['resolution'] === 'approve') {
-            $payments->confirm($payment->subscription()->firstOrFail(), [
+            $subscription = $payment->subscription()->firstOrFail();
+            $paymentData = [
                 'method' => $payment->method, 'provider' => $payment->provider, 'provider_reference' => $payment->provider_reference,
                 'webhook_event_id' => $payment->webhook_event_id, 'provider_payload' => $payment->provider_payload,
-            ]);
+            ];
+            if ($payment->purpose === 'subscription_upgrade') {
+                $upgradePlanId = data_get($payment->provider_payload, 'metadata.upgrade_plan_id');
+                $upgradePlan = SubscriptionPlan::query()->where('is_active', true)->findOrFail($upgradePlanId);
+                $payments->confirmUpgrade($subscription, $upgradePlan, $paymentData);
+            } else {
+                $payments->confirm($subscription, $paymentData);
+            }
         } else {
             $payment->update(['status' => 'rejected', 'requires_review' => false, 'review_reason' => $data['reason']]);
         }

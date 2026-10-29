@@ -35,7 +35,7 @@ class MarketplaceBusinessController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate(['plan_id' => ['required', 'exists:subscription_plans,id'], 'destination_city_id' => ['required', 'exists:destination_cities,id'], 'type' => ['required', Rule::in(array_keys(self::TYPES))], 'business_name' => ['required', 'string', 'max:150'], 'legal_name' => ['required', 'string', 'max:180'], 'ruc' => ['required', 'digits:11', 'unique:organizations,ruc'], 'contact_name' => ['required', 'string', 'max:150'], 'email' => ['required', 'email', 'unique:users,email'], 'phone' => ['required', 'string', 'max:30'], 'password' => ['required', 'confirmed', 'min:8']]);
+        $data = $request->validate(['plan_id' => ['required', Rule::exists('subscription_plans', 'id')->where('is_active', true)], 'destination_city_id' => ['required', Rule::exists('destination_cities', 'id')->where('is_active', true)], 'type' => ['required', Rule::in(array_keys(self::TYPES))], 'business_name' => ['required', 'string', 'max:150'], 'legal_name' => ['required', 'string', 'max:180'], 'ruc' => ['required', 'digits:11', 'unique:organizations,ruc'], 'contact_name' => ['required', 'string', 'max:150'], 'email' => ['required', 'email', 'unique:users,email'], 'phone' => ['required', 'string', 'max:30'], 'password' => ['required', 'confirmed', 'min:8']]);
         $user = DB::transaction(function () use ($data) {
             $plan = SubscriptionPlan::findOrFail($data['plan_id']);
             $city = DestinationCity::findOrFail($data['destination_city_id']);
@@ -82,7 +82,7 @@ class MarketplaceBusinessController extends Controller
     public function update(Request $request): RedirectResponse
     {
         [$org,$listing] = $this->owned($request);
-        $data = $request->validate(['destination_city_id' => ['required', 'exists:destination_cities,id'], 'type' => ['required', Rule::in(array_keys(self::TYPES))], 'business_category_id' => ['required', 'exists:business_categories,id'], 'name' => ['required', 'string', 'max:150'], 'description' => ['required', 'string', 'max:3000'], 'services' => ['nullable', 'string', 'max:3000'], 'address' => ['nullable', 'string', 'max:250'], 'contact_phone' => ['required', 'string', 'max:40'], 'website_url' => ['nullable', 'url', 'max:500'], 'price_reference' => ['nullable', 'string', 'max:80'], 'schedule' => ['nullable', 'array'], 'schedule.*.closed' => ['nullable', 'boolean'], 'schedule.*.open_1' => ['nullable', 'date_format:H:i'], 'schedule.*.close_1' => ['nullable', 'date_format:H:i'], 'schedule.*.open_2' => ['nullable', 'date_format:H:i'], 'schedule.*.close_2' => ['nullable', 'date_format:H:i'], 'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'images' => ['nullable', 'array', 'max:6'], 'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'action' => ['required', Rule::in(['draft', 'submit'])]]);
+        $data = $request->validate(['destination_city_id' => ['required', Rule::exists('destination_cities', 'id')->where('is_active', true)], 'type' => ['required', Rule::in(array_keys(self::TYPES))], 'business_category_id' => ['required', Rule::exists('business_categories', 'id')->where('is_active', true)], 'name' => ['required', 'string', 'max:150'], 'description' => ['required', 'string', 'max:3000'], 'services' => ['nullable', 'string', 'max:3000'], 'address' => ['nullable', 'string', 'max:250'], 'contact_phone' => ['required', 'string', 'max:40'], 'website_url' => ['nullable', 'url', 'max:500'], 'price_reference' => ['nullable', 'string', 'max:80'], 'schedule' => ['nullable', 'array'], 'schedule.*.closed' => ['nullable', 'boolean'], 'schedule.*.open_1' => ['nullable', 'date_format:H:i'], 'schedule.*.close_1' => ['nullable', 'date_format:H:i'], 'schedule.*.open_2' => ['nullable', 'date_format:H:i'], 'schedule.*.close_2' => ['nullable', 'date_format:H:i'], 'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'images' => ['nullable', 'array', 'max:6'], 'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'action' => ['required', Rule::in(['draft', 'submit'])]]);
         $category = BusinessCategory::whereKey($data['business_category_id'])->where('listing_type', $data['type'])->where('is_active', true)->firstOrFail();
         $data['category'] = $category->name;
         if ($listing->images()->count() + count($request->file('images', [])) > 6) {
@@ -290,8 +290,8 @@ class MarketplaceBusinessController extends Controller
 
     private function owned(Request $request): array
     {
-        $org = $request->user()->organizations()->where('organizations.type','marketplace_business')->firstOrFail();
+        $org = $request->user()->organizations()->where('organizations.type', 'marketplace_business')->firstOrFail();
 
-        return [$org, DestinationListing::where('organization_id',$org->id)->where('owner_user_id',$request->user()->id)->firstOrFail()];
+        return [$org, DestinationListing::where('organization_id', $org->id)->where('owner_user_id', $request->user()->id)->firstOrFail()];
     }
 }

@@ -11,6 +11,7 @@
     description="Controla salidas, capacidad publicada, ocupación y disponibilidad del marketplace."
 >
     <x-slot:actions>
+        <a href="{{ route('admin.dashboard') }}" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700">← Dashboard</a>
         <span class="inline-flex h-10 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-800">{{ $operators->where('published_departures_count', '>', 0)->count() }} operadores con salidas</span>
     </x-slot:actions>
 

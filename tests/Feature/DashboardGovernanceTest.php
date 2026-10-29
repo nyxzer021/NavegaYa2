@@ -12,7 +12,7 @@ class DashboardGovernanceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_super_admin_sees_regional_governance_dashboard_and_master_catalog_link(): void
+    public function test_super_admin_sees_clear_commercial_dashboard_and_pending_affiliation(): void
     {
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['code' => 'super_admin', 'name' => 'Super administrador']));
@@ -22,11 +22,26 @@ class DashboardGovernanceTest extends TestCase
         ]);
 
         $this->actingAs($admin)->get(route('dashboard'))
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('GMV Regional Hoy')
-            ->assertSee('Comisión Neta NavegaYA')
-            ->assertSee('Operador pendiente SAC')
-            ->assertSee('Monitoreo de terminales')
-            ->assertSee(route('admin.master-routes.index'));
+            ->assertSee('GMV transporte')
+            ->assertSee('Total cobrado por pasajes; no es ingreso neto')
+            ->assertSee('Ingreso NavegaYA')
+            ->assertSee('Pendientes por atender')
+            ->assertDontSee('Control de geografía oficial');
+    }
+
+    public function test_affiliation_review_explains_decision_and_can_return_to_dashboard(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['code' => 'super_admin', 'name' => 'Super administrador']));
+
+        $this->actingAs($admin)->get(route('admin.organizations.index'))
+            ->assertOk()
+            ->assertSee('Decide qué empresas pueden operar')
+            ->assertSee('Bandeja al día')
+            ->assertSee(route('admin.dashboard'));
     }
 }

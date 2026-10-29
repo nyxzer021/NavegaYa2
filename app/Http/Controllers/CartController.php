@@ -30,14 +30,16 @@ class CartController extends Controller
 
     public function remove(Request $request, Reservation $reservation): RedirectResponse
     {
-        $ids = collect($request->session()->get('cart_reservation_ids', []))->reject(fn ($id) => (int) $id === $reservation->id)->values()->all();
+        $cartReservationIds = collect($request->session()->get('cart_reservation_ids', []))->map(fn ($id) => (int) $id);
+        abort_unless($cartReservationIds->contains($reservation->id), 404);
+        $ids = $cartReservationIds->reject(fn ($id) => $id === $reservation->id)->values()->all();
         $request->session()->put('cart_reservation_ids', $ids);
         if ($reservation->status === 'pending_payment' && ! $reservation->checkout_order_id) {
             $reservation->seats()->delete();
             $reservation->update(['status' => 'cancelled']);
         }
 
-return back()->with('success', 'Pasaje retirado del carrito.');
+        return back()->with('success', 'Pasaje retirado del carrito.');
     }
 
     public function checkout(Request $request): RedirectResponse
@@ -110,7 +112,7 @@ return back()->with('success', 'Pasaje retirado del carrito.');
             }
         }
 
-return app('dompdf.wrapper')->loadView('cart.pdf', compact('order', 'qrDataUris'))->setPaper('a4')->download('boletos-'.$order->code.'.pdf');
+        return app('dompdf.wrapper')->loadView('cart.pdf', compact('order', 'qrDataUris'))->setPaper('a4')->download('boletos-'.$order->code.'.pdf');
     }
 
     public function tickets(Request $request, string $code): View
@@ -133,11 +135,11 @@ return app('dompdf.wrapper')->loadView('cart.pdf', compact('order', 'qrDataUris'
     {
         $order = CheckoutOrder::with('reservations.seats')->where('code', $code)->firstOrFail();
         if ($order->user_id) {
-            abort_unless(auth()->id() === $order->user_id,403);
+            abort_unless(auth()->id() === $order->user_id, 403);
         } else {
-            abort_unless((int) $request->session()->get('active_checkout_order') === $order->id,403);
+            abort_unless((int) $request->session()->get('active_checkout_order') === $order->id, 403);
         }
 
-return $order;
+        return $order;
     }
 }

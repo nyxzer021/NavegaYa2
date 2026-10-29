@@ -324,6 +324,8 @@ class AdminTransportRouteController extends Controller
     private function authorizeCompanyAdmin(): void
     {
         abort_unless(auth()->user()?->roles()->where('code', 'company_admin')->exists(), 403);
-        abort_unless(AdminScope::organizationId(auth()->user()), 403);
+        $organizationId = AdminScope::organizationId(auth()->user());
+        abort_unless($organizationId, 403);
+        abort_unless(Organization::query()->whereKey($organizationId)->where('status', 'active')->exists(), 403, 'La empresa debe estar aprobada para operar salidas.');
     }
 }

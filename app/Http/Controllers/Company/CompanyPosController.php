@@ -21,7 +21,7 @@ class CompanyPosController extends Controller
     {
         $organizationId = AdminScope::organizationId($request->user());
         abort_unless($organizationId, 403);
-        $organization = Organization::with('vessels.basePort')->findOrFail($organizationId);
+        $organization = Organization::with('vessels.basePort')->where('status', 'active')->findOrFail($organizationId);
         $expired = Reservation::where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
         ReservationSeat::whereIn('reservation_id', $expired)->delete();
         Reservation::whereIn('id', $expired)->update(['status' => 'expired']);
@@ -51,6 +51,7 @@ class CompanyPosController extends Controller
             'email' => ['nullable', 'email', 'max:150'],
         ]);
         $organizationId = AdminScope::organizationId($request->user());
+        abort_unless(Organization::query()->whereKey($organizationId)->where('status', 'active')->exists(), 403);
         $departure = RouteDeparture::with('transportRoute')->findOrFail($data['departure_id']);
         abort_unless((int) $departure->transportRoute->organization_id === (int) $organizationId && $departure->departure_at->isToday(), 403);
         abort_unless($departure->is_published && in_array($departure->status, ['scheduled', 'delayed', 'rescheduled'], true), 422, 'La salida no está habilitada para ventas.');
