@@ -23,28 +23,34 @@
 
     @if(session('success'))<div class="mx-5 mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">✓ {{ session('success') }}</div>@endif
 
-    <section class="grid border-b border-slate-200 bg-white sm:grid-cols-2 xl:grid-cols-5" aria-label="Resultado operativo de la fecha">
+    <section class="grid gap-3 border-b border-slate-200 bg-slate-50/70 p-4 sm:grid-cols-2 xl:grid-cols-5 lg:px-6" aria-label="Resultado operativo de la fecha">
         @foreach([
-            ['Programadas', $scheduledDeparturesCount, 'Salidas registradas para la fecha', 'text-slate-900'],
-            ['En curso o completadas', $departedDeparturesCount, 'Operación iniciada o finalizada', 'text-emerald-700'],
-            ['Por iniciar', $pendingDeparturesCount, 'Programadas o en embarque', 'text-sky-700'],
-            ['Canceladas', $cancelledDeparturesCount, 'No realizaron la salida', 'text-rose-700'],
-            ['Reprogramadas', $rescheduledDeparturesCount, 'Cambio de fecha u hora registrado', 'text-amber-700'],
+            ['Programadas', $scheduledDeparturesCount, 'Salidas registradas', 'text-slate-900', 'bg-slate-100', '▦'],
+            ['En curso o completadas', $departedDeparturesCount, 'Operación iniciada o finalizada', 'text-emerald-700', 'bg-emerald-50', '✓'],
+            ['Por iniciar', $pendingDeparturesCount, 'Programadas o en embarque', 'text-sky-700', 'bg-sky-50', '◷'],
+            ['Canceladas', $cancelledDeparturesCount, 'No realizaron la salida', 'text-rose-700', 'bg-rose-50', '×'],
+            ['Reprogramadas', $rescheduledDeparturesCount, 'Cambio de fecha u hora', 'text-amber-700', 'bg-amber-50', '↻'],
         ] as $operation)
-            <article class="border-r border-slate-100 px-5 py-3"><span class="text-[9px] font-black uppercase tracking-wider text-slate-400">{{ $operation[0] }}</span><div class="mt-1 text-xl font-black {{ $operation[3] }}">{{ number_format($operation[1]) }}</div><p class="text-[9px] text-slate-400">{{ $operation[2] }}</p></article>
+            <article class="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg {{ $operation[4] }} text-sm font-black {{ $operation[3] }}">{{ $operation[5] }}</span>
+                <div class="min-w-0"><div class="flex items-baseline gap-2"><strong class="text-xl font-black {{ $operation[3] }}">{{ number_format($operation[1]) }}</strong><span class="truncate text-[9px] font-black uppercase tracking-wider text-slate-500">{{ $operation[0] }}</span></div><p class="truncate text-[9px] text-slate-400">{{ $operation[2] }}</p></div>
+            </article>
         @endforeach
     </section>
 
-    <div class="border-b border-slate-200 p-4 lg:px-6">
-        <form method="GET" class="flex flex-wrap items-center gap-2">
+    <div class="border-b border-slate-200 bg-white p-4 lg:px-6">
+        <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div><p class="text-[9px] font-black uppercase tracking-[.16em] text-emerald-700">Consulta operativa</p><h3 class="mt-0.5 text-sm font-black text-slate-950">Encuentra una empresa o revisa una fecha</h3></div>
+            <span class="text-[10px] font-semibold text-slate-400">Actualizado {{ now()->translatedFormat('d M Y · H:i') }}</span>
+        </div>
+        <form method="GET" class="grid items-end gap-2 md:grid-cols-2 xl:grid-cols-[minmax(230px,1.5fr)_150px_170px_190px_auto_auto]">
             <input type="hidden" name="tab" value="{{ $activeTab }}">
-            <input name="search" value="{{ request('search') }}" class="h-10 min-w-64 flex-1 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs" placeholder="Buscar empresa o RUC">
-            <input type="date" name="date" value="{{ request('date', $selectedDate->toDateString()) }}" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700" aria-label="Fecha de salida">
-            <select name="modality" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"><option value="">Todas las modalidades</option><option value="fluvial" @selected(request('modality') === 'fluvial')>Fluvial</option><option value="aereo" @selected(request('modality') === 'aereo')>Aéreo</option><option value="mixto" @selected(request('modality') === 'mixto')>Mixto</option></select>
-            <select name="status" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"><option value="">Todos los estados</option><option value="published" @selected(request('status') === 'published')>Con salidas publicadas</option><option value="without_inventory" @selected(request('status') === 'without_inventory')>Sin inventario</option><option value="paused" @selected(request('status') === 'paused')>Ventas pausadas</option></select>
-            <button class="h-10 rounded-xl bg-[#062c21] px-5 text-xs font-black text-white hover:bg-emerald-900">Aplicar filtros</button>
-            <a href="{{ route('admin.itineraries.index') }}" class="inline-flex h-10 items-center px-3 text-xs font-bold text-emerald-700">Limpiar</a>
-            <span class="ml-auto text-[10px] font-semibold text-slate-400">Actualizado {{ now()->translatedFormat('d M Y · H:i') }}</span>
+            <label class="block min-w-0"><span class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-400">Empresa o RUC</span><span class="relative block"><span class="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-slate-400">⌕</span><input name="search" value="{{ request('search') }}" class="h-10 rounded-xl border-slate-200 bg-slate-50 pl-9 pr-3 text-xs" placeholder="Ej. Selva Fast o 20600513959"></span></label>
+            <label class="block"><span class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-400">Fecha de salida</span><input type="date" name="date" value="{{ request('date', $selectedDate->toDateString()) }}" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"></label>
+            <label class="block"><span class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-400">Modalidad</span><select name="modality" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"><option value="">Todas</option><option value="fluvial" @selected(request('modality') === 'fluvial')>🚤 Fluvial</option><option value="aereo" @selected(request('modality') === 'aereo')>✈️ Aéreo</option><option value="mixto" @selected(request('modality') === 'mixto')>Mixto</option></select></label>
+            <label class="block"><span class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-400">Estado comercial</span><select name="status" class="h-10 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700"><option value="">Todos</option><option value="published" @selected(request('status') === 'published')>Con salidas publicadas</option><option value="without_inventory" @selected(request('status') === 'without_inventory')>Sin inventario</option><option value="paused" @selected(request('status') === 'paused')>Ventas pausadas</option></select></label>
+            <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#062c21] px-5 text-xs font-black text-white shadow-sm hover:bg-emerald-900"><span>⌕</span> Consultar</button>
+            <a href="{{ route('admin.itineraries.index') }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50">Limpiar</a>
         </form>
     </div>
 
