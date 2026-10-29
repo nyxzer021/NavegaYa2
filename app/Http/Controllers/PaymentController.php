@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\Ticket;
 use App\Services\BookingPaymentService;
+use App\Services\AdvertisementInventoryService;
 use App\Support\BoardingQr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,14 +48,19 @@ class PaymentController extends Controller
         return redirect()->route('tickets.show', $reservation->code);
     }
 
-    public function tickets(string $code): View
+    public function tickets(string $code, AdvertisementInventoryService $advertising): View
     {
         $reservation = $this->reservationOrFail($code);
         abort_unless($reservation->status === 'confirmed', 404);
         $reservation->load(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'airDeparture.airRoute', 'airDeparture.aircraft', 'seats.seat', 'seats.aircraftSeat', 'seats.ticket']);
         $isSandbox = $reservation->payments()->where('provider', 'sandbox')->exists();
+        $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
+        $route = $reservation->isAir() ? $trip->airRoute : $trip->transportRoute;
+        $destination = $reservation->isAir() ? $route->destination_city : $route->destinationPort->city;
+        $destinationAds = $advertising->select('post_purchase', 3, [], $destination, ['lodge_hotel', 'restaurant', 'tour_operator', 'charter_transport']);
+        $advertising->register($destinationAds);
 
-        return view('tickets.show', compact('reservation', 'isSandbox'));
+        return view('tickets.show', compact('reservation', 'isSandbox', 'destinationAds', 'destination'));
     }
 
     public function qr(string $ticketCode): Response

@@ -74,7 +74,7 @@ class MarketplaceBusinessController extends Controller
             'reviews' => $reviews,
             'ratingAverage' => round((float) $reviews->where('status', 'approved')->avg('rating'), 1),
             'stats' => ['profile_views' => $listing->views, 'contact_clicks' => $listing->contact_clicks, 'campaign_views' => $campaigns->sum('views'), 'campaign_clicks' => $campaigns->sum('clicks')],
-            'placements' => array_intersect_key(Advertisement::PLACEMENTS, array_flip(['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup'])),
+            'placements' => array_intersect_key(Advertisement::PLACEMENTS, array_flip(['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup', 'search_results', 'trip_complete', 'post_purchase'])),
             'activeTab' => in_array($request->query('tab'), ['overview', 'profile', 'gallery', 'offers', 'reviews', 'campaigns', 'plan'], true) ? $request->query('tab') : 'overview',
         ]);
     }
@@ -133,7 +133,7 @@ class MarketplaceBusinessController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
-            'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup'])],
+            'placement' => ['required', Rule::in(['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup', 'search_results', 'trip_complete', 'post_purchase'])],
             'banner_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1536', 'dimensions:min_width=800,min_height=450'],
         ]);
 

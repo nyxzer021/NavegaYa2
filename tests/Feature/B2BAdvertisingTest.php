@@ -176,4 +176,14 @@ class B2BAdvertisingTest extends TestCase
 
         $response->assertDontSee('Portada empresa 6');
     }
+
+    public function test_home_prioritizes_contextual_campaign_for_searched_destination(): void
+    {
+        Advertisement::query()->delete();
+        Advertisement::create(['business_name' => 'Hotel General', 'business_type' => 'lodge_hotel', 'category' => 'Hotel', 'contact_name' => 'Ventas', 'phone_whatsapp' => '999999999', 'city_destination' => 'Iquitos', 'placements' => ['search_results'], 'title' => 'Oferta general', 'status' => 'active', 'views' => 0]);
+        Advertisement::create(['business_name' => 'Lodge Nauta', 'business_type' => 'lodge_hotel', 'category' => 'Hotel', 'contact_name' => 'Ventas', 'phone_whatsapp' => '988888888', 'city_destination' => 'Nauta', 'placements' => ['search_results'], 'title' => 'Descansa en Nauta', 'status' => 'active', 'views' => 20]);
+
+        $this->get(route('home', ['origin' => 'Iquitos', 'destination' => 'Nauta']))
+            ->assertOk()->assertSee('Descansa en Nauta')->assertSee('Recomendación para Nauta');
+    }
 }

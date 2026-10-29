@@ -13,7 +13,7 @@ use Illuminate\View\View;
 
 class CompanyAdvertisingController extends Controller
 {
-    private const PLACEMENTS = ['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup', 'routes_sidebar', 'company_footer'];
+    private const PLACEMENTS = ['home_carousel', 'home_sidebar', 'home_recommendations', 'home_popup', 'search_results', 'trip_complete', 'post_purchase', 'routes_sidebar', 'company_footer'];
 
     public function index(Request $request): View
     {

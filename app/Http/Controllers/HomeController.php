@@ -65,6 +65,9 @@ class HomeController
         }
         $visible = $carouselAds->concat([$sideAd])->filter()->values();
         $ads = $this->advertising->select('home_recommendations', 3, $visible);
+        $contextCity = $destination ?: $origin;
+        $searchAd = $hasSearch ? $this->advertising->select('search_results', 1, $visible->merge($ads), $contextCity)->first() : null;
+        $tripAds = $this->advertising->select('trip_complete', 3, $visible->merge($ads)->push($searchAd)->filter(), $contextCity, ['lodge_hotel', 'restaurant', 'tour_operator', 'charter_transport']);
         $popupAd = null;
         if (! $hasSearch) {
             $popupAd = $this->advertising->select('home_popup', 1, $visible->merge($ads))->first();
@@ -72,6 +75,8 @@ class HomeController
         $this->advertising->register($carouselAds);
         $this->advertising->register($sideAd);
         $this->advertising->register($ads);
+        $this->advertising->register($searchAd);
+        $this->advertising->register($tripAds);
         $riverCities = Port::query()->where('is_active', true)->pluck('city');
         $airCities = AirRoute::query()->get(['origin_city', 'destination_city'])->flatMap(fn ($route) => [$route->origin_city, $route->destination_city]);
         $citiesForSearch = $riverCities->merge($airCities)->filter()->unique()->sort()->values();
@@ -95,6 +100,6 @@ class HomeController
             ['date' => 'FEB', 'name' => 'Carnaval Amazónico', 'place' => 'Amazonía peruana', 'description' => 'Comparsas, danzas y expresiones culturales de la selva.'],
         ]);
 
-        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'carouselAds', 'sideAd', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'sideAd', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
     }
 }

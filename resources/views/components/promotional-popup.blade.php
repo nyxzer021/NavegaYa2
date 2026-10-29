@@ -14,15 +14,15 @@
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
  const popup=document.getElementById('promotional-popup'); if(!popup)return;
- const storageKey='navegaya:promotion:closed',day=86400000;
- const getClosed=()=>{try{return Number(localStorage.getItem(storageKey)||0)}catch{return 0}},remember=()=>{try{localStorage.setItem(storageKey,String(Date.now()+day))}catch{}};
+ const storageKey='navegaya:promotion:closed',day=86400000,frequency=day*7;
+ const getClosed=()=>{try{return Number(localStorage.getItem(storageKey)||0)}catch{return 0}},remember=()=>{try{localStorage.setItem(storageKey,String(Date.now()+frequency))}catch{}};
  if(getClosed()>Date.now())return;
  let shown=false,timer;
  const anotherModalOpen=()=>document.querySelector('dialog[open],#consulta-pasaje[aria-hidden="false"],.ny-modal-open');
  const show=()=>{if(shown||document.hidden||anotherModalOpen())return;shown=true;popup.classList.remove('hidden');popup.classList.add('flex');popup.setAttribute('aria-hidden','false');document.body.classList.add('overflow-hidden');document.getElementById('advertise-floating-cta')?.style.setProperty('display','none');popup.querySelector('[data-promo-close]')?.focus();fetch(popup.dataset.impressionUrl,{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'','Accept':'application/json'}}).catch(()=>{});window.removeEventListener('scroll',onScroll)};
  const close=()=>{remember();popup.classList.add('hidden');popup.classList.remove('flex');popup.setAttribute('aria-hidden','true');document.body.classList.remove('overflow-hidden');document.getElementById('advertise-floating-cta')?.style.removeProperty('display');clearTimeout(timer)};
- const onScroll=()=>{const total=document.documentElement.scrollHeight-innerHeight;if(total>0&&scrollY/total>=.35)show()};
- popup.querySelector('[data-promo-visit]')?.addEventListener('click',remember);popup.querySelectorAll('[data-promo-close]').forEach(button=>button.addEventListener('click',close));popup.addEventListener('click',event=>{if(event.target===popup)close()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&popup.getAttribute('aria-hidden')==='false')close()});window.addEventListener('scroll',onScroll,{passive:true});timer=setTimeout(show,10000);
+ const onScroll=()=>{const total=document.documentElement.scrollHeight-innerHeight;if(total>0&&scrollY/total>=.60)show()};
+ popup.querySelector('[data-promo-visit]')?.addEventListener('click',remember);popup.querySelectorAll('[data-promo-close]').forEach(button=>button.addEventListener('click',close));popup.addEventListener('click',event=>{if(event.target===popup)close()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&popup.getAttribute('aria-hidden')==='false')close()});window.addEventListener('scroll',onScroll,{passive:true});timer=setTimeout(show,25000);
 });
 </script>
 @endif
