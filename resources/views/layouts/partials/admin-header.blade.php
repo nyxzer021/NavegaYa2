@@ -1,8 +1,7 @@
 @php($isSuperAdmin = auth()->user()?->roles()->where('code', 'super_admin')->exists() ?? false)
 @php($adminInbox = $isSuperAdmin ? app(\App\Support\AdminRequestInbox::class)->summary() : ['total'=>0,'latest'=>collect()])
 @php($hasUnreadAdminInbox = $isSuperAdmin && $adminInbox['total'] > 0 && session('admin_inbox_seen_signature') !== app(\App\Support\AdminRequestInbox::class)->signature())
-<header class="ny-admin-header" style="display:flex;align-items:center;justify-content:space-between;min-height:60px;padding:10px 24px;border-bottom:1px solid #dce7e2;">
-    <div>{{ $header ?? '' }}@yield('header')</div>
+<header class="ny-admin-header" style="display:flex;align-items:center;justify-content:flex-end;min-height:60px;padding:10px 24px;border-bottom:1px solid #dce7e2;">
     <div class="flex items-center gap-3">
         @if($isSuperAdmin)<details class="ny-account">
             <summary aria-label="Solicitudes pendientes" onclick="fetch('{{ route('admin.requests.mark-seen') }}',{method:'POST',headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'}});this.querySelector('[data-unread-badge]')?.remove()" class="relative grid h-10 w-10 place-items-center rounded-xl border border-emerald-900/10 bg-white text-lg shadow-sm hover:bg-emerald-50">🔔@if($hasUnreadAdminInbox)<span data-unread-badge class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-600 px-1 text-[9px] font-black text-white">{{ $adminInbox['total']>99?'99+':$adminInbox['total'] }}</span>@endif</summary>

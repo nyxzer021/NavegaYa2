@@ -12,6 +12,7 @@
         <section class="overflow-hidden rounded-3xl bg-[#062c21] p-6 text-white shadow-lg sm:p-8">
             <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
                 <div>
+                    <p class="mb-2 text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Editar salida {{ $type === 'aereo' ? 'aérea' : 'fluvial' }}</p>
                     <span class="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-200">
                         {{ $type === 'aereo' ? '✈️ Operación aérea' : '🚤 Operación fluvial' }}
                     </span>

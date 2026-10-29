@@ -64,6 +64,7 @@
     <section class="relative overflow-hidden rounded-3xl bg-[#062c21] p-6 text-white shadow-xl">
         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
+                <p class="mb-2 text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Dossier del operador</p>
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="rounded-full px-3 py-1 text-[10px] font-black {{ $status[1] }}">{{ $status[0] }}</span>
                     <span class="rounded-full border border-cyan-400/25 bg-cyan-500/15 px-3 py-1 text-[10px] font-bold text-cyan-200">{{ $modalityLabel }}</span>
