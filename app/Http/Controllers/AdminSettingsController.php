@@ -11,9 +11,9 @@ class AdminSettingsController
 {
     public function index(Request $request): View
     {
-        $tab = in_array($request->string('tab')->toString(), ['integrations', 'identity', 'payments', 'appearance'], true) ? $request->string('tab')->toString() : 'integrations';
+        $tab = in_array($request->string('tab')->toString(), ['integrations', 'identity', 'operations', 'payments', 'appearance'], true) ? $request->string('tab')->toString() : 'integrations';
 
-        return view('admin.settings.index', ['activeTab' => $tab, 'culqiConfigured' => filled(config('services.culqi.public_key')) && filled(config('services.culqi.secret_key')) && filled(config('services.culqi.webhook_secret')), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.'), 'siteBrand' => SystemSetting::value('site_brand', 'NavegaYA'), 'footerDescription' => SystemSetting::value('footer_description', 'La plataforma para viajes fluviales, empresas verificadas y destinos amazónicos.'), 'footerRights' => SystemSetting::value('footer_rights', 'Todos los derechos reservados.'), 'themeFont' => SystemSetting::value('theme_font', 'elegant'), 'themeForest' => SystemSetting::value('theme_forest', '#103a31'), 'themeGold' => SystemSetting::value('theme_gold', '#f2b624'), 'themeRiver' => SystemSetting::value('theme_river', '#32b6c9'), 'themeHeroHeight' => SystemSetting::value('theme_hero_height', '360'), 'platformFeePercent' => SystemSetting::value('platform_fee_percent', '10')]);
+        return view('admin.settings.index', ['activeTab' => $tab, 'culqiConfigured' => filled(config('services.culqi.public_key')) && filled(config('services.culqi.secret_key')) && filled(config('services.culqi.webhook_secret')), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.'), 'siteBrand' => SystemSetting::value('site_brand', 'NavegaYA'), 'footerDescription' => SystemSetting::value('footer_description', 'La plataforma para viajes fluviales, empresas verificadas y destinos amazónicos.'), 'footerRights' => SystemSetting::value('footer_rights', 'Todos los derechos reservados.'), 'weatherTemperature' => SystemSetting::value('weather_temperature', '28'), 'riverStatus' => SystemSetting::value('river_status', 'normal'), 'themeFont' => SystemSetting::value('theme_font', 'elegant'), 'themeForest' => SystemSetting::value('theme_forest', '#103a31'), 'themeGold' => SystemSetting::value('theme_gold', '#f2b624'), 'themeRiver' => SystemSetting::value('theme_river', '#32b6c9'), 'themeHeroHeight' => SystemSetting::value('theme_hero_height', '360'), 'platformFeePercent' => SystemSetting::value('platform_fee_percent', '10')]);
     }
 
     public function updateWhatsApp(Request $request): RedirectResponse
@@ -42,6 +42,20 @@ class AdminSettingsController
         SystemSetting::updateOrCreate(['key' => 'platform_fee_percent'], ['value' => number_format((float) $data['platform_fee_percent'], 2, '.', '')]);
 
         return back()->with('success', 'Comisión de NavegaYA actualizada.');
+    }
+
+    public function updateOperations(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'weather_temperature' => ['required', 'integer', 'min:0', 'max:50'],
+            'river_status' => ['required', 'in:normal,rising,high,falling,low'],
+        ]);
+
+        foreach ($data as $key => $value) {
+            SystemSetting::updateOrCreate(['key' => $key], ['value' => (string) $value]);
+        }
+
+        return back()->with('success', 'Información operativa pública actualizada.');
     }
 
     public function updateTheme(Request $request): RedirectResponse

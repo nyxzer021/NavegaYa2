@@ -38,10 +38,17 @@ class AuthenticatedSessionController extends Controller
             $roles->contains('company_admin') => route('company.dashboard', absolute: false),
             $roles->contains('marketplace_admin') => route('marketplace.dashboard', absolute: false),
             $roles->intersect(['customer', 'traveler', 'passenger'])->isNotEmpty() => route('travels.index', absolute: false),
-            default => route('dashboard', absolute: false),
+            $roles->intersect(['super_admin', 'admin'])->isNotEmpty() => route('admin.dashboard', absolute: false),
+            default => null,
         };
 
-        return redirect()->intended($destination);
+        if ($destination !== null) {
+            $request->session()->forget('url.intended');
+
+            return redirect($destination);
+        }
+
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**

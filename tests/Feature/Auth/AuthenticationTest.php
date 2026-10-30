@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -40,6 +41,24 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertGuest();
+    }
+
+    public function test_customer_login_ignores_an_intended_admin_page_and_opens_the_customer_portal(): void
+    {
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::firstOrCreate(
+            ['code' => 'customer'],
+            ['name' => 'Cliente / pasajero'],
+        ));
+
+        $response = $this->withSession(['url.intended' => route('admin.dashboard')])->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('travels.index', absolute: false));
+        $this->assertNull(session('url.intended'));
     }
 
     public function test_users_can_logout(): void

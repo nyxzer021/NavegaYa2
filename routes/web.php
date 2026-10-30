@@ -41,8 +41,8 @@ use App\Http\Controllers\AirBookingController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusinessMessageController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyAdvertisingController;
+use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyDepartureController;
 use App\Http\Controllers\Company\CompanyFleetController;
 use App\Http\Controllers\Company\CompanyPosController;
@@ -295,6 +295,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/configuracion/encabezado-pie', [AdminSettingsController::class, 'updateChrome'])->name('settings.chrome');
     Route::patch('/configuracion/diseno', [AdminSettingsController::class, 'updateTheme'])->name('settings.theme');
     Route::patch('/configuracion/pagos', [AdminSettingsController::class, 'updatePayments'])->name('settings.payments');
+    Route::patch('/configuracion/informacion-operativa', [AdminSettingsController::class, 'updateOperations'])->name('settings.operations');
     Route::get('/portada-principal', [AdminHomeHeroController::class, 'index'])->name('home-hero.index');
     Route::post('/portada-principal', [AdminHomeHeroController::class, 'store'])->name('home-hero.store');
     Route::patch('/portada-principal/duracion', [AdminHomeHeroController::class, 'updateDuration'])->name('home-hero.duration');

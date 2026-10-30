@@ -31,7 +31,13 @@ class CompanyCounterController extends Controller
             'company' => $company,
             'departures' => $departures,
             'base' => $base,
-            'riverStatus' => SystemSetting::value('river_status', 'Normal'),
+            'riverStatus' => match (strtolower((string) SystemSetting::value('river_status', 'normal'))) {
+                'rising' => 'En aumento',
+                'high' => 'Alto',
+                'falling' => 'En descenso',
+                'low' => 'Bajo',
+                default => 'Normal',
+            },
         ]);
     }
 
