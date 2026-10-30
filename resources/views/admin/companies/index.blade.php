@@ -6,6 +6,7 @@
     $activeTab = in_array(request('tab'), ['solicitudes', 'rendimiento', 'flota', 'comisiones'], true) ? request('tab') : 'solicitudes';
 @endphp
 <x-admin.module-workspace
+    header-tone="green"
     eyebrow="Gobernanza comercial"
     title="Red de empresas transportistas"
     description="Revisa afiliaciones, supervisa operadores habilitados y administra sus condiciones comerciales."
@@ -107,4 +108,3 @@
 @endif
 </x-admin.module-workspace>
 @endsection
-

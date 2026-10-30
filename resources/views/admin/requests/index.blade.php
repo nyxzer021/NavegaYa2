@@ -3,8 +3,8 @@
 @section('header')<div><p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Centro de control</p><h1 class="ny-page-title">Bandeja de solicitudes</h1></div>@endsection
 @section('content')
 <div class="mx-auto max-w-7xl space-y-5">
-    <section class="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 to-emerald-800 p-7 text-white shadow-xl">
-        <div class="flex flex-wrap items-center justify-between gap-5"><div><span class="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">Atención administrativa</span><h2 class="mt-2 text-3xl font-black">{{ $summary['total'] }} solicitud(es) por atender</h2><p class="mt-2 max-w-2xl text-sm text-emerald-100/70">Solo aparecen casos que necesitan una decisión humana: afiliaciones, excepciones de pago, flota, moderación de contenido y reportes de usuarios. Los pagos confirmados se activan automáticamente.</p></div><span class="grid h-20 w-20 place-items-center rounded-3xl bg-white/10 text-4xl">🔔</span></div>
+    <section class="overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-7 text-slate-950 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-5"><div><span class="text-[10px] font-black uppercase tracking-[.2em] text-emerald-700">Atención administrativa</span><h2 class="mt-2 text-3xl font-black">{{ $summary['total'] }} solicitud(es) por atender</h2><p class="mt-2 max-w-2xl text-sm text-slate-600">Solo aparecen casos que necesitan una decisión humana: afiliaciones, excepciones de pago, flota, moderación de contenido y reportes de usuarios. Los pagos confirmados se activan automáticamente.</p></div><span class="grid h-20 w-20 place-items-center rounded-3xl bg-emerald-100 text-4xl">🔔</span></div>
     </section>
 
     <nav class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
@@ -16,7 +16,7 @@
     </nav>
 
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <header class="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 class="text-lg font-black text-slate-950">Pendientes ordenados por fecha</h2><p class="text-xs text-slate-500">Abre cada elemento para validarlo en su módulo especializado.</p></div><span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">{{ $items->count() }} pendiente(s)</span></header>
+        <header class="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h2 class="text-lg font-black text-slate-950">Pendientes ordenados por fecha</h2><p class="text-xs text-slate-500">Usa las tarjetas superiores para filtrar. Luego abre un caso para revisar sus datos y decidir en el módulo correspondiente.</p></div><span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">{{ $items->count() }} pendiente(s)</span></header>
         <div class="divide-y divide-slate-100">
             @forelse($items as $item)
             <article class="grid gap-4 px-6 py-5 transition hover:bg-slate-50 lg:grid-cols-[auto_1fr_auto] lg:items-center">

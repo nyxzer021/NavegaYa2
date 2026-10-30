@@ -55,6 +55,7 @@
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($ports as $port)
                             @php($portInUse = ($port->origin_master_routes_count + $port->destination_master_routes_count + $port->origin_routes_count + $port->destination_routes_count + $port->base_vessels_count) > 0)
+                            @if($loop->first || $ports[$loop->index - 1]->modality !== $port->modality)<tr class="bg-slate-100/80"><td colspan="6" class="px-6 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-700">{{ $port->modality === 'aereo' ? '✈ Aeródromos y terminales aéreas' : '🚤 Puertos, muelles y embarcaderos fluviales' }}</td></tr>@endif
                             <tr class="hover:bg-slate-50">
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $port->name }}</td>
                                 <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $port->modality==='aereo'?'bg-violet-50 text-violet-700':'bg-sky-50 text-sky-700' }}">{{ $port->modality==='aereo'?'✈ Aéreo':'⚓ Fluvial' }}</span></td>
@@ -76,9 +77,6 @@
                     </tbody>
                 </table>
             </div>
-            @if ($ports->hasPages())
-                <div class="border-t border-slate-100 px-6 py-4">{{ $ports->links() }}</div>
-            @endif
         </div>
     </div>
     <script>

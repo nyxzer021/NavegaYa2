@@ -22,7 +22,7 @@ class AdminPortController extends Controller
                 ->withCount(['originMasterRoutes', 'destinationMasterRoutes', 'originRoutes', 'destinationRoutes', 'baseVessels'])
                 ->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))
                 ->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))
-                ->orderBy('city')->orderBy('name')->paginate(10)->withQueryString(),
+                ->orderBy('modality')->orderBy('city')->orderBy('name')->get(),
         ]));
     }
 
