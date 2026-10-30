@@ -13,7 +13,15 @@ class PublicNavigationTest extends TestCase
     public function test_public_pages_share_navigation_for_guests(): void
     {
         foreach (['home', 'routes.index', 'discover.index', 'about'] as $route) {
-            $this->get(route($route))->assertOk()->assertSee('Rutas y horarios')->assertSee('Empresas')->assertSee('Puertos y muelles')->assertSee('Consultar pasaje')->assertSee('Guía Loreto')->assertSee('Afiliar tu empresa')->assertSee('Iniciar sesión');
+            $this->get(route($route))
+                ->assertOk()
+                ->assertSee('Quiénes somos')
+                ->assertSee('Rutas fluviales')
+                ->assertSee('Empresas')
+                ->assertSee('Descubrir')
+                ->assertSee('Busca tu pasaje')
+                ->assertSee('Afiliar tu empresa')
+                ->assertSee('Iniciar sesión');
         }
     }
 

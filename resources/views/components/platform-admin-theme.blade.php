@@ -28,7 +28,8 @@
 .ny-side{width:238px!important;flex-basis:238px!important}
 .ny-side .ny-nav{padding-top:10px}
 .ny-side .space-y-4>:not([hidden])~:not([hidden]){margin-top:.45rem}
-.ny-side nav a{font-size:11.5px;line-height:1.2}
+.ny-side nav a{font-size:11.5px;line-height:1.2;font-weight:600!important}
+.ny-side nav a span{font-size:inherit;line-height:inherit}
 .ny-side nav section>p{font-size:9px}
 .ny-main .ny-route-wrap,.ny-main .ny-vessel-wrap,.ny-main .ny-form-wrap,.ny-main .ny-departure-form,.ny-main .ny-seat-wrap,.ny-main .ny-aircraft-wrap,.ny-main .ny-air-route-wrap,.ny-main .ny-cargo-wrap{max-width:1120px!important;margin-inline:auto!important}
 .ny-main .ny-route-hero,.ny-main .ny-vessel-hero,.ny-main .ny-seat-heading,.ny-main .ny-air-hero,.ny-main .ny-cargo-hero{border-radius:var(--ny-radius-lg)!important;background:linear-gradient(120deg,var(--ny-primary),var(--ny-primary-hover))!important;box-shadow:var(--ny-shadow-sm)!important}

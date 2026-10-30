@@ -16,7 +16,11 @@ class NavigationItem extends Model
     public function url(): string
     {
         return match ($this->target_type) {
-            'route' => \Route::has($this->target) ? route($this->target) : '#','page' => route('pages.show', $this->target),default => $this->target
+            'route' => \Route::has($this->target) ? route($this->target) : '#',
+            'page' => PublicPage::where('slug', $this->target)->exists()
+                ? route('pages.show', $this->target)
+                : (\Route::has($this->target) ? route($this->target) : '#'),
+            default => $this->target,
         };
     }
 
