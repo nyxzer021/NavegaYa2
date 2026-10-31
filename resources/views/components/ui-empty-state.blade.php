@@ -1,6 +1,7 @@
-@props(['title' => 'Aún no hay información', 'description' => null])
+@props(['icon' => '🌿', 'title' => 'Aún no hay información', 'description' => null])
 <section {{ $attributes->merge(['class' => 'ny-empty']) }}>
-    <strong>{{ $title }}</strong>
-    @if($description)<p>{{ $description }}</p>@endif
-    @if(isset($action))<div style="margin-top:14px">{{ $action }}</div>@endif
+    <span class="ny-empty__icon" aria-hidden="true">{{ $icon }}</span>
+    <strong class="ny-empty__title">{{ $title }}</strong>
+    @if($description)<p class="ny-empty__description">{{ $description }}</p>@endif
+    @if(isset($action))<div class="ny-empty__action">{{ $action }}</div>@endif
 </section>

@@ -121,7 +121,7 @@ class B2BAdvertisingTest extends TestCase
             ->assertSee('Patrocinado');
     }
 
-    public function test_home_displays_a_carousel_and_one_stable_sidebar_ad_without_duplicates(): void
+    public function test_home_displays_the_carousel_without_the_deprecated_sidebar_ad(): void
     {
         Advertisement::query()->delete();
         $carousel = Advertisement::create([
@@ -140,13 +140,11 @@ class B2BAdvertisingTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Descansa junto al Amazonas')
-            ->assertSee('Sabores de Loreto');
+            ->assertDontSee('Sabores de Loreto');
 
-        $this->assertSame($sidebar->id, session('home_sidebar_ad_id'));
         $this->assertSame(1, $carousel->fresh()->views);
-        $this->assertSame(1, $sidebar->fresh()->views);
-        $this->get(route('home'))->assertOk()->assertSee('Sabores de Loreto');
-        $this->assertSame($sidebar->id, session('home_sidebar_ad_id'));
+        $this->assertSame(0, $sidebar->fresh()->views);
+        $this->assertNull(session('home_sidebar_ad_id'));
     }
 
     public function test_home_carousel_prioritizes_campaigns_with_less_exposure(): void

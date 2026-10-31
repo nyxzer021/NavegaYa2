@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Advertisement;
 use App\Models\AirDeparture;
 use App\Models\AirRoute;
 use App\Models\DestinationCity;
@@ -52,18 +51,10 @@ class HomeController
             ->orderBy('departure_at')->limit(12)->get();
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
         $carouselAds = $this->advertising->select('home_carousel', 6);
-        if ($carouselAds->isEmpty()) $carouselAds = $this->advertising->select('home_hero', 6);
-        $sideAd = null;
-        $sessionSideAdId = $request->session()->get('home_sidebar_ad_id');
-        if ($sessionSideAdId) {
-            $sideAd = Advertisement::with('city')->active()->forPlacement('home_sidebar')->whereKey($sessionSideAdId)->first();
-            if ($sideAd && (($sideAd->organization_id && $carouselAds->contains('organization_id', $sideAd->organization_id)) || $carouselAds->contains('business_name', $sideAd->business_name))) $sideAd = null;
+        if ($carouselAds->isEmpty()) {
+            $carouselAds = $this->advertising->select('home_hero', 6);
         }
-        if (! $sideAd) {
-            $sideAd = $this->advertising->select('home_sidebar', 1, $carouselAds)->first();
-            $request->session()->put('home_sidebar_ad_id', $sideAd?->id);
-        }
-        $visible = $carouselAds->concat([$sideAd])->filter()->values();
+        $visible = $carouselAds;
         $ads = $this->advertising->select('home_recommendations', 3, $visible);
         $contextCity = $destination ?: $origin;
         $searchAd = $hasSearch ? $this->advertising->select('search_results', 1, $visible->merge($ads), $contextCity)->first() : null;
@@ -73,7 +64,6 @@ class HomeController
             $popupAd = $this->advertising->select('home_popup', 1, $visible->merge($ads))->first();
         }
         $this->advertising->register($carouselAds);
-        $this->advertising->register($sideAd);
         $this->advertising->register($ads);
         $this->advertising->register($searchAd);
         $this->advertising->register($tripAds);
@@ -100,6 +90,6 @@ class HomeController
             ['date' => 'FEB', 'name' => 'Carnaval Amazónico', 'place' => 'Amazonía peruana', 'description' => 'Comparsas, danzas y expresiones culturales de la selva.'],
         ]);
 
-        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'sideAd', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
     }
 }

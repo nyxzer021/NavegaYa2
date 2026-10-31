@@ -79,14 +79,15 @@
         fetchpriority="{{ $theme === 'home' ? 'high' : 'auto' }}"
     >
     <div class="absolute inset-0 bg-gradient-to-r {{ $overlay }}"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/10 to-slate-950/45"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(251,191,36,.12),transparent_34%)]"></div>
     <div class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent to-slate-50/55 sm:h-12"></div>
 
     @if($slot->isEmpty())
         <div class="relative z-10 max-w-3xl px-6 py-8 sm:px-10">
-            <span class="mb-2 inline-block rounded border border-emerald-500/40 bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">● {{ $selected['badge'] }}</span>
-            <h1 class="m-0 text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">{{ $selected['title'] }}</h1>
-            <p class="mt-2 text-xs font-medium leading-relaxed text-slate-200 sm:text-sm">{{ $selected['subtitle'] }}</p>
+            <span class="mb-2 inline-flex max-w-full whitespace-nowrap rounded border border-emerald-300/50 bg-emerald-950/75 px-2 py-1 text-[9px] font-bold tracking-normal text-emerald-100 shadow-sm sm:px-2.5 sm:text-[11px]">● {{ $selected['badge'] }}</span>
+            <h1 class="m-0 text-2xl font-black tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,.65)] sm:text-3xl lg:text-4xl">{{ $selected['title'] }}</h1>
+            <p class="mt-2 text-xs font-semibold leading-relaxed text-white [text-shadow:0_1px_8px_rgba(0,0,0,.85)] sm:text-sm">{{ $selected['subtitle'] }}</p>
         </div>
     @else
         <div class="relative z-10 mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{{ $slot }}</div>

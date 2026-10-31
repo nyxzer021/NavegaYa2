@@ -23,7 +23,7 @@
 @foreach($items as $departure)
 <x-departure-card :departure="$departure" />
 @endforeach
-@empty<div class="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center"><h3 class="text-sm font-bold text-slate-800">No encontramos salidas</h3><p class="mt-1 text-xs text-slate-500">Prueba con otra fecha, origen o destino.</p></div>@endforelse
+@empty<x-ui-empty-state icon="🚤" title="No encontramos salidas" description="Prueba con otra fecha, origen o destino."><x-slot:action><a href="{{route('routes.index')}}" class="ny-button ny-button--accent">Ver todas las rutas</a></x-slot:action></x-ui-empty-state>@endforelse
 </main></div>
 </x-public-layout>
 
