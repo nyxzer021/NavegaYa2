@@ -16,7 +16,6 @@ class AdminHomeHeroController
         return view('admin.home-hero.index', [
             'slides' => HomeHeroSlide::orderBy('sort_order')->get(),
             'duration' => (int) SystemSetting::value('home_hero_duration', '4'),
-            'carouselLimit' => (int) SystemSetting::value('home_carousel_limit', '5'),
         ]);
     }
 
@@ -50,14 +49,6 @@ class AdminHomeHeroController
         SystemSetting::updateOrCreate(['key' => 'home_hero_duration'], ['value' => $data['duration']]);
 
         return back()->with('success', 'Tiempo de transición actualizado.');
-    }
-
-    public function updateCarouselLimit(Request $request): RedirectResponse
-    {
-        $data = $request->validate(['carousel_limit' => ['required', 'integer', 'min:1', 'max:5']]);
-        SystemSetting::updateOrCreate(['key' => 'home_carousel_limit'], ['value' => $data['carousel_limit']]);
-
-        return back()->with('success', 'Máximo del carrusel publicitario actualizado.');
     }
 
     private function validated(Request $request, bool $creating, ?HomeHeroSlide $slide = null): array

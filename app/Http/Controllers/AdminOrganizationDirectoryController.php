@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CompanyReview;
 use App\Models\Organization;
 use App\Support\AdminScope;
-use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -45,11 +44,7 @@ class AdminOrganizationDirectoryController extends Controller
     public function updatePublicProfile(Request $request, Organization $organization): RedirectResponse
     {
         $this->authorizeOrganization($organization);
-        $data = $request->validate(['commercial_name' => ['nullable', 'string', 'max:150'], 'whatsapp' => ['nullable', 'regex:/^(?:\+?51)?[\s-]*9(?:[\s-]*\d){8}$/'], 'whatsapp_message' => ['nullable', 'string', 'max:500'], 'show_whatsapp' => ['nullable', 'boolean'], 'phone' => ['nullable', 'string', 'max:30'], 'service_hours' => ['nullable', 'string', 'max:180'], 'website' => ['nullable', 'url', 'max:500'], 'address' => ['nullable', 'string', 'max:250'], 'public_description' => ['nullable', 'string', 'max:1500'], 'logo' => ['nullable', 'image', 'max:5120'], 'cover' => ['nullable', 'image', 'max:5120']]);
-        $data['show_whatsapp'] = $request->boolean('show_whatsapp');
-        if (filled($data['whatsapp'] ?? null)) {
-            $data['whatsapp'] = PhoneNumber::international($data['whatsapp']);
-        }
+        $data = $request->validate(['commercial_name' => ['nullable', 'string', 'max:150'], 'whatsapp' => ['nullable', 'string', 'max:30'], 'phone' => ['nullable', 'string', 'max:30'], 'website' => ['nullable', 'url', 'max:500'], 'address' => ['nullable', 'string', 'max:250'], 'public_description' => ['nullable', 'string', 'max:1500'], 'logo' => ['nullable', 'image', 'max:5120'], 'cover' => ['nullable', 'image', 'max:5120']]);
         if ($request->hasFile('logo')) {
             $data['logo_path'] = Storage::url($request->file('logo')->store('company-profiles', 'public'));
         }

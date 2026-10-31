@@ -168,11 +168,10 @@ class B2BAdvertisingTest extends TestCase
 
         $response = $this->get(route('home'))->assertOk();
 
-        foreach (range(0, 4) as $views) {
+        foreach (range(0, 5) as $views) {
             $response->assertSee("Portada empresa {$views}");
         }
 
-        $response->assertDontSee('Portada empresa 5');
         $response->assertDontSee('Portada empresa 6');
     }
 

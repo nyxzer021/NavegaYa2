@@ -1,5 +1,4 @@
 <x-public-layout :title="$page->title.' · NavegaYA'" :description="$page->summary ?: \Illuminate\Support\Str::limit(strip_tags($page->content), 155)">
-    <x-amazon-hero-bg theme="routes" :page="$page"><div class="mx-auto flex h-full max-w-3xl flex-col justify-center text-center"><p class="text-[10px] font-black uppercase tracking-wider text-emerald-200">Página de NavegaYA</p><h1 class="mt-2 text-3xl font-black text-white sm:text-5xl">{{$page->title}}</h1>@if($page->summary)<p class="mx-auto mt-3 max-w-2xl text-sm text-white/85">{{$page->summary}}</p>@endif</div></x-amazon-hero-bg>
     <main class="bg-slate-50 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div class="mx-auto max-w-4xl">
             <nav class="mb-5 text-xs text-slate-500" aria-label="Ruta de navegación"><a href="{{route('home')}}" class="font-semibold text-emerald-800 hover:underline">Inicio</a><span class="mx-2">/</span><span>Información legal</span></nav>

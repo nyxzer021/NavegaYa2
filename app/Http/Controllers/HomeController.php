@@ -50,10 +50,9 @@ class HomeController
             ->when($date, fn ($q) => $q->whereDate('departure_at', $date))
             ->orderBy('departure_at')->limit(12)->get();
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
-        $carouselLimit = max(1, min(5, (int) SystemSetting::value('home_carousel_limit', '5')));
-        $carouselAds = $this->advertising->select('home_carousel', $carouselLimit);
+        $carouselAds = $this->advertising->select('home_carousel', 6);
         if ($carouselAds->isEmpty()) {
-            $carouselAds = $this->advertising->select('home_hero', $carouselLimit);
+            $carouselAds = $this->advertising->select('home_hero', 6);
         }
         $visible = $carouselAds;
         $ads = $this->advertising->select('home_recommendations', 3, $visible);

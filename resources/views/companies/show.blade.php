@@ -42,7 +42,7 @@
     }
     $gallery = $gallery->unique('src')->values();
     $dock = $ports->first();
-    $supportNumber = $organization->show_whatsapp ? \App\Support\PhoneNumber::international($organization->whatsapp) : null;
+    $supportNumber = preg_replace('/\D/', '', $organization->whatsapp ?: $organization->phone ?: '');
 @endphp
 
 <div class="min-h-screen bg-slate-50 pb-20">

@@ -3,7 +3,6 @@
     'image' => null,
     'class' => 'min-h-[220px]',
     'overlay' => 'from-slate-950/90 via-slate-900/70 to-slate-950/50',
-    'page' => null,
 ])
 
 @php
@@ -67,24 +66,40 @@
     ];
 
     $selected = $backgrounds[$theme] ?? $backgrounds['routes'];
-    $heroSetting = $page?->hero ?? \App\Models\SiteHero::query()->where('page_key', $theme)->first();
-    $configuredImage = $heroSetting?->image_path;
     $source = $image
         ? (str_starts_with($image, 'http') ? $image : asset(ltrim($image, '/')))
-        : ($configuredImage
-            ? (str_starts_with($configuredImage, 'http') ? $configuredImage : asset(ltrim($configuredImage, '/')))
-            : (file_exists(public_path($selected['local_file'])) ? asset($selected['local_file']) : $approvedAmazonImage));
-    $focalClass = match ($heroSetting?->focal_point) {
-        'top' => 'object-top', 'bottom' => 'object-bottom', 'left' => 'object-left', 'right' => 'object-right', default => 'object-center',
-    };
-    $alt = $heroSetting?->alt_text ?: $selected['title'];
+        : (file_exists(public_path($selected['local_file'])) ? asset($selected['local_file']) : $approvedAmazonImage);
 @endphp
 
-<section {{ $attributes->except('class')->merge(['class' => 'relative mx-auto mb-6 h-[260px] w-full max-w-7xl overflow-hidden rounded-b-[2rem] bg-slate-950 text-white shadow-xl md:h-[300px] lg:h-[340px] sm:rounded-b-[2.5rem] '.$class]) }} data-amazon-theme="{{ $theme }}">
+<style>
+    .ny-public-hero {
+        height: 260px !important;
+        min-height: 260px !important;
+        max-height: 260px !important;
+    }
+
+    @media (min-width: 768px) {
+        .ny-public-hero {
+            height: 300px !important;
+            min-height: 300px !important;
+            max-height: 300px !important;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .ny-public-hero {
+            height: 340px !important;
+            min-height: 340px !important;
+            max-height: 340px !important;
+        }
+    }
+</style>
+
+<section {{ $attributes->except('class')->merge(['class' => 'ny-public-hero relative mx-auto mb-6 max-w-[1600px] overflow-hidden rounded-b-[2rem] bg-slate-950 text-white shadow-xl sm:rounded-b-[2.5rem] '.$class]) }} data-amazon-theme="{{ $theme }}">
     <img
         src="{{ $source }}"
-        alt="{{ $alt }}"
-        class="absolute inset-0 h-full w-full object-cover {{ $focalClass }} brightness-[.88] saturate-[1.08]"
+        alt="{{ $selected['title'] }}"
+        class="absolute inset-0 h-full w-full object-cover object-center brightness-[.88] saturate-[1.08]"
         fetchpriority="{{ $theme === 'home' ? 'high' : 'auto' }}"
     >
     <div class="absolute inset-0 bg-gradient-to-r {{ $overlay }}"></div>
@@ -94,7 +109,7 @@
 
     @if($slot->isEmpty())
         <div class="relative z-10 max-w-3xl px-6 py-8 sm:px-10">
-            <span class="mb-2 inline-flex max-w-full whitespace-nowrap rounded border border-emerald-300/50 bg-emerald-950/75 px-1.5 py-1 text-[8px] font-bold tracking-[-.02em] text-emerald-100 shadow-sm sm:px-2.5 sm:text-[11px] sm:tracking-normal">● {{ $selected['badge'] }}</span>
+            <span class="mb-2 inline-flex max-w-full whitespace-nowrap rounded border border-emerald-300/50 bg-emerald-950/75 px-2 py-1 text-[9px] font-bold tracking-normal text-emerald-100 shadow-sm sm:px-2.5 sm:text-[11px]">● {{ $selected['badge'] }}</span>
             <h1 class="m-0 text-2xl font-black tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,.65)] sm:text-3xl lg:text-4xl">{{ $selected['title'] }}</h1>
             <p class="mt-2 text-xs font-semibold leading-relaxed text-white [text-shadow:0_1px_8px_rgba(0,0,0,.85)] sm:text-sm">{{ $selected['subtitle'] }}</p>
         </div>

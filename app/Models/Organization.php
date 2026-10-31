@@ -16,7 +16,6 @@ class Organization extends Model
 
     protected $fillable = [
         'type', 'modality', 'base_city', 'legal_name', 'commercial_name', 'contact_name', 'ruc', 'email', 'phone', 'whatsapp',
-        'whatsapp_message', 'service_hours', 'show_whatsapp',
         'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
         'bank_name', 'bank_account', 'bank_cci',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
@@ -29,7 +28,6 @@ class Organization extends Model
             'verified_at' => 'datetime',
             'contact_verified_at' => 'datetime',
             'is_marketplace_paused' => 'boolean',
-            'show_whatsapp' => 'boolean',
             'commission_rate' => 'decimal:2',
             'commission_starts_on' => 'date',
             'commission_ends_on' => 'date',
