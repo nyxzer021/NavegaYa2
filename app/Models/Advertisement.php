@@ -25,11 +25,11 @@ class Advertisement extends Model
         'ticket_voucher' => 'Boleto digital',
     ];
 
-    protected $fillable = ['organization_id', 'destination_city_id', 'business_name', 'business_type', 'contact_name', 'phone_whatsapp', 'email', 'city_destination', 'ruc', 'placements', 'category', 'title', 'description', 'target_url', 'image_url', 'banner_image_path', 'starts_on', 'ends_on', 'monthly_fee', 'status', 'admin_notes', 'views', 'clicks'];
+    protected $fillable = ['organization_id', 'destination_city_id', 'business_name', 'business_type', 'contact_name', 'phone_whatsapp', 'email', 'city_destination', 'ruc', 'placements', 'category', 'title', 'description', 'target_url', 'image_url', 'banner_image_path', 'alt_text', 'starts_on', 'ends_on', 'monthly_fee', 'status', 'display_order', 'admin_notes', 'views', 'clicks'];
 
     protected function casts(): array
     {
-        return ['placements' => 'array', 'starts_on' => 'date', 'ends_on' => 'date', 'monthly_fee' => 'decimal:2'];
+        return ['placements' => 'array', 'starts_on' => 'date', 'ends_on' => 'date', 'monthly_fee' => 'decimal:2', 'display_order' => 'integer'];
     }
 
     public function city(): BelongsTo

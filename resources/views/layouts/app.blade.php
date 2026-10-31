@@ -21,6 +21,10 @@
     @include('layouts.partials.header', ['current' => $current ?? ''])
     <main class="w-full flex-grow">{{ $slot ?? '' }}@yield('content')</main>
     @include('layouts.partials.footer')
+    @php($floatingWhatsApp=\App\Support\PhoneNumber::peru(\App\Models\SystemSetting::value('whatsapp_number')))
+    @php($showFloating=\App\Models\SystemSetting::value('show_whatsapp_floating','1')==='1')
+    @php($floatingMessage=\App\Models\SystemSetting::value('whatsapp_message','Hola, necesito ayuda para planificar mi viaje con NavegaYA.'))
+    @if($showFloating && $floatingWhatsApp)<a href="https://wa.me/{{$floatingWhatsApp}}?text={{urlencode($floatingMessage)}}" target="_blank" rel="noopener" class="fixed bottom-5 right-5 z-[9000] grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-2xl ring-4 ring-white transition hover:-translate-y-1 focus:outline-none focus:ring-amber-300" aria-label="Abrir ayuda por WhatsApp"><svg class="h-7 w-7" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3A13 13 0 0 0 5 22.9L3.3 29l6.3-1.7A13 13 0 1 0 16 3Zm0 23.8a10.8 10.8 0 0 1-5.5-1.5l-.4-.2-3.9 1 1-3.8-.2-.4A10.8 10.8 0 1 1 16 26.8Zm5.9-8.1c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.1l-1 1.3c-.2.2-.4.2-.7.1-2.1-.9-3.5-2.4-4.5-4.3-.2-.3 0-.5.1-.7l.8-1.1c.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.6-.7-.6h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.2 3.1 1.3 3.4c.2.2 2.3 3.5 5.6 4.9.8.3 1.4.5 1.9.7.8.2 1.5.2 2 .1.6-.1 1.9-.8 2.2-1.5.3-.8.3-1.4.2-1.6-.1-.1-.3-.2-.7-.4Z"/></svg></a>@endif
     @stack('scripts')
 </body>
 </html>

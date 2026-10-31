@@ -2,8 +2,8 @@
     $publicNavigation = \App\Models\NavigationItem::query()->where('is_active', true)->orderBy('position')->orderBy('id')->get();
     $desktopNavigation = $publicNavigation->take(5);
     $overflowNavigation = $publicNavigation->slice(5);
-    $whatsAppLabel = trim((string) \App\Models\SystemSetting::value('whatsapp_number'));
-    $whatsAppNumber = preg_replace('/\D/', '', $whatsAppLabel);
+    $whatsAppNumber = \App\Support\PhoneNumber::peru(\App\Models\SystemSetting::value('whatsapp_number'));
+    $whatsAppLabel = \App\Support\PhoneNumber::display($whatsAppNumber);
     $companyRegistrationActive = request()->routeIs('company.registration*');
     $isCurrentNavigation = function ($item): bool {
         if ($item->target_type === 'page') {
@@ -27,7 +27,7 @@
             @if($overflowNavigation->isNotEmpty())
                 <details class="group relative"><summary class="cursor-pointer list-none rounded-lg px-2.5 py-2 font-semibold text-emerald-100 transition hover:bg-white/10 hover:text-white">Más ▾</summary><div class="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl">@foreach($overflowNavigation as $item)@php($current = $isCurrentNavigation($item))<a href="{{ $item->url() }}" @if($item->opens_new_tab) target="_blank" rel="noopener noreferrer" @endif @if($current) aria-current="page" @endif class="block rounded-lg px-3 py-2 text-sm font-semibold {{ $current ? 'bg-amber-100 text-emerald-950' : 'hover:bg-emerald-50' }}">{{ $item->text() }}</a>@endforeach</div></details>
             @endif
-            <a href="{{ route('company.registration') }}" @if($companyRegistrationActive) aria-current="page" @endif class="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 font-semibold transition {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950 shadow-sm' : 'border border-white/20 text-emerald-100 hover:bg-white/10 hover:text-white' }}">🏢 <span>Afiliar tu empresa</span></a>
+            <a href="{{ route('company.registration') }}#formulario-transportista" @if($companyRegistrationActive) aria-current="page" @endif class="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 font-semibold transition {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950 shadow-sm' : 'border border-white/20 text-emerald-100 hover:bg-white/10 hover:text-white' }}">🏢 <span>Afiliar tu empresa</span></a>
         </nav>
 
         <div class="flex shrink-0 items-center gap-2">
@@ -39,7 +39,7 @@
     <nav id="public-mobile-menu" hidden class="mx-auto mt-3 max-h-[calc(100vh-5.5rem)] max-w-7xl overflow-y-auto border-t border-white/10 pt-3 md:hidden" aria-label="Navegación móvil">
         <div class="grid gap-1">
             @foreach($publicNavigation as $item)@php($current = $isCurrentNavigation($item))<a href="{{ $item->url() }}" data-mobile-menu-link @if($item->opens_new_tab) target="_blank" rel="noopener noreferrer" @endif @if($current) aria-current="page" @endif class="rounded-lg px-3 py-2.5 text-sm font-semibold {{ $current ? 'bg-amber-400 text-emerald-950' : 'text-emerald-50 hover:bg-white/10' }}">{{ $item->text() }}</a>@endforeach
-            <a href="{{ route('company.registration') }}" data-mobile-menu-link class="mt-1 rounded-xl px-3 py-2.5 text-sm font-semibold {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950' : 'border border-white/20 text-emerald-50' }}">🏢 Afiliar tu empresa</a>
+            <a href="{{ route('company.registration') }}#formulario-transportista" data-mobile-menu-link class="mt-1 rounded-xl px-3 py-2.5 text-sm font-semibold {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950' : 'border border-white/20 text-emerald-50' }}">🏢 Afiliar tu empresa</a>
             @auth<a href="{{ route('dashboard') }}" data-mobile-menu-link class="rounded-xl border border-white/20 px-3 py-2.5 text-sm font-semibold text-white">👤 {{ auth()->user()->isCustomer() ? (app()->getLocale()==='en'?'My trips':'Mis viajes') : (app()->getLocale()==='en'?'My account':'Mi cuenta') }}</a>@else<a href="{{ route('login') }}" data-mobile-menu-link class="rounded-xl border border-white/20 px-3 py-2.5 text-sm font-semibold text-white">👤 {{app()->getLocale()==='en'?'Sign in':'Iniciar sesión'}}</a>@endauth
             <div class="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-3 pt-3 text-xs">@if($whatsAppNumber)<a href="https://wa.me/{{ $whatsAppNumber }}" target="_blank" rel="noopener" class="font-semibold text-emerald-100">WhatsApp: {{ $whatsAppLabel }}</a>@endif<div class="flex gap-2"><a href="{{ route('public.locale', ['locale' => 'es']) }}" class="rounded-md px-2 py-1 {{ app()->getLocale() === 'es' ? 'bg-white/15 text-white' : 'text-emerald-100' }}">ES</a><a href="{{ route('public.locale', ['locale' => 'en']) }}" class="rounded-md px-2 py-1 {{ app()->getLocale() === 'en' ? 'bg-white/15 text-white' : 'text-emerald-100' }}">EN</a></div></div>
         </div>

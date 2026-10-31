@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemSetting;
+use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,12 +14,14 @@ class AdminSettingsController
     {
         $tab = in_array($request->string('tab')->toString(), ['integrations', 'identity', 'operations', 'payments', 'appearance'], true) ? $request->string('tab')->toString() : 'integrations';
 
-        return view('admin.settings.index', ['activeTab' => $tab, 'culqiConfigured' => filled(config('services.culqi.public_key')) && filled(config('services.culqi.secret_key')) && filled(config('services.culqi.webhook_secret')), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.'), 'siteBrand' => SystemSetting::value('site_brand', 'NavegaYA'), 'footerDescription' => SystemSetting::value('footer_description', 'La plataforma para viajes fluviales, empresas verificadas y destinos amazónicos.'), 'footerRights' => SystemSetting::value('footer_rights', 'Todos los derechos reservados.'), 'weatherTemperature' => SystemSetting::value('weather_temperature', '28'), 'riverStatus' => SystemSetting::value('river_status', 'normal'), 'themeFont' => SystemSetting::value('theme_font', 'elegant'), 'themeForest' => SystemSetting::value('theme_forest', '#103a31'), 'themeGold' => SystemSetting::value('theme_gold', '#f2b624'), 'themeRiver' => SystemSetting::value('theme_river', '#32b6c9'), 'themeHeroHeight' => SystemSetting::value('theme_hero_height', '360'), 'platformFeePercent' => SystemSetting::value('platform_fee_percent', '10')]);
+        return view('admin.settings.index', ['activeTab' => $tab, 'culqiConfigured' => filled(config('services.culqi.public_key')) && filled(config('services.culqi.secret_key')) && filled(config('services.culqi.webhook_secret')), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.'), 'showWhatsApp' => SystemSetting::value('show_whatsapp_floating', '1') === '1', 'siteBrand' => SystemSetting::value('site_brand', 'NavegaYA'), 'footerDescription' => SystemSetting::value('footer_description', 'La plataforma para viajes fluviales, empresas verificadas y destinos amazónicos.'), 'footerRights' => SystemSetting::value('footer_rights', 'Todos los derechos reservados.'), 'sideBannerTitle' => SystemSetting::value('home_side_banner_title', 'Anuncie aquí'), 'sideBannerText' => SystemSetting::value('home_side_banner_text', 'Conozca nuestros planes'), 'sideBannerUrl' => SystemSetting::value('home_side_banner_url', '/anunciate'), 'weatherTemperature' => SystemSetting::value('weather_temperature', '28'), 'riverStatus' => SystemSetting::value('river_status', 'normal'), 'themeFont' => SystemSetting::value('theme_font', 'elegant'), 'themeForest' => SystemSetting::value('theme_forest', '#103a31'), 'themeGold' => SystemSetting::value('theme_gold', '#f2b624'), 'themeRiver' => SystemSetting::value('theme_river', '#32b6c9'), 'themeHeroHeight' => SystemSetting::value('theme_hero_height', '360'), 'platformFeePercent' => SystemSetting::value('platform_fee_percent', '10')]);
     }
 
     public function updateWhatsApp(Request $request): RedirectResponse
     {
-        $data = $request->validate(['whatsapp_number' => ['required', 'regex:/^[1-9][0-9]{7,14}$/'], 'whatsapp_message' => ['required', 'string', 'max:500']]);
+        $data = $request->validate(['whatsapp_number' => ['nullable', 'string', 'max:30'], 'whatsapp_message' => ['required', 'string', 'max:500'], 'show_whatsapp_floating' => ['nullable', 'boolean']]);
+        $data['whatsapp_number'] = PhoneNumber::peru($data['whatsapp_number'] ?? null) ?? '';
+        $data['show_whatsapp_floating'] = $request->boolean('show_whatsapp_floating') ? '1' : '0';
         foreach ($data as $key => $value) {
             SystemSetting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
@@ -28,8 +31,8 @@ class AdminSettingsController
 
     public function updateChrome(Request $request): RedirectResponse
     {
-        $data = $request->validate(['site_brand' => ['required', 'string', 'max:40'], 'footer_description' => ['required', 'string', 'max:300'], 'footer_rights' => ['required', 'string', 'max:120']]);
-        foreach ($data as $key => $value) {
+        $data = $request->validate(['site_brand' => ['required', 'string', 'max:40'], 'footer_description' => ['required', 'string', 'max:300'], 'footer_rights' => ['required', 'string', 'max:120'], 'home_side_banner_title' => ['nullable', 'string', 'max:60'], 'home_side_banner_text' => ['nullable', 'string', 'max:120'], 'home_side_banner_url' => ['nullable', 'string', 'max:500']]);
+        foreach (array_filter($data, fn ($value) => $value !== null) as $key => $value) {
             SystemSetting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 

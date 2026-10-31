@@ -1,7 +1,7 @@
 @php
  $locale=app()->getLocale()==='en'?'en':'es';
- $supportLabel=trim((string)\App\Models\SystemSetting::value('whatsapp_number'));
- $supportNumber=preg_replace('/\D/','',$supportLabel);
+ $supportNumber=\App\Support\PhoneNumber::peru(\App\Models\SystemSetting::value('whatsapp_number'));
+ $supportLabel=\App\Support\PhoneNumber::display($supportNumber);
  $temperature=(int)\App\Models\SystemSetting::value('weather_temperature','28');
  $riverCode=strtolower((string)\App\Models\SystemSetting::value('river_status','normal'));
  $riverLabels=['normal'=>['Normal','Normal'],'rising'=>['En aumento','Rising'],'high'=>['Alto','High'],'falling'=>['En descenso','Falling'],'low'=>['Bajo','Low']];

@@ -1,5 +1,5 @@
-@php($supportLabel=trim((string)\App\Models\SystemSetting::value('whatsapp_number')))
-@php($supportNumber=preg_replace('/\D/','',$supportLabel))
+@php($supportNumber=\App\Support\PhoneNumber::peru(\App\Models\SystemSetting::value('whatsapp_number')))
+@php($supportLabel=\App\Support\PhoneNumber::display($supportNumber))
 @php($siteBrand=\App\Models\SystemSetting::value('site_brand','NavegaYA'))
 @php($footerDescription=\App\Models\SystemSetting::value('footer_description','Plataforma digital de pasajes fluviales y aéreos en la Amazonía peruana. Compra segura y confirmación inmediata.'))
 @php($footerRights=\App\Models\SystemSetting::value('footer_rights','Todos los derechos reservados.'))
