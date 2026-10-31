@@ -61,6 +61,7 @@ class PublicHeroManagementTest extends TestCase
             $this->get(route($route))
                 ->assertOk()
                 ->assertSee('data-amazon-theme="'.$theme.'"', false)
+                ->assertSee('width: min(80rem, calc(100vw - 2rem)) !important', false)
                 ->assertSee('height: 240px !important', false)
                 ->assertSee('height: 340px !important', false);
         }

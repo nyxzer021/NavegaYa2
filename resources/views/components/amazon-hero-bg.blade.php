@@ -87,7 +87,13 @@
 
 <style>
     .ny-public-hero {
-        width: 100%;
+        left: 50%;
+        width: min(80rem, calc(100vw - 2rem)) !important;
+        max-width: 80rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        transform: translateX(-50%);
+        border-radius: 0 0 2rem 2rem;
         height: 240px !important;
         min-height: 240px !important;
         max-height: 240px !important;
@@ -95,6 +101,7 @@
 
     @media (min-width: 768px) {
         .ny-public-hero {
+            border-radius: 0 0 2.5rem 2.5rem;
             height: 300px !important;
             min-height: 300px !important;
             max-height: 300px !important;
