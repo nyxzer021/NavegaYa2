@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Services\CompanyProvisioningService;
+use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,10 @@ class AdminCompanyController extends Controller
             'commercial_name' => ['nullable', 'string', 'max:255'],
             'ruc' => ['required', 'digits:11', 'unique:organizations,ruc'],
             'phone' => ['required', 'string', 'max:30'],
+            'whatsapp' => ['nullable', 'regex:/^(?:\+?51)?[\s-]*9(?:[\s-]*\d){8}$/'],
+            'whatsapp_message' => ['nullable', 'string', 'max:500'],
+            'service_hours' => ['nullable', 'string', 'max:180'],
+            'show_whatsapp' => ['nullable', 'boolean'],
             'whatsapp' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
@@ -43,6 +48,10 @@ class AdminCompanyController extends Controller
             'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'admin_password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
+        $data['show_whatsapp'] = $request->boolean('show_whatsapp');
+        if (filled($data['whatsapp'] ?? null)) {
+            $data['whatsapp'] = PhoneNumber::international($data['whatsapp']);
+        }
 
         $provisioning->provision($data, true);
 
@@ -195,6 +204,10 @@ class AdminCompanyController extends Controller
             'legal_name' => ['required', 'string', 'max:255'],
             'commercial_name' => ['nullable', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
+            'whatsapp' => ['nullable', 'regex:/^(?:\+?51)?[\s-]*9(?:[\s-]*\d){8}$/'],
+            'whatsapp_message' => ['nullable', 'string', 'max:500'],
+            'service_hours' => ['nullable', 'string', 'max:180'],
+            'show_whatsapp' => ['nullable', 'boolean'],
             'base_city' => ['required', 'string', 'max:100'],
             'modality' => ['required', 'in:fluvial,aereo,mixto'],
             'commission_rate' => ['required', 'numeric', 'between:0,100'],
@@ -207,10 +220,14 @@ class AdminCompanyController extends Controller
             'admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($admin)],
             'admin_password' => [$admin ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
         ]);
+        $data['show_whatsapp'] = $request->boolean('show_whatsapp');
+        if (filled($data['whatsapp'] ?? null)) {
+            $data['whatsapp'] = PhoneNumber::international($data['whatsapp']);
+        }
 
         DB::transaction(function () use ($organization, $admin, $data): void {
             $organization->update(collect($data)->only([
-                'legal_name', 'commercial_name', 'phone', 'base_city', 'modality', 'commission_rate',
+                'legal_name', 'commercial_name', 'phone', 'whatsapp', 'whatsapp_message', 'service_hours', 'show_whatsapp', 'base_city', 'modality', 'commission_rate',
                 'commercial_plan', 'agreement_number', 'commission_starts_on', 'commission_ends_on', 'commission_notes',
             ])->all());
             if ($admin) {

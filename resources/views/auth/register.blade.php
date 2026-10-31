@@ -21,7 +21,5 @@
     <div class="oauth-separator"><span>o regístrate con</span></div>
     @if(config('services.google.enabled'))
         <a class="google-button" href="{{ route('google.redirect') }}"><b>G</b> Continuar con Google</a>
-    @else
-        <span class="google-button is-pending" title="Pendiente de configuración de Google"><b>G</b> Continuar con Google <small>Próximamente</small></span>
     @endif
 </x-guest-layout>
