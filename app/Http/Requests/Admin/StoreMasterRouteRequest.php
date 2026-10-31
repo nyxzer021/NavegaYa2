@@ -23,6 +23,15 @@ class StoreMasterRouteRequest extends FormRequest
                 'path_geojson' => null,
             ]);
         }
+
+        if ($this->filled('estimated_duration_minutes')) {
+            $minutes = $this->integer('estimated_duration_minutes');
+            $hours = intdiv($minutes, 60);
+            $remaining = $minutes % 60;
+            $this->merge(['estimated_duration_text' => trim(($hours ? $hours.' h ' : '').($remaining ? $remaining.' min' : ''))]);
+        } elseif ($this->filled('estimated_duration_text') && preg_match('/^(?:(\d+) h)?(?: ?(\d+) min)?$/', trim((string) $this->input('estimated_duration_text')), $parts)) {
+            $this->merge(['estimated_duration_minutes' => ((int) ($parts[1] ?? 0) * 60) + (int) ($parts[2] ?? 0)]);
+        }
     }
 
     public function authorize(): bool
@@ -43,6 +52,7 @@ class StoreMasterRouteRequest extends FormRequest
             'destination_port_id' => ['required', 'integer', 'exists:ports,id', 'different:origin_port_id'],
             'river_basin' => ['nullable', 'string', 'max:160'],
             'corridor' => ['nullable', 'string', 'max:160'],
+            'estimated_duration_minutes' => ['required', 'integer', 'min:1', 'max:43200'],
             'estimated_duration_text' => ['required', 'string', 'max:80', 'regex:/^(?:\d+ h(?: \d+ min)?|\d+ min)$/'],
             'path_geojson' => ['nullable', 'array'],
             'path_geojson.type' => ['required_with:path_geojson', Rule::in(['LineString'])],

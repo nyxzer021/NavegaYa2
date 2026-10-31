@@ -20,7 +20,7 @@
     @include('layouts.partials.header', ['current' => $current ?? ''])
     <main class="w-full flex-grow">{{ $slot ?? '' }}@yield('content')</main>
     @include('layouts.partials.footer')
-    <x-public-i18n />@stack('scripts')
+    @stack('scripts')
 </body>
 </html>
 

@@ -2,10 +2,12 @@
 @php
  $editing = (bool) $masterRoute;
  $durationValue = old('estimated_duration_text', $masterRoute->estimated_duration_text ?? '1 h');
+ $storedMinutes = old('estimated_duration_minutes', $masterRoute->estimated_duration_minutes ?? null);
  preg_match('/(\d+)\s*h/i', $durationValue, $durationHourParts);
  preg_match('/(\d+)\s*min/i', $durationValue, $durationMinuteParts);
  $durationHours = (int) ($durationHourParts[1] ?? 0);
  $durationMinutes = (int) ($durationMinuteParts[1] ?? 0);
+ if ($storedMinutes !== null) { $durationHours = intdiv((int) $storedMinutes, 60); $durationMinutes = (int) $storedMinutes % 60; }
 @endphp
 <x-slot name="header"><h2 class="ny-page-title">{{ $editing ? 'Editar tramo maestro' : 'Nuevo tramo maestro' }}</h2></x-slot>
 <div class="mx-auto max-w-7xl space-y-3 px-4 py-4 sm:px-6">

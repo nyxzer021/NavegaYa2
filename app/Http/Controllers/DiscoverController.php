@@ -5,26 +5,31 @@ namespace App\Http\Controllers;
 use App\Models\Advertisement;
 use App\Models\DestinationCity;
 use App\Models\DestinationReview;
+use App\Models\MasterRoute;
 use App\Models\Reservation;
 use App\Models\SystemSetting;
 use App\Models\TransportRoute;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Response;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class DiscoverController
 {
     public function index(): View
     {
-        $cities = DestinationCity::where('is_active', true)->orderBy('name')->get();
+        $cities = DestinationCity::where('is_active', true)->where('show_in_discover', true)->orderBy('name')->get();
         $routes = TransportRoute::with(['originPort', 'destinationPort'])->where('status', 'active')->get();
+        $routeCounts = MasterRoute::query()->where('status', 'active')->get()
+            ->flatMap(fn (MasterRoute $route) => [$route->origin_city, $route->destination_city])
+            ->filter()->countBy();
+        $hasMultipleDepartments = $cities->pluck('department')->filter()->unique()->count() > 1;
         $ads = Advertisement::with('city')->where('status', 'active')->where(fn ($q) => $q->whereNull('starts_on')->orWhereDate('starts_on', '<=', today()))->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))->get();
         $ads->each(fn ($ad) => $ad->increment('views'));
         $whatsappNumber = SystemSetting::value('whatsapp_number');
         $whatsappMessage = SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.');
 
-        return view('discover.index', compact('cities', 'routes', 'ads', 'whatsappNumber', 'whatsappMessage'));
+        return view('discover.index', compact('cities', 'routes', 'routeCounts', 'hasMultipleDepartments', 'ads', 'whatsappNumber', 'whatsappMessage'));
     }
 
     public function show(DestinationCity $city): View
@@ -38,7 +43,7 @@ class DiscoverController
             $canReview = Reservation::where('contact_email', auth()->user()->email)->where('status', 'confirmed')->whereHas('departure', fn ($departure) => $departure->where('departure_at', '<', now())->whereHas('transportRoute', fn ($route) => $route->whereHas('originPort', fn ($port) => $port->where('city', $city->name))->orWhereHas('destinationPort', fn ($port) => $port->where('city', $city->name))))->exists();
         }
 
-return view('discover.show', compact('city', 'routes', 'reviews', 'average', 'canReview'));
+        return view('discover.show', compact('city', 'routes', 'reviews', 'average', 'canReview'));
     }
 
     public function review(Request $request, DestinationCity $city): RedirectResponse

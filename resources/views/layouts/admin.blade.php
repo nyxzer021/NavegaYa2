@@ -58,6 +58,5 @@
     </script>
 
     <x-platform-admin-theme />
-    <x-public-i18n />
 </body>
 </html>

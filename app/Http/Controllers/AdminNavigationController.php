@@ -111,6 +111,15 @@ class AdminNavigationController extends Controller
 
     private function pageData(Request $r, ?PublicPage $page = null): array
     {
-        return $r->validate(['title' => ['required', 'string', 'max:150'], 'slug' => ['nullable', 'string', 'max:160', Rule::unique('public_pages', 'slug')->ignore($page?->id)], 'summary' => ['nullable', 'string', 'max:500'], 'content' => ['nullable', 'string'], 'is_published' => ['nullable', 'boolean']]) + ['is_published' => $r->boolean('is_published')];
+        return $r->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'title_en' => ['nullable', 'string', 'max:150'],
+            'slug' => ['nullable', 'string', 'max:160', Rule::unique('public_pages', 'slug')->ignore($page?->id)],
+            'summary' => ['nullable', 'string', 'max:500'],
+            'summary_en' => ['nullable', 'string', 'max:500'],
+            'content' => ['nullable', 'string'],
+            'content_en' => ['nullable', 'string'],
+            'is_published' => ['nullable', 'boolean'],
+        ]) + ['is_published' => $r->boolean('is_published')];
     }
 }

@@ -15,14 +15,32 @@ class MasterRoute extends Model
 
     protected $fillable = [
         'code', 'modality', 'origin_city', 'destination_city', 'origin_port_id',
-        'destination_port_id', 'river_basin', 'corridor', 'estimated_duration_text', 'path_geojson', 'status',
+        'destination_port_id', 'river_basin', 'corridor', 'estimated_duration_text', 'estimated_duration_minutes', 'duration_needs_review', 'path_geojson', 'status',
     ];
 
     protected function casts(): array
     {
         return [
             'path_geojson' => 'array',
+            'estimated_duration_minutes' => 'integer',
+            'duration_needs_review' => 'boolean',
         ];
+    }
+
+    public static function formatDuration(?int $minutes): string
+    {
+        if (! $minutes) {
+            return __('public.duration_review');
+        }
+        $hours = intdiv($minutes, 60);
+        $remaining = $minutes % 60;
+
+        return $hours > 0 ? trim($hours.' h '.($remaining ? $remaining.' min' : '')) : $remaining.' min';
+    }
+
+    public function getFormattedDurationAttribute(): string
+    {
+        return $this->duration_needs_review ? __('public.duration_review') : self::formatDuration($this->estimated_duration_minutes);
     }
 
     public function originPort(): BelongsTo

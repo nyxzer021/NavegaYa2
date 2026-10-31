@@ -20,6 +20,5 @@
                 {{ $slot }}
             </div></div>
         </div>
-    <x-public-i18n />
     </body>
 </html>

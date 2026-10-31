@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class DestinationCity extends Model
 {
-    protected $fillable = ['name', 'department', 'river', 'summary', 'attractions', 'lodging', 'gastronomy', 'image_url', 'sort_order', 'is_active'];
+    protected $fillable = ['name', 'department', 'river', 'summary', 'summary_en', 'attractions', 'attractions_en', 'lodging', 'lodging_en', 'gastronomy', 'gastronomy_en', 'image_url', 'image_alt', 'image_alt_en', 'sort_order', 'is_active', 'show_in_discover'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'show_in_discover' => 'boolean'];
     }
 }
