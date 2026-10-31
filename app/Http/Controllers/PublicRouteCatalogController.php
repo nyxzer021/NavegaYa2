@@ -36,6 +36,7 @@ class PublicRouteCatalogController
             ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
             ->where('departure_at', '>=', now())
             ->when($request->filled('origin'), fn ($query) => $query->whereHas('transportRoute.originPort', fn ($port) => $port->where('city', $request->string('origin')->toString())))
+            ->when($request->integer('origin_port'), fn ($query, $portId) => $query->whereHas('transportRoute', fn ($route) => $route->where('origin_port_id', $portId)))
             ->when($request->filled('destination'), fn ($query) => $query->whereHas('transportRoute.destinationPort', fn ($port) => $port->where('city', $request->string('destination')->toString())))
             ->when($request->date('date'), fn ($query, $date) => $query->whereDate('departure_at', $date))
             ->when($request->filled('service'), function ($query) use ($request) {

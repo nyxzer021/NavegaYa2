@@ -19,7 +19,7 @@
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-3">
         <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10" aria-hidden="true">🚤</span><span class="text-lg font-extrabold tracking-tight">Navega<span class="text-amber-400">YA</span></span></a>
 
-        <nav class="hidden min-w-0 flex-1 items-center justify-center gap-1 text-xs md:flex" aria-label="Navegación principal">
+        <nav class="hidden min-w-0 flex-1 items-center justify-center gap-1 text-xs md:flex" aria-label="{{app()->getLocale()==='en'?'Main navigation':'Navegación principal'}}">
             @foreach($desktopNavigation as $item)
                 @php($current = $isCurrentNavigation($item))
                 <a href="{{ $item->url() }}" @if($item->opens_new_tab) target="_blank" rel="noopener noreferrer" @endif @if($current) aria-current="page" @endif class="max-w-40 truncate rounded-lg px-2.5 py-2 font-semibold transition {{ $current ? 'bg-amber-400 text-emerald-950' : 'text-emerald-100 hover:bg-white/10 hover:text-white' }}" title="{{ $item->text() }}">{{ $item->text() }}</a>

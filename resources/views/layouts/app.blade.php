@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}">
     @php($pageTitle=$title??config('app.name','NavegaYA').' · Transporte Fluvial y Aéreo en Loreto')
-    @php($pageDescription=\Illuminate\Support\Str::limit(strip_tags($description??'Compra pasajes fluviales y aéreos, consulta rutas oficiales y descubre empresas verificadas para viajar por Loreto.'),160,''))
+    @php($defaultDescription=app()->getLocale()==='en'?'Compare verified river and air services, check official schedules, buy tickets securely and discover trusted destinations across the Peruvian Amazon.':'Compara servicios fluviales y aéreos verificados, consulta horarios oficiales, compra pasajes de forma segura y descubre destinos de la Amazonía peruana.')
+    @php($pageDescription=\Illuminate\Support\Str::limit(strip_tags($description??$defaultDescription),160,''))
     @php($shareImage=$image?:asset('images/branding/banner-home-viajeros-amazonia.webp'))
     <meta name="description" content="{{ $pageDescription }}">
     <meta property="og:type" content="website"><meta property="og:site_name" content="NavegaYA"><meta property="og:title" content="{{ $pageTitle }}"><meta property="og:description" content="{{ $pageDescription }}"><meta property="og:image" content="{{ $shareImage }}"><meta property="og:url" content="{{ url()->current() }}">

@@ -1,25 +1,29 @@
-<x-public-layout current="about" title="Quiénes somos · NavegaYA" description="Conoce el propósito de NavegaYA y cómo conectamos viajeros con empresas de transporte de la Amazonía peruana.">
+<x-public-layout current="about" :title="app()->getLocale()==='en'?'About us · NavegaYA':'Quiénes somos · NavegaYA'" :description="app()->getLocale()==='en'?'Learn how NavegaYA connects travelers with verified river and air operators, reliable schedules and trusted services throughout the Peruvian Amazon.':'Conoce cómo NavegaYA conecta viajeros con operadores fluviales y aéreos verificados, horarios confiables y servicios seguros en toda la Amazonía peruana.'">
     <main class="bg-slate-50 px-4 pb-16 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <x-amazon-hero-bg theme="home" class="text-center shadow-xl" overlay="from-slate-950/80 via-[#062c21]/65 to-emerald-950/35">
                 <div class="mx-auto max-w-3xl px-4 pb-16 pt-10 sm:py-20">
                     <span class="inline-flex rounded-full border border-emerald-300/30 bg-emerald-950/60 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.16em] text-emerald-200">NavegaYA · Amazonía peruana</span>
-                    <h1 class="mt-4 text-3xl font-extrabold leading-tight text-white sm:text-5xl">Conectamos viajes, ríos y personas</h1>
-                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-emerald-50/85 sm:text-base">Reunimos rutas fluviales y aéreas, empresas verificadas y destinos de Loreto para que cada viaje pueda planificarse con información clara y confiable.</p>
+                    <h1 class="mt-4 text-3xl font-extrabold leading-tight text-white sm:text-5xl">{{app()->getLocale()==='en'?'Connecting journeys, rivers and people':'Conectamos viajes, ríos y personas'}}</h1>
+                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-emerald-50/85 sm:text-base">{{app()->getLocale()==='en'?'We bring together river and air routes, verified operators and Amazon destinations so every journey can be planned with clear, reliable information.':'Reunimos rutas fluviales y aéreas, empresas verificadas y destinos de Loreto para que cada viaje pueda planificarse con información clara y confiable.'}}</p>
                 </div>
             </x-amazon-hero-bg>
 
             <section class="mx-auto -mt-6 grid max-w-6xl gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8 lg:grid-cols-[.8fr_1.2fr] lg:p-10">
-                <div><p class="text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-700">Conoce NavegaYA</p><h2 class="mt-2 text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">Información clara para viajar mejor</h2></div>
-                <p class="text-sm leading-7 text-slate-600">NavegaYA es una plataforma digital creada para acercar a viajeros y empresas de transporte de la Amazonía. Integra rutas, salidas, embarcaciones, aeronaves, pasajes y destinos en un solo lugar, facilitando una experiencia más ordenada antes, durante y después del viaje.</p>
+                <div><p class="text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-700">{{app()->getLocale()==='en'?'About NavegaYA':'Conoce NavegaYA'}}</p><h2 class="mt-2 text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">{{app()->getLocale()==='en'?'Clear information for better travel':'Información clara para viajar mejor'}}</h2></div>
+                <p class="text-sm leading-7 text-slate-600">{{app()->getLocale()==='en'?'NavegaYA is a digital platform connecting travelers and Amazon transport operators. It brings routes, departures, vessels, aircraft, tickets and destinations together in one reliable place.':'NavegaYA es una plataforma digital creada para acercar a viajeros y empresas de transporte de la Amazonía. Integra rutas, salidas, embarcaciones, aeronaves, pasajes y destinos en un solo lugar, facilitando una experiencia más ordenada antes, durante y después del viaje.'}}</p>
             </section>
 
             <section class="mx-auto mt-8 grid max-w-6xl gap-5 md:grid-cols-3">
-                @foreach([
+                @foreach((app()->getLocale()==='en' ? [
+                    ['◎','Our purpose','Make reliable information readily available to search, compare and book river and air travel.'],
+                    ['✓','For travelers','Provide schedules, verified operators, digital tickets and useful guidance in one platform.'],
+                    ['↗','For companies','Offer tools to publish services, manage operations and connect with new passengers.'],
+                ] : [
                     ['◎','Nuestro propósito','Facilitar el acceso a información confiable para buscar, comparar y reservar viajes por río y aire.'],
                     ['✓','Para los viajeros','Ofrecer horarios, empresas verificadas, pasajes digitales y orientación útil en una sola plataforma.'],
                     ['↗','Para las empresas','Brindar herramientas para publicar su oferta, administrar operaciones y conectar con nuevos pasajeros.'],
-                ] as [$icon,$title,$description])
+                ]) as [$icon,$title,$description])
                     <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 font-black text-emerald-700">{{$icon}}</span><h3 class="mt-4 font-extrabold text-slate-950">{{$title}}</h3><p class="mt-2 text-sm leading-6 text-slate-500">{{$description}}</p></article>
                 @endforeach
             </section>
