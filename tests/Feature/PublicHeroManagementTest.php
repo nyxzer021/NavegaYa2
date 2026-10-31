@@ -47,9 +47,22 @@ class PublicHeroManagementTest extends TestCase
 
     public function test_public_hero_has_one_consistent_responsive_height(): void
     {
-        $this->get(route('companies.index'))
-            ->assertOk()
-            ->assertSee('height: 240px !important', false)
-            ->assertSee('height: 340px !important', false);
+        $pages = [
+            ['home', 'home'],
+            ['about', 'about'],
+            ['routes.index', 'routes'],
+            ['companies.index', 'companies'],
+            ['discover.index', 'discover'],
+            ['travels.index', 'check_ticket'],
+            ['company.registration', 'affiliate'],
+        ];
+
+        foreach ($pages as [$route, $theme]) {
+            $this->get(route($route))
+                ->assertOk()
+                ->assertSee('data-amazon-theme="'.$theme.'"', false)
+                ->assertSee('height: 240px !important', false)
+                ->assertSee('height: 340px !important', false);
+        }
     }
 }

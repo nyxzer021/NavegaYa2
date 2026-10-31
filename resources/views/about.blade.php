@@ -2,10 +2,10 @@
     <main class="bg-slate-50 px-4 pb-16 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <x-amazon-hero-bg theme="about" class="text-center shadow-xl" overlay="from-slate-950/80 via-[#062c21]/65 to-emerald-950/35">
-                <div class="mx-auto max-w-3xl px-4 pb-16 pt-10 sm:py-20">
+                <div class="mx-auto flex h-full max-w-3xl flex-col items-center justify-center px-4 py-3">
                     <span class="inline-flex rounded-full border border-emerald-300/30 bg-emerald-950/60 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.16em] text-emerald-200">NavegaYA · Amazonía peruana</span>
-                    <h1 class="mt-4 text-3xl font-extrabold leading-tight text-white sm:text-5xl">{{app()->getLocale()==='en'?'Connecting journeys, rivers and people':'Conectamos viajes, ríos y personas'}}</h1>
-                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-emerald-50/85 sm:text-base">{{app()->getLocale()==='en'?'We bring together river and air routes, verified operators and Amazon destinations so every journey can be planned with clear, reliable information.':'Reunimos rutas fluviales y aéreas, empresas verificadas y destinos de Loreto para que cada viaje pueda planificarse con información clara y confiable.'}}</p>
+                    <h1 class="mt-3 text-3xl font-extrabold leading-tight text-white sm:text-4xl">{{app()->getLocale()==='en'?'Connecting journeys, rivers and people':'Conectamos viajes, ríos y personas'}}</h1>
+                    <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-emerald-50/85">{{app()->getLocale()==='en'?'We bring together river and air routes, verified operators and Amazon destinations so every journey can be planned with clear, reliable information.':'Reunimos rutas fluviales y aéreas, empresas verificadas y destinos de Loreto para que cada viaje pueda planificarse con información clara y confiable.'}}</p>
                 </div>
             </x-amazon-hero-bg>
 

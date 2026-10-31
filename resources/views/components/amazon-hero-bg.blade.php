@@ -45,6 +45,12 @@
             'title' => 'Empresas de Transporte Certificadas',
             'subtitle' => 'Flota de embarcaciones rápidas, motonaves, aerotaxis e hidroaviones en la región Loreto.',
         ],
+        'discover' => [
+            'local_file' => 'images/branding/banner-descubrir-amazonia-v2.webp',
+            'badge' => 'Viajes y Destinos Amazónicos',
+            'title' => 'Descubre la Amazonía',
+            'subtitle' => 'Explora ciudades, cultura, naturaleza y rutas que conectan los destinos de la selva peruana.',
+        ],
         'ports' => [
             'local_file' => 'images/branding/banner-puertos-nauta.webp',
             'badge' => 'Infraestructura Ribereña y Aérea',
@@ -104,7 +110,7 @@
     }
 </style>
 
-<section {{ $attributes->except('class')->merge(['class' => 'ny-public-hero relative mx-auto mb-6 max-w-[1600px] overflow-hidden rounded-b-[2rem] bg-slate-950 text-white shadow-xl sm:rounded-b-[2.5rem] '.$class]) }} data-amazon-theme="{{ $theme }}">
+<section {{ $attributes->except('class')->merge(['class' => 'ny-public-hero relative mx-auto mb-6 w-full max-w-7xl overflow-hidden rounded-b-[2rem] bg-slate-950 text-white shadow-xl sm:rounded-b-[2.5rem] '.$class]) }} data-amazon-theme="{{ $theme }}">
     <img
         src="{{ $source }}"
         alt="{{ $selected['title'] }}"
@@ -123,7 +129,7 @@
             <p class="mt-2 text-xs font-semibold leading-relaxed text-white [text-shadow:0_1px_8px_rgba(0,0,0,.85)] sm:text-sm">{{ $selected['subtitle'] }}</p>
         </div>
     @else
-        <div class="relative z-10 mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{{ $slot }}</div>
+        <div class="relative z-10 mx-auto h-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{{ $slot }}</div>
     @endif
 </section>
 

@@ -15,6 +15,7 @@ class AdminSiteHeroController
         'routes' => 'Rutas fluviales',
         'air' => 'Rutas aéreas',
         'companies' => 'Empresas',
+        'discover' => 'Descubrir la Amazonía',
         'ports' => 'Puertos y aeródromos',
         'guide' => 'Guía Loreto',
         'check_ticket' => 'Consultar pasaje',
