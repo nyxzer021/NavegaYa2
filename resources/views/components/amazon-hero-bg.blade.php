@@ -15,6 +15,12 @@
             'title' => 'Viaja por la Amazonía con Total Confianza',
             'subtitle' => 'Compara rutas oficiales, consulta horarios y compra tus boletos con confirmación inmediata.',
         ],
+        'about' => [
+            'local_file' => 'images/branding/banner-home-viajeros-amazonia.webp',
+            'badge' => 'Conoce NavegaYA',
+            'title' => 'Quiénes somos',
+            'subtitle' => 'Tecnología y confianza para conectar viajeros con la Amazonía peruana.',
+        ],
         'routes' => [
             'local_file' => 'images/navegaya-hero-amazonas.png',
             'title' => 'Rutas Fluviales y Vuelos en Loreto',
@@ -66,16 +72,19 @@
     ];
 
     $selected = $backgrounds[$theme] ?? $backgrounds['routes'];
-    $source = $image
-        ? (str_starts_with($image, 'http') ? $image : asset(ltrim($image, '/')))
+    $managedImage = \App\Models\SiteHero::query()->where('key', $theme)->value('image_path');
+    $resolvedImage = $image ?: ($managedImage ? Storage::url($managedImage) : null);
+    $source = $resolvedImage
+        ? (str_starts_with($resolvedImage, 'http') || str_starts_with($resolvedImage, '/') ? $resolvedImage : asset(ltrim($resolvedImage, '/')))
         : (file_exists(public_path($selected['local_file'])) ? asset($selected['local_file']) : $approvedAmazonImage);
 @endphp
 
 <style>
     .ny-public-hero {
-        height: 260px !important;
-        min-height: 260px !important;
-        max-height: 260px !important;
+        width: 100%;
+        height: 240px !important;
+        min-height: 240px !important;
+        max-height: 240px !important;
     }
 
     @media (min-width: 768px) {

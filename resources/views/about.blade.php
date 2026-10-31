@@ -1,7 +1,7 @@
 <x-public-layout current="about" :title="app()->getLocale()==='en'?'About us · NavegaYA':'Quiénes somos · NavegaYA'" :description="app()->getLocale()==='en'?'Learn how NavegaYA connects travelers with verified river and air operators, reliable schedules and trusted services throughout the Peruvian Amazon.':'Conoce cómo NavegaYA conecta viajeros con operadores fluviales y aéreos verificados, horarios confiables y servicios seguros en toda la Amazonía peruana.'">
     <main class="bg-slate-50 px-4 pb-16 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
-            <x-amazon-hero-bg theme="home" class="text-center shadow-xl" overlay="from-slate-950/80 via-[#062c21]/65 to-emerald-950/35">
+            <x-amazon-hero-bg theme="about" class="text-center shadow-xl" overlay="from-slate-950/80 via-[#062c21]/65 to-emerald-950/35">
                 <div class="mx-auto max-w-3xl px-4 pb-16 pt-10 sm:py-20">
                     <span class="inline-flex rounded-full border border-emerald-300/30 bg-emerald-950/60 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.16em] text-emerald-200">NavegaYA · Amazonía peruana</span>
                     <h1 class="mt-4 text-3xl font-extrabold leading-tight text-white sm:text-5xl">{{app()->getLocale()==='en'?'Connecting journeys, rivers and people':'Conectamos viajes, ríos y personas'}}</h1>

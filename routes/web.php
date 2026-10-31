@@ -33,6 +33,7 @@ use App\Http\Controllers\AdminOrganizationReviewController;
 use App\Http\Controllers\AdminPortController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\AdminSiteHeroController;
 use App\Http\Controllers\AdminTransportRouteController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminVesselController;
@@ -296,11 +297,15 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/configuracion/diseno', [AdminSettingsController::class, 'updateTheme'])->name('settings.theme');
     Route::patch('/configuracion/pagos', [AdminSettingsController::class, 'updatePayments'])->name('settings.payments');
     Route::patch('/configuracion/informacion-operativa', [AdminSettingsController::class, 'updateOperations'])->name('settings.operations');
-    Route::get('/portada-principal', [AdminHomeHeroController::class, 'index'])->name('home-hero.index');
-    Route::post('/portada-principal', [AdminHomeHeroController::class, 'store'])->name('home-hero.store');
-    Route::patch('/portada-principal/duracion', [AdminHomeHeroController::class, 'updateDuration'])->name('home-hero.duration');
-    Route::patch('/portada-principal/{slide}', [AdminHomeHeroController::class, 'update'])->name('home-hero.update');
-    Route::delete('/portada-principal/{slide}', [AdminHomeHeroController::class, 'destroy'])->name('home-hero.destroy');
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/portada-principal', [AdminHomeHeroController::class, 'index'])->name('home-hero.index');
+        Route::post('/portada-principal', [AdminHomeHeroController::class, 'store'])->name('home-hero.store');
+        Route::patch('/portada-principal/duracion', [AdminHomeHeroController::class, 'updateDuration'])->name('home-hero.duration');
+        Route::patch('/portada-principal/{slide}', [AdminHomeHeroController::class, 'update'])->name('home-hero.update');
+        Route::delete('/portada-principal/{slide}', [AdminHomeHeroController::class, 'destroy'])->name('home-hero.destroy');
+        Route::get('/portadas-publicas', [AdminSiteHeroController::class, 'index'])->name('site-heroes.index');
+        Route::patch('/portadas-publicas/{key}', [AdminSiteHeroController::class, 'update'])->name('site-heroes.update');
+    });
     Route::get('/reportes', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/reportes/exportar', [AdminReportController::class, 'export'])->name('reports.export');
     Route::get('/salidas/{departure}/manifiesto', [AdminManifestController::class, 'show'])->name('manifests.show');

@@ -30,6 +30,7 @@ class EnsureUserHasPermission
         'admin.moderation.' => 'audit', 'admin.audit.' => 'audit', 'admin.users.' => 'users',
         'admin.settings.' => 'settings',
         'admin.home-hero.' => 'settings',
+        'admin.site-heroes.' => 'settings',
         'admin.navigation.' => 'settings',
     ];
 
