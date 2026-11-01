@@ -31,6 +31,16 @@ class PortalCorrectionsTest extends TestCase
         $this->get('/login')->assertSee('og:description', false);
     }
 
+    public function test_seeded_cities_outside_loreto_stay_out_of_discover(): void
+    {
+        $this->get('/descubrir')
+            ->assertOk()
+            ->assertDontSee('Pucallpa')
+            ->assertDontSee('Tarapoto')
+            ->assertDontSee('Puerto Maldonado')
+            ->assertSee('Iquitos');
+    }
+
     public function test_discover_cards_show_a_photo_and_hide_cities_outside_the_catalog(): void
     {
         DestinationCity::create(['name' => 'Ciudad Sin Foto', 'department' => 'Loreto', 'is_active' => true, 'show_in_discover' => true, 'sort_order' => 1]);
