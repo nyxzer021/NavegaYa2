@@ -5,22 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Services\BookingPaymentService;
+use App\Services\MarketplaceSales;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class CulqiPaymentController extends Controller
 {
-    public function order(Request $request, string $code): JsonResponse
+    public function order(Request $request, string $code, MarketplaceSales $sales): JsonResponse
     {
         abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
         $reservation = Reservation::where('code', $code)->firstOrFail();
         $this->authorizeReservation($request, $reservation);
         abort_unless($reservation->status === 'pending_payment' && ! $reservation->expires_at?->isPast(), 422);
+        $quote = $sales->quote($reservation);
         $names = preg_split('/\s+/', trim($reservation->contact_name), 2);
         $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
             ->post(rtrim(config('services.culqi.api_url'), '/').'/orders', [
-                'amount' => (int) round((float) $reservation->total_amount * 100),
+                'amount' => (int) round($quote['charged_amount'] * 100),
                 'currency_code' => 'PEN',
                 'description' => "Pasajes NavegaYA {$reservation->code}",
                 'order_number' => $reservation->code,
@@ -43,7 +45,7 @@ class CulqiPaymentController extends Controller
             ['provider_reference' => $order['id']],
             [
                 'reservation_id' => $reservation->id, 'method' => 'pagoefectivo', 'provider' => 'culqi',
-                'amount' => $reservation->total_amount, 'currency_code' => 'PEN', 'status' => 'pending',
+                'amount' => $quote['charged_amount'], 'currency_code' => 'PEN', 'status' => 'pending',
                 'provider_payload' => $order,
             ],
         );
@@ -55,19 +57,20 @@ class CulqiPaymentController extends Controller
         ]);
     }
 
-    public function charge(Request $request, string $code, BookingPaymentService $payments): JsonResponse
+    public function charge(Request $request, string $code, BookingPaymentService $payments, MarketplaceSales $sales): JsonResponse
     {
         abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
         $data = $request->validate(['source_id' => ['required', 'string', 'max:120']]);
         $reservation = Reservation::with('seats')->where('code', $code)->firstOrFail();
         $this->authorizeReservation($request, $reservation);
         abort_unless($reservation->status === 'pending_payment' && ! $reservation->expires_at?->isPast(), 422);
+        $quote = $sales->quote($reservation);
 
         $names = preg_split('/\s+/', trim($reservation->contact_name), 2);
         $response = Http::withToken(config('services.culqi.secret_key'))
             ->acceptJson()->asJson()->timeout(20)
             ->post(rtrim(config('services.culqi.api_url'), '/').'/charges', [
-                'amount' => (int) round((float) $reservation->total_amount * 100),
+                'amount' => (int) round($quote['charged_amount'] * 100),
                 'currency_code' => 'PEN',
                 'email' => $reservation->contact_email,
                 'source_id' => $data['source_id'],

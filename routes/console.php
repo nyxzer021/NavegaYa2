@@ -25,3 +25,7 @@ Schedule::command('queue:prune-failed --hours=336')
 Schedule::command('navegaya:operations-health')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('navegaya:close-past-departures')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();

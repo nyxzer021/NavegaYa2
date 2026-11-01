@@ -11,6 +11,7 @@ use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
 use App\Models\Ticket;
 use App\Models\TransportRoute;
+use App\Services\MarketplaceSales;
 use App\Support\AdminScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -86,6 +87,10 @@ class AdminReportController extends Controller
         $air = $dates(AirDeparture::query(), 'departure_at')->when($organizationId, fn (Builder $q) => $q->whereHas('airRoute', fn (Builder $r) => $r->where('organization_id', $organizationId)));
         $reservations = $dates(Reservation::query())->when($organizationId, fn (Builder $q) => $this->scopeReservation($q, $organizationId));
         $tickets = $dates(Ticket::query(), 'issued_at')->when($organizationId, fn (Builder $q) => $q->whereHas('reservationSeat.reservation', fn (Builder $r) => $this->scopeReservation($r, $organizationId)));
+        $ticketPayments = app(MarketplaceSales::class)->ticketPayments()
+            ->when($from, fn (Builder $query) => $query->where('paid_at', '>=', $from))
+            ->when($to, fn (Builder $query) => $query->where('paid_at', '<=', $to))
+            ->when($organizationId, fn (Builder $query) => $query->whereHas('reservation', fn (Builder $reservation) => $this->scopeReservation($reservation, $organizationId)));
         $cargo = $dates(CargoShipment::query())->when($organizationId, fn (Builder $q) => $q->where(fn (Builder $m) => $m
             ->whereHas('departure.transportRoute', fn (Builder $r) => $r->where('organization_id', $organizationId))
             ->orWhereHas('airDeparture.airRoute', fn (Builder $r) => $r->where('organization_id', $organizationId))));
@@ -109,7 +114,7 @@ class AdminReportController extends Controller
             'organizations' => Organization::where('type', 'transport_company')->orderBy('legal_name')->get(),
             'metrics' => ['routes' => TransportRoute::when($organizationId, fn ($q) => $q->where('organization_id', $organizationId))->count() + AirRoute::when($organizationId, fn ($q) => $q->where('organization_id', $organizationId))->count(),
                 'departures' => (clone $river)->count() + (clone $air)->count(), 'reservations' => (clone $reservations)->count(),
-                'confirmed_reservations' => (clone $reservations)->where('status', 'confirmed')->count(), 'passenger_income' => (float) (clone $reservations)->where('status', 'confirmed')->sum('total_amount'),
+                'confirmed_reservations' => (clone $reservations)->where('status', 'confirmed')->count(), 'passenger_income' => (float) (clone $ticketPayments)->sum('amount'),
                 'tickets' => (clone $tickets)->count(), 'boarded' => (clone $tickets)->where('status', 'boarded')->count(), 'cargo' => (clone $cargo)->count(),
                 'cargo_income' => (float) (clone $cargo)->where('payment_status', 'paid_terminal')->sum('amount')],
             'recentDepartures' => $recentRiver->concat($recentAir)->sortByDesc('departure_at')->take(8)->values(), 'reservationRows' => $rows,

@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use App\Models\Ticket;
-use App\Services\BookingPaymentService;
 use App\Services\AdvertisementInventoryService;
+use App\Services\BookingPaymentService;
+use App\Services\MarketplaceSales;
 use App\Support\BoardingQr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,13 +17,14 @@ use Illuminate\View\View;
 
 class PaymentController extends Controller
 {
-    public function show(string $code): View
+    public function show(string $code, MarketplaceSales $sales): View
     {
         $reservation = $this->reservationOrFail($code);
         $sandboxEnabled = config('payments.sandbox_enabled');
         $culqiEnabled = config('services.culqi.enabled');
+        $quote = $sales->quote($reservation);
 
-        return view('payments.show', compact('reservation', 'sandboxEnabled', 'culqiEnabled'));
+        return view('payments.show', compact('reservation', 'sandboxEnabled', 'culqiEnabled', 'quote'));
     }
 
     public function sandboxConfirm(Request $request, string $code, BookingPaymentService $payments): RedirectResponse

@@ -34,7 +34,7 @@
                             <button class="inline-flex h-8 items-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-[10px] font-bold text-amber-900 transition hover:bg-amber-100">⏸️ Pausar ventas</button>
                         @endif
                     </form>
-                    <span class="mt-1.5 block text-[9px] font-semibold {{ $operator->is_paused ? 'text-rose-600' : 'text-emerald-600' }}">{{ $operator->is_paused ? 'Ventas pausadas' : '● En venta' }}</span>
+                    <span class="mt-1.5 block text-[9px] font-semibold {{ $operator->is_paused ? 'text-rose-600' : ($operator->on_sale ? 'text-emerald-600' : 'text-slate-500') }}">{{ $operator->is_paused ? 'Ventas pausadas' : ($operator->on_sale ? '● En venta' : 'Sin inventario') }}</span>
                 </td>
             </tr>
         @empty

@@ -52,6 +52,27 @@ class AdminItineraryController extends AdminSupervisionController
                     ?? $reservation?->airDeparture?->airRoute?->organization_id;
             });
 
+        $riverSellingIds = RouteDeparture::query()
+            ->where('is_published', true)
+            ->whereIn('status', ['scheduled', 'boarding'])
+            ->where('departure_at', '>=', now())
+            ->whereHas('transportRoute')
+            ->with('transportRoute:id,organization_id')
+            ->get()
+            ->map(fn (RouteDeparture $departure) => $departure->transportRoute?->organization_id)
+            ->filter()
+            ->unique();
+        $airSellingIds = AirDeparture::query()
+            ->where('is_published', true)
+            ->whereIn('status', ['scheduled', 'boarding'])
+            ->where('departure_at', '>=', now())
+            ->whereHas('airRoute')
+            ->with('airRoute:id,organization_id')
+            ->get()
+            ->map(fn (AirDeparture $departure) => $departure->airRoute?->organization_id)
+            ->filter()
+            ->unique();
+
         $operators = Organization::query()
             ->where('type', 'transport_company')
             ->where('status', 'active')
@@ -65,7 +86,7 @@ class AdminItineraryController extends AdminSupervisionController
             ->when($filters['modality'] ?? null, fn ($query, string $modality) => $query->where('modality', $modality))
             ->orderBy('commercial_name')
             ->get()
-            ->map(function (Organization $organization) use ($riverDepartures, $airDepartures, $payments) {
+            ->map(function (Organization $organization) use ($riverDepartures, $airDepartures, $payments, $riverSellingIds, $airSellingIds) {
                 $river = $riverDepartures->get($organization->id, collect());
                 $air = $airDepartures->get($organization->id, collect());
                 $publishedRiver = $river->filter(fn (RouteDeparture $departure) => $departure->is_published
@@ -119,6 +140,8 @@ class AdminItineraryController extends AdminSupervisionController
                     'commission' => $commission,
                     'commission_rate' => $commissionRate,
                     'is_paused' => (bool) $organization->is_marketplace_paused,
+                    'on_sale' => ! $organization->is_marketplace_paused
+                        && ($riverSellingIds->contains($organization->id) || $airSellingIds->contains($organization->id)),
                 ];
             })
             ->when($filters['status'] ?? null, fn ($items, string $status) => $items->filter(fn ($operator) => match ($status) {

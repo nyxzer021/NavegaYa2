@@ -19,7 +19,7 @@
 
     <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['GMV del marketplace', $grossVolume, 'Volumen vendido por los operadores', 'border-slate-200 text-slate-950'],
+            ['GMV del marketplace', $grossVolume, 'Pasajes cobrados, sin suscripciones', 'border-slate-200 text-slate-950'],
             ['Comisión generada', $commissionGenerated, 'Según el acuerdo de cada empresa', 'border-emerald-200 text-emerald-700'],
             ['Comisión cobrada', $commissionCollected, 'Ingresos confirmados de NavegaYA', 'border-cyan-200 text-cyan-700'],
             ['Por cobrar', $commissionReceivable, 'Pendiente de facturación o cobro', 'border-amber-200 text-amber-700'],

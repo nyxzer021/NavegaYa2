@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Reservation extends Model
 {
-    protected $fillable = ['user_id', 'checkout_order_id', 'route_departure_id', 'air_departure_id', 'code', 'contact_name', 'contact_email', 'contact_phone', 'contact_document', 'total_amount', 'status', 'sales_channel', 'payment_method', 'expires_at', 'paid_at'];
+    protected $fillable = ['user_id', 'checkout_order_id', 'route_departure_id', 'air_departure_id', 'code', 'contact_name', 'contact_email', 'contact_phone', 'contact_document', 'total_amount', 'base_amount', 'discount_amount', 'service_fee_amount', 'status', 'sales_channel', 'payment_method', 'expires_at', 'paid_at'];
 
     protected function casts(): array
     {
-        return ['total_amount' => 'decimal:2', 'expires_at' => 'datetime', 'paid_at' => 'datetime'];
+        return ['total_amount' => 'decimal:2', 'base_amount' => 'decimal:2', 'discount_amount' => 'decimal:2', 'service_fee_amount' => 'decimal:2', 'expires_at' => 'datetime', 'paid_at' => 'datetime'];
     }
 
     public function checkoutOrder(): BelongsTo

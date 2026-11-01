@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Ticket;
+use App\Services\MarketplaceSales;
 use App\Support\AdminScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -61,7 +62,9 @@ class CompanySalesController extends Controller
 
     private function payments(int $organizationId, Carbon $from, Carbon $to): Builder
     {
-        return Payment::query()->where('status', 'confirmed')->whereBetween('paid_at', [$from, $to])
+        return Payment::query()->whereIn('status', ['confirmed', 'succeeded'])->where(function (Builder $query): void {
+            $query->whereNull('purpose')->orWhere('purpose', 'ticket');
+        })->whereBetween('paid_at', [$from, $to])
             ->whereHas('reservation', fn (Builder $query) => $this->scopeReservations($query, $organizationId));
     }
 
@@ -97,7 +100,7 @@ class CompanySalesController extends Controller
         $route = $reservation->isAir() ? $departure?->airRoute : $departure?->transportRoute;
         $origin = $reservation->isAir() ? ($route?->origin_city ?? '—') : ($route?->originPort?->city ?? '—');
         $destination = $reservation->isAir() ? ($route?->destination_city ?? '—') : ($route?->destinationPort?->city ?? '—');
-        $amount = (float) $reservation->total_amount / max(1, $reservation->seats()->count());
+        $amount = app(MarketplaceSales::class)->perSeatCharged($reservation);
 
         return compact('seat', 'reservation', 'departure', 'origin', 'destination', 'amount');
     }

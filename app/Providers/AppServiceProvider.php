@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Advertisement;
 use App\Models\AuditLog;
+use App\Models\BusinessConversation;
+use App\Models\DestinationListing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -25,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        if ($this->isCounterOrReadMark($subject, $event)) {
+            return;
+        }
+
         if (app()->runningInConsole() && ! app()->runningUnitTests()) {
             return;
         }
@@ -40,6 +47,27 @@ class AppServiceProvider extends ServiceProvider
             'changes' => $changes, 'ip_address' => request()?->ip(), 'user_agent' => substr((string) request()?->userAgent(), 0, 500),
             'route_name' => request()?->route()?->getName(), 'http_method' => request()?->method(), 'created_at' => now(),
         ]);
+    }
+
+    private function isCounterOrReadMark(Model $subject, string $event): bool
+    {
+        if ($event !== 'updated') {
+            return false;
+        }
+
+        $ignored = match ($subject::class) {
+            Advertisement::class, DestinationListing::class => ['views', 'clicks', 'contact_clicks', 'updated_at'],
+            BusinessConversation::class => ['admin_last_read_at', 'business_last_read_at', 'updated_at'],
+            default => [],
+        };
+
+        if ($ignored === []) {
+            return false;
+        }
+
+        $changed = array_keys($subject->getChanges());
+
+        return $changed !== [] && array_diff($changed, $ignored) === [];
     }
 
     private function safe(array $values): array

@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\TicketConfirmedMail;
 use App\Models\CheckoutOrder;
-use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\SystemSetting;
-use App\Models\Ticket;
+use App\Services\BookingPaymentService;
 use App\Support\BoardingQr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -68,34 +65,36 @@ class CartController extends Controller
         return view('cart.payment', ['order' => $order, 'sandboxEnabled' => config('payments.sandbox_enabled'), 'culqiEnabled' => config('services.culqi.enabled')]);
     }
 
-    public function sandboxConfirm(Request $request, string $code): RedirectResponse
+    public function sandboxConfirm(Request $request, string $code, BookingPaymentService $payments): RedirectResponse
     {
         abort_unless(config('payments.sandbox_enabled'), 404);
         $data = $request->validate(['method' => ['required', 'in:yape,plin,card']]);
         $order = $this->order($request, $code);
         if ($order->status === 'confirmed') {
             return redirect()->route('cart.tickets', $order->code);
-        }abort_unless($order->status === 'pending_payment', 422);
-        DB::transaction(function () use ($order, $data) {
-            $order->refresh()->load('reservations.seats.ticket');
-            Payment::create(['reservation_id' => $order->reservations->first()->id, 'checkout_order_id' => $order->id, 'method' => $data['method'], 'provider' => 'sandbox', 'provider_reference' => 'DEMO-'.Str::upper(Str::random(12)), 'amount' => $order->total_amount, 'status' => 'confirmed', 'paid_at' => now(), 'provider_payload' => ['mode' => 'sandbox', 'platform_fee' => $order->platform_fee_amount]]);
-            foreach ($order->reservations as $reservation) {
-                $reservation->update(['status' => 'confirmed', 'expires_at' => null]);
-                foreach ($reservation->seats as $seat) {
-                    if (! $seat->ticket) {
-                        Ticket::create(['reservation_seat_id' => $seat->id, 'code' => 'BOL-'.now()->format('ymd').'-'.Str::upper(Str::random(6)), 'boarding_token' => Str::upper(Str::random(32)), 'status' => 'confirmed', 'issued_at' => now()]);
-                    }
-                }
-            }$order->update(['status' => 'confirmed', 'expires_at' => null]);
-        });
-        $order->refresh()->load(['reservations.seats.seat', 'reservations.seats.aircraftSeat', 'reservations.seats.ticket']);
+        }
+        abort_unless($order->status === 'pending_payment', 422);
+        $order->load('reservations');
         foreach ($order->reservations as $reservation) {
-            try {
-                Mail::to($reservation->contact_email)->send(new TicketConfirmedMail($reservation));
-            } catch (\Throwable $exception) {
-                logger()->warning('No se pudo enviar el correo del boleto.', ['reservation' => $reservation->code, 'error' => $exception->getMessage()]);
+            if ($reservation->status === 'confirmed') {
+                continue;
             }
-        }$request->session()->forget('cart_reservation_ids');
+            $payments->confirm($reservation, [
+                'method' => $data['method'],
+                'provider' => 'sandbox',
+                'provider_reference' => 'DEMO-'.$reservation->code,
+                'provider_payload' => ['mode' => 'sandbox'],
+            ]);
+        }
+        $order->refresh()->load('reservations');
+        $order->update([
+            'subtotal_amount' => $order->reservations->sum(fn (Reservation $reservation): float => (float) ($reservation->base_amount ?? $reservation->total_amount)),
+            'platform_fee_amount' => $order->reservations->sum(fn (Reservation $reservation): float => (float) $reservation->service_fee_amount),
+            'total_amount' => $order->reservations->sum(fn (Reservation $reservation): float => (float) $reservation->total_amount),
+            'status' => 'confirmed',
+            'expires_at' => null,
+        ]);
+        $request->session()->forget('cart_reservation_ids');
 
         return redirect()->route('cart.tickets', $order->code);
     }

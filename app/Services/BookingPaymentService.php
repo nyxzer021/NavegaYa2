@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 
 class BookingPaymentService
 {
+    public function __construct(private readonly MarketplaceSales $sales) {}
+
     public function confirm(Reservation $reservation, array $paymentData, ?float $commissionRate = null): Reservation
     {
         $confirmed = DB::transaction(function () use ($reservation, $paymentData, $commissionRate) {
@@ -26,31 +28,40 @@ class BookingPaymentService
             $organization = $reservation->isAir()
                 ? $reservation->airDeparture->airRoute->organization
                 : $reservation->departure->transportRoute->organization;
+            $quote = $this->sales->quote($reservation);
             $rate = $commissionRate ?? (float) ($organization->commission_rate ?? 0);
-            $total = (float) $reservation->total_amount;
-            $commission = round($total * $rate / 100, 2);
-            $operatorNet = round($total - $commission, 2);
+            $commission = $this->sales->commission($quote['charged_amount'], $rate);
 
             Payment::updateOrCreate(
                 ['provider_reference' => $paymentData['provider_reference']],
                 [
                     'reservation_id' => $reservation->id,
+                    'checkout_order_id' => $reservation->checkout_order_id,
+                    'purpose' => 'ticket',
                     'method' => $paymentData['method'],
                     'provider' => $paymentData['provider'],
                     'webhook_event_id' => $paymentData['webhook_event_id'] ?? null,
-                    'amount' => $total,
+                    'amount' => $quote['charged_amount'],
                     'currency_code' => 'PEN',
-                    'commission_rate' => $rate,
-                    'commission_amount' => $commission,
-                    'operator_net' => $operatorNet,
+                    'commission_rate' => $commission['commission_rate'],
+                    'commission_amount' => $commission['commission_amount'],
+                    'operator_net' => $commission['operator_net'],
                     'commission_status' => 'pending',
                     'status' => 'confirmed',
                     'paid_at' => now(),
-                    'provider_payload' => $paymentData['provider_payload'] ?? null,
+                    'provider_payload' => array_merge($paymentData['provider_payload'] ?? [], [
+                        'base_amount' => $quote['base_amount'],
+                        'discount_amount' => $quote['discount_amount'],
+                        'service_fee_amount' => $quote['service_fee_amount'],
+                    ]),
                 ],
             );
 
             $reservation->update([
+                'base_amount' => $quote['base_amount'],
+                'discount_amount' => $quote['discount_amount'],
+                'service_fee_amount' => $quote['service_fee_amount'],
+                'total_amount' => $quote['charged_amount'],
                 'status' => 'confirmed',
                 'payment_method' => $paymentData['method'],
                 'paid_at' => now(),
