@@ -34,6 +34,7 @@
             </div>
         </article>
     @endforeach
+    <x-company-whatsapp :company="$organization" :departure="$trip" :code="$reservation->code" class="mt-4" />
     @if($trip->status === 'completed')
         <section class="review">
             <strong>¿Cómo estuvo tu viaje con {{ $organization->commercial_name ?: $organization->legal_name }}?</strong>

@@ -67,7 +67,8 @@ $port=$isAir?($trip->airport_name ?? 'Aeropuerto regional'):($route->originPort-
 @if($reservations->isNotEmpty())<form method="POST" action="{{route('cart.checkout')}}" data-turbo="false">@csrf<input type="hidden" name="preferred_method" x-bind:value="paymentMethod"><button type="submit" class="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 text-sm font-black text-slate-950 shadow-lg transition hover:bg-amber-600 hover:shadow-amber-500/20 active:scale-[.99]">Pagar S/ {{number_format($total,2)}} y continuar <span>➔</span></button></form>@endif
 <div class="space-y-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500"><p class="flex gap-2"><span class="font-bold text-emerald-700">✓</span><span>Boleto enviado a tu WhatsApp y correo después del pago.</span></p><p class="flex gap-2"><span class="font-bold text-emerald-700">✓</span><span>Registro en el manifiesto oficial del operador.</span></p></div>
 </section>
-<div class="rounded-2xl border border-slate-200/80 bg-white p-3.5 text-center text-xs text-slate-500">¿Necesitas ayuda? <a href="https://wa.me/51900000000" target="_blank" rel="noopener" class="ml-1 font-bold text-emerald-800 underline hover:text-emerald-950">WhatsApp de soporte</a></div>
+@php($cartSupport=\App\Support\PhoneNumber::peru(\App\Models\SystemSetting::value('whatsapp_number')))
+@if($cartSupport)<div class="rounded-2xl border border-slate-200/80 bg-white p-3.5 text-center text-xs text-slate-500">¿Necesitas ayuda? <a href="https://wa.me/{{$cartSupport}}" target="_blank" rel="noopener" class="ml-1 font-bold text-emerald-800 underline hover:text-emerald-950">WhatsApp de soporte</a></div>@endif
 </aside>
 </div>
 </main>

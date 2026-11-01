@@ -33,11 +33,12 @@
 <div class="text-right"><time class="text-lg font-black leading-none text-slate-900">{{$arrival?->format('H:i') ?: '—'}}</time><strong class="mt-1 block truncate text-xs text-slate-800">{{$destination}}</strong><span class="block text-[9px] text-slate-400">Llegada estimada</span></div>
 </div>
 <div class="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2.5 text-[10px] font-semibold text-slate-600"><span class="rounded-lg bg-slate-50 px-2 py-1">💺 {{$available}} asientos libres</span><span class="rounded-lg bg-slate-50 px-2 py-1">🧳 {{$luggage}}</span><span class="rounded-lg bg-slate-50 px-2 py-1">🪪 Abordaje con DNI</span></div>
+<p class="mt-2 text-xs font-semibold text-amber-950">La salida puede demorar 1 o 2 horas respecto a la hora citada.</p>
 </div>
 
 <div class="flex items-center justify-between gap-4 border-t border-slate-100 pt-3 lg:flex-col lg:items-end lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
 <div class="lg:text-right"><span class="block text-[9px] font-semibold uppercase tracking-wider text-slate-400">Desde</span><strong class="text-xl font-black leading-none text-slate-900">S/ {{number_format((float)$departure->fare,2)}}</strong><span class="mt-0.5 block text-[9px] text-slate-400">por asiento</span></div>
-<a href="{{$bookingUrl}}" class="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-xl bg-amber-500 px-4 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-600 active:scale-95">Ver asientos <span>→</span></a>
+<div class="flex flex-wrap items-center justify-end gap-2"><x-company-whatsapp :company="$organization" :departure="$departure" compact /><a href="{{$bookingUrl}}" class="inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl bg-amber-500 px-4 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-600 active:scale-95">Ver asientos <span>→</span></a></div>
 </div>
 </div>
 </article>

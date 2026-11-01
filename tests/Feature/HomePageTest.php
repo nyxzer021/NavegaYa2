@@ -16,7 +16,7 @@ class HomePageTest extends TestCase
 
     public function test_home_page_displays_public_scheduled_departure(): void
     {
-        $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Operador Inicio', 'ruc' => '20888888888', 'email' => 'inicio@test.pe', 'status' => 'active']);
+        $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Operador Inicio', 'ruc' => '20888888888', 'email' => 'inicio@test.pe', 'status' => 'active', 'whatsapp' => '953540705', 'show_public_whatsapp' => true]);
         $origin = Port::create(['name' => 'Puerto Iquitos', 'city' => 'Iquitos', 'region' => 'Loreto']);
         $destination = Port::create(['name' => 'Puerto Nauta', 'city' => 'Nauta', 'region' => 'Loreto']);
         $vessel = Vessel::create(['organization_id' => $company->id, 'name' => 'Nave Inicio', 'registration_number' => 'IN-01', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
@@ -25,6 +25,8 @@ class HomePageTest extends TestCase
         $this->get(route('home'))->assertOk()->assertSee('Tu viaje empieza en el río.')->assertSee('Iquitos')->assertSee('Nauta')
             ->assertSee('action="'.route('home').'#resultados"', false)
             ->assertSee('Elegir asiento')
+            ->assertSee('La salida puede demorar 1 o 2 horas')
+            ->assertSee('https://wa.me/51953540705', false)
             ->assertSee('href="'.route('bookings.create', $departure).'"', false);
 
         $this->get(route('home', ['transport' => 'river', 'origin' => 'Iquitos', 'destination' => 'Nauta', 'passengers' => 2]))

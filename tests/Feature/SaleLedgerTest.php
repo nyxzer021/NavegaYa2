@@ -39,7 +39,7 @@ class SaleLedgerTest extends TestCase
         $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Aero Cierre SAC', 'ruc' => '20101010101', 'email' => 'aero-cierre@test.pe', 'status' => 'active']);
         $aircraft = Aircraft::create(['organization_id' => $company->id, 'name' => 'Caravan', 'registration_number' => 'OB-CLOSE', 'seat_capacity' => 8, 'status' => 'ready']);
         $route = AirRoute::create(['organization_id' => $company->id, 'origin_city' => 'Iquitos', 'destination_city' => 'Yurimaguas', 'code' => 'AIR-CLOSE', 'estimated_duration_minutes' => 80]);
-        $air = AirDeparture::create(['air_route_id' => $route->id, 'aircraft_id' => $aircraft->id, 'departure_at' => now()->subHours(5), 'estimated_arrival_at' => now()->subHour(), 'fare' => 300, 'status' => 'scheduled', 'is_published' => true]);
+        $air = AirDeparture::create(['air_route_id' => $route->id, 'aircraft_id' => $aircraft->id, 'departure_at' => now()->subHours(8), 'estimated_arrival_at' => now()->subHours(5), 'fare' => 300, 'status' => 'scheduled', 'is_published' => true]);
 
         $this->artisan('navegaya:close-past-departures')->assertSuccessful();
 
@@ -51,6 +51,11 @@ class SaleLedgerTest extends TestCase
         $this->assertSame('rescheduled', $rescheduled->fresh()->status);
         $this->assertSame('completed', $air->fresh()->status);
         $this->assertFalse((bool) $air->fresh()->is_published);
+
+        [$stillAtDock] = $this->departure('MUELLE-01', now()->subHour(), now()->addHours(4));
+        $stillAtDock->update(['estimated_arrival_at' => null, 'departure_at' => now()->subHour()]);
+        $this->artisan('navegaya:close-past-departures')->assertSuccessful();
+        $this->assertSame('scheduled', $stillAtDock->fresh()->status);
     }
 
     public function test_one_sale_keeps_the_same_charged_amount_and_commission(): void
@@ -212,6 +217,103 @@ class SaleLedgerTest extends TestCase
         $advertisement->update(['title' => 'Título corregido']);
 
         $this->assertSame(1, AuditLog::query()->where('event', 'updated')->where('subject_type', Advertisement::class)->where('subject_id', $advertisement->id)->count());
+    }
+
+    public function test_confirmed_ticket_shows_the_company_whatsapp(): void
+    {
+        Mail::fake();
+        config()->set('payments.sandbox_enabled', true);
+        [$departure, $seat] = $this->departure('WHA-01', now()->addDay(), now()->addDays(2));
+        $departure->transportRoute->organization->update([
+            'whatsapp' => '953540705',
+            'show_public_whatsapp' => true,
+        ]);
+        $reservation = Reservation::create([
+            'route_departure_id' => $departure->id,
+            'code' => 'NY-WHA',
+            'contact_name' => 'Ana Torres',
+            'contact_email' => 'ana-wa@test.pe',
+            'contact_phone' => '999888777',
+            'total_amount' => 100,
+            'status' => 'pending_payment',
+            'sales_channel' => 'web',
+            'expires_at' => now()->addMinutes(10),
+        ]);
+        ReservationSeat::create([
+            'reservation_id' => $reservation->id,
+            'route_departure_id' => $departure->id,
+            'vessel_seat_id' => $seat->id,
+            'passenger_name' => 'Ana Torres',
+            'document_number' => '12345678',
+        ]);
+
+        $this->post(route('payments.sandbox-confirm', $reservation->code), ['method' => 'yape'])->assertRedirect();
+
+        $this->get(route('tickets.show', $reservation->code))
+            ->assertOk()
+            ->assertSee('https://wa.me/51953540705', false)
+            ->assertSee('WhatsApp boletería');
+    }
+
+    public function test_dashboard_separates_ticket_commission_from_advertising_income(): void
+    {
+        $company = Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => 'Ingresos SAC',
+            'commercial_name' => 'Ingresos',
+            'ruc' => '20900000088',
+            'email' => 'ingresos@test.pe',
+            'status' => 'active',
+            'commission_rate' => 8,
+        ]);
+        [$departure, $seat] = $this->departure('ING-01', now()->addDay(), now()->addDays(2), 'scheduled', $company);
+        $reservation = Reservation::create([
+            'route_departure_id' => $departure->id,
+            'code' => 'NY-ING',
+            'contact_name' => 'Luis',
+            'contact_email' => 'luis-ing@test.pe',
+            'contact_phone' => '999',
+            'total_amount' => 180,
+            'status' => 'confirmed',
+            'paid_at' => now(),
+        ]);
+        ReservationSeat::create([
+            'reservation_id' => $reservation->id,
+            'route_departure_id' => $departure->id,
+            'vessel_seat_id' => $seat->id,
+            'passenger_name' => 'Luis',
+            'document_number' => '87654321',
+        ]);
+        Payment::create([
+            'reservation_id' => $reservation->id,
+            'purpose' => 'ticket',
+            'method' => 'yape',
+            'provider' => 'sandbox',
+            'provider_reference' => 'DEMO-ING',
+            'amount' => 198,
+            'commission_rate' => 0,
+            'commission_amount' => 0,
+            'status' => 'confirmed',
+            'paid_at' => now(),
+        ]);
+        Payment::create([
+            'purpose' => 'subscription',
+            'method' => 'card',
+            'provider' => 'sandbox',
+            'provider_reference' => 'DEMO-ADS',
+            'amount' => 750,
+            'status' => 'confirmed',
+            'paid_at' => now(),
+        ]);
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Superadministrador']));
+
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Ingreso NavegaYA')
+            ->assertSee('15.84')
+            ->assertSee('Anuncios de empresas')
+            ->assertSee('750.00');
     }
 
     public function test_counter_sale_does_not_add_the_web_service_fee(): void

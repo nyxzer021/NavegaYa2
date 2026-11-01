@@ -118,7 +118,7 @@ class CartController extends Controller
     {
         $order = $this->order($request, $code);
         abort_unless($order->status === 'confirmed', 404);
-        $order->load(['reservations.departure.transportRoute.originPort', 'reservations.departure.transportRoute.destinationPort', 'reservations.departure.vessel', 'reservations.airDeparture.airRoute', 'reservations.airDeparture.aircraft', 'reservations.seats.seat', 'reservations.seats.aircraftSeat', 'reservations.seats.ticket']);
+        $order->load(['reservations.departure.transportRoute.originPort', 'reservations.departure.transportRoute.destinationPort', 'reservations.departure.transportRoute.organization', 'reservations.departure.vessel', 'reservations.airDeparture.airRoute.organization', 'reservations.airDeparture.aircraft', 'reservations.seats.seat', 'reservations.seats.aircraftSeat', 'reservations.seats.ticket']);
 
         return view('cart.tickets', compact('order'));
     }

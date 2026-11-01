@@ -172,12 +172,13 @@
             </aside>
             <main class="min-w-0 bg-white">
         <div data-dashboard-panel="resumen" data-dashboard-area="transporte" role="tabpanel" class="ny-enterprise-layout grid w-full min-w-0 gap-4 p-4">
-            <div class="ny-layout-full grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="ny-layout-full grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 @foreach([
                     ['Fluvial', number_format($fluvialTicketsSold).' pasajes', 'S/ '.number_format($fluvialGmv,2).' vendidos · '.$fluvialDeparturesCount.' salidas', '🚤', 'border-emerald-200 bg-emerald-50'],
                     ['Aéreo', number_format($airTicketsSold).' pasajes', 'S/ '.number_format($airGmv,2).' vendidos · '.$airDeparturesCount.' vuelos', '✈️', 'border-sky-200 bg-sky-50'],
                     ['GMV transporte', 'S/ '.number_format($grossSales,2), 'Total cobrado por pasajes; no es ingreso neto', '💳', 'border-indigo-200 bg-indigo-50'],
-                    ['Ingreso NavegaYA', 'S/ '.number_format($netCommission,2), 'Comisiones generadas por transporte', '📈', 'border-amber-200 bg-amber-50']
+                    ['Ingreso NavegaYA', 'S/ '.number_format($netCommission,2), 'Comisiones de pasajes cobrados', '📈', 'border-amber-200 bg-amber-50'],
+                    ['Anuncios de empresas', 'S/ '.number_format($advertisingIncome,2), 'Planes y campañas cobrados en el período', '📣', 'border-emerald-200 bg-emerald-50']
                 ] as $item)
                     <article class="rounded-2xl border p-4 {{ $item[4] }}"><div class="flex items-center justify-between"><span class="text-[9px] font-black uppercase tracking-wider text-slate-600">{{ $item[0] }}</span><span class="text-xl">{{ $item[3] }}</span></div><strong class="mt-3 block text-xl font-black text-slate-950">{{ $item[1] }}</strong><p class="mt-1 text-[9px] leading-4 text-slate-500">{{ $item[2] }}</p></article>
                 @endforeach
@@ -227,7 +228,7 @@
 
         <div data-dashboard-panel="finanzas" data-dashboard-area="transporte" role="tabpanel" hidden class="ny-enterprise-layout grid w-full min-w-0 gap-4 bg-amber-50/30 p-4">
             <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                @foreach([['GMV procesado','S/ '.number_format($grossSales,2),'Ventas confirmadas','💳'],['Comisión generada','S/ '.number_format($netCommission,2),'Ingreso NavegaYA','%'],['Comisión pendiente','S/ '.number_format($commissionReceivable,2),'Pendiente de cobro','⏳']] as $item)
+                @foreach([['GMV procesado','S/ '.number_format($grossSales,2),'Ventas confirmadas','💳'],['Comisión de pasajes','S/ '.number_format($netCommission,2),'Ingreso NavegaYA por boletos','%'],['Anuncios cobrados','S/ '.number_format($advertisingIncome,2),'Planes de empresas','📣'],['Comisión pendiente','S/ '.number_format($commissionReceivable,2),'Pendiente de cobro','⏳']] as $item)
                     <article class="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm"><span class="text-2xl">{{ $item[3] }}</span><strong class="mt-3 block text-3xl font-black text-slate-950">{{ $item[1] }}</strong><span class="text-[10px] font-black uppercase text-amber-800">{{ $item[0] }}</span><p class="mt-1 text-[9px] text-slate-500">{{ $item[2] }}</p></article>
                 @endforeach
             </div>

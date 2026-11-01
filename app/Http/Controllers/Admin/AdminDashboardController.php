@@ -18,6 +18,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
+use App\Services\MarketplaceSales;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
@@ -80,8 +81,9 @@ class AdminDashboardController extends Controller
             ->whereBetween('created_at', [$from, $to])
             ->get();
 
+        $sales = app(MarketplaceSales::class);
         $grossSales = (float) $payments->sum('amount');
-        $netCommission = (float) $payments->sum('commission_amount');
+        $netCommission = (float) $payments->sum(fn (Payment $payment): float => $sales->commissionOf($payment));
         $cargoRevenue = (float) $cargoShipments->sum('amount');
         $totalTicketsSold = $payments->sum(
             fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0
@@ -116,10 +118,15 @@ class AdminDashboardController extends Controller
 
         $commissionCollected = (float) $payments
             ->where('commission_status', 'paid')
-            ->sum('commission_amount');
+            ->sum(fn (Payment $payment): float => $sales->commissionOf($payment));
         $commissionReceivable = (float) $payments
             ->whereIn('commission_status', ['pending', 'invoiced'])
-            ->sum('commission_amount');
+            ->sum(fn (Payment $payment): float => $sales->commissionOf($payment));
+        $advertisingIncome = (float) Payment::query()
+            ->whereIn('purpose', ['subscription', 'subscription_upgrade'])
+            ->whereIn('status', ['confirmed', 'succeeded'])
+            ->whereBetween('paid_at', [$from, $to])
+            ->sum('amount');
         $activeOperatorsCount = Organization::query()
             ->where('type', 'transport_company')
             ->where('status', 'active')
@@ -232,7 +239,7 @@ class AdminDashboardController extends Controller
         $operatorRanking = $payments
             ->groupBy(fn (Payment $payment) => $this->organization($payment)?->id ?? 0)
             ->filter(fn (Collection $group, int|string $organizationId) => (int) $organizationId > 0)
-            ->map(function (Collection $group): array {
+            ->map(function (Collection $group) use ($sales): array {
                 $organization = $this->organization($group->first());
                 $airTickets = $group->filter(fn (Payment $payment) => $payment->reservation?->air_departure_id !== null)->count();
                 $fluvialTickets = $group->filter(fn (Payment $payment) => $payment->reservation?->route_departure_id !== null)->count();
@@ -245,7 +252,7 @@ class AdminDashboardController extends Controller
                         : ($airTickets > 0 ? 'Aéreo' : 'Fluvial'),
                     'tickets' => $group->sum(fn (Payment $payment) => $payment->reservation?->seats->count() ?? 0),
                     'sales' => (float) $group->sum('amount'),
-                    'commission' => (float) $group->sum('commission_amount'),
+                    'commission' => (float) $group->sum(fn (Payment $payment): float => $sales->commissionOf($payment)),
                 ];
             })
             ->sortByDesc('sales')
@@ -466,6 +473,7 @@ class AdminDashboardController extends Controller
             'to',
             'grossSales',
             'netCommission',
+            'advertisingIncome',
             'commissionCollected',
             'commissionReceivable',
             'activeOperatorsCount',
