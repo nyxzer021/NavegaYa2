@@ -54,7 +54,6 @@ class PublicHeroManagementTest extends TestCase
             ['companies.index', 'companies'],
             ['discover.index', 'discover'],
             ['travels.index', 'check_ticket'],
-            ['company.registration', 'affiliate'],
         ];
 
         foreach ($pages as [$route, $theme]) {

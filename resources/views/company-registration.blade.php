@@ -1,20 +1,76 @@
 <x-public-layout title="Afiliación de empresas · NavegaYA">
-<x-slot:head><style>
-@media(min-width:768px){#formulario-transportista+div{grid-template-columns:240px minmax(0,1fr)!important;gap:1rem!important}#formulario-transportista+div>aside{padding:1.15rem!important}#formulario-transportista+div>aside ol{margin-top:1rem!important}#formulario-transportista+div>aside li+li{margin-top:.7rem!important}#solicitud-transportista>header{padding:1rem 1.25rem!important}#solicitud-transportista>header h2{margin-top:.2rem!important;font-size:1.15rem!important}#solicitud-transportista>header p{font-size:.75rem!important}.ny-affiliation-form{padding:1.1rem 1.25rem!important}.ny-affiliation-form>fieldset+fieldset,.ny-affiliation-form>div{margin-top:.85rem!important;padding-top:.8rem!important}.ny-affiliation-form legend{margin-bottom:.55rem!important}.ny-affiliation-form fieldset>div{gap:.55rem!important}.ny-affiliation-form label.rounded-2xl{padding:.55rem!important;border-radius:.75rem!important}.ny-affiliation-form input:not([type=checkbox]):not([type=file]),.ny-affiliation-form select{min-height:38px!important}.ny-affiliation-form input[type=file]{min-height:36px!important;padding:.2rem!important}.ny-affiliation-form button{height:42px!important;margin-top:.75rem!important}.ny-affiliation-form p{margin-top:.35rem!important}}
-</style></x-slot:head>
-<div class="bg-slate-50 px-4 sm:px-6 lg:px-8"><div class="mx-auto max-w-7xl"><x-amazon-hero-bg theme="affiliate" class="flex items-center shadow-2xl" overlay="from-slate-950/78 via-[#062c21]/54 to-slate-900/18"><div class="max-w-3xl px-2 py-10 sm:px-8"><span class="inline-flex rounded-full border border-amber-300/35 bg-amber-400/15 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-amber-200">🏢 Red de operadores NavegaYA</span><h1 class="mt-4 text-3xl font-black text-white sm:text-5xl">Afiliar tu empresa</h1><p class="mt-3 max-w-xl text-sm leading-relaxed text-emerald-50/85 sm:text-base">Integra tu operación fluvial o aérea al marketplace de Loreto y administra rutas, disponibilidad y ventas desde un solo panel.</p></div></x-amazon-hero-bg></div></div>
-<main class="min-h-screen bg-slate-50 px-4 pb-10 pt-6 sm:px-6 lg:px-8"><div class="mx-auto max-w-6xl">
+<div class="bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+<div class="mx-auto max-w-3xl">
 @if(session('status'))<div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ session('status') }}</div>@endif
-<section class="mb-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div class="max-w-2xl"><span class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Primero identifica tu empresa</span><h2 class="mt-1 text-2xl font-black text-slate-950">¿Qué deseas gestionar en NavegaYA?</h2><p class="mt-1 text-sm text-slate-500">Cada tipo de empresa recibe un panel y un proceso de validación diferente.</p></div><div class="mt-5 grid gap-4 lg:grid-cols-3"><article class="rounded-2xl border-2 border-emerald-700 bg-emerald-50 p-5"><div class="flex items-start gap-3"><span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-900 text-xl">🚢</span><div><span class="rounded-full bg-emerald-700 px-2 py-1 text-[9px] font-black uppercase text-white">Formulario actual</span><h3 class="mt-2 text-lg font-black text-slate-950">Empresa de transporte</h3><p class="mt-1 text-xs leading-5 text-slate-600">Opera rutas, salidas y venta de pasajes por vía fluvial, aérea o ambas.</p></div></div><a href="#solicitud-transportista" class="mt-4 inline-flex rounded-xl bg-emerald-800 px-4 py-2.5 text-xs font-black text-white">Registrar transportista ↓</a></article><article class="rounded-2xl border border-slate-200 p-5"><div class="flex items-start gap-3"><span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-xl">🏨</span><div><h3 class="text-lg font-black text-slate-950">Negocio que desea anunciarse</h3><p class="mt-1 text-xs leading-5 text-slate-600">Hotel, lodge, restaurante, tour, servicio para viajeros, transporte turístico o comercio local.</p></div></div><a href="{{route('marketplace.register')}}" class="mt-4 inline-flex rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950">Crear cuenta de anunciante →</a></article><article class="rounded-2xl border border-slate-200 p-5"><div class="flex items-start gap-3"><span class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-100 text-xl">🧳</span><div><h3 class="text-lg font-black text-slate-950">Viajero o comprador</h3><p class="mt-1 text-xs leading-5 text-slate-600">Compra pasajes, consulta boletos, descarga sus QR y conserva el historial de sus viajes.</p></div></div><a href="{{route('register')}}" class="mt-4 inline-flex rounded-xl bg-sky-700 px-4 py-2.5 text-xs font-black text-white">Crear cuenta de viajero →</a></article></div></section>
-<span id="formulario-transportista" class="block scroll-mt-24" aria-hidden="true"></span>
-<div class="grid items-start gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
-<aside class="rounded-3xl bg-emerald-950 p-7 text-white lg:sticky lg:top-6"><span class="text-xs font-black uppercase tracking-[.18em] text-emerald-300">Red de operadores</span><h1 class="mt-3 text-3xl font-black leading-tight">Afíliate a NavegaYA</h1><p class="mt-3 text-sm leading-6 text-emerald-100/75">Envía los datos legales de tu empresa. Revisaremos el expediente antes de habilitar tu panel.</p><ol class="mt-8 space-y-5 text-sm">@foreach([['1','Envía la solicitud','Completa los datos y adjunta los documentos.'],['2','Confirma tu correo','Usa el enlace que recibirás por email.'],['3','Validamos el expediente','NavegaYA revisa identidad y permisos.'],['4','Activa tu cuenta','Al aprobarse, crearás tu contraseña.']] as [$n,$title,$copy])<li class="flex gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-300 font-black text-emerald-950">{{$n}}</span><span><strong class="block">{{$title}}</strong><small class="text-emerald-100/65">{{$copy}}</small></span></li>@endforeach</ol></aside>
-<section id="solicitud-transportista" class="scroll-mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"><header class="border-b border-slate-100 p-6 sm:p-8"><span class="text-xs font-black uppercase tracking-wider text-emerald-700">Solicitud de afiliación</span><h2 class="mt-2 text-2xl font-black text-slate-950">Datos de la empresa transportista</h2><p class="mt-1 text-sm text-slate-500">Este formulario es exclusivamente para operadores que publicarán rutas y venderán pasajes.</p></header>
-@if($errors->any())<div class="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 sm:mx-8"><strong>Revisa la información ingresada.</strong><ul class="mt-2 list-inside list-disc">@foreach($errors->all() as $error)<li>{{$error}}</li>@endforeach</ul></div>@endif
-<form action="{{ route('company.registration.store') }}" method="POST" enctype="multipart/form-data" class="ny-affiliation-form space-y-8 p-6 sm:p-8">@csrf
-<fieldset><legend class="mb-4 text-sm font-black text-slate-900">1. Información legal y operativa</legend><div class="grid gap-4 sm:grid-cols-2"><x-company-field name="ruc" label="RUC (11 dígitos)" placeholder="20XXXXXXXXX" required/><x-company-field name="legal_name" label="Razón social" placeholder="Transportes del Oriente S.A.C." required/><x-company-field name="commercial_name" label="Nombre comercial" placeholder="Amazonía Express"/><label class="rounded-2xl border border-slate-200 bg-slate-50 p-3 focus-within:ring-2 focus-within:ring-emerald-600"><span class="block text-[10px] font-bold uppercase text-slate-500">Tipo de operación</span><select name="modality" required class="mt-1 w-full border-0 bg-transparent p-0 text-sm font-bold focus:ring-0"><option value="fluvial" @selected(old('modality')==='fluvial')>Solo transporte fluvial</option><option value="aereo" @selected(old('modality')==='aereo')>Solo transporte aéreo</option><option value="mixto" @selected(old('modality')==='mixto')>Transporte fluvial y aéreo</option></select><small class="mt-2 block text-[10px] font-normal leading-4 text-slate-500">Esta selección controla qué módulos, flota y rutas aparecerán en tu panel.</small></label><x-company-field name="base_city" label="Ciudad base" placeholder="Iquitos" required/><x-company-field name="address" label="Dirección fiscal / base de operaciones" placeholder="Dirección principal" required/></div></fieldset>
-<fieldset class="border-t border-slate-100 pt-7"><legend class="mb-4 text-sm font-black text-slate-900">2. Contacto responsable</legend><div class="grid gap-4 sm:grid-cols-2"><x-company-field name="contact_name" label="Nombres y apellidos" placeholder="Responsable legal" required/><x-company-field name="email" label="Correo corporativo" placeholder="administracion@empresa.pe" type="email" required/><x-company-field name="phone" label="Teléfono" placeholder="900 000 000" required/><x-company-field name="whatsapp" label="WhatsApp (opcional)" placeholder="900 000 000"/><x-company-field name="website" label="Sitio web (opcional)" placeholder="https://" type="url"/></div></fieldset>
-<fieldset class="border-t border-slate-100 pt-7"><legend class="mb-1 text-sm font-black text-slate-900">3. Documentos para validación</legend><p class="mb-4 text-xs text-slate-500">Formatos PDF, JPG o PNG. Máximo 5 MB por archivo.</p><div class="grid gap-4 sm:grid-cols-3">@foreach([['ruc_document','Ficha RUC'],['representative_document','Documento del representante'],['operating_permit','Permiso de operación']] as [$name,$label])<label class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs font-bold text-slate-700"><span class="mb-2 block">{{$label}} *</span><input type="file" name="{{$name}}" accept=".pdf,.jpg,.jpeg,.png" required class="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-emerald-100 file:px-3 file:py-2 file:font-bold file:text-emerald-900"></label>@endforeach</div></fieldset>
-<div class="border-t border-slate-100 pt-7"><label class="flex items-start gap-3 text-sm text-slate-600"><input type="checkbox" name="terms" value="1" required class="mt-1 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"><span>Declaro que la información es correcta y acepto los <a class="font-bold text-emerald-700 underline" href="{{route('pages.show','terminos')}}" onclick="const legalDialog=document.getElementById('legal-terminos');if(legalDialog){event.preventDefault();legalDialog.showModal()}">términos y condiciones</a> y la <a class="font-bold text-emerald-700 underline" href="{{route('pages.show','privacidad')}}" onclick="const legalDialog=document.getElementById('legal-privacidad');if(legalDialog){event.preventDefault();legalDialog.showModal()}">política de privacidad</a> para evaluar la afiliación.</span></label><button class="mt-5 flex h-12 w-full items-center justify-center rounded-2xl bg-amber-500 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-400">Enviar solicitud para revisión</button><p class="mt-3 text-center text-xs text-slate-500">No crearás una contraseña todavía. La configurarás cuando la solicitud sea aprobada.</p></div>
-</form></section></div></div></main>
+<p class="text-[11px] font-bold uppercase tracking-[.18em] text-emerald-700">Operadores de Loreto</p>
+<h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Afiliar tu empresa</h1>
+<p class="mt-2 max-w-xl text-sm leading-6 text-slate-600">Envía el expediente. Revisamos los documentos y, cuando quede aprobado, creas la contraseña del panel.</p>
+<ol class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+<li class="rounded-full bg-emerald-800 px-3 py-1 text-white">1. Solicitud</li>
+<li class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">2. Correo</li>
+<li class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">3. Revisión</li>
+<li class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">4. Contraseña</li>
+</ol>
+<div class="mt-6 flex flex-wrap gap-2">
+<a href="#formulario-transportista" class="inline-flex h-11 items-center rounded-xl bg-emerald-800 px-4 text-sm font-bold text-white">Vendo pasajes</a>
+<a href="{{ route('marketplace.register') }}" class="inline-flex h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800">Quiero anunciarme</a>
+</div>
+<p class="mt-3 text-sm text-slate-500">¿Eres viajero? <a href="{{ route('register') }}" class="font-bold text-emerald-800 underline">Crea tu cuenta</a></p>
+
+<section id="formulario-transportista" class="mt-6 scroll-mt-24 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+<header class="border-b border-slate-100 px-5 py-4 sm:px-6"><h2 class="text-lg font-black text-slate-950">Datos del transportista</h2><p class="mt-1 text-sm text-slate-500">Para empresas que publican rutas y venden pasajes.</p></header>
+@if($errors->any())<div class="mx-5 mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 sm:mx-6"><strong>Revisa la información ingresada.</strong><ul class="mt-2 list-inside list-disc">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+<form action="{{ route('company.registration.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6 px-5 py-5 sm:px-6">
+@csrf
+<fieldset>
+<legend class="mb-3 text-sm font-black text-slate-900">Empresa</legend>
+<div class="grid gap-3 sm:grid-cols-2">
+<x-company-field name="ruc" label="RUC (11 dígitos)" placeholder="20XXXXXXXXX" required />
+<x-company-field name="legal_name" label="Razón social" placeholder="Transportes del Oriente S.A.C." required />
+<x-company-field name="commercial_name" label="Nombre comercial" placeholder="Amazonía Express" />
+<x-company-field name="base_city" label="Ciudad base" placeholder="Iquitos" required />
+<x-company-field name="address" label="Dirección fiscal" placeholder="Dirección principal" required />
+</div>
+<div class="mt-3">
+<span class="mb-2 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Tipo de operación</span>
+<div class="grid grid-cols-3 gap-2">
+@foreach(['fluvial' => 'Fluvial', 'aereo' => 'Aéreo', 'mixto' => 'Ambos'] as $value => $label)
+<label class="flex h-11 cursor-pointer items-center justify-center rounded-xl border text-sm font-bold has-[:checked]:border-emerald-700 has-[:checked]:bg-emerald-50 has-[:checked]:text-emerald-900 {{ old('modality', 'fluvial') === $value ? 'border-emerald-700 bg-emerald-50 text-emerald-900' : 'border-slate-200 text-slate-700' }}">
+<input type="radio" name="modality" value="{{ $value }}" class="sr-only" @checked(old('modality', 'fluvial') === $value) required>{{ $label }}
+</label>
+@endforeach
+</div>
+</div>
+</fieldset>
+<fieldset class="border-t border-slate-100 pt-5">
+<legend class="mb-3 text-sm font-black text-slate-900">Responsable</legend>
+<div class="grid gap-3 sm:grid-cols-2">
+<x-company-field name="contact_name" label="Nombres y apellidos" placeholder="Responsable legal" required />
+<x-company-field name="email" label="Correo corporativo" placeholder="administracion@empresa.pe" type="email" required />
+<x-company-field name="phone" label="Teléfono" placeholder="900 000 000" required />
+<x-company-field name="whatsapp" label="WhatsApp" placeholder="900 000 000" />
+</div>
+<details class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2" @if(old('website')) open @endif>
+<summary class="cursor-pointer text-sm font-semibold text-emerald-800">Agregar sitio web</summary>
+<div class="pt-2"><x-company-field name="website" label="Sitio web" placeholder="https://" type="url" /></div>
+</details>
+</fieldset>
+<fieldset class="border-t border-slate-100 pt-5">
+<legend class="text-sm font-black text-slate-900">Documentos</legend>
+<p class="mb-3 mt-1 text-xs text-slate-500">PDF, JPG o PNG. Máximo 5 MB por archivo.</p>
+<div class="grid gap-2">
+@foreach([['ruc_document', 'Ficha RUC'], ['representative_document', 'Documento del representante'], ['operating_permit', 'Permiso de operación']] as [$name, $label])
+<label class="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 sm:flex-row sm:items-center sm:justify-between"><span>{{ $label }}</span><input type="file" name="{{ $name }}" accept=".pdf,.jpg,.jpeg,.png" required class="block text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-emerald-100 file:px-3 file:py-1.5 file:font-bold file:text-emerald-900"></label>
+@endforeach
+</div>
+</fieldset>
+<div class="border-t border-slate-100 pt-5">
+<label class="flex items-start gap-3 text-sm text-slate-600"><input type="checkbox" name="terms" value="1" required class="mt-0.5 h-[18px] w-[18px] shrink-0"><span>Declaro que la información es correcta y acepto los <a class="font-bold text-emerald-700 underline" href="{{ route('pages.show', 'terminos') }}" onclick="const legalDialog=document.getElementById('legal-terminos');if(legalDialog){event.preventDefault();legalDialog.showModal()}">términos y condiciones</a> y la <a class="font-bold text-emerald-700 underline" href="{{ route('pages.show', 'privacidad') }}" onclick="const legalDialog=document.getElementById('legal-privacidad');if(legalDialog){event.preventDefault();legalDialog.showModal()}">política de privacidad</a>.</span></label>
+<button class="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-amber-500 text-sm font-black text-slate-950 transition hover:bg-amber-400">Enviar solicitud</button>
+<p class="mt-3 text-center text-xs text-slate-500">La contraseña se crea cuando la solicitud queda aprobada.</p>
+</div>
+</form>
+</section>
+</div>
+</div>
 </x-public-layout>

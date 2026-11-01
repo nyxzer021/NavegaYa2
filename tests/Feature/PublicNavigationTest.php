@@ -19,7 +19,7 @@ class PublicNavigationTest extends TestCase
                 ->assertSee('Rutas fluviales')
                 ->assertSee('Empresas')
                 ->assertSee('Descubrir')
-                ->assertSee('Busca tu pasaje')
+                ->assertSee('Consultar boleto')
                 ->assertSee('Afiliar tu empresa')
                 ->assertSee('Iniciar sesión');
         }

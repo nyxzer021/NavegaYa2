@@ -1,6 +1,6 @@
-@props(['departure'])
+@props(['departure', 'passengers' => 1])
 @php
-    $isAir = $departure instanceof AppModelsAirDeparture;
+    $isAir = $departure instanceof \App\Models\AirDeparture;
     $route = $isAir ? $departure->airRoute : $departure->transportRoute;
     $vehicle = $isAir ? $departure->aircraft : $departure->vessel;
     $organization = $vehicle->organization;
@@ -38,7 +38,7 @@
 
 <div class="flex items-center justify-between gap-4 border-t border-slate-100 pt-3 lg:flex-col lg:items-end lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
 <div class="lg:text-right"><span class="block text-[9px] font-semibold uppercase tracking-wider text-slate-400">Desde</span><strong class="text-xl font-black leading-none text-slate-900">S/ {{number_format((float)$departure->fare,2)}}</strong><span class="mt-0.5 block text-[9px] text-slate-400">por asiento</span></div>
-<div class="flex flex-wrap items-center justify-end gap-2"><x-company-whatsapp :company="$organization" :departure="$departure" compact /><a href="{{$bookingUrl}}" class="inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl bg-amber-500 px-4 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-600 active:scale-95">Ver asientos <span>→</span></a></div>
+<div class="flex flex-wrap items-center justify-end gap-2">@if($available >= (int) $passengers)<x-company-whatsapp :company="$organization" :departure="$departure" compact /><a href="{{$bookingUrl}}" class="inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl bg-amber-500 px-4 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-600 active:scale-95">Elegir asiento <span>→</span></a>@else<span class="inline-flex h-10 items-center rounded-xl bg-slate-100 px-4 text-xs font-bold text-slate-500">Agotado</span>@endif</div>
 </div>
 </div>
 </article>

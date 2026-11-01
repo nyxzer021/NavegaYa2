@@ -26,6 +26,7 @@ class HomePageTest extends TestCase
             ->assertSee('action="'.route('home').'#resultados"', false)
             ->assertSee('Elegir asiento')
             ->assertSee('La salida puede demorar 1 o 2 horas')
+            ->assertDontSee('Ida y vuelta')
             ->assertSee('https://wa.me/51953540705', false)
             ->assertSee('href="'.route('bookings.create', $departure).'"', false);
 
