@@ -5,7 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>NavegaYA · Cuenta de viajero</title>
+        <title>{{ $title }}</title>
+        <meta name="description" content="{{ $description }}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="NavegaYA">
+        <meta property="og:title" content="{{ $title }}">
+        <meta property="og:description" content="{{ $description }}">
+        <meta property="og:image" content="{{ asset('images/branding/banner-home-viajeros-amazonia.webp') }}">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $title }}">
+        <meta name="twitter:description" content="{{ $description }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

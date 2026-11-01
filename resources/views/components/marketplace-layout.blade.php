@@ -9,6 +9,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .advertiser-menu-toggle{display:none;align-items:center;justify-content:center;min-height:44px;border:0;border-radius:12px;background:#fff;color:#052f25;font-size:12px;font-weight:800;padding:0 12px}
+        @media(max-width:1023px){
+            .advertiser-menu-toggle{display:inline-flex}
+            #advertiser-sidebar{position:fixed;z-index:60;top:64px;left:0;height:calc(100vh - 64px);width:min(18rem,88vw);transform:translateX(-105%);transition:transform .2s ease}
+            #advertiser-sidebar.is-open{transform:none}
+            #advertiser-sidebar nav{display:block}
+        }
+    </style>
 </head>
 <body class="ny-marketplace-portal min-h-full bg-slate-50 font-sans text-slate-800 antialiased">
     @php($unreadSupportCount = auth()->check() ? \App\Models\SupportTicket::query()->where('user_id', auth()->id())->whereNotNull('admin_response')->where(fn($query) => $query->whereNull('requester_viewed_at')->orWhereColumn('requester_viewed_at', '<', 'responded_at'))->count() : 0)
@@ -22,7 +31,8 @@
                 </span>
                 <span>Navega<span class="text-amber-400">YA</span><small class="block text-[8px] uppercase tracking-[.2em] text-emerald-200">Portal del anunciante</small></span>
             </a>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center justify-end gap-3">
+                <button type="button" class="advertiser-menu-toggle" aria-controls="advertiser-sidebar" aria-expanded="false">Menú</button>
                 <a href="{{ route('messages.index') }}" aria-label="Mensajes comerciales" class="relative grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 text-lg transition hover:bg-white/20">✉️@if($unreadBusinessMessages)<span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white">{{ $unreadBusinessMessages > 99 ? '99+' : $unreadBusinessMessages }}</span>@endif</a>
                 <a href="{{ route('support.index') }}" aria-label="Respuestas nuevas de soporte" class="relative grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 text-lg transition hover:bg-white/20">🛟@if($unreadSupportCount)<span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white">{{ $unreadSupportCount > 99 ? '99+' : $unreadSupportCount }}</span>@endif</a>
                 <span class="hidden text-xs text-emerald-100/70 sm:block">{{ auth()->user()->name }}</span>
@@ -33,5 +43,20 @@
         </div>
     </header>
     {{ $slot }}
+    <script>
+        (() => {
+            const button = document.querySelector('.advertiser-menu-toggle');
+            const side = document.getElementById('advertiser-sidebar');
+            if (!button) return;
+            if (!side) {
+                button.remove();
+                return;
+            }
+            button.addEventListener('click', () => {
+                const open = side.classList.toggle('is-open');
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        })();
+    </script>
 </body>
 </html>

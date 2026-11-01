@@ -1,4 +1,4 @@
-<x-guest-layout>
+<x-guest-layout title="Iniciar sesión · NavegaYA" description="Ingresa a tu cuenta de NavegaYA para consultar reservas, descargar boletos y seguir tus viajes fluviales y aéreos por Loreto.">
     <section class="auth-heading">
         <p>CUENTA DE VIAJERO</p>
         <h1>Bienvenido de vuelta</h1>

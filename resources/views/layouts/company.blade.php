@@ -14,12 +14,15 @@
         .company-shell { display: flex; flex-direction: row; height: 100vh; min-height: 100vh; width: 100%; overflow: hidden; }
         .company-sidebar { position: relative; flex: 0 0 16rem; width: 16rem; min-width: 16rem; max-width: 16rem; height: 100vh; overflow-y: auto; }
         .company-main { flex: 1 1 0%; min-width: 0; width: calc(100% - 16rem); height: 100vh; overflow-y: auto; }
+        .company-menu-toggle { display: none; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; border: 0; border-radius: 12px; background: #062c21; color: #fff; font-weight: 800; }
         @media (max-width: 1023px) {
+            .company-menu-toggle { display: inline-flex; }
             .company-shell { display: block; height: auto; min-height: 100vh; overflow: visible; }
-            .company-sidebar { width: 100%; min-width: 0; max-width: none; height: auto; max-height: 24rem; }
-            .company-sidebar nav { flex-direction: row; overflow-x: auto; padding-bottom: .5rem; }
-            .company-sidebar nav > div { min-width: 14rem; }
-            .company-main { width: 100%; height: auto; min-height: 100vh; overflow: visible; padding: 1rem; }
+            .company-sidebar { position: fixed; z-index: 70; top: 0; left: 0; width: min(18rem, 88vw); min-width: 0; max-width: none; height: 100vh; transform: translateX(-105%); transition: transform .2s ease; }
+            .company-sidebar.is-open { transform: none; box-shadow: 0 16px 40px #062c2155; }
+            .company-sidebar nav { flex-direction: column; overflow: visible; }
+            .company-main { width: 100%; height: auto; min-height: 100vh; overflow: auto; padding: 1rem; }
+            .company-main table { display: block; max-width: 100%; overflow-x: auto; }
         }
     </style>
 </head>
@@ -33,7 +36,7 @@
 @endphp
 <body class="ny-company-portal min-h-full bg-slate-50 text-slate-800 antialiased">
     <div class="company-shell min-h-screen bg-slate-50 flex flex-row">
-        <aside class="company-sidebar flex h-screen min-h-screen w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0 flex-col overflow-y-auto bg-[#062c21] p-4 text-white">
+        <aside id="company-sidebar" class="company-sidebar flex h-screen min-h-screen w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0 flex-col overflow-y-auto bg-[#062c21] p-4 text-white">
             <a href="{{ route('home') }}" class="mb-6 flex items-center gap-3 border-b border-white/10 pb-5">
                 <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-lg">⚓</span>
                 <span>
@@ -59,7 +62,7 @@
                     </a>
                     @unless($isCounter)
                         <a href="{{ route('company.sales.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.sales.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">💳</span><span>Ventas &amp; reportes</span>
+                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10">💳</span><span>Ventas y reportes</span>
                         </a>
                     @endunless
                     <a href="{{ route('company.counter.index') }}" class="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition {{ request()->routeIs('company.counter.*') || request()->routeIs('company.boarding.*') ? 'bg-white/10 text-white before:absolute before:-left-4 before:h-6 before:w-1 before:rounded-r-full before:bg-amber-400' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
@@ -103,7 +106,8 @@
         </aside>
 
         <main class="company-main flex-1 overflow-y-auto p-8">
-            <header class="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
+            <header class="mb-6 flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                <button type="button" class="company-menu-toggle" aria-controls="company-sidebar" aria-expanded="false">Menú</button>
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">{{ $isCounter ? 'Terminal / Counter' : 'Administración de empresa' }}</p>
                     <h1 class="text-lg font-bold text-slate-900">@yield('page-title', 'Operación')</h1>
@@ -131,5 +135,20 @@
             @yield('content')
         </main>
     </div>
+    <script>
+        (() => {
+            const button = document.querySelector('.company-menu-toggle');
+            const side = document.getElementById('company-sidebar');
+            if (!button || !side) return;
+            button.addEventListener('click', () => {
+                const open = side.classList.toggle('is-open');
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            side.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+                side.classList.remove('is-open');
+                button.setAttribute('aria-expanded', 'false');
+            }));
+        })();
+    </script>
 </body>
 </html>

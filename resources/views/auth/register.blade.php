@@ -1,4 +1,4 @@
-<x-guest-layout>
+<x-guest-layout title="Crear cuenta · NavegaYA" description="Crea tu cuenta de viajero en NavegaYA para guardar reservas, descargar boletos y consultar tus viajes fluviales y aéreos por Loreto.">
     <section class="auth-heading">
         <p>CUENTA DE VIAJERO</p>
         <h1>Viaja con NavegaYA</h1>
