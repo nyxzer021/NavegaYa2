@@ -4,18 +4,13 @@
 @if(session('status'))<div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ session('status') }}</div>@endif
 <p class="text-[11px] font-bold uppercase tracking-[.18em] text-emerald-700">Operadores de Loreto</p>
 <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Afiliar tu empresa</h1>
-<p class="mt-2 max-w-xl text-sm leading-6 text-slate-600">Envía el expediente. Revisamos los documentos y, cuando quede aprobado, creas la contraseña del panel.</p>
+<p class="mt-2 max-w-xl text-sm leading-6 text-slate-600">Solo para empresas que publican rutas y venden pasajes. Revisamos los documentos y, cuando quede aprobado, creas la contraseña del panel.</p>
 <ol class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
 <li class="rounded-full bg-emerald-800 px-3 py-1 text-white">1. Solicitud</li>
 <li class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">2. Correo</li>
 <li class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">3. Revisión</li>
 <li class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">4. Contraseña</li>
 </ol>
-<div class="mt-6 flex flex-wrap gap-2">
-<a href="#formulario-transportista" class="inline-flex h-11 items-center rounded-xl bg-emerald-800 px-4 text-sm font-bold text-white">Vendo pasajes</a>
-<a href="{{ route('marketplace.register') }}" class="inline-flex h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800">Quiero anunciarme</a>
-</div>
-<p class="mt-3 text-sm text-slate-500">¿Eres viajero? <a href="{{ route('register') }}" class="font-bold text-emerald-800 underline">Crea tu cuenta</a></p>
 
 <section id="formulario-transportista" class="mt-6 scroll-mt-24 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 <header class="border-b border-slate-100 px-5 py-4 sm:px-6"><h2 class="text-lg font-black text-slate-950">Datos del transportista</h2><p class="mt-1 text-sm text-slate-500">Para empresas que publican rutas y venden pasajes.</p></header>
