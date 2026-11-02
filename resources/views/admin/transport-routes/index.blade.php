@@ -24,7 +24,7 @@
  </section>
 
  <section>
-  <div class="mb-3 flex items-end justify-between"><div><span class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Directorio operativo</span><h2 class="text-xl font-black text-slate-900">Empresas transportistas</h2></div><span class="text-xs font-semibold text-slate-400">{{ $companies->count() }} operador(es)</span></div>
+  <div class="mb-3 flex items-end justify-between"><div><span class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Directorio operativo</span><h2 class="text-xl font-black text-slate-900">Empresas transportistas</h2></div><span class="text-xs font-semibold text-slate-400">{{ \App\Support\SpanishCount::phrase($companies->count(), 'operador', 'operadores') }}</span></div>
   <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
    @forelse($companies as $company)
     @php
@@ -52,7 +52,7 @@
    $companyDepartures = $groupedDepartures->get($company->id, collect());
   @endphp
   <section x-show="openCompany === {{ $company->id }}" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak class="overflow-hidden rounded-3xl border border-emerald-900/20 bg-white shadow-xl">
-   <header class="flex flex-col gap-3 bg-[#062c21] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between"><div><span class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Detalle cronológico</span><h2 class="mt-0.5 text-lg font-black">{{ $company->commercial_name ?: $company->legal_name }}</h2><p class="text-[11px] text-emerald-100/65">RUC {{ $company->ruc ?: 'por verificar' }} · {{ $companyDepartures->count() }} salida(s) futura(s)</p></div><button type="button" @click="openCompany=null" class="w-fit rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-[11px] font-bold hover:bg-white/20">Cerrar detalle ×</button></header>
+   <header class="flex flex-col gap-3 bg-[#062c21] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between"><div><span class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Detalle cronológico</span><h2 class="mt-0.5 text-lg font-black">{{ $company->commercial_name ?: $company->legal_name }}</h2><p class="text-[11px] text-emerald-100/65">RUC {{ $company->ruc ?: 'por verificar' }} · {{ \App\Support\SpanishCount::phrase($companyDepartures->count(), 'salida futura', 'salidas futuras') }}</p></div><button type="button" @click="openCompany=null" class="w-fit rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-[11px] font-bold hover:bg-white/20">Cerrar detalle ×</button></header>
    <div class="overflow-x-auto"><table class="w-full min-w-[1080px] text-left text-xs text-slate-600"><thead class="border-b border-slate-100 bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400"><tr><th class="py-3 pl-5">Hora</th><th class="px-4 py-3">Ruta / puertos</th><th class="px-4 py-3">Nave / matrícula</th><th class="px-4 py-3">Ocupación</th><th class="px-4 py-3">Tarifa</th><th class="px-4 py-3">Estado</th><th class="py-3 pr-5 text-right">Acciones</th></tr></thead><tbody class="divide-y divide-slate-100">
     @forelse($companyDepartures as $departure)
      @php

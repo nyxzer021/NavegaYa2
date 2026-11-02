@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Port;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StorePortRequest extends FormRequest
 {
@@ -33,5 +35,28 @@ class StorePortRequest extends FormRequest
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_active' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $name = mb_strtolower(trim((string) $this->input('name')));
+            $districtId = (int) $this->input('district_id');
+            $current = $this->route('port');
+            $currentId = $current instanceof Port ? $current->id : null;
+            $exists = Port::query()
+                ->when($currentId, fn ($query) => $query->whereKeyNot($currentId))
+                ->where('district_id', $districtId)
+                ->get(['id', 'name'])
+                ->contains(fn (Port $port): bool => mb_strtolower(trim($port->name)) === $name);
+
+            if ($exists) {
+                $validator->errors()->add('name', 'Ya existe un terminal con este nombre en el mismo distrito.');
+            }
+        });
     }
 }

@@ -43,6 +43,9 @@ class ContentModerationTest extends TestCase
             ->assertOk()
             ->assertSee('Reportes de usuarios')
             ->assertDontSee('Imágenes de perfiles pendientes');
+        $this->get(route('admin.moderation.index', ['tab' => 'reports', 'status' => 'resolved']))
+            ->assertOk()
+            ->assertSee('Acoso');
         $this->get(route('admin.moderation.index', ['tab' => 'profiles']))
             ->assertOk()
             ->assertSee('Imágenes de perfiles pendientes')

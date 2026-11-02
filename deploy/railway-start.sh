@@ -7,4 +7,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+if [ "${RUN_SCHEDULER:-1}" != "0" ]; then
+  php artisan schedule:work --no-interaction &
+fi
+
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"

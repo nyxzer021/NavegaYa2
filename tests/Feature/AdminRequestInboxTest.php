@@ -36,6 +36,7 @@ class AdminRequestInboxTest extends TestCase
         $this->actingAs($admin)->get(route('admin.requests.index'))
             ->assertOk()
             ->assertSee('Bandeja de solicitudes')
+            ->assertSee('1 solicitud por atender')
             ->assertSee('Transportes Sol')
             ->assertSee('Validación pendiente')
             ->assertSee('Revisar empresa');

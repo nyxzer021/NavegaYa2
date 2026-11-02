@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Services\MarketplaceSales;
 use App\Support\AdminScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
 
 class CompanyFinanceController extends Controller
 {
+    public function __construct(private readonly MarketplaceSales $sales) {}
+
     public function index(): View
     {
         $organization = $this->organization();
@@ -29,6 +32,11 @@ class CompanyFinanceController extends Controller
             'grossMonth' => (float) $monthPayments->sum('amount'),
             'transactionsMonth' => $monthPayments->count(),
             'averageTicketMonth' => $monthPayments->count() > 0 ? (float) $monthPayments->avg('amount') : 0,
+            'confirmedSales' => (float) $payments->sum('amount'),
+            'commissionRate' => (float) $organization->commission_rate,
+            'commissionGenerated' => (float) $payments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+            'commissionCollected' => (float) $payments->where('commission_status', 'paid')->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+            'commissionReceivable' => (float) $payments->whereIn('commission_status', ['pending', 'invoiced'])->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
             'recentPayments' => $payments->take(12),
         ]);
     }

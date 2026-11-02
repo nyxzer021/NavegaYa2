@@ -11,6 +11,7 @@ use App\Models\Vessel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class AdminPortController extends Controller
@@ -23,6 +24,7 @@ class AdminPortController extends Controller
                 ->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))
                 ->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))
                 ->orderBy('modality')->orderBy('city')->orderBy('name')->get(),
+            'repeatedPortLabels' => $this->repeatedPortLabels(),
         ]));
     }
 
@@ -33,9 +35,9 @@ class AdminPortController extends Controller
 
     public function store(StorePortRequest $request): RedirectResponse
     {
-        Port::create($this->normalized($request));
+        $port = Port::create($this->normalized($request));
 
-        return redirect()->route('admin.ports.index')->with('success', 'Puerto registrado correctamente.');
+        return $this->saved($port, 'Puerto registrado correctamente.');
     }
 
     public function edit(Port $port): View
@@ -52,7 +54,7 @@ class AdminPortController extends Controller
     {
         $port->update($this->normalized($request));
 
-        return redirect()->route('admin.ports.index')->with('success', 'Puerto actualizado correctamente.');
+        return $this->saved($port, 'Puerto actualizado correctamente.');
     }
 
     public function provinces(GeographicDepartment $department): JsonResponse
@@ -81,6 +83,31 @@ class AdminPortController extends Controller
         } $port->delete();
 
         return redirect()->route('admin.ports.index')->with('success', 'Puerto eliminado correctamente.');
+    }
+
+    private function saved(Port $port, string $success): RedirectResponse
+    {
+        $port->load('district');
+        $others = Port::query()->with('district')->whereKeyNot($port->id)->get()
+            ->filter(fn (Port $other): bool => mb_strtolower(trim($other->name)) === mb_strtolower(trim($port->name)))
+            ->map(fn (Port $other): string => $other->optionLabel())
+            ->values();
+        $redirect = redirect()->route('admin.ports.index')->with('success', $success);
+        if ($others->isNotEmpty()) {
+            $redirect->with('warning', 'Se guardó '.$port->optionLabel().'. Ya existe otro terminal con el mismo nombre: '.$others->join(', ').'.');
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    private function repeatedPortLabels(): Collection
+    {
+        return Port::query()->with('district')->orderBy('name')->get()
+            ->groupBy(fn (Port $port): string => mb_strtolower(trim($port->name)))
+            ->flatMap(fn ($group) => $group->count() > 1 ? $group->map(fn (Port $port): string => $port->optionLabel()) : []);
     }
 
     private function formData(array $extra = []): array

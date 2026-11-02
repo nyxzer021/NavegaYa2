@@ -63,7 +63,7 @@ class AdminBoardingController extends Controller
             : $this->currentTickets($tickets);
         $previous = $selectedDeparture ? collect() : $tickets->diff($current)->sortByDesc(fn ($ticket) => $this->departureAt($ticket))->values();
         $boardingStats = $selectedDeparture ? ['total' => $current->count(), 'boarded' => $current->where('status', 'boarded')->count(), 'pending' => $current->where('status', '!=', 'boarded')->count()] : null;
-        $ports = Port::where('is_active', true)->orderBy('city')->orderBy('name')->get();
+        $ports = Port::with('district')->where('is_active', true)->orderBy('city')->orderBy('name')->get();
 
         return view('admin.boarding.index', compact('current', 'previous', 'term', 'ports', 'selectedDeparture', 'selectedIsAir', 'boardingStats'));
     }

@@ -31,6 +31,8 @@ class AuditCoverageTest extends TestCase
         $this->get(route('admin.audit.index'))
             ->assertOk()
             ->assertSee('Historial completo de operaciones')
-            ->assertSee('Campaña auditable');
+            ->assertSee('Campaña auditable')
+            ->assertSee('Anuncio')
+            ->assertDontSee('>Advertisement');
     }
 }

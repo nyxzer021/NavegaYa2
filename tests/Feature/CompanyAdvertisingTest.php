@@ -52,6 +52,21 @@ class CompanyAdvertisingTest extends TestCase
         $this->assertDatabaseMissing('advertisements', ['organization_id' => $organization->id, 'title' => 'Campaña no incluida']);
     }
 
+    public function test_company_without_a_plan_can_request_activation(): void
+    {
+        [$user] = $this->company();
+
+        $this->actingAs($user)->get(route('company.advertising.index'))
+            ->assertOk()
+            ->assertSee('Solicitar activación');
+        $this->actingAs($user)->get(route('messages.index', [
+            'asunto' => 'Solicitud de activación del plan publicitario',
+            'mensaje' => 'Solicito la activación del plan publicitario de mi empresa.',
+        ]))->assertOk()
+            ->assertSee('Solicitud de activación del plan publicitario')
+            ->assertSee('Solicito la activación del plan publicitario de mi empresa.');
+    }
+
     public function test_pending_transport_company_cannot_access_advertising(): void
     {
         [$user, $organization] = $this->company();

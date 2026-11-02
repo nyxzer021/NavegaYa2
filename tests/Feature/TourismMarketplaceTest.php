@@ -93,7 +93,7 @@ class TourismMarketplaceTest extends TestCase
         $this->assertSame($newCover->path, $listing->fresh()->banner_path);
 
         $this->actingAs($owner)->get(route('marketplace.dashboard', ['tab' => 'profile']))
-            ->assertOk()->assertSee('Horario de atención')->assertSee('Horario personalizado')
+            ->assertOk()->assertSee('Horario de atención')->assertSee('Horario personalizado')->assertSee('type="time"', false)
             ->assertSee('Cerrar sesión')->assertDontSee('Afiliar tu empresa');
         $this->actingAs($owner)->get(route('marketplace.dashboard', ['tab' => 'gallery']))
             ->assertOk()->assertSee('Galería de tu negocio')->assertSee('Usar como portada')

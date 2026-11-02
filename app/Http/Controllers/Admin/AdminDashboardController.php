@@ -15,10 +15,12 @@ use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
+use App\Models\SystemSetting;
 use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Services\MarketplaceSales;
+use App\Support\PhoneNumber;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
@@ -428,7 +430,7 @@ class AdminDashboardController extends Controller
         $tourismDirectory = DestinationListing::query()
             ->selectRaw('type, count(*) as total')
             ->where('is_active', true)
-            ->whereIn('type', ['lodging', 'gastronomy', 'attraction'])
+            ->whereIn('type', ['lodging', 'gastronomy', 'attraction', 'tourist_transport'])
             ->groupBy('type')
             ->pluck('total', 'type');
         $publishedTourismCount = (int) $tourismDirectory->sum();
@@ -437,6 +439,7 @@ class AdminDashboardController extends Controller
             'lodging' => (int) ($tourismDirectory['lodging'] ?? 0),
             'gastronomy' => (int) ($tourismDirectory['gastronomy'] ?? 0),
             'attraction' => (int) ($tourismDirectory['attraction'] ?? 0),
+            'tourist_transport' => (int) ($tourismDirectory['tourist_transport'] ?? 0),
         ];
 
         $subscriptionPlans = SubscriptionPlan::query()->where('is_active', true)->orderBy('monthly_price')->get();
@@ -466,6 +469,12 @@ class AdminDashboardController extends Controller
         $professionalGrowth = (float) data_get($planMetrics->firstWhere('code', 'professional'), 'growth', 0);
         $subscriptionRevenueSeries = $planMetrics->pluck('revenue')->values();
         $subscriptionClientSeries = $planMetrics->pluck('clients')->values();
+        $supportWhatsAppMissing = PhoneNumber::peru(SystemSetting::value('whatsapp_number')) === null;
+        $draftPaidListings = DestinationListing::query()
+            ->where('status', 'draft')
+            ->whereHas('organization.subscriptions', fn ($query) => $query->where('status', 'active'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('admin.dashboard', compact(
             'period',
@@ -553,6 +562,8 @@ class AdminDashboardController extends Controller
             'professionalGrowth',
             'subscriptionRevenueSeries',
             'subscriptionClientSeries',
+            'supportWhatsAppMissing',
+            'draftPaidListings',
         ));
     }
 

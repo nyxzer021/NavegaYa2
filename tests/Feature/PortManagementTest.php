@@ -70,4 +70,38 @@ class PortManagementTest extends TestCase
         $this->actingAs($this->admin())->from(route('admin.ports.index'))->delete(route('admin.ports.destroy', $origin))->assertRedirect(route('admin.ports.index'))->assertSessionHas('error');
         $this->assertDatabaseHas('ports', ['id' => $origin->id]);
     }
+
+    public function test_same_port_name_is_rejected_in_one_district_and_labeled_in_another(): void
+    {
+        [$department, $province, $district] = $this->location();
+        $other = GeographicDistrict::where('province_id', $province->id)->whereKeyNot($district->id)->firstOrFail();
+        $admin = $this->admin();
+        $payload = [
+            'department_id' => $department->id,
+            'province_id' => $province->id,
+            'district_id' => $district->id,
+            'name' => 'Puerto Nanay',
+            'modality' => 'fluvial',
+            'port_type' => 'embarcadero',
+            'river' => 'Nanay',
+        ];
+
+        $this->actingAs($admin)->post(route('admin.ports.store'), $payload)->assertRedirect(route('admin.ports.index'));
+        $this->actingAs($admin)->post(route('admin.ports.store'), $payload)->assertSessionHasErrors('name');
+        $this->assertSame(1, Port::where('name', 'Puerto Nanay')->count());
+
+        $this->actingAs($admin)->post(route('admin.ports.store'), [...$payload, 'district_id' => $other->id])
+            ->assertRedirect(route('admin.ports.index'))
+            ->assertSessionHas('warning');
+
+        $this->actingAs($admin)->get(route('admin.ports.index'))
+            ->assertOk()
+            ->assertSee('Puerto Nanay · '.$district->name)
+            ->assertSee('Puerto Nanay · '.$other->name)
+            ->assertSee('Hay terminales con el mismo nombre');
+
+        $this->actingAs($admin)->get(route('admin.transport-routes.city-ports', ['city' => $district->name]))
+            ->assertOk()
+            ->assertJsonFragment(['label' => 'Puerto Nanay · '.$district->name]);
+    }
 }

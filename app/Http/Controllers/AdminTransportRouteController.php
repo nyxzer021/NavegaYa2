@@ -99,7 +99,8 @@ class AdminTransportRouteController extends Controller
     public function portsByCity(string $city): JsonResponse
     {
         return response()->json(
-            Port::query()->where('is_active', true)->where('city', $city)->orderBy('name')->get(['id', 'name', 'city'])
+            Port::query()->with('district')->where('is_active', true)->where('city', $city)->orderBy('name')->get()
+                ->map(fn (Port $port): array => ['id' => $port->id, 'name' => $port->name, 'city' => $port->city, 'label' => $port->optionLabel()])
         );
     }
 
@@ -311,8 +312,8 @@ class AdminTransportRouteController extends Controller
             'routeRecord' => $routeRecord,
             'organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->whereKey($id))->orderBy('legal_name')->get(),
             'cities' => DestinationCity::query()->where('is_active', true)->orderBy('name')->pluck('name'),
-            'initialOriginPorts' => $originPort ? Port::where('is_active', true)->where('city', $originPort->city)->orderBy('name')->get() : collect(),
-            'initialDestinationPorts' => $destinationPort ? Port::where('is_active', true)->where('city', $destinationPort->city)->orderBy('name')->get() : collect(),
+            'initialOriginPorts' => $originPort ? Port::with('district')->where('is_active', true)->where('city', $originPort->city)->orderBy('name')->get() : collect(),
+            'initialDestinationPorts' => $destinationPort ? Port::with('district')->where('is_active', true)->where('city', $destinationPort->city)->orderBy('name')->get() : collect(),
         ];
     }
 

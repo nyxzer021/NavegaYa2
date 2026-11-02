@@ -8,8 +8,16 @@
             <div class="mb-5 rounded-xl bg-emerald-50 px-5 py-4 font-semibold text-emerald-800">✓ {{ session('success') }}</div>
         @endif
 
+        @if (session('warning'))
+            <div class="mb-5 rounded-xl bg-amber-50 px-5 py-4 font-semibold text-amber-950">{{ session('warning') }}</div>
+        @endif
+
         @if (session('error'))
             <div class="mb-5 rounded-xl bg-rose-50 px-5 py-4 font-semibold text-rose-800">{{ session('error') }}</div>
+        @endif
+
+        @if ($repeatedPortLabels->isNotEmpty())
+            <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-950">Hay terminales con el mismo nombre. En las listas se distinguen así: {{ $repeatedPortLabels->join('; ') }}.</div>
         @endif
 
         <div class="mb-4 rounded-2xl bg-gradient-to-r from-[#10352f] to-[#1d6457] px-6 py-5 text-white">
@@ -59,7 +67,7 @@
                             <tr class="hover:bg-slate-50">
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $port->name }}</td>
                                 <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $port->modality==='aereo'?'bg-violet-50 text-violet-700':'bg-sky-50 text-sky-700' }}">{{ $port->modality==='aereo'?'✈ Aéreo':'⚓ Fluvial' }}</span></td>
-                                <td class="px-4 py-4 text-slate-700">{{ $port->city }}<br><span class="text-[10px] text-slate-400">{{ $port->province->name ?? 'Loreto' }} · {{ $port->region }}</span></td>
+                                <td class="px-4 py-4 text-slate-700">{{ $port->placeName() }}<br><span class="text-[10px] text-slate-400">{{ $port->province->name ?? 'Loreto' }} · {{ $port->region }}</span></td>
                                 <td class="px-4 py-4 text-slate-700">{{ $port->river ?: 'No registrado' }}</td>
                                 <td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold {{ $port->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $port->is_active ? 'Activo' : 'Inactivo' }}</span></td>
                                 <td class="px-6 py-4 whitespace-nowrap">

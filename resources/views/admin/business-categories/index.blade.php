@@ -50,7 +50,7 @@
                     <div class="grid gap-3 px-4 py-3 lg:grid-cols-[52px_minmax(180px,1.2fr)_minmax(190px,1fr)_80px_170px] lg:items-center">
                         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-xl ring-1 ring-emerald-100">{{$category->icon ?: '🏪'}}</div>
                         <div class="min-w-0"><h4 class="truncate text-sm font-black text-slate-950">{{$category->name}}</h4><p class="mt-0.5 truncate font-mono text-[11px] text-slate-500">{{$category->code}} · orden {{$category->sort_order}}</p></div>
-                        <div><p class="text-xs font-bold text-slate-700">{{$types[$category->listing_type] ?? $category->listing_type}}</p><p class="mt-0.5 text-[11px] text-slate-500">{{$category->listings_count}} ficha(s) vinculada(s)</p></div>
+                        <div><p class="text-xs font-bold text-slate-700">{{$types[$category->listing_type] ?? $category->listing_type}}</p><p class="mt-0.5 text-[11px] text-slate-500">{{ \App\Support\SpanishCount::phrase($category->listings_count, 'ficha vinculada', 'fichas vinculadas') }}</p></div>
                         <div><span class="inline-flex rounded-full px-2 py-1 text-[10px] font-black {{$category->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}}">{{$category->is_active ? 'Activa' : 'Inactiva'}}</span></div>
                         <div class="flex items-center gap-2 lg:justify-end">
                             <button type="button" onclick="document.getElementById('edit-category-{{$category->id}}').classList.toggle('hidden')" class="rounded-lg border border-emerald-700 px-3 py-2 text-xs font-black text-emerald-800 hover:bg-emerald-50">Editar</button>

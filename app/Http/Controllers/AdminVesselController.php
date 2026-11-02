@@ -55,7 +55,7 @@ class AdminVesselController extends Controller
     {
         return $extra + [
             'organizations' => Organization::query()->where('type', 'transport_company')->where('status', 'active')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->whereKey($id))->orderBy('legal_name')->get(),
-            'ports' => Port::query()->where('is_active', true)->orderBy('city')->orderBy('name')->get(),
+            'ports' => Port::query()->with('district')->where('is_active', true)->orderBy('city')->orderBy('name')->get(),
         ];
     }
 }

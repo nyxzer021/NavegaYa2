@@ -21,6 +21,18 @@
         @endforeach
     </section>
 
+    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        @foreach([
+            ['Ventas confirmadas', 'S/ '.number_format($confirmedSales, 2), 'Pasajes cobrados'],
+            ['Porcentaje', number_format($commissionRate, 2).'%', 'Acuerdo de tu empresa'],
+            ['Comisión generada', 'S/ '.number_format($commissionGenerated, 2), 'Calculada sobre esas ventas'],
+            ['Comisión cobrada', 'S/ '.number_format($commissionCollected, 2), 'Ya registrada por NavegaYA'],
+            ['Por cobrar', 'S/ '.number_format($commissionReceivable, 2), 'Pendiente de registro'],
+        ] as [$label, $amount, $copy])
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span class="text-[9px] font-black uppercase tracking-wider text-slate-400">{{ $label }}</span><strong class="mt-2 block text-2xl font-black text-slate-900">{{ $amount }}</strong><span class="mt-1 block text-[10px] text-slate-400">{{ $copy }}</span></article>
+        @endforeach
+    </section>
+
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <header class="border-b border-slate-100 px-5 py-4"><h3 class="font-black text-slate-900">Pagos recientes</h3><p class="text-[10px] text-slate-400">Importes efectivamente confirmados para tu empresa.</p></header>
         <div class="overflow-x-auto"><table class="w-full min-w-[820px] text-left text-xs">

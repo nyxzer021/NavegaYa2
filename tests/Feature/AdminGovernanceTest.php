@@ -375,7 +375,7 @@ class AdminGovernanceTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.companies.index', ['tab' => 'rendimiento']))
             ->assertOk()
-            ->assertSee('registrada(s)')
+            ->assertSee('registrada')
             ->assertDontSee('Ver dossier');
 
         $this->get(route('admin.companies.show', $riverOperator))

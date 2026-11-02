@@ -23,7 +23,7 @@ class CompanyFleetController extends Controller
             'organization' => $organization,
             'vessels' => Vessel::with(['basePort', 'seats' => fn ($query) => $query->orderBy('deck')->orderBy('row_position')->orderBy('column_position')])->where('organization_id', $organization->id)->latest()->get(),
             'aircraft' => Aircraft::with(['seats' => fn ($query) => $query->orderBy('row_position')->orderBy('column_position')])->where('organization_id', $organization->id)->latest()->get(),
-            'ports' => Port::where('is_active', true)->orderBy('city')->orderBy('name')->get(),
+            'ports' => Port::with('district')->where('is_active', true)->orderBy('city')->orderBy('name')->get(),
         ]);
     }
 

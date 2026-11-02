@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Port extends Model
 {
+    /**
+     * @var list<string>
+     */
+    public const AIR_PORT_TYPES = ['aerodromo', 'aeropuerto', 'pista'];
+
     protected static function booted(): void
     {
         static::created(fn (self $model) => $model->internal_code ?: $model->forceFill(['internal_code' => 'PTO-'.str_pad((string) $model->id, 6, '0', STR_PAD_LEFT)])->saveQuietly());
@@ -18,6 +24,40 @@ class Port extends Model
     protected function casts(): array
     {
         return ['latitude' => 'decimal:7', 'longitude' => 'decimal:7', 'is_active' => 'boolean'];
+    }
+
+    public function placeName(): string
+    {
+        return $this->district?->name ?: ($this->city ?: 'Distrito por registrar');
+    }
+
+    public function optionLabel(): string
+    {
+        return trim($this->name).' · '.$this->placeName();
+    }
+
+    public function publicSide(): string
+    {
+        if ($this->modality === 'aereo' || in_array($this->port_type, self::AIR_PORT_TYPES, true)) {
+            return 'aereo';
+        }
+
+        return 'fluvial';
+    }
+
+    public function scopePublicSide(Builder $query, string $side): Builder
+    {
+        if ($side === 'aereo') {
+            return $query->where(function (Builder $air): void {
+                $air->where('modality', 'aereo')->orWhereIn('port_type', self::AIR_PORT_TYPES);
+            });
+        }
+
+        return $query->where(function (Builder $river): void {
+            $river->where('modality', '!=', 'aereo')->orWhereNull('modality');
+        })->where(function (Builder $river): void {
+            $river->whereNull('port_type')->orWhereNotIn('port_type', self::AIR_PORT_TYPES);
+        });
     }
 
     public function department(): BelongsTo
