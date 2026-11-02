@@ -18,11 +18,11 @@
    </div>
   </x-amazon-hero-bg>
  <div id="buscar" class="relative z-20 mx-auto -mt-4 w-full max-w-5xl">
-  <div class="rounded-2xl border border-slate-100 bg-white p-3 shadow-xl sm:p-3.5">
+  <div class="overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-[0_22px_50px_rgba(6,44,33,.14)]"><div class="h-1.5 bg-gradient-to-r from-emerald-950 via-emerald-600 to-amber-400"></div><div class="p-3 sm:p-3.5">
    <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
     <div class="inline-flex rounded-xl bg-slate-100 p-1" aria-label="Modalidad de transporte"><button type="button" data-transport-tab="river" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"><span>🚤</span> Fluvial</button><button type="button" data-transport-tab="air" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"><span>✈️</span> Aéreo</button></div>
    </div>
-   <form id="homeSearchForm" action="{{route('home')}}#resultados" method="GET" class="relative grid grid-cols-1 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1.5 sm:grid-cols-2 lg:grid-cols-12">
+   <form id="homeSearchForm" action="{{route('home')}}#resultados" method="GET" class="relative grid grid-cols-1 items-center gap-1.5 rounded-2xl border border-emerald-100 bg-[#f4faf7] p-1.5 sm:grid-cols-2 lg:grid-cols-12">
     <input type="hidden" id="transportInput" name="transport" value="{{$activeTransport}}">
     @php($searchOptions=$searchCities->mapWithKeys(fn($city)=>[$city=>$cityLabels[$city]??$city])->all())
     <div class="relative grid gap-1.5 sm:col-span-2 sm:grid-cols-2 lg:col-span-6">
@@ -30,12 +30,13 @@
     <x-public-select name="destination" label="Destino" icon="🎯" placeholder="Selecciona destino" :options="$searchOptions" :selected="request('destination')" class="lg:pl-5" />
     <button id="swapRoute" type="button" title="Intercambiar origen y destino" aria-label="Intercambiar origen y destino" class="absolute left-1/2 top-1/2 z-30 hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-emerald-200 bg-white text-sm font-black text-emerald-800 shadow-md transition hover:rotate-180 hover:border-emerald-500 hover:bg-emerald-50 lg:grid">⇄</button>
     </div>
-    <div class="flex h-[52px] flex-col justify-center rounded-lg border border-slate-200/70 bg-white px-2.5 transition hover:border-slate-300 focus-within:ring-1 focus-within:ring-emerald-700 lg:col-span-2"><label for="travel-date" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Fecha de salida</label><input id="travel-date" type="date" name="date" value="{{request('date',today()->toDateString())}}" min="{{today()->toDateString()}}" class="mt-0.5 w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"></div>
+    <div class="flex h-[52px] flex-col justify-center rounded-xl border border-emerald-100 bg-white px-2.5 transition hover:border-emerald-300 focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-amber-400/30 lg:col-span-2"><label for="travel-date" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Fecha de salida</label><input id="travel-date" type="date" name="date" value="{{request('date',today()->toDateString())}}" min="{{today()->toDateString()}}" class="mt-0.5 w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"></div>
     @php($passengerOptions=collect(range(1,9))->mapWithKeys(fn($count)=>[$count=>$count.' '.($count===1?'adulto':'adultos')])->all())
     <x-public-select name="passengers" label="Pasajeros" icon="👤" placeholder="Número de pasajeros" :options="$passengerOptions" :selected="request('passengers',1)" class="lg:col-span-2" />
-    <div class="lg:col-span-2"><button type="submit" class="flex h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-600 active:scale-95 sm:text-sm"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 10.5 18a7.5 7.5 0 0 0 6.15-3.35z"></path></svg>Buscar pasajes</button></div>
+    <div class="lg:col-span-2"><button type="submit" class="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 px-3 text-xs font-black text-slate-950 shadow-[0_10px_20px_rgba(242,182,36,.35)] transition hover:-translate-y-0.5 hover:from-amber-200 hover:to-amber-400 active:scale-95 sm:text-sm"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 10.5 18a7.5 7.5 0 0 0 6.15-3.35z"></path></svg>Buscar pasajes</button></div>
    </form>
    <div class="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-500"><span class="font-medium text-slate-400">Rutas rápidas:</span><a href="{{route('home',['transport'=>'river','origin'=>'Iquitos','destination'=>'Nauta'])}}#resultados" class="rounded-md bg-slate-100 px-2.5 py-0.5 transition hover:bg-emerald-50 hover:text-emerald-700">Iquitos ➔ Nauta</a><a href="{{route('home',['transport'=>'river','origin'=>'Nauta','destination'=>'Yurimaguas'])}}#resultados" class="rounded-md bg-slate-100 px-2.5 py-0.5 transition hover:bg-emerald-50 hover:text-emerald-700">Nauta ➔ Yurimaguas</a><a href="{{route('home',['transport'=>'river','origin'=>'Iquitos','destination'=>'Santa Rosa'])}}#resultados" class="rounded-md bg-slate-100 px-2.5 py-0.5 transition hover:bg-emerald-50 hover:text-emerald-700">Iquitos ➔ Santa Rosa</a></div>
+  </div>
   </div>
  </div>
 

@@ -1,2 +1,2 @@
 @props(['name','label','type'=>'text','placeholder'=>'','required'=>false])
-<label class="ny-company-field block"><span class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">{{$label}}</span><input type="{{$type}}" name="{{$name}}" value="{{old($name)}}" placeholder="{{$placeholder}}" @required($required) class="h-10 min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800"></label>
+<label {{ $attributes->merge(['class' => 'ny-company-field']) }}><span>{{ $label }}</span><input type="{{ $type }}" name="{{ $name }}" value="{{ old($name) }}" placeholder="{{ $placeholder }}" @required($required)></label>
