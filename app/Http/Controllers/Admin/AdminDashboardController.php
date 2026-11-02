@@ -12,6 +12,7 @@ use App\Models\DestinationListing;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Port;
+use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -66,17 +67,25 @@ class AdminDashboardController extends Controller
             ->whereBetween('paid_at', [now()->startOfYear(), now()->endOfYear()])
             ->sum('commission_amount');
 
-        $paymentAmounts = [
-            'yape' => (float) $payments->whereIn('method', ['yape', 'plin'])->sum('amount'),
-            'card' => (float) $payments->where('method', 'card')->sum('amount'),
+        $methodNames = [
+            'yape' => 'Yape',
+            'plin' => 'Plin',
+            'card' => 'Tarjeta',
+            'cash' => 'Efectivo',
+            'cash_dock' => 'Efectivo en muelle',
+            'transfer' => 'Transferencia',
+            'pos' => 'Counter',
         ];
-        $paymentAmounts['cash'] = max(0, (float) $payments->sum('amount') - $paymentAmounts['yape'] - $paymentAmounts['card']);
-        $paymentMethodsTotal = array_sum($paymentAmounts);
-        $paymentMethodStats = [
-            'yape_percent' => $paymentMethodsTotal > 0 ? round(($paymentAmounts['yape'] / $paymentMethodsTotal) * 100, 1) : 0,
-            'card_percent' => $paymentMethodsTotal > 0 ? round(($paymentAmounts['card'] / $paymentMethodsTotal) * 100, 1) : 0,
-            'cash_percent' => $paymentMethodsTotal > 0 ? round(($paymentAmounts['cash'] / $paymentMethodsTotal) * 100, 1) : 0,
-        ];
+        $paymentMethodChart = $payments
+            ->groupBy(fn (Payment $payment): string => (string) ($payment->method ?: 'sin_metodo'))
+            ->map(fn (Collection $group, string $method): array => [
+                'label' => $methodNames[$method] ?? ucfirst(str_replace('_', ' ', $method)),
+                'amount' => round((float) $group->sum('amount'), 2),
+            ])
+            ->sortByDesc('amount')
+            ->values();
+        $paymentMethodLabels = $paymentMethodChart->pluck('label')->all();
+        $paymentMethodAmounts = $paymentMethodChart->pluck('amount')->all();
 
         $cargoShipments = CargoShipment::query()
             ->where('payment_status', 'paid')
@@ -107,8 +116,10 @@ class AdminDashboardController extends Controller
             ->get();
         $fluvialCapacity = (int) $periodFluvialDepartures->sum(fn (RouteDeparture $departure) => $departure->vessel?->seat_capacity ?? 0);
         $airCapacity = (int) $periodAirDepartures->sum(fn (AirDeparture $departure) => $departure->aircraft?->seat_capacity ?? 0);
-        $fluvialOccupancyRate = $fluvialCapacity > 0 ? min(100, round(($fluvialTicketsSold / $fluvialCapacity) * 100, 1)) : 0;
-        $airOccupancyRate = $airCapacity > 0 ? min(100, round(($airTicketsSold / $airCapacity) * 100, 1)) : 0;
+        $fluvialSeatsOnDepartures = $this->confirmedSeats($periodFluvialDepartures->pluck('id'), 'route_departure_id');
+        $airSeatsOnDepartures = $this->confirmedSeats($periodAirDepartures->pluck('id'), 'air_departure_id');
+        $fluvialOccupancyRate = $fluvialCapacity > 0 ? round(($fluvialSeatsOnDepartures / $fluvialCapacity) * 100, 1) : 0;
+        $airOccupancyRate = $airCapacity > 0 ? round(($airSeatsOnDepartures / $airCapacity) * 100, 1) : 0;
         $fluvialDeparturesCount = $periodFluvialDepartures->count();
         $airDeparturesCount = $periodAirDepartures->count();
         $cancelledFluvialDepartures = $periodFluvialDepartures->where('status', 'cancelled')->count();
@@ -191,8 +202,10 @@ class AdminDashboardController extends Controller
         $todayCapacity = $todayFluvialDepartures->sum(fn (RouteDeparture $departure) => $departure->vessel?->seat_capacity ?? 0)
             + $todayAirDepartures->sum(fn (AirDeparture $departure) => $departure->aircraft?->seat_capacity ?? 0);
 
+        $todaySoldSeats = $this->confirmedSeats($todayFluvialDepartures->pluck('id'), 'route_departure_id')
+            + $this->confirmedSeats($todayAirDepartures->pluck('id'), 'air_departure_id');
         $todayOccupancyRate = $todayCapacity > 0
-            ? min(100, round(($todaysTicketsCount / $todayCapacity) * 100, 1))
+            ? round(($todaySoldSeats / $todayCapacity) * 100, 1)
             : 0;
 
         $riverUnitsInTransit = $todayFluvialDepartures->where('status', 'in_transit')->count();
@@ -298,7 +311,7 @@ class AdminDashboardController extends Controller
             ->take(5)
             ->values();
 
-        [$chartLabels, $fluvialSeries, $airSeries, $cargoSeries] = $this->chartSeries(
+        [$chartLabels, $fluvialSeries, $airSeries, $cargoSeries, $commissionSeries, $advertisingSeries] = $this->chartSeries(
             $payments,
             $cargoShipments,
             $period,
@@ -539,7 +552,12 @@ class AdminDashboardController extends Controller
             'profitToday',
             'profitMonth',
             'profitYear',
-            'paymentMethodStats',
+            'paymentMethodLabels',
+            'paymentMethodAmounts',
+            'fluvialSeatsOnDepartures',
+            'airSeatsOnDepartures',
+            'commissionSeries',
+            'advertisingSeries',
             'activeAdvertisersCount',
             'activeCampaignsCount',
             'pendingAdLeadsCount',
@@ -634,7 +652,13 @@ class AdminDashboardController extends Controller
         Carbon $from,
         Carbon $to
     ): array {
-        $labels = $fluvial = $air = $cargo = [];
+        $sales = app(MarketplaceSales::class);
+        $adPayments = Payment::query()
+            ->whereIn('purpose', ['subscription', 'subscription_upgrade'])
+            ->whereIn('status', ['confirmed', 'succeeded'])
+            ->whereBetween('paid_at', [$from, $to])
+            ->get(['amount', 'paid_at']);
+        $labels = $fluvial = $air = $cargo = $commission = $advertising = [];
 
         if ($period === 'today') {
             foreach ([0, 4, 8, 12, 16, 20] as $hour) {
@@ -651,14 +675,21 @@ class AdminDashboardController extends Controller
                     fn (CargoShipment $shipment) => $shipment->created_at->greaterThanOrEqualTo($blockStart)
                         && $shipment->created_at->lessThan($blockEnd)
                 );
+                $adBlock = $adPayments->filter(function (Payment $payment) use ($blockStart, $blockEnd): bool {
+                    $paidAt = $payment->paid_at instanceof Carbon ? $payment->paid_at : Carbon::parse($payment->paid_at);
+
+                    return $paidAt->greaterThanOrEqualTo($blockStart) && $paidAt->lessThan($blockEnd);
+                });
 
                 $labels[] = sprintf('%02d:00', $hour);
                 $fluvial[] = round((float) $paymentBlock->filter(fn (Payment $payment) => $payment->reservation?->route_departure_id)->sum('amount'), 2);
                 $air[] = round((float) $paymentBlock->filter(fn (Payment $payment) => $payment->reservation?->air_departure_id)->sum('amount'), 2);
                 $cargo[] = round((float) $cargoBlock->sum('amount'), 2);
+                $commission[] = round((float) $paymentBlock->sum(fn (Payment $payment): float => $sales->commissionOf($payment)), 2);
+                $advertising[] = round((float) $adBlock->sum('amount'), 2);
             }
 
-            return [$labels, $fluvial, $air, $cargo];
+            return [$labels, $fluvial, $air, $cargo, $commission, $advertising];
         }
 
         $points = collect(CarbonPeriod::create($from->copy()->startOfDay(), $to->copy()->startOfDay()));
@@ -671,12 +702,35 @@ class AdminDashboardController extends Controller
             });
             $cargoBlock = $cargoShipments->filter(fn (CargoShipment $shipment) => $shipment->created_at->isSameDay($point));
 
+            $adBlock = $adPayments->filter(function (Payment $payment) use ($point): bool {
+                $paidAt = $payment->paid_at instanceof Carbon ? $payment->paid_at : Carbon::parse($payment->paid_at);
+
+                return $paidAt->isSameDay($point);
+            });
+
             $labels[] = $point->format('d/m');
             $fluvial[] = round((float) $paymentBlock->filter(fn (Payment $payment) => $payment->reservation?->route_departure_id)->sum('amount'), 2);
             $air[] = round((float) $paymentBlock->filter(fn (Payment $payment) => $payment->reservation?->air_departure_id)->sum('amount'), 2);
             $cargo[] = round((float) $cargoBlock->sum('amount'), 2);
+            $commission[] = round((float) $paymentBlock->sum(fn (Payment $payment): float => $sales->commissionOf($payment)), 2);
+            $advertising[] = round((float) $adBlock->sum('amount'), 2);
         }
 
-        return [$labels, $fluvial, $air, $cargo];
+        return [$labels, $fluvial, $air, $cargo, $commission, $advertising];
+    }
+
+    /**
+     * @param  Collection<int, int|string>  $ids
+     */
+    private function confirmedSeats(Collection $ids, string $column): int
+    {
+        if ($ids->isEmpty()) {
+            return 0;
+        }
+
+        return ReservationSeat::query()
+            ->whereIn($column, $ids)
+            ->whereHas('reservation', fn ($query) => $query->where('status', 'confirmed'))
+            ->count();
     }
 }
