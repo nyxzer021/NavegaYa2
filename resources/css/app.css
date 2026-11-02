@@ -38,26 +38,20 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 :where(.ny-admin-portal,.ny-company-portal,.ny-marketplace-portal,.ny-public-portal,.ny-auth-portal) :where(input,select,textarea):user-invalid{border-color:#e66d7c;box-shadow:0 0 0 3px rgba(225,29,72,.09)}
 @media(max-width:640px){:root{--ny-control-height:46px}:where(.ny-admin-portal,.ny-company-portal,.ny-marketplace-portal,.ny-public-portal,.ny-auth-portal) :where(input,select,textarea){font-size:16px!important}}
 
-.ny-form-page{background:radial-gradient(880px 260px at 8% -8%,rgba(242,182,36,.2),transparent 62%),radial-gradient(720px 300px at 100% 0,rgba(23,109,96,.14),transparent 58%),var(--ny-background);padding:2.5rem 1rem 4rem}
+.ny-form-page{background:radial-gradient(880px 260px at 8% -8%,rgba(242,182,36,.2),transparent 62%),radial-gradient(720px 300px at 100% 0,rgba(23,109,96,.14),transparent 58%),var(--ny-background);padding:1.25rem 1rem 2.5rem}
 .ny-form-card{position:relative;overflow:hidden;border:1px solid #e4efe9;border-radius:28px;background:#fff;box-shadow:0 24px 50px rgba(6,44,33,.09)}
 .ny-form-card::before{content:"";display:block;height:6px;background:linear-gradient(90deg,var(--ny-primary),var(--ny-primary-hover) 58%,var(--ny-accent))}
-.ny-form-section{margin-top:1.15rem;padding:1rem 1rem 1.05rem;border:1px solid #e5f0eb;border-radius:20px;background:linear-gradient(180deg,#f7fbf9,#fff)}
-.ny-form-kicker{display:flex;align-items:center;gap:.55rem;margin:0 0 .85rem;color:var(--ny-primary);font-size:.95rem;font-weight:800}
-.ny-form-kicker i{display:grid;width:1.6rem;height:1.6rem;place-items:center;border-radius:999px;background:var(--ny-primary);color:#fff;font-size:.72rem;font-style:normal}
-.ny-steps{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}
-.ny-steps li{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #e4efe9;border-radius:999px;background:#fff;padding:.28rem .7rem .28rem .28rem;color:#536a62;font-size:.75rem;font-weight:700}
-.ny-steps b{display:grid;width:1.45rem;height:1.45rem;place-items:center;border-radius:999px;background:#e7f3ee;color:var(--ny-primary);font-size:.72rem}
-.ny-steps .is-now{border-color:transparent;background:var(--ny-primary);color:#fff}
-.ny-steps .is-now b{background:var(--ny-accent);color:#12372d}
+.ny-form-section{margin-top:.65rem;padding:.7rem .8rem;border:1px solid #e5f0eb;border-radius:16px;background:linear-gradient(180deg,#f7fbf9,#fff)}
+.ny-form-kicker{margin:0 0 .55rem;color:var(--ny-primary);font-size:.82rem;font-weight:800}
 .ny-company-field{display:grid;gap:.35rem}
 .ny-company-field span{color:#3e5c54;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-.ny-company-field input{width:100%;height:48px;min-height:48px;border:1px solid #d5e6df;border-radius:14px;background:#fff;padding:0 .9rem;color:var(--ny-text);font-size:.95rem;font-weight:600;box-shadow:0 1px 2px rgba(16,58,49,.04)}
+.ny-company-field input{width:100%;height:40px;min-height:40px;border:1px solid #d5e6df;border-radius:12px;background:#fff;padding:0 .75rem;color:var(--ny-text);font-size:.9rem;font-weight:600;box-shadow:0 1px 2px rgba(16,58,49,.04)}
 .ny-company-field input:hover{border-color:#91b9ad}
 .ny-company-field input:focus{border-color:var(--ny-primary-hover);box-shadow:0 0 0 4px rgba(242,182,36,.28);outline:0}
-.ny-choice{display:flex;height:48px;cursor:pointer;align-items:center;justify-content:center;border:1px solid #d5e6df;border-radius:14px;background:#fff;color:#24463d;font-size:.9rem;font-weight:800;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.ny-choice{display:flex;height:40px;cursor:pointer;align-items:center;justify-content:center;border:1px solid #d5e6df;border-radius:12px;background:#fff;color:#24463d;font-size:.85rem;font-weight:800;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
 .ny-choice:hover{border-color:#91b9ad}
 .ny-choice:has(:checked){border-color:var(--ny-primary);background:#eef8f3;color:var(--ny-primary);box-shadow:inset 0 0 0 1px var(--ny-primary)}
-.ny-file{display:flex;min-height:58px;cursor:pointer;align-items:center;justify-content:space-between;gap:.75rem;border:1.5px dashed #b7d4c8;border-radius:16px;background:#f7fbf9;padding:.75rem 1rem}
+.ny-file{display:flex;min-height:44px;cursor:pointer;align-items:center;justify-content:space-between;gap:.75rem;border:1.5px dashed #b7d4c8;border-radius:12px;background:#f7fbf9;padding:.4rem .7rem}
 .ny-file span{color:#173b33;font-size:.82rem;font-weight:800}
 .ny-file strong{flex:none;border:1px solid #d5e6df;border-radius:999px;background:#fff;padding:.45rem .8rem;color:#08785d;font-size:.75rem}
 .ny-file:hover{border-color:var(--ny-primary-hover);background:#fff}
