@@ -36,6 +36,7 @@ class CompanyDashboardController extends Controller
             'commissionReceivable' => $this->commissionReceivable($organization),
             'attentionCount' => $todayDepartures->whereIn('status', ['delayed', 'rescheduled', 'suspended', 'cancelled'])->count() + $pendingCargoCount,
             'todayDepartures' => $todayDepartures,
+            'upcomingDepartures' => $this->upcomingDepartures($organization),
         ]);
     }
 
@@ -63,6 +64,36 @@ class CompanyDashboardController extends Controller
         return $riverDepartures->map(fn ($departure) => $this->departureRow($departure, false))
             ->concat($airDepartures->map(fn ($departure) => $this->departureRow($departure, true)))
             ->sortBy('departure_at')->values();
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function upcomingDepartures($organization): Collection
+    {
+        $from = now()->endOfDay();
+        $until = now()->addDays(14);
+        $modality = $organization->modality ?: 'fluvial';
+        $riverDepartures = in_array($modality, ['fluvial', 'mixto'], true)
+            ? RouteDeparture::query()
+                ->whereHas('transportRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
+                ->where('departure_at', '>', $from)
+                ->where('departure_at', '<=', $until)
+                ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])
+                ->orderBy('departure_at')->limit(6)->get()
+            : collect();
+        $airDepartures = in_array($modality, ['aereo', 'mixto'], true)
+            ? AirDeparture::query()
+                ->whereHas('airRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
+                ->where('departure_at', '>', $from)
+                ->where('departure_at', '<=', $until)
+                ->with(['airRoute', 'aircraft', 'reservations.seats'])
+                ->orderBy('departure_at')->limit(6)->get()
+            : collect();
+
+        return $riverDepartures->map(fn ($departure) => $this->departureRow($departure, false))
+            ->concat($airDepartures->map(fn ($departure) => $this->departureRow($departure, true)))
+            ->sortBy('departure_at')->take(6)->values();
     }
 
     /**

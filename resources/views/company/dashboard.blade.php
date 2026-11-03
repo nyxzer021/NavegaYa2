@@ -70,9 +70,31 @@
             </a>
         </section>
 
+        @if($upcomingDepartures->isNotEmpty())
+            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <header class="border-b border-slate-100 px-5 py-4">
+                    <h3 class="text-lg font-black text-slate-950">Próximas salidas</h3>
+                    <p class="text-sm text-slate-500">Rutas ya programadas. La venta en muelle y el embarque se abren el día del zarpe.</p>
+                </header>
+                @foreach($upcomingDepartures as $row)
+                    <article class="flex flex-col gap-1 border-b border-slate-100 px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <strong class="text-slate-950">{{ $row['departure_at']->translatedFormat('D d M · H:i') }}</strong>
+                            <span class="mt-0.5 block text-sm text-slate-700">{{ $row['origin'] }} → {{ $row['destination'] }}</span>
+                            <span class="block text-sm text-slate-500">{{ $row['unit'] }} · {{ $row['confirmed_seats'] }} {{ $row['confirmed_seats'] === 1 ? 'pasajero' : 'pasajeros' }}</span>
+                        </div>
+                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">{{ $statusLabels[$row['status']] ?? 'Programada' }}</span>
+                    </article>
+                @endforeach
+            </section>
+        @endif
+
         <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <header class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-                <h3 class="text-lg font-black text-slate-950">Salidas de hoy</h3>
+                <div>
+                    <h3 class="text-lg font-black text-slate-950">Salidas de hoy</h3>
+                    <p class="text-sm text-slate-500">Ocupación de los asientos confirmados en los zarpes de hoy.</p>
+                </div>
                 <a href="{{ route('company.departures.create') }}" class="text-sm font-bold text-emerald-800">Nueva salida</a>
             </header>
             @forelse($todayDepartures as $row)

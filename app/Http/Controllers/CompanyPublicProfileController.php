@@ -29,7 +29,7 @@ class CompanyPublicProfileController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $organization = $this->organization($request);
-        $data = $request->validate($this->rules());
+        $data = $request->validate($this->rules(), $this->uploadMessages());
         $data['whatsapp'] = PhoneNumber::peru($data['whatsapp'] ?? null);
         $data['show_public_whatsapp'] = $request->boolean('show_public_whatsapp');
         $data['profile_content_status'] = 'published';
@@ -58,7 +58,7 @@ class CompanyPublicProfileController extends Controller
             'photos' => ['required', 'array', 'max:8'],
             'photos.*' => ['image', 'max:5120'],
             'caption' => ['nullable', 'string', 'max:120'],
-        ]);
+        ], $this->uploadMessages());
         $next = (int) $organization->photos()->max('sort_order');
         foreach ($data['photos'] as $photo) {
             $next++;
@@ -80,6 +80,26 @@ class CompanyPublicProfileController extends Controller
         $photo->delete();
 
         return back()->with('success', 'La foto se quitó de la galería.');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function uploadMessages(): array
+    {
+        return [
+            'logo.uploaded' => 'No se pudo subir el logo. Usa un JPG o PNG de hasta 5 MB.',
+            'logo.image' => 'El logo debe ser una imagen JPG o PNG.',
+            'logo.max' => 'El logo no puede pasar de 5 MB.',
+            'cover.uploaded' => 'No se pudo subir la portada. Usa un JPG o PNG de hasta 5 MB.',
+            'cover.image' => 'La portada debe ser una imagen JPG o PNG.',
+            'cover.max' => 'La portada no puede pasar de 5 MB.',
+            'photos.required' => 'Elige al menos una foto para la galería.',
+            'photos.max' => 'Puedes subir hasta 8 fotos a la vez.',
+            'photos.*.uploaded' => 'No se pudo subir una foto. Cada imagen debe ser JPG o PNG de hasta 5 MB.',
+            'photos.*.image' => 'Cada foto debe ser una imagen JPG o PNG.',
+            'photos.*.max' => 'Cada foto no puede pasar de 5 MB.',
+        ];
     }
 
     /**

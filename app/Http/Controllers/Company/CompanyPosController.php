@@ -34,8 +34,15 @@ class CompanyPosController extends Controller
         $occupiedSeatIds = $selectedDeparture
             ? ReservationSeat::where('route_departure_id', $selectedDeparture->id)->pluck('vessel_seat_id')->all()
             : [];
+        $upcoming = RouteDeparture::query()
+            ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
+            ->where('departure_at', '>', now()->endOfDay())
+            ->where('is_published', true)
+            ->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])
+            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel'])
+            ->orderBy('departure_at')->limit(3)->get();
 
-        return view('company.pos.index', compact('organization', 'departures', 'selectedDeparture', 'occupiedSeatIds'));
+        return view('company.pos.index', compact('organization', 'departures', 'selectedDeparture', 'occupiedSeatIds', 'upcoming'));
     }
 
     public function store(Request $request, BookingPaymentService $payments): RedirectResponse
@@ -67,7 +74,7 @@ class CompanyPosController extends Controller
                 'route_departure_id' => $departure->id,
                 'code' => $code,
                 'contact_name' => $data['passenger_name'],
-                'contact_email' => $data['email'] ?: strtolower($code).'@pos.navegaya.test',
+                'contact_email' => ($data['email'] ?? null) ?: strtolower($code).'@pos.navegaya.test',
                 'contact_phone' => $data['phone'],
                 'contact_document' => $data['document_number'],
                 'total_amount' => $departure->fare,
@@ -87,13 +94,12 @@ class CompanyPosController extends Controller
             return $reservation;
         });
 
-        $organization = Organization::findOrFail($organizationId);
         $payments->confirm($reservation, [
             'method' => 'cash_dock',
             'provider' => 'pos',
             'provider_reference' => 'CASH-'.$reservation->code,
             'provider_payload' => ['registered_by' => $request->user()->id],
-        ], (float) $organization->physical_sales_commission_rate);
+        ], 0.0);
 
         return redirect()->route('tickets.show', $reservation->code)->with('success', 'Venta en muelle registrada y boleto emitido.');
     }

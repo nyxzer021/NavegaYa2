@@ -24,12 +24,22 @@ class CompanyCounterController extends Controller
             ->whereDate('departure_at', today())->with(['airRoute', 'aircraft', 'reservations.seats'])->orderBy('departure_at')->get()
             ->map(fn ($item) => $this->row($item, true)) : collect();
         $departures = $river->concat($air)->sortBy('departure_at')->values();
+        $from = now()->endOfDay();
+        $until = now()->addDays(14);
+        $upcomingRiver = in_array($company->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::whereHas('transportRoute', fn ($query) => $query->where('organization_id', $company->id))
+            ->where('departure_at', '>', $from)->where('departure_at', '<=', $until)->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])->orderBy('departure_at')->limit(6)->get()
+            ->map(fn ($item) => $this->row($item, false)) : collect();
+        $upcomingAir = in_array($company->modality, ['aereo', 'mixto'], true) ? AirDeparture::whereHas('airRoute', fn ($query) => $query->where('organization_id', $company->id))
+            ->where('departure_at', '>', $from)->where('departure_at', '<=', $until)->with(['airRoute', 'aircraft', 'reservations.seats'])->orderBy('departure_at')->limit(6)->get()
+            ->map(fn ($item) => $this->row($item, true)) : collect();
+        $upcoming = $upcomingRiver->concat($upcomingAir)->sortBy('departure_at')->take(6)->values();
         $base = $company->vessels()->with('basePort')->first()?->basePort?->name ?? $company->address ?? 'Base operativa';
 
         return view('company.counter', [
             'organization' => $company,
             'company' => $company,
             'departures' => $departures,
+            'upcoming' => $upcoming,
             'base' => $base,
             'riverStatus' => match (strtolower((string) SystemSetting::value('river_status', 'normal'))) {
                 'rising' => 'En aumento',

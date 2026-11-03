@@ -5,6 +5,10 @@
 <style>
     .ficha-menu-preview{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;padding:.4rem;border:2px solid var(--menu-stroke,#fbbf24);border-radius:999px;background:var(--menu-bar,#062c21)}
     .ficha-menu-preview span{display:inline-flex;min-height:2.4rem;align-items:center;white-space:nowrap;border:2px solid transparent;border-radius:999px;padding:.3rem .85rem;font-size:.85rem;font-weight:800}
+    .ficha-file{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:.55rem}
+    .ficha-file input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    .ficha-file span{display:inline-flex;min-height:2.75rem;align-items:center;border-radius:999px;background:#062c21;padding:0 1rem;font-size:.85rem;font-weight:800;color:#fff;cursor:pointer}
+    .ficha-file em{font-style:normal;font-size:.8rem;font-weight:600;color:#64748b}
 </style>
 <div class="mx-auto max-w-5xl space-y-5">
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -23,7 +27,10 @@
 
     <form method="POST" enctype="multipart/form-data" action="{{ route('company.profile.update') }}" class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         @csrf @method('PATCH')
-        <h3 class="text-lg font-black text-slate-950">Información</h3>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="text-lg font-black text-slate-950">Información</h3>
+            <button class="inline-flex min-h-11 items-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Guardar ficha</button>
+        </div>
         <div class="grid gap-3 sm:grid-cols-2">
             <label class="text-sm font-semibold text-slate-700">Nombre comercial<input name="commercial_name" value="{{ old('commercial_name', $organization->commercial_name) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
             <label class="text-sm font-semibold text-slate-700">Horario de atención<input name="service_hours" value="{{ old('service_hours', $organization->service_hours) }}" placeholder="Lun–Sáb 08:00–18:00" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
@@ -36,16 +43,16 @@
         </div>
         <label class="block text-sm font-semibold text-slate-700">Descripción<textarea name="public_description" rows="4" class="mt-1 w-full rounded-xl border-slate-200 text-sm">{{ old('public_description', $organization->public_description) }}</textarea></label>
         <div class="grid gap-3 sm:grid-cols-2">
-            <label class="text-sm font-semibold text-slate-700">Logo
+            <div class="text-sm font-semibold text-slate-700">Logo
                 @if($organization->logo_path)<img src="{{ $organization->logo_path }}" alt="Logo actual" class="mt-2 h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain p-1">@endif
-                <input type="file" accept="image/*" name="logo" class="mt-2 block w-full text-sm">
+                <label class="ficha-file"><input type="file" accept="image/jpeg,image/png,image/webp" name="logo"><span>Elegir logo</span><em data-file-name>Ningún archivo elegido</em></label>
                 <span class="mt-1 block text-xs font-normal text-slate-500">Se muestra completo, sin recorte. JPG o PNG, hasta 5 MB.</span>
-            </label>
-            <label class="text-sm font-semibold text-slate-700">Imagen de portada
+            </div>
+            <div class="text-sm font-semibold text-slate-700">Imagen de portada
                 @if($organization->cover_image_path)<img src="{{ $organization->cover_image_path }}" alt="Portada actual" class="mt-2 h-20 w-full rounded-xl border border-slate-200 object-cover">@endif
-                <input type="file" accept="image/*" name="cover" class="mt-2 block w-full text-sm">
+                <label class="ficha-file"><input type="file" accept="image/jpeg,image/png,image/webp" name="cover"><span>Elegir portada</span><em data-file-name>Ningún archivo elegido</em></label>
                 <span class="mt-1 block text-xs font-normal text-slate-500">Foto horizontal de la embarcación o el río. Cubre la cabecera.</span>
-            </label>
+            </div>
         </div>
         <p class="text-sm text-slate-500">Las embarcaciones y aeronaves se publican desde Flota y capacidad. Aquí solo completas la presentación.</p>
 
@@ -104,10 +111,10 @@
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 class="text-lg font-black text-slate-950">Galería</h3>
         <p class="mt-1 text-sm text-slate-500">Estas fotos se ven en la ficha, junto con la portada y las fotos de la flota. Los viajeros registrados pueden comentarlas desde Empresas.</p>
-        <form method="POST" enctype="multipart/form-data" action="{{ route('company.profile.photos.store') }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('company.profile.photos.store') }}" class="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
             @csrf
-            <label class="text-sm font-semibold text-slate-700">Fotos<input type="file" name="photos[]" accept="image/*" multiple required class="mt-1 block w-full text-sm"></label>
-            <button class="inline-flex min-h-11 items-center rounded-xl bg-[#062c21] px-5 text-sm font-bold text-white">Subir fotos</button>
+            <label class="ficha-file text-sm font-semibold text-slate-700">Fotos<input type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple required><span>Elegir fotos</span><em data-file-name>Ningún archivo elegido</em></label>
+            <button class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#062c21] px-5 text-sm font-bold text-white">Subir fotos</button>
         </form>
         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             @forelse($organization->photos as $photo)
@@ -126,6 +133,14 @@
 </div>
 <script>
     (function () {
+        document.querySelectorAll('.ficha-file input').forEach(function (input) {
+            input.addEventListener('change', function () {
+                var label = input.parentElement.querySelector('[data-file-name]');
+                if (!label) return;
+                var names = Array.prototype.map.call(input.files || [], function (file) { return file.name; });
+                label.textContent = names.length ? names.join(', ') : 'Ningún archivo elegido';
+            });
+        });
         var preview = document.getElementById('ficha-menu-preview');
         var restore = document.getElementById('restore-brand-colors');
         if (!preview || !restore) return;

@@ -234,6 +234,50 @@ class CompanyPortalTest extends TestCase
         $this->assertDatabaseMissing('reservations', ['route_departure_id' => $departure->id]);
     }
 
+    public function test_counter_sale_charges_the_fare_without_a_navega_ya_commission(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Muelle', '20999999995');
+        $organization->update(['commission_rate' => 7.5, 'physical_sales_commission_rate' => 5]);
+        $departure = $this->departure($organization, 'Nave Muelle', 'Iquitos', 'Pebas');
+        $departure->update(['departure_at' => now()->setTime(15, 0), 'status' => 'scheduled', 'is_published' => true]);
+        $seat = $departure->vessel->seats()->create(['code' => '1A', 'row_position' => 1, 'column_position' => 1, 'deck' => 1, 'is_available' => true]);
+
+        $this->actingAs($admin)->post(route('company.pos.store'), [
+            'departure_id' => $departure->id,
+            'seat_id' => $seat->id,
+            'document_type' => 'DNI',
+            'document_number' => '12345678',
+            'passenger_name' => 'Pasajero de muelle',
+            'passenger_age' => 30,
+            'phone' => '999999999',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('payments', [
+            'method' => 'cash_dock',
+            'commission_rate' => 0,
+            'commission_amount' => 0,
+        ]);
+    }
+
+    public function test_invalid_departure_times_are_explained_in_spanish(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Horario', '20999999996');
+        $departure = $this->departure($organization, 'Nave Horario', 'Iquitos', 'Nauta');
+
+        $this->actingAs($admin)->from(route('company.departures.create'))->post(route('company.departures.store'), [
+            'master_route_id' => $departure->transportRoute->master_route_id,
+            'vessel_id' => $departure->vessel_id,
+            'departure_at' => '2026-11-05 17:12:00',
+            'boarding_starts_at' => '2026-11-06 17:13:00',
+            'estimated_arrival_at' => '2026-11-04 17:13:00',
+            'fare' => '200',
+        ])->assertRedirect(route('company.departures.create'))
+            ->assertSessionHasErrors([
+                'boarding_starts_at' => 'El inicio de embarque debe ser antes o a la misma hora de la salida.',
+                'estimated_arrival_at' => 'La llegada estimada debe ser después de la salida.',
+            ]);
+    }
+
     public function test_pending_company_can_prepare_its_profile_and_fleet_but_cannot_operate(): void
     {
         $organization = Organization::create([

@@ -26,4 +26,34 @@ class StoreRouteDepartureRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'boarding_starts_at.before_or_equal' => 'El inicio de embarque debe ser antes o a la misma hora de la salida.',
+            'estimated_arrival_at.after' => 'La llegada estimada debe ser después de la salida.',
+            'cargo_reception_starts_at.before_or_equal' => 'La recepción de carga debe empezar antes o a la misma hora de la salida.',
+            'fare.min' => 'El precio del pasaje debe ser mayor que cero.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'master_route_id' => 'tramo',
+            'vessel_id' => 'embarcación',
+            'departure_at' => 'fecha y hora de salida',
+            'boarding_starts_at' => 'inicio de embarque',
+            'estimated_arrival_at' => 'llegada estimada',
+            'cargo_reception_starts_at' => 'inicio de recepción de carga',
+            'fare' => 'precio del pasaje',
+            'notes' => 'nota para pasajeros',
+        ];
+    }
 }
