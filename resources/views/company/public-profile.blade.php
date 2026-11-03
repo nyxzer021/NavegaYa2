@@ -25,15 +25,23 @@
             <label class="text-sm font-semibold text-slate-700">Horario de atención<input name="service_hours" value="{{ old('service_hours', $organization->service_hours) }}" placeholder="Lun–Sáb 08:00–18:00" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
             <label class="text-sm font-semibold text-slate-700">WhatsApp de boletería<input name="whatsapp" value="{{ old('whatsapp', $organization->whatsapp) }}" placeholder="900 000 000" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
             <label class="text-sm font-semibold text-slate-700">Teléfono de central<input name="phone" value="{{ old('phone', $organization->phone) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
-            <label class="text-sm font-semibold text-slate-700 sm:col-span-2">Mensaje inicial de WhatsApp<input name="whatsapp_message" value="{{ old('whatsapp_message', $organization->whatsapp_message) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
+            <label class="text-sm font-semibold text-slate-700 sm:col-span-2">Mensaje inicial de WhatsApp<input name="whatsapp_message" value="{{ old('whatsapp_message', $organization->whatsapp_message) }}" placeholder="Hola, vi su perfil en NavegaYA y quisiera información sobre sus viajes." class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
             <label class="flex items-center gap-3 rounded-xl bg-emerald-50 p-3 text-sm text-slate-700 sm:col-span-2"><input type="checkbox" name="show_public_whatsapp" value="1" @checked(old('show_public_whatsapp', $organization->show_public_whatsapp))> Mostrar WhatsApp a los viajeros</label>
             <label class="text-sm font-semibold text-slate-700">Sitio web<input type="url" name="website" value="{{ old('website', $organization->website) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
             <label class="text-sm font-semibold text-slate-700">Dirección<input name="address" value="{{ old('address', $organization->address) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
         </div>
         <label class="block text-sm font-semibold text-slate-700">Descripción<textarea name="public_description" rows="4" class="mt-1 w-full rounded-xl border-slate-200 text-sm">{{ old('public_description', $organization->public_description) }}</textarea></label>
         <div class="grid gap-3 sm:grid-cols-2">
-            <label class="text-sm font-semibold text-slate-700">Logo<input type="file" accept="image/*" name="logo" class="mt-1 block w-full text-sm"></label>
-            <label class="text-sm font-semibold text-slate-700">Imagen de portada<input type="file" accept="image/*" name="cover" class="mt-1 block w-full text-sm"></label>
+            <label class="text-sm font-semibold text-slate-700">Logo
+                @if($organization->logo_path)<img src="{{ $organization->logo_path }}" alt="Logo actual" class="mt-2 h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain p-1">@endif
+                <input type="file" accept="image/*" name="logo" class="mt-2 block w-full text-sm">
+                <span class="mt-1 block text-xs font-normal text-slate-500">Se muestra completo, sin recorte. JPG o PNG, hasta 5 MB.</span>
+            </label>
+            <label class="text-sm font-semibold text-slate-700">Imagen de portada
+                @if($organization->cover_image_path)<img src="{{ $organization->cover_image_path }}" alt="Portada actual" class="mt-2 h-20 w-full rounded-xl border border-slate-200 object-cover">@endif
+                <input type="file" accept="image/*" name="cover" class="mt-2 block w-full text-sm">
+                <span class="mt-1 block text-xs font-normal text-slate-500">Foto horizontal de la embarcación o el río. Cubre la cabecera.</span>
+            </label>
         </div>
         <p class="text-sm text-slate-500">Las embarcaciones y aeronaves se publican desde Flota y capacidad. Aquí solo completas la presentación.</p>
         <button class="inline-flex min-h-11 items-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Guardar ficha</button>
