@@ -2,8 +2,8 @@
 <style>
     [x-cloak]{display:none!important}
     .company-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
-    .company-tabs{display:flex;gap:.35rem;overflow-x:auto}
-    .company-tab{display:inline-flex;min-height:2.5rem;align-items:center;white-space:nowrap;border-radius:999px;padding:.4rem .9rem;font-size:.875rem;font-weight:800}
+    .company-tabs{display:flex;gap:.35rem;overflow-x:auto;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem}
+    .company-tab{display:inline-flex;min-height:2.5rem;align-items:center;white-space:nowrap;border:0;border-radius:999px;background:transparent;padding:.4rem .9rem;font-size:.875rem;font-weight:800;cursor:pointer}
     @media (min-width:640px){.company-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 @php
@@ -62,9 +62,17 @@
 
 <div class="min-h-screen bg-emerald-50 pb-20">
 <main class="mx-auto max-w-5xl px-4 pt-4 sm:px-6" x-data="{
-    tab: ['informacion','galeria','flota','salidas','opiniones'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'informacion',
+    tab: 'informacion',
     cargoType:'caja',
     cargoWeight:5,
+    init() {
+        const name = location.hash.replace('#', '');
+        if (['informacion','galeria','flota','salidas','opiniones'].includes(name)) this.tab = name;
+    },
+    open(name) {
+        this.tab = name;
+        history.replaceState(null, '', '#' + name);
+    },
     cargoPrice(){if(this.cargoType==='sobre')return 15;if(this.cargoType==='caja')return 20+Math.max(0,this.cargoWeight-5)*2;return 35+Math.max(0,this.cargoWeight-15)*1.5},
     cargoMessage(){return encodeURIComponent('Hola, deseo confirmar una cotización de '+this.cargoType+' de aproximadamente '+this.cargoWeight+' kg con este operador.')}
 }">
@@ -89,7 +97,7 @@
                     @if($supportNumber)
                         <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="inline-flex h-11 items-center rounded-full bg-emerald-700 px-4 text-sm font-bold text-white">WhatsApp</a>
                     @endif
-                    <a href="#salidas" @click="tab='salidas'" class="inline-flex h-11 items-center rounded-full bg-amber-400 px-4 text-sm font-black text-emerald-950">Ver salidas</a>
+                    <button type="button" @click="open('salidas'); $refs.menu.scrollIntoView({ block: 'start' })" class="inline-flex h-11 items-center rounded-full bg-amber-400 px-4 text-sm font-black text-emerald-950">Ver salidas</button>
                     @if($organization->phone)
                         <a href="tel:{{ preg_replace('/[^\d+]/', '', $organization->phone) }}" class="inline-flex h-11 items-center rounded-full bg-emerald-900 px-4 text-sm font-bold text-white">Llamar</a>
                     @endif
@@ -113,15 +121,15 @@
         <article class="rounded-2xl bg-white p-4 text-emerald-950 shadow-sm"><span class="text-sm font-semibold text-emerald-700">Calificación</span><strong class="mt-1 block text-2xl font-black">{{ $reviews->count() ? number_format($average, 1) : '—' }}</strong></article>
     </div>
 
-    <nav class="company-tabs sticky top-3 z-20 rounded-full bg-emerald-950 p-1.5 shadow-lg" aria-label="Secciones de la empresa">
-        <a href="#informacion" @click="tab='informacion'" :class="tab==='informacion' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Información</a>
-        <a href="#galeria" @click="tab='galeria'" :class="tab==='galeria' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Galería</a>
-        <a href="#flota" @click="tab='flota'" :class="tab==='flota' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Flota</a>
-        <a href="#salidas" @click="tab='salidas'" :class="tab==='salidas' ? 'bg-amber-400 text-emerald-950' : 'text-amber-200'" class="company-tab">Salidas</a>
-        <a href="#opiniones" @click="tab='opiniones'" :class="tab==='opiniones' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Testimonios{{ $reviews->count() ? ' ('.$reviews->count().')' : '' }}</a>
+    <nav id="empresa-menu" x-ref="menu" class="company-tabs rounded-full bg-emerald-950 p-1.5 shadow-lg" aria-label="Secciones de la empresa">
+        <button type="button" @click="open('informacion')" :class="tab==='informacion' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Información</button>
+        <button type="button" @click="open('galeria')" :class="tab==='galeria' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Galería</button>
+        <button type="button" @click="open('flota')" :class="tab==='flota' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Flota</button>
+        <button type="button" @click="open('salidas')" :class="tab==='salidas' ? 'bg-amber-400 text-emerald-950' : 'text-amber-200'" class="company-tab">Salidas</button>
+        <button type="button" @click="open('opiniones')" :class="tab==='opiniones' ? 'bg-white text-emerald-950' : 'text-emerald-100'" class="company-tab">Testimonios{{ $reviews->count() ? ' ('.$reviews->count().')' : '' }}</button>
     </nav>
 
-    <section id="informacion" x-show="tab==='informacion'" x-cloak class="mt-5 space-y-4">
+    <section x-show="tab==='informacion'" x-cloak class="mt-5 space-y-4">
         <article class="rounded-3xl border-l-8 border-emerald-600 bg-white p-6 shadow-sm sm:p-8">
             <h2 id="company-information-title" class="text-xl font-black text-emerald-950">Información de la empresa</h2>
             <p class="mt-3 whitespace-pre-line text-base leading-7 text-slate-700">{{ $organization->public_description ?: 'Empresa de transporte autorizada en NavegaYA. Consulta aquí sus salidas, unidades registradas y canales oficiales de atención.' }}</p>
@@ -166,7 +174,7 @@
         @endauth
     </section>
 
-    <section id="galeria" x-show="tab==='galeria'" x-cloak class="mt-5">
+    <section x-show="tab==='galeria'" x-cloak class="mt-5">
         @if($gallery->isNotEmpty())
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 @foreach($gallery as $image)
@@ -178,7 +186,7 @@
         @endif
     </section>
 
-    <section id="flota" x-show="tab==='flota'" x-cloak class="mt-5 grid gap-4 sm:grid-cols-2">
+    <section x-show="tab==='flota'" x-cloak class="mt-5 grid gap-4 sm:grid-cols-2">
         @forelse($fleet as $index => $fleetItem)
             @php
                 $unit = $fleetItem['unit'];
@@ -200,7 +208,7 @@
         @endforelse
     </section>
 
-    <section id="salidas" x-show="tab==='salidas'" x-cloak class="mt-5 space-y-3">
+    <section x-show="tab==='salidas'" x-cloak class="mt-5 space-y-3">
         <div class="rounded-3xl bg-amber-400 px-5 py-4 text-emerald-950"><h2 class="text-xl font-black">Salidas</h2><p class="mt-1 text-sm font-semibold">Elige una salida para ver los asientos y reservar.</p></div>
         @forelse($departures as $item)
             <x-departure-card :departure="$item['departure']" />
@@ -209,7 +217,7 @@
         @endforelse
     </section>
 
-    <section id="opiniones" x-show="tab==='opiniones'" x-cloak class="mt-5 space-y-4">
+    <section x-show="tab==='opiniones'" x-cloak class="mt-5 space-y-4">
         @if($reviews->count())
             <div class="flex items-center gap-4 rounded-3xl bg-amber-400 p-6 text-emerald-950">
                 <strong class="text-5xl font-black">{{ number_format($average, 1) }}</strong>

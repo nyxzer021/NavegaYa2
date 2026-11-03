@@ -54,7 +54,7 @@ class CompanyReviewTest extends TestCase
             ->assertSee('Excelente atención')
             ->assertSee('Información de la empresa')
             ->assertSee('Operador regional con atención diaria.')
-            ->assertSee('href="#flota"', false)
+            ->assertSee('>Flota</button>', false)
             ->assertSee('/storage/company-profiles/amazonas.jpg', false);
     }
 
