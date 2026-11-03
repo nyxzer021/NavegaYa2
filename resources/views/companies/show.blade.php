@@ -25,6 +25,17 @@
     .company-photo{overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#f8fafc}
     .company-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
     .company-viewer img{display:block;max-height:78vh;width:100%;object-fit:contain;border-radius:.75rem;background:#f8fafc}
+    .company-viewer-bar{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:flex-end;margin-bottom:.45rem}
+    .company-viewer-bar button{min-height:2.75rem;border:0;border-radius:999px;background:#062c21;padding:0 .9rem;font-size:.85rem;font-weight:800;color:#fff;cursor:pointer}
+    .company-viewer-bar button:disabled{opacity:.4;cursor:default}
+    .company-viewer-bar button:focus-visible,.company-quiet:focus-visible,.company-filters select:focus-visible,.company-filters input:focus-visible{outline:2px solid #059669;outline-offset:2px}
+    .company-viewer-count{margin-top:.35rem;text-align:center;font-size:.8rem;font-weight:700;color:#475569}
+    [data-departure][hidden]{display:none!important}
+    .company-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.6rem}
+    .company-filters label{display:flex;flex-direction:column;gap:.25rem;min-width:8.5rem;font-size:.72rem;font-weight:800;color:#047857}
+    .company-filters select,.company-filters input{height:2.5rem;border:1px solid #e2e8f0;border-radius:.7rem;background:#fff;padding:0 .7rem;font-size:.9rem;font-weight:600;color:#0f172a}
+    .company-quiet{display:inline-flex;min-height:2.5rem;align-items:center;border:1px solid #a7f3d0;border-radius:999px;background:#f0fdf4;padding:0 .85rem;font-size:.85rem;font-weight:800;color:#065f46;cursor:pointer}
+    .company-quiet:hover{background:#d1fae5}
     @media (min-width:640px){.company-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 @php
@@ -46,6 +57,9 @@
     $departures = $riverDepartures->concat($airDepartures)
         ->filter(fn ($item) => $item['vehicle'] && $item['departure']->departure_at?->isFuture() && in_array($item['departure']->status, ['scheduled', 'boarding']))
         ->sortBy(fn ($item) => $item['departure']->departure_at)->values();
+    $departuresByVehicle = $departures->groupBy(fn ($item) => $item['mode'].'-'.$item['vehicle']->id);
+    $departureOrigins = $departures->pluck('origin')->filter(fn ($city) => $city && $city !== '—')->unique()->sort()->values();
+    $departureDestinations = $departures->pluck('destination')->filter(fn ($city) => $city && $city !== '—')->unique()->sort()->values();
     $hasRiver = $organization->transportRoutes->isNotEmpty() || $organization->vessels->isNotEmpty();
     $hasAir = $organization->airRoutes->isNotEmpty() || $organization->aircraft->isNotEmpty();
     $operatorMode = $hasRiver && $hasAir ? 'Operador fluvial y aéreo' : ($hasAir ? 'Operador aéreo regional' : 'Operador fluvial');
@@ -92,6 +106,8 @@
     if ($mapQuery && $dock?->city) {
         $mapQuery = trim($mapQuery.', '.$dock->city);
     }
+    $copyPhone = $organization->phone ?: $supportNumber;
+    $shareUrl = route('companies.show', $organization);
     $ownComment = auth()->check()
         ? $reviews->first(fn ($review) => (int) $review->user_id === (int) auth()->id() && $review->reservation_id === null)
         : null;
@@ -132,6 +148,13 @@
                     @if($brief)
                         <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{{ $brief }}</p>
                     @endif
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        @if($copyPhone)
+                            <button type="button" class="company-quiet" data-copy="{{ $copyPhone }}">Copiar teléfono</button>
+                        @endif
+                        <button type="button" class="company-quiet" data-share="{{ $shareUrl }}" data-share-title="{{ $name }}">Compartir perfil</button>
+                        <span id="company-toast" role="status" class="text-sm font-semibold text-emerald-800"></span>
+                    </div>
                 </div>
                 <div class="flex flex-wrap gap-2 sm:mb-1 sm:shrink-0">
                     @if($supportNumber)
@@ -255,6 +278,7 @@
             @php
                 $unit = $fleetItem['unit'];
                 $unitIsAir = $fleetItem['mode'] === 'air';
+                $unitDepartureCount = $departuresByVehicle->get($fleetItem['mode'].'-'.$unit->id)?->count() ?? 0;
             @endphp
             <article class="overflow-hidden rounded-3xl bg-white shadow-sm">
                 <img src="{{ $unit->cover_image_path ?: asset($fallbackImages[$index % count($fallbackImages)]) }}" alt="{{ $unit->name }}" class="h-44 w-full object-cover">
@@ -265,6 +289,11 @@
                     </div>
                     <p class="mt-2 text-sm leading-6 text-slate-600">{{ $unit->description ?: 'Unidad registrada para transporte de pasajeros.' }}</p>
                     <div class="mt-4 flex justify-between rounded-2xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900"><span>{{ $unit->seat_capacity }} pasajeros</span><span>{{ $unit->registration_number ?: 'Matrícula validada' }}</span></div>
+                    @if($unitDepartureCount > 0)
+                        <button type="button" class="company-quiet mt-3" data-open="salidas" data-vessel="{{ $fleetItem['mode'] }}-{{ $unit->id }}" data-vessel-name="{{ $unit->name }}">Ver sus salidas ({{ $unitDepartureCount }})</button>
+                    @else
+                        <p class="mt-3 text-sm text-slate-500">Sin salidas próximas.</p>
+                    @endif
                 </div>
             </article>
         @empty
@@ -273,12 +302,41 @@
     </section>
 
     <section data-panel="salidas" class="company-panel mt-5 space-y-3" hidden>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"><h2 class="text-base font-black text-emerald-950">Salidas</h2><p class="mt-1 text-sm text-slate-600">Elige una salida para ver los asientos y reservar.</p></div>
-        @forelse($departures as $item)
-            <x-departure-card :departure="$item['departure']" />
-        @empty
+        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <h2 class="text-base font-black text-emerald-950">Salidas</h2>
+            <p class="mt-1 text-sm text-slate-600">Elige una salida para ver los asientos y reservar. El WhatsApp de cada salida incluye la ruta y la fecha.</p>
+            @if($departures->isNotEmpty())
+                <div class="company-filters mt-3">
+                    <label>Origen
+                        <select id="salida-origen">
+                            <option value="">Todos</option>
+                            @foreach($departureOrigins as $city)<option value="{{ $city }}">{{ $city }}</option>@endforeach
+                        </select>
+                    </label>
+                    <label>Destino
+                        <select id="salida-destino">
+                            <option value="">Todos</option>
+                            @foreach($departureDestinations as $city)<option value="{{ $city }}">{{ $city }}</option>@endforeach
+                        </select>
+                    </label>
+                    <label>Fecha
+                        <input id="salida-fecha" type="date">
+                    </label>
+                    <button type="button" id="salida-limpiar" class="company-quiet">Limpiar</button>
+                    <p id="salida-count" class="text-sm font-bold text-emerald-950">{{ $departures->count() }} {{ $departures->count() === 1 ? 'salida' : 'salidas' }}</p>
+                </div>
+                <p id="salida-embarcacion" class="mt-2 text-sm font-semibold text-emerald-800" hidden></p>
+            @endif
+        </div>
+        @foreach($departures as $item)
+            <div data-departure data-origin="{{ $item['origin'] }}" data-destination="{{ $item['destination'] }}" data-date="{{ $item['departure']->departure_at->toDateString() }}" data-vehicle="{{ $item['mode'] }}-{{ $item['vehicle']->id }}">
+                <x-departure-card :departure="$item['departure']" />
+            </div>
+        @endforeach
+        <p id="salida-empty" class="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-sm text-slate-600" hidden>Ninguna salida coincide con la búsqueda.</p>
+        @if($departures->isEmpty())
             <div class="rounded-3xl bg-white p-7 shadow-sm"><h3 class="text-lg font-black text-emerald-950">Consulta la próxima salida con la boletería oficial</h3><p class="mt-2 text-sm text-slate-600">El operador actualiza sus zarpes según la capitanía y el río.</p>@if($supportNumber)<a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}" class="mt-4 inline-flex h-11 items-center rounded-full bg-emerald-700 px-4 text-sm font-bold text-white">Consultar próxima salida</a>@endif</div>
-        @endforelse
+        @endif
     </section>
 
     <section data-panel="opiniones" class="company-panel mt-5 space-y-4" hidden>
@@ -353,8 +411,13 @@
     <x-b2b-ad-banner placement="company_footer" :city="$organization->base_city" class="mt-8" />
 </main>
 <dialog id="company-photo" class="company-viewer">
-    <form method="dialog" class="mb-2 flex justify-end"><button class="rounded-full bg-emerald-900 px-3 py-1.5 text-xs font-bold text-white">Cerrar</button></form>
+    <div class="company-viewer-bar">
+        <button type="button" data-photo-step="-1">Anterior</button>
+        <button type="button" data-photo-step="1">Siguiente</button>
+        <form method="dialog"><button>Cerrar</button></form>
+    </div>
     <img id="company-photo-img" alt="">
+    <p id="company-photo-count" class="company-viewer-count"></p>
 </dialog>
 <script>
     (function () {
@@ -385,20 +448,110 @@
                 link.href = link.href.split('?')[0] + '?text=' + encodeURIComponent('Hola, deseo confirmar una cotización de ' + cargoType + ' de aproximadamente ' + cargoWeight + ' kg.');
             }
         }
+        var vesselFilter = '';
+        var vesselName = '';
+        var photos = [];
+        var photoIndex = 0;
+        root.querySelectorAll('[data-photo]').forEach(function (button, index) {
+            photos.push({ src: button.getAttribute('data-photo'), alt: button.getAttribute('data-photo-alt') || 'Foto de la empresa' });
+            button.setAttribute('data-photo-index', String(index));
+        });
+        function toast(text) {
+            var el = document.getElementById('company-toast');
+            if (!el) return;
+            el.textContent = text;
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(function () { el.textContent = ''; }, 2500);
+        }
+        function legacyCopy(text) {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.left = '-9999px';
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand('copy');
+            area.remove();
+            return Promise.resolve();
+        }
+        function copyText(text) {
+            return new Promise(function (resolve) {
+                var settled = false;
+                function finish() {
+                    if (!settled) {
+                        settled = true;
+                        resolve();
+                    }
+                }
+                legacyCopy(text).then(finish);
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(finish, finish);
+                }
+                setTimeout(finish, 400);
+            });
+        }
+        function departureCount(shown) {
+            return shown === 1 ? '1 salida' : shown + ' salidas';
+        }
+        function applyFilters() {
+            var origin = document.getElementById('salida-origen');
+            var destination = document.getElementById('salida-destino');
+            var date = document.getElementById('salida-fecha');
+            var shown = 0;
+            root.querySelectorAll('[data-departure]').forEach(function (card) {
+                var ok = true;
+                if (origin && origin.value && card.getAttribute('data-origin') !== origin.value) ok = false;
+                if (destination && destination.value && card.getAttribute('data-destination') !== destination.value) ok = false;
+                if (date && date.value && card.getAttribute('data-date') !== date.value) ok = false;
+                if (vesselFilter && card.getAttribute('data-vehicle') !== vesselFilter) ok = false;
+                card.hidden = !ok;
+                if (ok) shown++;
+            });
+            var count = document.getElementById('salida-count');
+            var empty = document.getElementById('salida-empty');
+            var note = document.getElementById('salida-embarcacion');
+            if (count) count.textContent = departureCount(shown);
+            if (empty) empty.hidden = shown !== 0;
+            if (note) {
+                note.hidden = !vesselFilter;
+                note.textContent = vesselFilter ? 'Salidas de ' + vesselName : '';
+            }
+        }
+        function showPhoto(index) {
+            var viewerImg = document.getElementById('company-photo-img');
+            var label = document.getElementById('company-photo-count');
+            if (!photos.length || !viewerImg) return;
+            photoIndex = (index + photos.length) % photos.length;
+            viewerImg.src = photos[photoIndex].src;
+            viewerImg.alt = photos[photoIndex].alt;
+            if (label) label.textContent = (photoIndex + 1) + ' de ' + photos.length;
+            root.querySelectorAll('[data-photo-step]').forEach(function (button) {
+                button.disabled = photos.length < 2;
+            });
+        }
         function show(name) {
             if (names.indexOf(name) === -1) name = 'informacion';
             root.querySelectorAll('[data-panel]').forEach(function (panel) {
                 panel.hidden = panel.getAttribute('data-panel') !== name;
             });
             root.querySelectorAll('[data-open]').forEach(function (button) {
-                button.classList.toggle('is-on', button.getAttribute('data-open') === name);
+                button.classList.toggle('is-on', button.getAttribute('data-open') === name && !button.hasAttribute('data-vessel'));
             });
             if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
         }
         root.addEventListener('click', function (event) {
             var tab = event.target.closest('[data-open]');
             if (tab && root.contains(tab)) {
+                if (tab.hasAttribute('data-vessel')) {
+                    vesselFilter = tab.getAttribute('data-vessel');
+                    vesselName = tab.getAttribute('data-vessel-name') || '';
+                } else if (tab.getAttribute('data-open') === 'salidas') {
+                    vesselFilter = '';
+                    vesselName = '';
+                }
                 show(tab.getAttribute('data-open'));
+                if (tab.getAttribute('data-open') === 'salidas') applyFilters();
                 document.getElementById('empresa-menu').scrollIntoView({ block: 'nearest' });
                 return;
             }
@@ -411,14 +564,52 @@
                 paintCargo();
                 return;
             }
+            var step = event.target.closest('[data-photo-step]');
+            if (step && !step.disabled) {
+                showPhoto(photoIndex + Number(step.getAttribute('data-photo-step')));
+                return;
+            }
             var photo = event.target.closest('[data-photo]');
             var viewer = document.getElementById('company-photo');
-            var viewerImg = document.getElementById('company-photo-img');
-            if (photo && viewer && viewerImg && typeof viewer.showModal === 'function') {
-                viewerImg.src = photo.getAttribute('data-photo');
-                viewerImg.alt = photo.getAttribute('data-photo-alt') || 'Foto de la empresa';
+            if (photo && viewer && typeof viewer.showModal === 'function') {
+                showPhoto(Number(photo.getAttribute('data-photo-index') || 0));
                 viewer.showModal();
+                return;
             }
+            var copy = event.target.closest('[data-copy]');
+            if (copy) {
+                copyText(copy.getAttribute('data-copy')).then(function () { toast('Teléfono copiado'); });
+                return;
+            }
+            var share = event.target.closest('[data-share]');
+            if (share) {
+                var url = share.getAttribute('data-share');
+                var title = share.getAttribute('data-share-title') || document.title;
+                if (navigator.share) {
+                    navigator.share({ title: title, text: title, url: url }).catch(function () {});
+                } else {
+                    copyText(url).then(function () { toast('Enlace copiado'); });
+                }
+            }
+        });
+        root.addEventListener('change', function (event) {
+            if (event.target && event.target.closest && event.target.closest('.company-filters')) applyFilters();
+        });
+        var clearFilters = document.getElementById('salida-limpiar');
+        if (clearFilters) clearFilters.addEventListener('click', function () {
+            ['salida-origen', 'salida-destino', 'salida-fecha'].forEach(function (id) {
+                var field = document.getElementById(id);
+                if (field) field.value = '';
+            });
+            vesselFilter = '';
+            vesselName = '';
+            applyFilters();
+        });
+        document.addEventListener('keydown', function (event) {
+            var viewer = document.getElementById('company-photo');
+            if (!viewer || !viewer.open) return;
+            if (event.key === 'ArrowLeft') showPhoto(photoIndex - 1);
+            if (event.key === 'ArrowRight') showPhoto(photoIndex + 1);
         });
         var range = document.getElementById('cargo-range');
         if (range) range.addEventListener('input', function () {
