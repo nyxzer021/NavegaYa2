@@ -31,10 +31,28 @@ class BookingTest extends TestCase
         return [$departure, $seatOne, $seatTwo];
     }
 
+    public function test_blocked_seat_stays_on_the_plan_and_cannot_be_chosen(): void
+    {
+        [$departure] = $this->departureWithSeats();
+        $departure->vessel->seats()->create([
+            'code' => '1C',
+            'deck' => 'principal',
+            'seat_class' => 'standard',
+            'row_position' => 1,
+            'column_position' => 3,
+            'is_available' => false,
+        ]);
+
+        $response = $this->get(route('bookings.create', $departure));
+
+        $response->assertOk()->assertSee('1C');
+        $this->assertMatchesRegularExpression('/data-code="1C"[^>]*disabled/', $response->getContent());
+    }
+
     public function test_guest_can_create_a_temporary_reservation_from_live_seat_map(): void
     {
         [$departure, $seatOne, $seatTwo] = $this->departureWithSeats();
-        $this->get(route('bookings.create', $departure))->assertOk()->assertSee('1A')->assertSee('Croquis de la embarcación');
+        $this->get(route('bookings.create', $departure))->assertOk()->assertSee('1A')->assertSee('Croquis de la embarcación')->assertSee('Proa');
         $this->post(route('bookings.store', $departure), [
             'contact_name' => 'Ana Torres', 'contact_email' => 'ana@test.pe', 'contact_phone' => '999888777',
             'seats' => [$seatOne->id, $seatTwo->id],

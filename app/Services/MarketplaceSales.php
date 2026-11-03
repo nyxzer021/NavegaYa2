@@ -83,6 +83,19 @@ class MarketplaceSales
         return round($this->charged($reservation) / max(1, $seats), 2);
     }
 
+    public function fareOf(Payment $payment): float
+    {
+        $payment->loadMissing('reservation');
+        $reservation = $payment->reservation;
+        if ($reservation?->base_amount !== null) {
+            return round(max(0, (float) $reservation->base_amount - (float) $reservation->discount_amount), 2);
+        }
+
+        $fee = round((float) data_get($payment->provider_payload, 'service_fee_amount', 0), 2);
+
+        return round(max(0, (float) $payment->amount - $fee), 2);
+    }
+
     public function commissionOf(Payment $payment): float
     {
         if ((float) $payment->commission_amount > 0 || (float) $payment->commission_rate > 0) {

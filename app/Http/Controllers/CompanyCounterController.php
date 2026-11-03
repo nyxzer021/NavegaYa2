@@ -45,12 +45,14 @@ class CompanyCounterController extends Controller
     {
         $route = $air ? $departure->airRoute : $departure->transportRoute;
         $unit = $air ? $departure->aircraft : $departure->vessel;
-        $reservations = $departure->reservations->whereNotIn('status', ['expired', 'cancelled']);
+        $confirmedSeats = $departure->reservations
+            ->where('status', 'confirmed')
+            ->sum(fn ($reservation) => $reservation->seats->count());
 
         return ['model' => $departure, 'is_air' => $air, 'departure_at' => $departure->departure_at,
             'origin' => $air ? ($route?->origin_city ?? 'Origen') : ($route?->originPort?->city ?? 'Origen'),
             'destination' => $air ? ($route?->destination_city ?? 'Destino') : ($route?->destinationPort?->city ?? 'Destino'),
             'unit' => $unit?->name ?? 'Unidad por asignar', 'capacity' => (int) ($unit?->seat_capacity ?? 0),
-            'booked' => $reservations->sum(fn ($reservation) => $reservation->seats->count()), 'status' => $departure->status];
+            'confirmed_seats' => (int) $confirmedSeats, 'status' => $departure->status];
     }
 }

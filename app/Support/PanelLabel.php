@@ -13,6 +13,8 @@ class PanelLabel
             'active' => 'Activo',
             'approved' => 'Aprobada',
             'boarded' => 'Embarcado',
+            'boarding' => 'Embarcando',
+            'delayed' => 'Retrasada',
             'cancelled' => 'Cancelada',
             'canceled' => 'Cancelada',
             'changes_requested' => 'Con observaciones',

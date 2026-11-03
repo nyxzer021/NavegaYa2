@@ -4,14 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Aircraft;
 use App\Models\AirDeparture;
-use App\Models\CargoShipment;
 use App\Models\Organization;
-use App\Models\Payment;
-use App\Models\Reservation;
 use App\Models\RouteDeparture;
 use App\Models\Vessel;
 use App\Support\AdminScope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -56,41 +52,29 @@ class CompanyDepartureController extends Controller
             ->where('organization_id', $organizationId)
             ->whereNotNull('master_route_id')
             ->whereColumn('origin_city', '<>', 'destination_city'))->whereDate('departure_at', today());
-        $todayGrossRevenue = (float) Payment::query()->where('status', 'confirmed')->whereDate('paid_at', today())
-            ->whereHas('reservation', fn ($query) => $query->where(function ($scope) use ($organization) {
-                $scope->whereHas('departure.transportRoute', fn ($route) => $route->where('organization_id', $organization->id))
-                    ->orWhereHas('airDeparture.airRoute', fn ($route) => $route->where('organization_id', $organization->id));
-            }))->sum('amount');
-        $todayPassengersCount = (clone $todayRiver)->with(['reservations' => fn ($query) => $query->where('status', 'confirmed')->withCount('seats')])->get()
-            ->sum(fn ($departure) => $departure->reservations->sum('seats_count'))
-            + (clone $todayAir)->with(['reservations' => fn ($query) => $query->where('status', 'confirmed')->withCount('seats')])->get()
-                ->sum(fn ($departure) => $departure->reservations->sum('seats_count'));
+        $todayDepartures = (clone $todayRiver)->with(['vessel', 'reservations.seats'])->get()
+            ->concat((clone $todayAir)->with(['aircraft', 'reservations.seats'])->get());
+        $todaySeatCapacity = (int) $todayDepartures->sum(fn (RouteDeparture|AirDeparture $departure): int => (int) (($departure instanceof AirDeparture ? $departure->aircraft : $departure->vessel)?->seat_capacity ?? 0));
+        $todayConfirmedSeats = (int) $todayDepartures->sum(fn (RouteDeparture|AirDeparture $departure): int => (int) $departure->reservations
+            ->where('status', 'confirmed')
+            ->sum(fn ($reservation) => $reservation->seats->count()));
 
         return view('company.departures.index', [
             'organization' => $organization,
             'departures' => $departures,
             'filter' => $filter,
-            'todayDeparturesCount' => (clone $todayRiver)->count() + (clone $todayAir)->count(),
-            'todayPassengersCount' => $todayPassengersCount,
-            'todayGrossRevenue' => $todayGrossRevenue,
-            'pendingCargoCount' => CargoShipment::query()->where(function ($query) use ($organization) {
-                $query->whereHas('departure.transportRoute', fn ($route) => $route->where('organization_id', $organization->id))
-                    ->orWhereHas('airDeparture.airRoute', fn ($route) => $route->where('organization_id', $organization->id));
-            })->whereNotIn('status', ['delivered', 'cancelled'])->count(),
+            'todayDeparturesCount' => $todayDepartures->count(),
+            'todayConfirmedSeats' => $todayConfirmedSeats,
+            'todaySeatCapacity' => $todaySeatCapacity,
+            'todayOccupancyLabel' => $todaySeatCapacity > 0
+                ? (string) (int) round(($todayConfirmedSeats / $todaySeatCapacity) * 100)
+                : '0',
         ]);
     }
 
     private function organization(): Organization
     {
         return Organization::query()->whereKey(AdminScope::organizationId(auth()->user()))->whereIn('status', ['active', 'pending'])->firstOrFail();
-    }
-
-    private function reservationScope(Organization $organization): Builder
-    {
-        return Reservation::query()->where(function ($query) use ($organization) {
-            $query->whereHas('departure.transportRoute', fn ($route) => $route->where('organization_id', $organization->id))
-                ->orWhereHas('airDeparture.airRoute', fn ($route) => $route->where('organization_id', $organization->id));
-        });
     }
 
     private function riverRow(RouteDeparture $departure): array
@@ -105,15 +89,16 @@ class CompanyDepartureController extends Controller
 
     private function row(RouteDeparture|AirDeparture $departure, bool $isAir, ?string $origin, ?string $destination, Vessel|Aircraft|null $unit, ?string $masterCode): array
     {
-        $reservations = $departure->reservations->whereNotIn('status', ['cancelled', 'expired']);
-        $booked = $reservations->sum(fn ($reservation) => $reservation->seats->count());
+        $booked = (int) $departure->reservations
+            ->where('status', 'confirmed')
+            ->sum(fn ($reservation) => $reservation->seats->count());
         $capacity = (int) ($unit?->seat_capacity ?? 0);
 
         return [
             'model' => $departure, 'is_air' => $isAir, 'departure_at' => $departure->departure_at,
             'origin' => $origin ?? 'Origen', 'destination' => $destination ?? 'Destino', 'master_code' => $masterCode,
             'unit' => $unit?->name ?? 'Unidad por asignar', 'registration' => $unit?->registration_number,
-            'capacity' => $capacity, 'booked' => $booked, 'occupancy' => $capacity > 0 ? min(100, (int) round($booked / $capacity * 100)) : 0,
+            'capacity' => $capacity, 'booked' => $booked, 'occupancy' => $capacity > 0 ? (int) round($booked / $capacity * 100) : 0,
             'fare' => (float) ($departure->fare ?? 0), 'status' => $departure->status ?? 'scheduled',
         ];
     }

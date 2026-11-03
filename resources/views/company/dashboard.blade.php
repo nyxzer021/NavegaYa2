@@ -6,52 +6,98 @@
     $name = $company->commercial_name ?: $company->legal_name;
     $hasAir = $company->aircraft->isNotEmpty();
     $hasRiver = $company->vessels->isNotEmpty();
-    $nextDeparture = $todayDepartures->whereNotIn('status', ['completed', 'cancelled'])->first();
     $statusLabels = ['scheduled' => 'Programada', 'boarding' => 'Embarcando', 'in_transit' => 'En tránsito', 'departed' => 'En tránsito', 'completed' => 'Completada', 'delayed' => 'Retrasada', 'rescheduled' => 'Reprogramada', 'suspended' => 'Suspendida', 'cancelled' => 'Cancelada'];
+    $modality = $hasAir && ! $hasRiver ? 'Aéreo' : ($hasAir && $hasRiver ? 'Fluvial y aéreo' : 'Fluvial');
 @endphp
-<div class="mx-auto max-w-7xl space-y-5" x-data="{view:'departures'}">
- <section class="overflow-hidden rounded-[28px] bg-gradient-to-r from-[#062c21] via-[#07533e] to-slate-900 p-6 text-white shadow-xl">
-  <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"><div><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-emerald-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-200">{{ $company->status === 'active' ? '● Operación en línea' : '◷ Validación pendiente' }}</span><span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold">{{ $hasAir && !$hasRiver ? 'Aéreo' : ($hasAir && $hasRiver ? 'Fluvial y aéreo' : 'Fluvial') }}</span></div><h2 class="mt-3 text-2xl font-black sm:text-3xl">{{ $name }}</h2><p class="mt-1 text-xs text-emerald-100/75">Resumen de hoy · {{ now()->translatedFormat('d \d\e F, Y') }}</p></div><div class="flex flex-wrap gap-2">@if($company->status === 'active')<a href="{{ route('company.pos.index') }}" class="rounded-2xl bg-amber-400 px-4 py-3 text-xs font-black text-emerald-950">＋ Vender pasaje</a><a href="{{ route('company.departures.create') }}" class="rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black text-slate-950">＋ Nueva salida</a>@else<a href="{{ route('company.fleet.index') }}" class="rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black text-slate-950">Completar flota y permisos →</a>@endif</div></div>
- </section>
+<div class="mx-auto max-w-5xl space-y-5">
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm font-semibold {{ $company->status === 'active' ? 'text-emerald-800' : 'text-amber-800' }}">{{ $company->status === 'active' ? 'Operación en línea' : 'Validación pendiente' }}</p>
+                <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $name }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ $modality }} · {{ now()->translatedFormat('l d \d\e F') }}</p>
+            </div>
+            @if($company->status === 'active')
+                <a href="{{ route('company.pos.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Vender pasaje</a>
+            @else
+                <a href="{{ route('company.fleet.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Completar flota</a>
+            @endif
+        </div>
+    </section>
 
- @if($company->status !== 'active')
- <section class="grid gap-4 md:grid-cols-3">
-  <article class="rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-lg">1</span><h3 class="mt-4 font-black text-slate-900">Completa la flota</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Registra unidades, capacidad, matrícula y plano de asientos.</p><a href="{{ route('company.fleet.index') }}" class="mt-4 inline-flex text-xs font-black text-emerald-800">Configurar flota →</a></article>
-  <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-lg">2</span><h3 class="mt-4 font-black text-slate-900">Espera la validación</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">NavegaYA revisará el RUC y los permisos operativos antes de habilitar ventas.</p><a href="{{ route('support.index') }}" class="mt-4 inline-flex text-xs font-black text-emerald-800">Consultar estado →</a></article>
-  <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-lg">3</span><h3 class="mt-4 font-black text-slate-900">Inicia la operación</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Al ser aprobada podrás programar salidas, vender pasajes y controlar el embarque.</p><span class="mt-4 inline-flex text-xs font-bold text-slate-400">Se habilitará automáticamente</span></article>
- </section>
- @else
- @if($attentionCount > 0)<a href="{{ route('company.departures.index') }}" class="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3.5 text-amber-950"><span><strong class="block text-sm">{{ $attentionCount }} asunto(s) requieren atención</strong><small class="text-amber-700">Salidas con cambios o encomiendas pendientes.</small></span><span class="font-black">Revisar →</span></a>@endif
+    @if($company->status !== 'active')
+        <section class="grid gap-4 md:grid-cols-3">
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 class="font-black text-slate-950">Completa la flota</h3>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">Registra unidades, capacidad, matrícula y plano de asientos.</p>
+                <a href="{{ route('company.fleet.index') }}" class="mt-4 inline-flex text-sm font-bold text-emerald-800">Configurar flota</a>
+            </article>
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 class="font-black text-slate-950">Espera la validación</h3>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">NavegaYA revisará el RUC y los permisos operativos antes de habilitar ventas.</p>
+                <a href="{{ route('support.index') }}" class="mt-4 inline-flex text-sm font-bold text-emerald-800">Consultar estado</a>
+            </article>
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 class="font-black text-slate-950">Inicia la operación</h3>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">Al ser aprobada podrás programar salidas, vender pasajes y controlar el embarque.</p>
+            </article>
+        </section>
+    @else
+        @if($attentionCount > 0)
+            <a href="{{ route('company.departures.index') }}" class="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950">
+                <span>
+                    <strong class="block text-sm">{{ \App\Support\SpanishCount::phrase($attentionCount, 'asunto requiere atención', 'asuntos requieren atención') }}</strong>
+                    <span class="text-sm text-amber-800">Salidas con cambios o encomiendas pendientes.</span>
+                </span>
+                <span class="text-sm font-bold">Revisar</span>
+            </a>
+        @endif
 
- <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-  @foreach([
-   ['Cobrado hoy', 'S/ '.number_format($todayRevenue, 2), 'Pagos confirmados', '💰', 'emerald'],
-   ['Pasajeros', $todayTicketsCount, 'Boletos confirmados', '👥', 'violet'],
-   ['Salidas activas', $activeDeparturesCount, 'Operación del día', '🧭', 'sky'],
-   ['Ocupación', $todayOccupancy.'%', 'Capacidad utilizada', '◔', 'amber'],
-   ['Carga pendiente', $pendingCargoCount, 'Encomiendas activas', '📦', 'rose'],
-  ] as [$label,$value,$note,$icon,$color])
-  <article class="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex items-start justify-between"><span class="text-[9px] font-black uppercase tracking-wider text-slate-400">{{ $label }}</span><span class="grid h-9 w-9 place-items-center rounded-xl bg-slate-50">{{ $icon }}</span></div><strong class="mt-2 block text-2xl font-black text-slate-900">{{ $value }}</strong><span class="text-[10px] text-slate-500">{{ $note }}</span>@if($label === 'Ocupación')<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100"><i class="block h-full rounded-full bg-amber-500" style="width:{{ min(100,$todayOccupancy) }}%"></i></div>@endif</article>
-  @endforeach
- </section>
+        <section class="grid gap-3 sm:grid-cols-3">
+            <a href="{{ route('company.departures.index') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <span class="text-sm font-semibold text-slate-500">Salidas de hoy</span>
+                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $todayDepartureCount }}</strong>
+            </a>
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <span class="text-sm font-semibold text-slate-500">Ocupación</span>
+                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $todayOccupancyLabel }}%</strong>
+                <span class="mt-1 block text-sm text-slate-500">{{ $todayConfirmedSeats }} de {{ $todaySeatCapacity }} {{ $todaySeatCapacity === 1 ? 'asiento' : 'asientos' }}</span>
+            </article>
+            <a href="{{ route('company.commissions.index') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <span class="text-sm font-semibold text-slate-500">Por cobrar</span>
+                <strong class="mt-2 block text-3xl font-black text-slate-950">S/ {{ number_format($commissionReceivable, 2) }}</strong>
+                <span class="mt-1 block text-sm text-slate-500">Comisión del convenio</span>
+            </a>
+        </section>
 
- <section class="grid gap-5 xl:grid-cols-12">
-  <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm xl:col-span-8">
-   <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"><div><span class="text-[9px] font-black uppercase tracking-wider text-emerald-700">Agenda operativa</span><h3 class="text-lg font-black text-slate-900">Salidas de hoy</h3></div><div class="flex rounded-xl bg-slate-100 p-1"><button @click="view='departures'" :class="view==='departures'?'bg-white text-slate-900 shadow-sm':'text-slate-500'" class="rounded-lg px-3 py-2 text-xs font-bold">Salidas</button><button @click="view='bookings'" :class="view==='bookings'?'bg-white text-slate-900 shadow-sm':'text-slate-500'" class="rounded-lg px-3 py-2 text-xs font-bold">Reservas</button></div></header>
-   <div x-show="view==='departures'">
-    @forelse($todayDepartures as $row)@php($percentage = $row['capacity'] > 0 ? min(100, round($row['booked_seats'] / $row['capacity'] * 100)) : 0)<article class="grid items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0 md:grid-cols-[70px_1fr_150px_120px_auto]"><div><strong class="text-lg font-black text-slate-900">{{ $row['departure_at']->format('H:i') }}</strong><span class="block text-[9px] font-bold {{ $row['is_air'] ? 'text-sky-600' : 'text-emerald-700' }}">{{ $row['is_air'] ? '✈ AÉREO' : '🚤 FLUVIAL' }}</span></div><div><strong class="text-sm text-slate-900">{{ $row['origin'] }} → {{ $row['destination'] }}</strong><span class="block text-[10px] text-slate-400">{{ $row['unit'] }} · {{ $row['registration'] ?: 'Sin matrícula' }}</span></div><div><div class="flex justify-between text-[10px]"><strong>{{ $row['booked_seats'] }}/{{ $row['capacity'] }} asientos</strong><span>{{ $percentage }}%</span></div><div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100"><i class="block h-full rounded-full {{ $percentage >= 90 ? 'bg-amber-500' : 'bg-emerald-600' }}" style="width:{{ $percentage }}%"></i></div></div><span class="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{{ $statusLabels[$row['status']] ?? ucfirst($row['status']) }}</span><div class="flex gap-2">@if(!$row['is_air'])<a href="{{ route('company.departures.manifest',$row['model']) }}" class="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-bold">Manifiesto</a><a href="{{ route('company.boarding.show',$row['model']) }}" class="rounded-xl bg-[#062c21] px-3 py-2 text-[10px] font-bold text-white">Embarcar</a>@endif</div></article>
-    @empty<div class="grid min-h-52 place-items-center p-8 text-center"><div><span class="text-3xl">🗓️</span><strong class="mt-2 block text-slate-800">No hay salidas para hoy</strong><p class="mt-1 text-xs text-slate-400">Programa una salida para comenzar la operación.</p><a href="{{ route('company.departures.create') }}" class="mt-4 inline-block rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black text-slate-950">Programar salida</a></div></div>@endforelse
-   </div>
-   <div x-show="view==='bookings'" x-cloak>@forelse($recentBookings as $seat)@php($reservation=$seat->reservation)@php($trip=$reservation->isAir()?$reservation->airDeparture:$reservation->departure)<article class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4"><div><strong class="text-sm text-slate-900">{{ $seat->passenger_name }}</strong><span class="block text-[10px] text-slate-400">{{ $reservation->code }} · asiento {{ $seat->seat?->code ?? $seat->aircraftSeat?->code }}</span></div><div class="text-right"><strong class="text-sm">S/ {{ number_format((float)$reservation->total_amount / max(1,$reservation->seats->count()),2) }}</strong><span class="block text-[10px] text-slate-400">{{ $trip?->departure_at?->format('d/m H:i') }}</span></div></article>@empty<div class="grid min-h-52 place-items-center text-sm text-slate-400">Todavía no existen reservas.</div>@endforelse</div>
-   <footer class="border-t border-slate-100 px-5 py-3 text-right"><a href="{{ route('company.departures.index') }}" class="text-xs font-black text-emerald-800">Ver todas las salidas →</a></footer>
-  </div>
-
-  <aside class="space-y-4 xl:col-span-4">
-   <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"><span class="text-[9px] font-black uppercase tracking-wider text-emerald-700">Próxima operación</span>@if($nextDeparture)@php($nextPercentage=$nextDeparture['capacity']>0?min(100,round($nextDeparture['booked_seats']/$nextDeparture['capacity']*100)):0)<h3 class="mt-2 text-xl font-black text-slate-900">{{ $nextDeparture['departure_at']->format('H:i') }} · {{ $nextDeparture['origin'] }}</h3><p class="text-xs text-slate-500">hacia {{ $nextDeparture['destination'] }} en {{ $nextDeparture['unit'] }}</p><div class="mt-4 grid grid-cols-2 gap-2"><div class="rounded-2xl bg-slate-50 p-3"><span class="text-[9px] uppercase text-slate-400">Ocupación</span><strong class="block text-lg">{{ $nextPercentage }}%</strong></div><div class="rounded-2xl bg-slate-50 p-3"><span class="text-[9px] uppercase text-slate-400">Disponibles</span><strong class="block text-lg">{{ max(0,$nextDeparture['capacity']-$nextDeparture['booked_seats']) }}</strong></div></div>@if(!$nextDeparture['is_air'])<a href="{{ route('company.boarding.show',$nextDeparture['model']) }}" class="mt-4 block rounded-2xl bg-[#062c21] px-4 py-3 text-center text-xs font-black text-white">Abrir embarque</a>@endif @else<h3 class="mt-2 font-black text-slate-800">Sin operación próxima</h3><p class="mt-1 text-xs text-slate-400">No hay salidas activas para hoy.</p>@endif</section>
-   <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"><h3 class="text-sm font-black text-slate-900">Acciones rápidas</h3><div class="mt-3 grid grid-cols-2 gap-2"><a href="{{ route('company.pos.index') }}" class="rounded-2xl bg-emerald-50 p-3 text-xs font-bold text-emerald-800">🎟️ Vender pasaje</a><a href="{{ route('company.counter.index') }}" class="rounded-2xl bg-sky-50 p-3 text-xs font-bold text-sky-800">📱 Validar QR</a><a href="{{ route('company.fleet.index') }}" class="rounded-2xl bg-violet-50 p-3 text-xs font-bold text-violet-800">🚤 Ver flota</a><a href="{{ route('company.sales.index') }}" class="rounded-2xl bg-amber-50 p-3 text-xs font-bold text-amber-800">📊 Ver ventas</a></div></section>
-   <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"><div class="flex items-center justify-between"><div><span class="text-[9px] font-black uppercase text-slate-400">Configuración</span><h3 class="text-sm font-black text-slate-900">Equipo y empresa</h3></div><span class="text-xl">⚙️</span></div><div class="mt-3 flex gap-2"><a href="{{ route('company.staff.index') }}" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-center text-[10px] font-bold">Personal</a><a href="{{ route('company.fleet.index') }}" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-center text-[10px] font-bold">Flota</a></div></section>
-  </aside>
- </section>
- @endif
+        <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <header class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                <h3 class="text-lg font-black text-slate-950">Salidas de hoy</h3>
+                <a href="{{ route('company.departures.create') }}" class="text-sm font-bold text-emerald-800">Nueva salida</a>
+            </header>
+            @forelse($todayDepartures as $row)
+                @php($freeSeats = max(0, $row['capacity'] - $row['confirmed_seats']))
+                <article class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <strong class="text-lg font-black text-slate-950">{{ $row['departure_at']->format('H:i') }}</strong>
+                        <span class="mt-0.5 block text-sm text-slate-800">{{ $row['origin'] }} → {{ $row['destination'] }}</span>
+                        <span class="block text-sm text-slate-500">{{ $row['unit'] }} · {{ $freeSeats }} {{ $freeSeats === 1 ? 'libre' : 'libres' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $statusLabels[$row['status']] ?? \App\Support\PanelLabel::status($row['status']) }}</span>
+                        @if(! $row['is_air'])
+                            <a href="{{ route('company.boarding.show', $row['model']) }}" class="inline-flex min-h-10 items-center rounded-xl bg-[#062c21] px-4 text-sm font-bold text-white">Embarcar</a>
+                        @endif
+                    </div>
+                </article>
+            @empty
+                <div class="px-5 py-12 text-center">
+                    <strong class="block text-slate-800">No hay salidas para hoy</strong>
+                    <p class="mt-1 text-sm text-slate-500">Programa una salida para comenzar la operación.</p>
+                    <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-emerald-800 px-5 text-sm font-bold text-emerald-900">Programar salida</a>
+                </div>
+            @endforelse
+        </section>
+    @endif
 </div>
 @endsection

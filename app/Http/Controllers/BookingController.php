@@ -20,7 +20,7 @@ class BookingController extends Controller
         $departure->load(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.organization', 'vessel.seats']);
         abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         $occupiedSeatIds = ReservationSeat::query()->where('route_departure_id', $departure->id)->pluck('vessel_seat_id')->all();
-        $seats = $departure->vessel->seats->where('is_available', true)->sortBy(['deck', 'row_position', 'column_position']);
+        $seats = $departure->vessel->seats->sortBy(['deck', 'row_position', 'column_position']);
 
         return view('bookings.create', compact('departure', 'seats', 'occupiedSeatIds'));
     }

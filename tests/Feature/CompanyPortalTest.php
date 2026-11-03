@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\MasterRoute;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Port;
+use App\Models\Reservation;
+use App\Models\ReservationSeat;
 use App\Models\Role;
 use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
@@ -26,6 +29,8 @@ class CompanyPortalTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.departures.index'))
             ->assertOk()->assertSee('Nave Propia')->assertSee('Iquitos')
+            ->assertSee('md:hidden', false)
+            ->assertDontSee('min-w-[980px]', false)
             ->assertDontSee('Nave Ajena')->assertDontSee('Yurimaguas');
     }
 
@@ -60,7 +65,8 @@ class CompanyPortalTest extends TestCase
         ]);
 
         $this->actingAs($admin)->get(route('company.fleet.index'))
-            ->assertOk()->assertSee('Rápida Segura')->assertSee('Cerrar sesión')->assertSee($admin->name);
+            ->assertOk()->assertSee('Rápida Segura')->assertSee('Cerrar sesión')->assertSee($admin->name)
+            ->assertDontSee('text-[9px]', false);
     }
 
     public function test_company_manifest_is_available_only_for_its_own_departure(): void
@@ -73,8 +79,15 @@ class CompanyPortalTest extends TestCase
         $this->actingAs($admin)->get(route('company.departures.manifest', $ownDeparture))
             ->assertOk()
             ->assertSee('Manifiesto oficial de pasajeros')
+            ->assertSee('0 pasajeros')
+            ->assertDontSee('pasajero(s)')
             ->assertSee('Nave DICAPI');
         $this->actingAs($admin)->get(route('company.departures.manifest', $foreignDeparture))->assertForbidden();
+        $ownDeparture->update(['departure_at' => now(), 'status' => 'scheduled']);
+        $this->actingAs($admin)->get(route('company.counter.index'))
+            ->assertOk()
+            ->assertSee('Programada')
+            ->assertDontSee('SCHEDULED');
     }
 
     public function test_company_admin_can_open_sales_dashboard_and_export_its_period(): void
@@ -83,9 +96,11 @@ class CompanyPortalTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.sales.index'))
             ->assertOk()
-            ->assertSee('Ventas e ingresos de Operador Comercial')
-            ->assertSee('Recaudación total')
-            ->assertSee('Evolución de ingresos');
+            ->assertSee('Boletos vendidos de Operador Comercial')
+            ->assertSee('Total pagado por viajeros')
+            ->assertSee('Evolución de ingresos')
+            ->assertSee('0 días con ventas')
+            ->assertDontSee('día(s)');
 
         $this->actingAs($admin)->get(route('company.sales.export'))
             ->assertOk()
@@ -167,11 +182,88 @@ class CompanyPortalTest extends TestCase
         $this->actingAs($admin)->get(route('company.dashboard'))
             ->assertOk()
             ->assertSee('Validación pendiente')
+            ->assertSee('Configuración inicial')
+            ->assertSee('data-menu-lead="configuracion"', false)
             ->assertDontSee('Vender pasaje');
         $this->actingAs($admin)->get(route('company.fleet.index'))->assertOk();
         $this->actingAs($admin)->get(route('company.departures.create'))->assertForbidden();
         $this->actingAs($admin)->get(route('company.counter.index'))->assertNotFound();
         $this->actingAs($admin)->get(route('company.pos.index'))->assertNotFound();
+    }
+
+    public function test_active_company_dashboard_leads_with_todays_departures_and_confirmed_occupancy(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador del Día', '20999999995');
+        $organization->update(['commission_rate' => 7.5]);
+        $departure = $this->departure($organization, 'Nave del Día', 'Iquitos', 'Pebas');
+        $departure->update(['departure_at' => now()->setTime(15, 0), 'status' => 'scheduled']);
+        $departure->vessel->update(['seat_capacity' => 4]);
+        $confirmedSeat = $departure->vessel->seats()->create(['code' => '1A', 'row_position' => 1, 'column_position' => 1, 'deck' => 1, 'is_available' => true]);
+        $heldSeat = $departure->vessel->seats()->create(['code' => '1B', 'row_position' => 1, 'column_position' => 2, 'deck' => 1, 'is_available' => true]);
+        $confirmed = Reservation::create([
+            'route_departure_id' => $departure->id,
+            'code' => 'RES-DIA',
+            'contact_name' => 'Ana',
+            'contact_email' => 'ana@viajero.test',
+            'contact_phone' => '999000111',
+            'total_amount' => 110,
+            'status' => 'confirmed',
+            'paid_at' => now(),
+        ]);
+        ReservationSeat::create([
+            'reservation_id' => $confirmed->id,
+            'route_departure_id' => $departure->id,
+            'vessel_seat_id' => $confirmedSeat->id,
+            'passenger_name' => 'Ana Confirmada',
+            'document_number' => '12345678',
+        ]);
+        $pending = Reservation::create([
+            'route_departure_id' => $departure->id,
+            'code' => 'RES-HOLD',
+            'contact_name' => 'Luis',
+            'contact_email' => 'luis@viajero.test',
+            'contact_phone' => '999000222',
+            'total_amount' => 110,
+            'status' => 'pending_payment',
+        ]);
+        ReservationSeat::create([
+            'reservation_id' => $pending->id,
+            'route_departure_id' => $departure->id,
+            'vessel_seat_id' => $heldSeat->id,
+            'passenger_name' => 'Luis en espera',
+            'document_number' => '87654321',
+        ]);
+        Payment::create([
+            'reservation_id' => $confirmed->id,
+            'purpose' => 'ticket',
+            'method' => 'yape',
+            'provider' => 'sandbox',
+            'provider_reference' => 'PAY-DIA',
+            'amount' => 110,
+            'commission_rate' => 7.5,
+            'commission_amount' => 8.25,
+            'operator_net' => 101.75,
+            'commission_status' => 'pending',
+            'status' => 'confirmed',
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('company.dashboard'))
+            ->assertOk()
+            ->assertSee('data-menu-lead="operacion"', false)
+            ->assertSee('Flota y personal')
+            ->assertSeeInOrder(['Operación', 'Flota y personal'])
+            ->assertSee('Salidas de hoy')
+            ->assertSee('15:00')
+            ->assertSee('Iquitos')
+            ->assertSee('3 libres')
+            ->assertSee('25%')
+            ->assertSee('1 de 4 asientos')
+            ->assertSee('S/ 8.25')
+            ->assertSee('Vender pasaje')
+            ->assertSee('Programada')
+            ->assertDontSee('Cobrado hoy')
+            ->assertDontSee('Cuenta bancaria');
     }
 
     private function companyAdmin(string $name, string $ruc): array

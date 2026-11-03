@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,6 +39,16 @@ class PublicNavigationTest extends TestCase
     {
         $user = User::factory()->create(['name' => 'Daniel Reyna']);
         $this->actingAs($user)->get(route('routes.index'))->assertOk()->assertSee('Mi cuenta')->assertDontSee('Iniciar sesión');
+    }
+
+    public function test_support_whatsapp_from_settings_appears_above_sign_in(): void
+    {
+        $this->get(route('home'))->assertOk()->assertDontSee('wa.me/51987654321', false);
+
+        SystemSetting::create(['key' => 'whatsapp_number', 'value' => '987654321']);
+
+        $html = $this->get(route('home'))->assertOk()->assertSee('https://wa.me/51987654321', false)->assertSee('WhatsApp +51 987 654 321')->getContent();
+        $this->assertLessThan(strpos($html, 'Iniciar sesión'), strpos($html, 'https://wa.me/51987654321'));
     }
 
     public function test_company_registration_is_highlighted_only_during_affiliation(): void

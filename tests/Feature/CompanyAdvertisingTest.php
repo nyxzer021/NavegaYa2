@@ -25,7 +25,9 @@ class CompanyAdvertisingTest extends TestCase
         Subscription::create(['organization_id' => $organization->id, 'subscription_plan_id' => $plan->id, 'status' => 'active', 'monthly_price' => 300, 'currency' => 'PEN', 'starts_on' => today(), 'benefits_snapshot' => $plan->benefits]);
 
         $this->actingAs($user)->get(route('company.advertising.index'))
-            ->assertOk()->assertSee('Promociona tus rutas y servicios')->assertSee('Portada · carrusel principal');
+            ->assertOk()->assertSee('Promociona tus rutas y servicios')->assertSee('Portada · carrusel principal')
+            ->assertDontSee('text-[9px]', false)
+            ->assertDontSee('text-[10px]', false);
 
         $this->actingAs($user)->post(route('company.advertising.store'), [
             'title' => 'Viaja seguro por el Amazonas', 'description' => 'Salidas verificadas desde Iquitos.',
@@ -37,6 +39,9 @@ class CompanyAdvertisingTest extends TestCase
         $this->assertSame('lead_pending', $campaign->status);
         $this->assertSame(0.0, (float) $campaign->monthly_fee);
         Storage::disk('public')->assertExists($campaign->banner_image_path);
+        $this->actingAs($user)->get(route('company.advertising.index'))
+            ->assertSee('Por revisar')
+            ->assertDontSee('PUBLICADA');
     }
 
     public function test_transport_company_cannot_use_a_placement_outside_its_plan(): void

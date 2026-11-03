@@ -23,21 +23,21 @@ class CompanyFinanceController extends Controller
             ->latest('paid_at')
             ->get();
 
-        $todayPayments = $payments->filter(fn (Payment $payment): bool => $payment->paid_at?->isToday() ?? false);
-        $monthPayments = $payments->filter(fn (Payment $payment): bool => $payment->paid_at?->isCurrentMonth() ?? false);
-
         return view('company.finance.index', [
             'organization' => $organization,
-            'grossToday' => (float) $todayPayments->sum('amount'),
-            'grossMonth' => (float) $monthPayments->sum('amount'),
-            'transactionsMonth' => $monthPayments->count(),
-            'averageTicketMonth' => $monthPayments->count() > 0 ? (float) $monthPayments->avg('amount') : 0,
-            'confirmedSales' => (float) $payments->sum('amount'),
+            'companyFare' => (float) $payments->sum(fn (Payment $payment): float => $this->sales->fareOf($payment)),
             'commissionRate' => (float) $organization->commission_rate,
             'commissionGenerated' => (float) $payments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
             'commissionCollected' => (float) $payments->where('commission_status', 'paid')->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
             'commissionReceivable' => (float) $payments->whereIn('commission_status', ['pending', 'invoiced'])->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-            'recentPayments' => $payments->take(12),
+            'recentPayments' => $payments->take(12)->map(fn (Payment $payment): array => [
+                'code' => $payment->reservation?->code ?? $payment->provider_reference,
+                'paid_at' => $payment->paid_at,
+                'channel' => $payment->reservation?->sales_channel === 'counter' ? 'Muelle' : 'En línea',
+                'fare' => $this->sales->fareOf($payment),
+                'commission' => $this->sales->commissionOf($payment),
+                'commission_status' => $payment->commission_status,
+            ]),
         ]);
     }
 
