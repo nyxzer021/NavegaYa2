@@ -6,13 +6,21 @@
     .company-stat strong{display:block;font-size:1.25rem;line-height:1.1;color:#022c22}
     .company-stat strong.is-empty{font-size:.95rem}
     .company-stat em{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}
-    .company-tabs{display:flex;gap:.15rem;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem;margin-top:1.25rem;padding:.3rem;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);scrollbar-width:none}
+    .company-tabs{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem;margin-top:1.25rem;padding:.4rem;border:2px solid #fbbf24;border-radius:999px;background:#062c21;box-shadow:0 8px 18px rgba(6,44,33,.18);scrollbar-width:none}
     .company-tabs::-webkit-scrollbar{display:none}
-    .company-tab{display:inline-flex;min-height:2.5rem;align-items:center;white-space:nowrap;border:0;border-radius:.75rem;background:transparent;padding:.35rem .9rem;font-size:.9rem;font-weight:700;color:#334155;cursor:pointer}
-    .company-tab:hover{background:#f0fdf4;color:#065f46}
-    .company-tab:focus-visible{outline:2px solid #059669;outline-offset:2px}
-    .company-tab.is-on{background:#ecfdf5;color:#064e3b;box-shadow:inset 0 -2px 0 #059669}
-    .company-tab[data-open="salidas"].is-on{background:#fffbeb;color:#78350f;box-shadow:inset 0 -2px 0 #f59e0b}
+    .company-tab{display:inline-flex;min-height:2.6rem;align-items:center;white-space:nowrap;border:2px solid transparent;border-radius:999px;background:transparent;padding:.35rem .95rem;font-size:.9rem;font-weight:800;color:#d1fae5;cursor:pointer}
+    .company-tab:hover{background:rgba(255,255,255,.12);color:#fff}
+    .company-tab:focus-visible{outline:2px solid #fbbf24;outline-offset:2px}
+    .company-tab[data-open="informacion"].is-on{background:#ecfdf5;border-color:#6ee7b7;color:#064e3b}
+    .company-tab[data-open="galeria"].is-on{background:#e0f2fe;border-color:#38bdf8;color:#0c4a6e}
+    .company-tab[data-open="flota"].is-on{background:#d1fae5;border-color:#047857;color:#064e3b}
+    .company-tab[data-open="salidas"].is-on{background:#fbbf24;border-color:#f59e0b;color:#022c22}
+    .company-tab[data-open="opiniones"].is-on{background:#fffbeb;border-color:#fbbf24;color:#78350f}
+    .company-cargo{border:2px solid #047857;border-radius:1rem;background:#f0fdf4;padding:.9rem 1rem}
+    .company-cargo-note{margin-top:.55rem;font-size:.85rem;font-weight:700;color:#065f46}
+    .company-cargo-note.is-port{color:#9a3412}
+    .company-quote{display:inline-flex;min-height:2.75rem;align-items:center;border:0;border-radius:999px;background:#fbbf24;padding:0 1rem;font-size:.9rem;font-weight:900;color:#022c22;box-shadow:0 1px 2px rgba(15,23,42,.12)}
+    .company-map{display:inline-flex;min-height:2.5rem;align-items:center;border:2px solid #fbbf24;border-radius:999px;background:#fffbeb;padding:0 .9rem;font-size:.85rem;font-weight:900;color:#022c22}
     .company-panel[hidden]{display:none!important}
     .company-fact{display:flex;flex-direction:column;justify-content:center;min-height:4.25rem;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:.65rem .8rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
     .company-fact span{font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#047857}
@@ -226,21 +234,21 @@
         @if($mapQuery)
             <article class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm">
                 <span><strong class="text-emerald-950">Cómo llegar. </strong>{{ $mapQuery }}</span>
-                <a target="_blank" rel="noopener" href="https://maps.google.com/?q={{ urlencode($mapQuery) }}" class="inline-flex h-8 items-center rounded-full bg-amber-400 px-3 text-xs font-black text-emerald-950">Mapa</a>
+                <a target="_blank" rel="noopener" href="https://maps.google.com/?q={{ urlencode($mapQuery) }}" class="company-map">Ver mapa</a>
             </article>
         @endif
-        <section class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}">
             <div class="flex flex-wrap items-center gap-2">
                 <h3 class="mr-1 text-sm font-black text-emerald-950">Encomiendas</h3>
-                <button type="button" data-cargo="sobre" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Sobre</button>
-                <button type="button" data-cargo="caja" class="is-on h-9 rounded-full bg-emerald-700 px-3 text-sm font-bold text-white">Caja</button>
-                <button type="button" data-cargo="saco" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Bulto</button>
-                <span class="ml-auto text-sm font-bold text-emerald-950"><span id="cargo-weight">5 kg</span> · S/ <span id="cargo-price">20.00</span></span>
+                <button type="button" data-cargo="pequeno" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Pequeño</button>
+                <button type="button" data-cargo="mediano" class="is-on h-9 rounded-full bg-emerald-700 px-3 text-sm font-bold text-white">Mediano</button>
+                <button type="button" data-cargo="grande" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Grande</button>
+                <span id="cargo-quote" class="ml-auto text-sm font-bold text-emerald-950"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">20.00</span></span></span>
                 @if($supportNumber)
-                    <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola, deseo confirmar una cotización de caja de aproximadamente 5 kg con '.$name.'.') }}" class="inline-flex h-9 items-center rounded-full border border-amber-300 bg-amber-50 px-3 text-sm font-black text-emerald-950">Cotizar</a>
+                    <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote">Cotizar carga</a>
                 @endif
             </div>
-            <p class="mt-2 text-xs text-slate-500">Referencia para cotizar. La empresa confirma el precio final.</p>
+            <p id="cargo-note" class="company-cargo-note">Referencia para cotizar. La empresa confirma el precio final.</p>
             <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-2 w-full accent-emerald-700">
         </section>
         @auth
@@ -424,19 +432,33 @@
         var root = document.getElementById('company-ficha');
         if (!root) return;
         var names = ['informacion', 'galeria', 'flota', 'salidas', 'opiniones'];
-        var cargoType = 'caja';
+        var cargoType = 'mediano';
         var cargoWeight = 5;
+        var cargoLabels = { pequeno: 'pequeña', mediano: 'mediana', grande: 'grande' };
         function price() {
-            if (cargoType === 'sobre') return 15;
-            if (cargoType === 'caja') return 20 + Math.max(0, cargoWeight - 5) * 2;
+            if (cargoType === 'pequeno') return 15 + Math.max(0, cargoWeight - 2) * 1.5;
+            if (cargoType === 'mediano') return 20 + Math.max(0, cargoWeight - 5) * 2;
             return 35 + Math.max(0, cargoWeight - 15) * 1.5;
         }
         function paintCargo() {
             var weight = document.getElementById('cargo-weight');
             var amount = document.getElementById('cargo-price');
+            var amountWrap = document.getElementById('cargo-amount');
+            var note = document.getElementById('cargo-note');
             var link = document.getElementById('cargo-whatsapp');
+            var cargoBox = root.querySelector('.company-cargo');
+            var port = cargoBox ? cargoBox.getAttribute('data-port') : 'el puerto de embarque';
+            var atPort = cargoWeight >= 25;
+            var label = cargoLabels[cargoType] || cargoType;
             if (weight) weight.textContent = cargoWeight + ' kg';
-            if (amount) amount.textContent = price().toFixed(2);
+            if (amountWrap) amountWrap.hidden = atPort;
+            if (amount && !atPort) amount.textContent = price().toFixed(2);
+            if (note) {
+                note.classList.toggle('is-port', atPort);
+                note.textContent = atPort
+                    ? 'Desde 25 kg se cotiza en ' + port + '.'
+                    : 'Referencia para cotizar. La empresa confirma el precio final.';
+            }
             root.querySelectorAll('[data-cargo]').forEach(function (button) {
                 var on = button.getAttribute('data-cargo') === cargoType;
                 button.classList.toggle('bg-emerald-700', on);
@@ -445,7 +467,10 @@
                 button.classList.toggle('text-emerald-900', !on);
             });
             if (link) {
-                link.href = link.href.split('?')[0] + '?text=' + encodeURIComponent('Hola, deseo confirmar una cotización de ' + cargoType + ' de aproximadamente ' + cargoWeight + ' kg.');
+                var text = atPort
+                    ? 'Hola, deseo cotizar una carga ' + label + ' de aproximadamente ' + cargoWeight + ' kg. Desde 25 kg se cotiza en ' + port + '.'
+                    : 'Hola, deseo cotizar una carga ' + label + ' de aproximadamente ' + cargoWeight + ' kg.';
+                link.href = link.href.split('?')[0] + '?text=' + encodeURIComponent(text);
             }
         }
         var vesselFilter = '';
@@ -558,7 +583,7 @@
             var cargo = event.target.closest('[data-cargo]');
             if (cargo && root.contains(cargo)) {
                 cargoType = cargo.getAttribute('data-cargo');
-                cargoWeight = cargoType === 'sobre' ? 1 : (cargoType === 'saco' ? 20 : 5);
+                cargoWeight = cargoType === 'pequeno' ? 2 : (cargoType === 'grande' ? 15 : 5);
                 var range = document.getElementById('cargo-range');
                 if (range) range.value = String(cargoWeight);
                 paintCargo();
