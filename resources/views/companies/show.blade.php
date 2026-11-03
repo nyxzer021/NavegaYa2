@@ -6,6 +6,10 @@
     .company-tab.is-on{background:#fff;color:#022c22}
     .company-tab[data-open="salidas"].is-on{background:#fbbf24;color:#022c22}
     .company-panel[hidden]{display:none!important}
+    .company-fact{display:flex;flex-direction:column;justify-content:center;border-radius:1rem;padding:.55rem .75rem}
+    .company-fact span{font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+    .company-fact strong{margin-top:.1rem;font-size:.9rem;line-height:1.25}
+    .company-fact .is-quiet{text-transform:none;letter-spacing:0;font-weight:600}
     @media (min-width:640px){.company-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 @php
@@ -103,10 +107,10 @@
     </section>
 
     <div class="company-stats my-4">
-        <article class="rounded-2xl bg-emerald-700 p-4 text-white"><span class="text-sm font-semibold text-emerald-100">Flota</span><strong class="mt-1 block text-2xl font-black">{{ $fleet->count() }}</strong></article>
-        <article class="rounded-2xl bg-emerald-900 p-4 text-white"><span class="text-sm font-semibold text-emerald-100">Rutas</span><strong class="mt-1 block text-2xl font-black">{{ $publishedRouteCount }}</strong></article>
-        <article class="rounded-2xl bg-amber-400 p-4 text-emerald-950"><span class="text-sm font-semibold">Fotos</span><strong class="mt-1 block text-2xl font-black">{{ $gallery->count() }}</strong></article>
-        <article class="rounded-2xl bg-white p-4 text-emerald-950 shadow-sm"><span class="text-sm font-semibold text-emerald-700">Calificación</span><strong class="mt-1 block text-2xl font-black">{{ $reviews->count() ? number_format($average, 1) : '—' }}</strong></article>
+        <article class="flex items-center justify-between gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-white"><span class="text-xs font-bold uppercase tracking-wide text-emerald-100">Flota</span><strong class="text-xl font-black">{{ $fleet->count() }}</strong></article>
+        <article class="flex items-center justify-between gap-2 rounded-2xl bg-emerald-900 px-4 py-2.5 text-white"><span class="text-xs font-bold uppercase tracking-wide text-emerald-100">Rutas</span><strong class="text-xl font-black">{{ $publishedRouteCount }}</strong></article>
+        <article class="flex items-center justify-between gap-2 rounded-2xl bg-amber-400 px-4 py-2.5 text-emerald-950"><span class="text-xs font-bold uppercase tracking-wide">Fotos</span><strong class="text-xl font-black">{{ $gallery->count() }}</strong></article>
+        <article class="flex items-center justify-between gap-2 rounded-2xl bg-white px-4 py-2.5 text-emerald-950 shadow-sm"><span class="text-xs font-bold uppercase tracking-wide text-emerald-700">Calificación</span><strong class="text-xl font-black">{{ $reviews->count() ? number_format($average, 1) : '—' }}</strong></article>
     </div>
 
     <nav id="empresa-menu" class="company-tabs" aria-label="Secciones de la empresa">
@@ -117,40 +121,39 @@
         <button type="button" data-open="opiniones" class="company-tab">Testimonios{{ $reviews->count() ? ' ('.$reviews->count().')' : '' }}</button>
     </nav>
 
-    <section data-panel="informacion" class="company-panel mt-5 space-y-4">
-        <article class="rounded-3xl border-l-8 border-emerald-600 bg-white p-6 shadow-sm sm:p-8">
-            <h2 id="company-information-title" class="text-xl font-black text-emerald-950">Información de la empresa</h2>
-            <p class="mt-3 whitespace-pre-line text-base leading-7 text-slate-700">{{ $organization->public_description ?: 'Empresa de transporte autorizada en NavegaYA. Consulta aquí sus salidas, unidades registradas y canales oficiales de atención.' }}</p>
+    <section data-panel="informacion" class="company-panel mt-4 grid gap-2">
+        <article class="rounded-2xl border-l-4 border-emerald-600 bg-white px-4 py-2.5 shadow-sm">
+            <h2 id="company-information-title" class="text-sm font-black text-emerald-950">Información de la empresa</h2>
+            <p class="mt-0.5 whitespace-pre-line text-sm leading-5 text-slate-700">{{ $organization->public_description ?: 'Empresa de transporte autorizada en NavegaYA. Consulta aquí sus salidas, unidades registradas y canales oficiales de atención.' }}</p>
         </article>
-        <div class="grid gap-3 sm:grid-cols-2">
-            <article class="rounded-2xl bg-white p-5 shadow-sm"><span class="text-xs font-black uppercase tracking-wide text-emerald-700">Dirección</span><strong class="mt-2 block text-lg text-emerald-950">{{ $organization->address ?: $place }}</strong></article>
-            <article class="rounded-2xl bg-white p-5 shadow-sm"><span class="text-xs font-black uppercase tracking-wide text-amber-700">Atención</span><strong class="mt-2 block text-lg text-emerald-950">{{ $organization->phone ?: $organization->whatsapp ?: 'Consultar por canal oficial' }}</strong>@if($organization->service_hours)<span class="mt-1 block text-sm text-slate-600">{{ $organization->service_hours }}</span>@endif</article>
-            <article class="rounded-2xl bg-emerald-800 p-5 text-white"><span class="text-xs font-black uppercase tracking-wide text-emerald-200">Razón social</span><strong class="mt-2 block text-lg">{{ $organization->legal_name }}</strong><span class="mt-1 block text-sm text-emerald-100">RUC {{ $organization->ruc ?: 'validado' }}</span></article>
-            <article class="rounded-2xl bg-amber-400 p-5 text-emerald-950"><span class="text-xs font-black uppercase tracking-wide">{{ $hasAir && ! $hasRiver ? 'Terminal' : 'Muelle' }}</span><strong class="mt-2 block text-lg">{{ $place }}</strong><span class="mt-1 block text-sm">{{ $hasAir && ! $hasRiver ? 'MTC / DGAC' : 'MTC / Capitanía de Puerto' }}</span></article>
+        <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <article class="company-fact bg-white shadow-sm"><span class="text-emerald-700">Dirección</span><strong class="text-emerald-950">{{ $organization->address ?: $place }}</strong></article>
+            <article class="company-fact bg-white shadow-sm"><span class="text-amber-700">Atención</span><strong class="text-emerald-950">{{ $organization->phone ?: $organization->whatsapp ?: 'Canal oficial' }}</strong>@if($organization->service_hours)<span class="is-quiet text-slate-500">{{ $organization->service_hours }}</span>@endif</article>
+            <article class="company-fact bg-emerald-800 text-white"><span class="text-emerald-200">Razón social</span><strong>{{ $organization->legal_name }}</strong><span class="is-quiet text-emerald-100">RUC {{ $organization->ruc ?: 'validado' }}</span></article>
+            <article class="company-fact bg-amber-400 text-emerald-950"><span>{{ $hasAir && ! $hasRiver ? 'Terminal' : 'Muelle' }}</span><strong>{{ $place }}</strong><span class="is-quiet">{{ $hasAir && ! $hasRiver ? 'MTC / DGAC' : 'MTC / Capitanía' }}</span></article>
+        </div>
+        <div class="grid gap-2 lg:grid-cols-2">
+            <article class="rounded-2xl bg-white px-4 py-2.5 text-sm leading-5 text-slate-700 shadow-sm"><strong class="text-emerald-950">Para viajar. </strong>Llega con el documento y el boleto digital. Una maleta de hasta 15 kg va incluida.</article>
+            <article class="flex items-center justify-between gap-3 rounded-2xl bg-emerald-900 px-4 py-2.5 text-sm leading-5 text-emerald-50"><span><strong class="text-amber-300">Cómo llegar. </strong>{{ $place }}@if($dock?->city), {{ $dock->city }}@endif. Mototaxi S/ 7 a S/ 12.</span><a target="_blank" rel="noopener" href="https://maps.google.com/?q={{ urlencode($place.', '.($dock?->city ?: 'Loreto, Perú')) }}" class="inline-flex h-8 shrink-0 items-center rounded-full bg-amber-400 px-3 text-xs font-black text-emerald-950">Mapa</a></article>
         </div>
         @if($organization->website)
-            <a href="{{ $organization->website }}" target="_blank" rel="noopener" class="inline-flex h-11 items-center rounded-full bg-white px-4 text-sm font-bold text-emerald-800 shadow-sm">Visitar sitio oficial</a>
+            <a href="{{ $organization->website }}" target="_blank" rel="noopener" class="inline-flex h-9 w-fit items-center rounded-full bg-white px-4 text-sm font-bold text-emerald-800 shadow-sm">Sitio oficial</a>
         @endif
-        <div class="grid gap-3 sm:grid-cols-2">
-            <article class="rounded-2xl bg-white p-5 text-sm leading-6 text-slate-700 shadow-sm"><strong class="mb-2 block text-emerald-950">Para viajar</strong>Llega con anticipación, lleva el documento físico y aborda con el boleto digital. El equipaje de mano y una maleta de hasta 15 kg van incluidos; confirma cargas especiales con la empresa.</article>
-            <article class="rounded-2xl bg-emerald-900 p-5 text-sm leading-6 text-emerald-50 shadow-sm"><strong class="mb-2 block text-amber-300">Cómo llegar</strong>Pide que te dejen en {{ $place }}@if($dock?->city), {{ $dock->city }}@endif. Un mototaxi desde el centro suele costar entre S/ 7 y S/ 12.<a target="_blank" rel="noopener" href="https://maps.google.com/?q={{ urlencode($place.', '.($dock?->city ?: 'Loreto, Perú')) }}" class="mt-3 inline-flex rounded-full bg-amber-400 px-3 py-1.5 text-xs font-black text-emerald-950">Abrir mapa</a></article>
-        </div>
-        <section class="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
-            <h3 class="text-lg font-black text-emerald-950">Encomiendas</h3>
-            <p class="mt-1 text-sm text-slate-600">Una referencia para cotizar. El operador confirma el precio final.</p>
-            <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <button type="button" data-cargo="sobre" class="rounded-2xl bg-emerald-50 p-4 text-left font-bold text-emerald-900">Sobre</button>
-                <button type="button" data-cargo="caja" class="is-on rounded-2xl bg-emerald-700 p-4 text-left font-bold text-white">Caja</button>
-                <button type="button" data-cargo="saco" class="rounded-2xl bg-emerald-50 p-4 text-left font-bold text-emerald-900">Bulto</button>
+        <section class="rounded-2xl bg-white px-4 py-2.5 shadow-sm">
+            <div class="flex flex-wrap items-center gap-2">
+                <h3 class="mr-1 text-sm font-black text-emerald-950">Encomiendas</h3>
+                <button type="button" data-cargo="sobre" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Sobre</button>
+                <button type="button" data-cargo="caja" class="is-on h-9 rounded-full bg-emerald-700 px-3 text-sm font-bold text-white">Caja</button>
+                <button type="button" data-cargo="saco" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Bulto</button>
+                <span class="ml-auto text-sm font-bold text-emerald-950"><span id="cargo-weight">5 kg</span> · S/ <span id="cargo-price">20.00</span></span>
+                @if($supportNumber)
+                    <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola, deseo confirmar una cotización de caja de aproximadamente 5 kg con '.$name.'.') }}" class="inline-flex h-9 items-center rounded-full bg-amber-400 px-3 text-sm font-black text-emerald-950">WhatsApp</a>
+                @endif
             </div>
-            <div class="mt-4 flex items-center justify-between gap-4 rounded-2xl bg-amber-50 p-4"><span class="text-sm font-bold text-emerald-950">Peso <span id="cargo-weight">5 kg</span></span><strong class="text-2xl font-black text-emerald-800">S/ <span id="cargo-price">20.00</span></strong></div>
-            <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-3 w-full accent-emerald-700">
-            @if($supportNumber)
-                <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola, deseo confirmar una cotización de caja de aproximadamente 5 kg con '.$name.'.') }}" class="mt-3 inline-flex h-11 items-center rounded-full bg-amber-400 px-5 text-sm font-black text-emerald-950">Confirmar por WhatsApp</a>
-            @endif
+            <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-2 w-full accent-emerald-700">
         </section>
         @auth
-            <details class="rounded-2xl bg-white p-4 text-sm text-slate-500 shadow-sm">
+            <details class="rounded-2xl bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
                 <summary class="cursor-pointer font-bold text-slate-600">Reportar esta ficha</summary>
                 <form method="POST" action="{{ route('companies.profile.report', $organization) }}" class="mt-3 space-y-2">
                     @csrf
