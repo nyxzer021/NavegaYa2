@@ -2,6 +2,10 @@
 @section('title', 'Ficha pública')
 @section('page-title', 'Ficha pública')
 @section('content')
+<style>
+    .ficha-menu-preview{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;padding:.4rem;border:2px solid var(--menu-stroke,#fbbf24);border-radius:999px;background:var(--menu-bar,#062c21)}
+    .ficha-menu-preview span{display:inline-flex;min-height:2.4rem;align-items:center;white-space:nowrap;border:2px solid transparent;border-radius:999px;padding:.3rem .85rem;font-size:.85rem;font-weight:800}
+</style>
 <div class="mx-auto max-w-5xl space-y-5">
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -44,6 +48,56 @@
             </label>
         </div>
         <p class="text-sm text-slate-500">Las embarcaciones y aeronaves se publican desde Flota y capacidad. Aquí solo completas la presentación.</p>
+
+        <section class="space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+            <div>
+                <h3 class="text-lg font-black text-slate-950">Colores del menú</h3>
+                <p class="mt-1 text-sm text-slate-500">Cada pestaña muestra el color con el que se verá activa en la ficha. El menú de arriba del sitio no cambia.</p>
+            </div>
+            <div id="ficha-menu-preview" class="ficha-menu-preview" aria-hidden="true">
+                @foreach($colorFields as $group)
+                    @if($group['key'])
+                        <span data-preview="{{ $group['key'] }}">{{ $group['title'] }}</span>
+                    @endif
+                @endforeach
+            </div>
+            <button type="button" id="restore-brand-colors" class="inline-flex min-h-11 items-center rounded-xl border border-emerald-800 px-4 text-sm font-bold text-emerald-900">Volver a los colores de NavegaYA</button>
+            <div class="grid gap-4">
+                @foreach($colorFields as $group)
+                    <fieldset class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <legend class="px-1 text-sm font-black text-slate-950">{{ $group['title'] }}</legend>
+                        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                            @foreach($group['fields'] as $name => $label)
+                                @php
+                                    $colorValue = old($name, \App\Support\CompanyPublicPresentation::valueFor($presentation, $name));
+                                @endphp
+                                <label class="text-sm font-semibold text-slate-700">{{ $label }}
+                                    <span class="mt-1 flex items-center gap-2">
+                                        <input type="color" data-color-for="{{ $name }}" value="{{ $colorValue }}" class="h-11 w-14 cursor-pointer rounded-lg border border-slate-200 bg-white p-1">
+                                        <input data-hex name="{{ $name }}" value="{{ $colorValue }}" maxlength="7" spellcheck="false" class="h-11 w-full rounded-xl border-slate-200 font-mono text-sm">
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </fieldset>
+                @endforeach
+            </div>
+        </section>
+
+        <section class="space-y-3 rounded-2xl border border-slate-200 p-4">
+            <h3 class="text-lg font-black text-slate-950">Encomiendas</h3>
+            <p class="text-sm text-slate-500">Precio de referencia para menos de 25 kg. Desde 25 kg el viajero ve el aviso y el botón Cotizar carga abre el WhatsApp de la empresa.</p>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <label class="text-sm font-semibold text-slate-700">Pequeño<input type="number" name="cargo_pequeno" min="0" max="9999" step="0.01" value="{{ old('cargo_pequeno', $presentation['cargo']['pequeno']) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
+                <label class="text-sm font-semibold text-slate-700">Mediano<input type="number" name="cargo_mediano" min="0" max="9999" step="0.01" value="{{ old('cargo_mediano', $presentation['cargo']['mediano']) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
+                <label class="text-sm font-semibold text-slate-700">Grande<input type="number" name="cargo_grande" min="0" max="9999" step="0.01" value="{{ old('cargo_grande', $presentation['cargo']['grande']) }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm"></label>
+            </div>
+            <label class="block text-sm font-semibold text-slate-700">Aviso desde 25 kg
+                <input name="cargo_port_note" maxlength="180" value="{{ old('cargo_port_note', $presentation['cargo']['port_note']) }}" placeholder="Desde 25 kg se cotiza en el puerto de embarque." class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm">
+                <span class="mt-1 block text-xs font-normal text-slate-500">Si lo dejas vacío, se usa el nombre del muelle.</span>
+            </label>
+        </section>
+
         <button class="inline-flex min-h-11 items-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Guardar ficha</button>
     </form>
 
@@ -70,4 +124,54 @@
         </div>
     </section>
 </div>
+<script>
+    (function () {
+        var preview = document.getElementById('ficha-menu-preview');
+        var restore = document.getElementById('restore-brand-colors');
+        if (!preview || !restore) return;
+        var brand = @json($brandColors);
+        function field(name) {
+            return document.querySelector('[data-hex][name="' + name + '"]');
+        }
+        function read(name) {
+            var input = field(name);
+            var value = input ? input.value.trim() : '';
+            return /^#[0-9A-Fa-f]{6}$/.test(value) ? value : brand[name];
+        }
+        function paintPreview() {
+            preview.style.setProperty('--menu-bar', read('menu_bar'));
+            preview.style.setProperty('--menu-stroke', read('menu_stroke'));
+            preview.querySelectorAll('[data-preview]').forEach(function (tab) {
+                var key = tab.getAttribute('data-preview');
+                tab.style.background = read('tab_' + key + '_bg');
+                tab.style.borderColor = read('tab_' + key + '_border');
+                tab.style.color = read('tab_' + key + '_text');
+            });
+        }
+        function write(name, value) {
+            var input = field(name);
+            var picker = document.querySelector('[data-color-for="' + name + '"]');
+            if (input) input.value = value;
+            if (picker) picker.value = value;
+        }
+        document.querySelectorAll('[data-color-for]').forEach(function (picker) {
+            picker.addEventListener('input', function () {
+                write(picker.getAttribute('data-color-for'), picker.value);
+                paintPreview();
+            });
+        });
+        document.querySelectorAll('[data-hex]').forEach(function (input) {
+            input.addEventListener('input', function () {
+                var picker = document.querySelector('[data-color-for="' + input.name + '"]');
+                if (picker && /^#[0-9A-Fa-f]{6}$/.test(input.value.trim())) picker.value = input.value.trim();
+                paintPreview();
+            });
+        });
+        restore.addEventListener('click', function () {
+            Object.keys(brand).forEach(function (name) { write(name, brand[name]); });
+            paintPreview();
+        });
+        paintPreview();
+    }());
+</script>
 @endsection

@@ -6,16 +6,16 @@
     .company-stat strong{display:block;font-size:1.25rem;line-height:1.1;color:#022c22}
     .company-stat strong.is-empty{font-size:.95rem}
     .company-stat em{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}
-    .company-tabs{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem;margin-top:1.25rem;padding:.4rem;border:2px solid #fbbf24;border-radius:999px;background:#062c21;box-shadow:0 8px 18px rgba(6,44,33,.18);scrollbar-width:none}
+    .company-tabs{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem;margin-top:1.25rem;padding:.4rem;border:2px solid var(--menu-stroke,#fbbf24);border-radius:999px;background:var(--menu-bar,#062c21);box-shadow:0 8px 18px rgba(6,44,33,.18);scrollbar-width:none}
     .company-tabs::-webkit-scrollbar{display:none}
     .company-tab{display:inline-flex;min-height:2.6rem;align-items:center;white-space:nowrap;border:2px solid transparent;border-radius:999px;background:transparent;padding:.35rem .95rem;font-size:.9rem;font-weight:800;color:#d1fae5;cursor:pointer}
     .company-tab:hover{background:rgba(255,255,255,.12);color:#fff}
-    .company-tab:focus-visible{outline:2px solid #fbbf24;outline-offset:2px}
-    .company-tab[data-open="informacion"].is-on{background:#ecfdf5;border-color:#6ee7b7;color:#064e3b}
-    .company-tab[data-open="galeria"].is-on{background:#e0f2fe;border-color:#38bdf8;color:#0c4a6e}
-    .company-tab[data-open="flota"].is-on{background:#d1fae5;border-color:#047857;color:#064e3b}
-    .company-tab[data-open="salidas"].is-on{background:#fbbf24;border-color:#f59e0b;color:#022c22}
-    .company-tab[data-open="opiniones"].is-on{background:#fffbeb;border-color:#fbbf24;color:#78350f}
+    .company-tab:focus-visible{outline:2px solid var(--menu-stroke,#fbbf24);outline-offset:2px}
+    .company-tab[data-open="informacion"].is-on{background:var(--tab-informacion-bg,#ecfdf5);border-color:var(--tab-informacion-border,#6ee7b7);color:var(--tab-informacion-text,#064e3b)}
+    .company-tab[data-open="galeria"].is-on{background:var(--tab-galeria-bg,#e0f2fe);border-color:var(--tab-galeria-border,#38bdf8);color:var(--tab-galeria-text,#0c4a6e)}
+    .company-tab[data-open="flota"].is-on{background:var(--tab-flota-bg,#d1fae5);border-color:var(--tab-flota-border,#047857);color:var(--tab-flota-text,#064e3b)}
+    .company-tab[data-open="salidas"].is-on{background:var(--tab-salidas-bg,#fbbf24);border-color:var(--tab-salidas-border,#f59e0b);color:var(--tab-salidas-text,#022c22)}
+    .company-tab[data-open="opiniones"].is-on{background:var(--tab-opiniones-bg,#fffbeb);border-color:var(--tab-opiniones-border,#fbbf24);color:var(--tab-opiniones-text,#78350f)}
     .company-cargo{border:2px solid #047857;border-radius:1rem;background:#f0fdf4;padding:.9rem 1rem}
     .company-cargo-note{margin-top:.55rem;font-size:.85rem;font-weight:700;color:#065f46}
     .company-cargo-note.is-port{color:#9a3412}
@@ -48,6 +48,8 @@
 </style>
 @php
     $name = $organization->commercial_name ?: $organization->legal_name;
+    $presentation = \App\Support\CompanyPublicPresentation::forOrganization($organization);
+    $menuStyle = \App\Support\CompanyPublicPresentation::menuStyle($presentation);
     $ports = $organization->transportRoutes->flatMap(fn ($route) => collect([$route->originPort, $route->destinationPort]))->filter()->unique('id')->values();
     $riverDepartures = $organization->transportRoutes->flatMap(fn ($route) => $route->departures->map(fn ($departure) => [
         'mode' => 'river', 'departure' => $departure,
@@ -121,7 +123,7 @@
         : null;
 @endphp
 
-<div class="bg-slate-50 pb-16" id="company-ficha">
+<div class="bg-slate-50 pb-16" id="company-ficha" style="{{ $menuStyle }}">
 <main class="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
     <a href="{{ route('companies.index') }}" class="mb-4 inline-flex text-sm font-bold text-emerald-800">← Empresas</a>
     @if(session('success'))<div class="mb-4 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-semibold text-white">{{ session('success') }}</div>@endif
@@ -237,13 +239,13 @@
                 <a target="_blank" rel="noopener" href="https://maps.google.com/?q={{ urlencode($mapQuery) }}" class="company-map">Ver mapa</a>
             </article>
         @endif
-        <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}">
+        <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}" data-price-pequeno="{{ number_format($presentation['cargo']['pequeno'], 2, '.', '') }}" data-price-mediano="{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}" data-price-grande="{{ number_format($presentation['cargo']['grande'], 2, '.', '') }}" data-port-note="{{ $presentation['cargo']['port_note'] }}">
             <div class="flex flex-wrap items-center gap-2">
                 <h3 class="mr-1 text-sm font-black text-emerald-950">Encomiendas</h3>
                 <button type="button" data-cargo="pequeno" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Pequeño</button>
                 <button type="button" data-cargo="mediano" class="is-on h-9 rounded-full bg-emerald-700 px-3 text-sm font-bold text-white">Mediano</button>
                 <button type="button" data-cargo="grande" class="h-9 rounded-full bg-emerald-50 px-3 text-sm font-bold text-emerald-900">Grande</button>
-                <span id="cargo-quote" class="ml-auto text-sm font-bold text-emerald-950"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">20.00</span></span></span>
+                <span id="cargo-quote" class="ml-auto text-sm font-bold text-emerald-950"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}</span></span></span>
                 @if($supportNumber)
                     <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote">Cotizar carga</a>
                 @endif
@@ -435,10 +437,15 @@
         var cargoType = 'mediano';
         var cargoWeight = 5;
         var cargoLabels = { pequeno: 'pequeña', mediano: 'mediana', grande: 'grande' };
+        var cargoBox = root.querySelector('.company-cargo');
+        var cargoBases = {
+            pequeno: cargoBox ? Number(cargoBox.getAttribute('data-price-pequeno')) : 15,
+            mediano: cargoBox ? Number(cargoBox.getAttribute('data-price-mediano')) : 20,
+            grande: cargoBox ? Number(cargoBox.getAttribute('data-price-grande')) : 35
+        };
         function price() {
-            if (cargoType === 'pequeno') return 15 + Math.max(0, cargoWeight - 2) * 1.5;
-            if (cargoType === 'mediano') return 20 + Math.max(0, cargoWeight - 5) * 2;
-            return 35 + Math.max(0, cargoWeight - 15) * 1.5;
+            var amount = cargoBases[cargoType];
+            return Number.isFinite(amount) ? amount : 20;
         }
         function paintCargo() {
             var weight = document.getElementById('cargo-weight');
@@ -446,8 +453,9 @@
             var amountWrap = document.getElementById('cargo-amount');
             var note = document.getElementById('cargo-note');
             var link = document.getElementById('cargo-whatsapp');
-            var cargoBox = root.querySelector('.company-cargo');
             var port = cargoBox ? cargoBox.getAttribute('data-port') : 'el puerto de embarque';
+            var customPortNote = cargoBox ? (cargoBox.getAttribute('data-port-note') || '') : '';
+            var portSentence = customPortNote || ('Desde 25 kg se cotiza en ' + port + '.');
             var atPort = cargoWeight >= 25;
             var label = cargoLabels[cargoType] || cargoType;
             if (weight) weight.textContent = cargoWeight + ' kg';
@@ -456,7 +464,7 @@
             if (note) {
                 note.classList.toggle('is-port', atPort);
                 note.textContent = atPort
-                    ? 'Desde 25 kg se cotiza en ' + port + '.'
+                    ? portSentence
                     : 'Referencia para cotizar. La empresa confirma el precio final.';
             }
             root.querySelectorAll('[data-cargo]').forEach(function (button) {
@@ -468,7 +476,7 @@
             });
             if (link) {
                 var text = atPort
-                    ? 'Hola, deseo cotizar una carga ' + label + ' de aproximadamente ' + cargoWeight + ' kg. Desde 25 kg se cotiza en ' + port + '.'
+                    ? 'Hola, deseo cotizar una carga ' + label + ' de aproximadamente ' + cargoWeight + ' kg. ' + portSentence
                     : 'Hola, deseo cotizar una carga ' + label + ' de aproximadamente ' + cargoWeight + ' kg.';
                 link.href = link.href.split('?')[0] + '?text=' + encodeURIComponent(text);
             }

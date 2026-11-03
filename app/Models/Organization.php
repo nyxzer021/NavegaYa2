@@ -19,7 +19,7 @@ class Organization extends Model
         'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
         'bank_name', 'bank_account', 'bank_cci',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
-        'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path', 'profile_content_status',
+        'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path', 'profile_content_status', 'public_presentation',
     ];
 
     protected function casts(): array
@@ -29,6 +29,7 @@ class Organization extends Model
             'contact_verified_at' => 'datetime',
             'is_marketplace_paused' => 'boolean',
             'show_public_whatsapp' => 'boolean',
+            'public_presentation' => 'array',
             'commission_rate' => 'decimal:2',
             'commission_starts_on' => 'date',
             'commission_ends_on' => 'date',
