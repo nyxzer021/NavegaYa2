@@ -30,6 +30,13 @@ class CompanyFleetController extends BaseCompanyFleetController
         return parent::storeAircraft($request);
     }
 
+    public function updateTransport(Request $request): RedirectResponse
+    {
+        $this->authorizeManager();
+
+        return parent::updateTransport($request);
+    }
+
     private function authorizeManager(): void
     {
         abort_unless(auth()->user()->roles()->where('code', 'company_admin')->exists(), 403);

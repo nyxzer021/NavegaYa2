@@ -3,11 +3,14 @@
     $isAir = $departure instanceof \App\Models\AirDeparture;
     $route = $isAir ? $departure->airRoute : $departure->transportRoute;
     $vehicle = $isAir ? $departure->aircraft : $departure->vessel;
-    $organization = $vehicle->organization;
+    $organization = $vehicle?->organization;
+@endphp
+@if($route && $vehicle && $organization && $departure->departure_at)
+@php
     $operator = $organization->commercial_name ?: $organization->legal_name;
-    $origin = $isAir ? $route->origin_city : $route->originPort->city;
-    $destination = $isAir ? $route->destination_city : $route->destinationPort->city;
-    $terminal = $isAir ? 'Terminal aéreo regional' : $route->originPort->name;
+    $origin = $isAir ? ($route->origin_city ?: '—') : ($route->originPort?->city ?: '—');
+    $destination = $isAir ? ($route->destination_city ?: '—') : ($route->destinationPort?->city ?: '—');
+    $terminal = $isAir ? 'Terminal aéreo regional' : ($route->originPort?->name ?: 'Muelle');
     $duration = (int) ($route->estimated_duration_minutes ?: 0);
     $arrival = $duration ? $departure->departure_at->copy()->addMinutes($duration) : $departure->estimated_arrival_at;
     $hours = intdiv($duration, 60);
@@ -42,3 +45,4 @@
 </div>
 </div>
 </article>
+@endif

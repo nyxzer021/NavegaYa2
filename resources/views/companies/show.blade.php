@@ -15,8 +15,8 @@
     $name = $organization->commercial_name ?: $organization->legal_name;
     $ports = $organization->transportRoutes->flatMap(fn ($route) => collect([$route->originPort, $route->destinationPort]))->filter()->unique('id')->values();
     $riverDepartures = $organization->transportRoutes->flatMap(fn ($route) => $route->departures->map(fn ($departure) => [
-        'mode' => 'river', 'departure' => $departure, 'origin' => $route->originPort->city,
-        'destination' => $route->destinationPort->city, 'terminal' => $route->originPort->name,
+        'mode' => 'river', 'departure' => $departure,         'origin' => $route->originPort?->city ?? '—',
+        'destination' => $route->destinationPort?->city ?? '—', 'terminal' => $route->originPort?->name ?? 'Muelle',
         'vehicle' => $departure->vessel, 'duration' => $route->estimated_duration_minutes,
     ]));
     $airDepartures = $organization->airRoutes->flatMap(fn ($route) => $route->departures->map(fn ($departure) => [
@@ -25,7 +25,7 @@
         'vehicle' => $departure->aircraft, 'duration' => $route->estimated_duration_minutes,
     ]));
     $departures = $riverDepartures->concat($airDepartures)
-        ->filter(fn ($item) => $item['departure']->departure_at?->isFuture() && in_array($item['departure']->status, ['scheduled', 'boarding']))
+        ->filter(fn ($item) => $item['vehicle'] && $item['departure']->departure_at?->isFuture() && in_array($item['departure']->status, ['scheduled', 'boarding']))
         ->sortBy(fn ($item) => $item['departure']->departure_at)->values();
     $hasRiver = $organization->transportRoutes->isNotEmpty() || $organization->vessels->isNotEmpty();
     $hasAir = $organization->airRoutes->isNotEmpty() || $organization->aircraft->isNotEmpty();
@@ -36,6 +36,11 @@
     $profilePublished = ($organization->profile_content_status ?? 'published') === 'published';
     $gallery = collect();
     if ($profilePublished && $organization->cover_image_path) $gallery->push(['src' => $organization->cover_image_path, 'alt' => 'Portada de '.$name]);
+    if ($profilePublished) {
+        foreach ($organization->photos as $photo) {
+            $gallery->push(['src' => $photo->path, 'alt' => $photo->caption ?: 'Foto de '.$name]);
+        }
+    }
     if ($profilePublished && $organization->logo_path) $gallery->push(['src' => $organization->logo_path, 'alt' => 'Logo de '.$name]);
     foreach ($fleet as $fleetItem) {
         if ($fleetItem['unit']->cover_image_path) $gallery->push(['src' => $fleetItem['unit']->cover_image_path, 'alt' => $fleetItem['unit']->name]);
@@ -43,6 +48,11 @@
     $gallery = $gallery->unique('src')->values();
     $dock = $ports->first();
     $supportNumber = $organization->show_public_whatsapp ? \App\Support\PhoneNumber::peru($organization->whatsapp ?: $organization->phone) : null;
+    $whatsappText = $organization->whatsapp_message ?: 'Hola, deseo información de '.$name.'.';
+    $publishedRouteCount = $organization->transportRoutes->count() + $organization->airRoutes->count();
+    $ownComment = auth()->check()
+        ? $reviews->first(fn ($review) => (int) $review->user_id === (int) auth()->id() && $review->reservation_id === null)
+        : null;
 @endphp
 
 <div class="min-h-screen bg-slate-50 pb-20">
@@ -57,19 +67,65 @@
     @if(session('success'))<div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-900">✓ {{session('success')}}</div>@endif
     @if($errors->any())<div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800"><strong>No pudimos enviar la opinión:</strong><ul class="mt-1 list-disc pl-5">@foreach($errors->all() as $error)<li>{{$error}}</li>@endforeach</ul></div>@endif
 
-    <section class="mb-8 overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xl">
-        <div class="relative flex min-h-[240px] items-center bg-[#062c21] px-6 py-10 text-white sm:px-10">
-            <img src="{{($organization->profile_content_status ?? 'published') === 'published' && $organization->cover_image_path ? $organization->cover_image_path : asset('images/navegaya-hero-rio.png')}}" alt="Operaciones de {{$name}}" class="absolute inset-0 h-full w-full object-cover opacity-25">
-            <div class="absolute inset-0 bg-gradient-to-r from-[#062c21] via-emerald-950/95 to-slate-900/80"></div>
-            <div class="relative z-10 flex w-full flex-col justify-between gap-6 md:flex-row md:items-center">
-                <div class="flex items-center gap-4">
-                    <div class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-emerald-400/40 bg-white p-2 text-2xl font-black text-emerald-950 shadow-lg sm:h-20 sm:w-20">@if(($organization->profile_content_status ?? 'published') === 'published' && $organization->logo_path)<img src="{{$organization->logo_path}}" alt="Logo de {{$name}}" class="h-full w-full object-contain">@else{{$hasAir&&!$hasRiver?'✈️':'🚤'}}@endif</div>
-                    <div><div class="flex flex-wrap items-center gap-2"><h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">{{$name}}</h1><span class="rounded-full border border-emerald-400/30 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-300">✓ {{$hasAir&&!$hasRiver?'Operador aéreo verificado':'Operador verificado DICAPI'}}</span>@if($reviews->count())<span class="rounded-full border border-amber-300/30 bg-amber-400/15 px-2.5 py-1 text-[10px] font-bold text-amber-300">★ {{number_format($average,1)}} / 5 · {{$reviews->count()}} opinión(es)</span>@endif</div><p class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-emerald-100/80"><span>📍 Base: <strong>{{$dock?->name ?: ($organization->address ?: 'Loreto, Perú')}}</strong></span><span>RUC: <strong>{{$organization->ruc ?: 'Registro validado'}}</strong></span><span>{{$operatorMode}}</span></p></div>
+    <section class="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="relative h-52 bg-[#062c21] sm:h-72">
+            <img src="{{ $profilePublished && $organization->cover_image_path ? $organization->cover_image_path : asset('images/navegaya-hero-rio.png') }}" alt="Operaciones de {{ $name }}" class="h-full w-full object-cover">
+        </div>
+        <div class="px-5 pb-6 sm:px-8">
+            <div class="-mt-8 flex flex-col gap-4 sm:-mt-10 sm:flex-row sm:items-end sm:justify-between">
+                <div class="flex items-end gap-4">
+                    <div class="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-white text-2xl font-black text-emerald-950 shadow-md sm:h-24 sm:w-24">
+                        @if($profilePublished && $organization->logo_path)
+                            <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}" class="h-full w-full object-contain">
+                        @else
+                            {{ $hasAir && ! $hasRiver ? '✈️' : '🚤' }}
+                        @endif
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-2.5">@auth<details class="relative"><summary class="flex h-11 cursor-pointer list-none items-center rounded-xl border border-white/20 bg-white/10 px-3 text-[10px] font-bold text-white">⚑ Reportar perfil</summary><form method="POST" action="{{route('companies.profile.report',$organization)}}" class="absolute right-0 z-30 mt-2 w-64 space-y-2 rounded-2xl bg-white p-4 text-slate-700 shadow-2xl">@csrf<select name="reason" required class="w-full rounded-lg border-slate-200 text-xs"><option value="inappropriate">Imagen inapropiada</option><option value="false_information">Información falsa</option><option value="copyright">Derechos de autor</option><option value="other">Otro motivo</option></select><textarea name="details" rows="2" placeholder="Describe el problema" class="w-full rounded-lg border-slate-200 text-xs"></textarea><button class="w-full rounded-lg bg-rose-600 py-2 text-xs font-black text-white">Enviar reporte</button></form></details>@endauth @if($supportNumber)<a target="_blank" rel="noopener" href="https://wa.me/{{$supportNumber}}?text={{urlencode('Hola, solicito información sobre las salidas de '.$name)}}" class="flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700">💬 WhatsApp boletería</a>@endif @if($organization->phone)<a href="tel:{{preg_replace('/[^\d+]/','',$organization->phone)}}" class="flex h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-bold text-white transition hover:bg-white/20">📞 Central</a>@endif</div>
+                <div class="flex flex-wrap gap-2">
+                    @if($supportNumber)
+                        <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="inline-flex h-11 items-center rounded-full bg-emerald-700 px-4 text-sm font-bold text-white">Contactar por WhatsApp</a>
+                    @endif
+                    <a href="#salidas" class="inline-flex h-11 items-center rounded-full bg-[#062c21] px-4 text-sm font-bold text-white">Ver salidas</a>
+                    @if($organization->phone)
+                        <a href="tel:{{ preg_replace('/[^\d+]/', '', $organization->phone) }}" class="inline-flex h-11 items-center rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-700">Llamar</a>
+                    @endif
+                    @auth
+                        <details class="relative">
+                            <summary class="inline-flex h-11 cursor-pointer list-none items-center rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-500">Reportar</summary>
+                            <form method="POST" action="{{ route('companies.profile.report', $organization) }}" class="absolute right-0 z-30 mt-2 w-64 space-y-2 rounded-2xl border border-slate-200 bg-white p-4 text-slate-700 shadow-xl">
+                                @csrf
+                                <select name="reason" required class="w-full rounded-lg border-slate-200 text-xs"><option value="inappropriate">Imagen inapropiada</option><option value="false_information">Información falsa</option><option value="copyright">Derechos de autor</option><option value="other">Otro motivo</option></select>
+                                <textarea name="details" rows="2" placeholder="Describe el problema" class="w-full rounded-lg border-slate-200 text-xs"></textarea>
+                                <button class="w-full rounded-lg bg-rose-600 py-2 text-xs font-black text-white">Enviar reporte</button>
+                            </form>
+                        </details>
+                    @endauth
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h1 class="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{{ $name }}</h1>
+                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">Empresa verificada</span>
+                </div>
+                <p class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500">
+                    <span>{{ $dock?->name ?: ($organization->address ?: 'Loreto, Perú') }}</span>
+                    <span>RUC {{ $organization->ruc ?: 'validado' }}</span>
+                    <span>{{ $operatorMode }}</span>
+                    @if($organization->service_hours)
+                        <span>Horario: {{ $organization->service_hours }}</span>
+                    @endif
+                </p>
             </div>
         </div>
-        <div class="operator-metrics divide-slate-100 bg-slate-50 text-center text-xs sm:divide-x"><div class="p-4"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700"><i class="h-2 w-2 rounded-full bg-emerald-500"></i>Modalidad habilitada</span><strong class="mt-1 block text-sm text-slate-900">{{$operatorMode}}</strong></div><div class="p-4"><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Flota publicada</span><strong class="mt-1 block text-sm text-slate-900">{{$fleet->count()}} {{$fleet->count() === 1 ? 'unidad' : 'unidades'}}</strong></div><div class="p-4"><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Rutas registradas</span><strong class="mt-1 block text-sm text-emerald-700">@php($publishedRouteCount = $organization->transportRoutes->count() + $organization->airRoutes->count()){{$publishedRouteCount}} {{$publishedRouteCount === 1 ? 'ruta' : 'rutas'}}</strong></div><div class="p-4"><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Abordaje</span><strong class="mt-1 block text-sm text-slate-900">DNI físico o código QR</strong></div></div>
+        <div class="operator-metrics border-t border-slate-100 text-center text-sm"><div class="p-4"><span class="block text-sm font-semibold text-slate-500">Flota</span><strong class="mt-1 block text-lg text-slate-950">{{ $fleet->count() }}</strong></div><div class="p-4"><span class="block text-sm font-semibold text-slate-500">Rutas</span><strong class="mt-1 block text-lg text-slate-950">{{ $publishedRouteCount }}</strong></div><div class="p-4"><span class="block text-sm font-semibold text-slate-500">Fotos</span><strong class="mt-1 block text-lg text-slate-950">{{ $gallery->count() }}</strong></div><div class="p-4"><span class="block text-sm font-semibold text-slate-500">Calificación</span><strong class="mt-1 block text-lg text-slate-950">{{ $reviews->count() ? number_format($average, 1) : '—' }}</strong></div></div>
+        @if($gallery->isNotEmpty())
+            <div class="grid grid-cols-2 gap-2 p-4 sm:grid-cols-4">
+                @foreach($gallery->take(4) as $image)
+                    <img src="{{ $image['src'] }}" alt="{{ $image['alt'] }}" class="h-36 w-full rounded-2xl object-cover sm:h-44">
+                @endforeach
+            </div>
+        @endif
     </section>
 
     <div class="operator-layout">
@@ -130,13 +186,24 @@
                     <div class="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-white p-6">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Experiencias verificadas</span>
                         <h2 class="mt-1 text-lg font-extrabold text-slate-900">Comparte tu experiencia de viaje</h2>
-                        <p class="mt-1 text-xs leading-relaxed text-slate-500">Cada opinión queda vinculada a una reserva completada y pasa por moderación antes de publicarse.</p>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-500">Cualquier viajero con cuenta puede comentar. Si ya viajaste, también puedes calificar esa reserva.</p>
                     </div>
                     <div class="p-6">
                         @guest
-                            <div class="flex flex-col justify-between gap-4 rounded-2xl bg-slate-50 p-5 sm:flex-row sm:items-center"><div><strong class="text-sm text-slate-900">Inicia sesión para verificar tu viaje</strong><p class="mt-1 text-xs text-slate-500">Usa la cuenta asociada al correo de tu reserva.</p></div><a href="{{route('login')}}" class="shrink-0 rounded-xl bg-[#062c21] px-5 py-3 text-center text-xs font-black text-white">Iniciar sesión</a></div>
-                        @else
-                            @forelse($completedReservations as $reservation)
+                            <div class="mb-5 flex flex-col justify-between gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center"><p class="text-sm text-slate-600">Inicia sesión para comentar esta empresa.</p><a href="{{ route('login') }}" class="inline-flex min-h-10 items-center rounded-xl bg-[#062c21] px-4 text-sm font-bold text-white">Iniciar sesión</a></div>
+                        @endguest
+                        @auth
+                            @if(! $ownComment)
+                                <form method="POST" action="{{ route('companies.comment', $organization) }}" class="mb-5 space-y-3 rounded-2xl border border-slate-200 p-4">
+                                    @csrf
+                                    <h3 class="text-sm font-black text-slate-950">Comenta esta empresa</h3>
+                                    <p class="text-sm text-slate-500">Tu nombre se publica junto al comentario. No incluyas teléfonos ni documentos.</p>
+                                    <div class="flex flex-wrap gap-2">@for($rating = 1; $rating <= 5; $rating++)<label class="cursor-pointer"><input required type="radio" name="rating" value="{{ $rating }}" class="peer sr-only"><span class="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:text-amber-800">{{ $rating }} ★</span></label>@endfor</div>
+                                    <textarea required minlength="10" maxlength="1000" name="comment" rows="3" placeholder="Cuenta cómo fue la atención, la embarcación o el viaje." class="w-full rounded-xl border-slate-200 text-sm">{{ old('comment') }}</textarea>
+                                    <button class="inline-flex min-h-11 items-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Publicar comentario</button>
+                                </form>
+                            @endif
+                            @foreach($completedReservations as $reservation)
                                 @php
                                     $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
                                     $route = $reservation->isAir() ? $trip?->airRoute : $trip?->transportRoute;
@@ -153,13 +220,11 @@
                                         <form method="POST" action="{{route('companies.review',$organization)}}" class="mt-5 space-y-4 border-t border-emerald-100 pt-4">@csrf<input type="hidden" name="reservation_id" value="{{$reservation->id}}"><fieldset><legend class="text-xs font-bold text-slate-700">Califica este viaje</legend><div class="mt-2 flex flex-wrap gap-2">@for($rating=1;$rating<=5;$rating++)<label class="cursor-pointer"><input required type="radio" name="rating" value="{{$rating}}" class="peer sr-only"><span class="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:text-amber-800">{{$rating}} ★</span></label>@endfor</div></fieldset><label class="block text-xs font-bold text-slate-700">Cuéntanos cómo fue el servicio<textarea required minlength="10" maxlength="1000" name="comment" rows="4" placeholder="Describe la atención, puntualidad, comodidad y embarque." class="mt-2 w-full rounded-xl border-slate-200 text-sm focus:border-emerald-600 focus:ring-emerald-600">{{old('comment')}}</textarea></label><div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><p class="text-[10px] leading-relaxed text-slate-400">No publiques teléfonos, documentos ni otros datos personales.</p><button class="rounded-xl bg-amber-400 px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-amber-300">Enviar opinión</button></div></form>
                                     @endif
                                 </article>
-                            @empty
-                                @if($hasUpcomingTrip)<div class="rounded-2xl border border-amber-200 bg-amber-50 p-5"><strong class="text-sm text-amber-950">Podrás opinar después de completar el viaje</strong><p class="mt-1 text-xs text-amber-800">Tu reserva está registrada, pero la salida todavía no ha sido marcada como completada.</p></div>@else<div class="rounded-2xl bg-slate-50 p-5"><strong class="text-sm text-slate-900">Solo pueden opinar pasajeros verificados</strong><p class="mt-1 text-xs text-slate-500">No encontramos un viaje completado con esta empresa asociado a tu cuenta o correo.</p></div>@endif
-                            @endforelse
-                        @endguest
+                            @endforeach
+                        @endauth
                     </div>
                 </div>
-                @if($reviews->count())<div class="flex items-center gap-5 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm"><div class="border-r border-slate-100 pr-6 text-center"><strong class="text-4xl text-slate-900">{{number_format($average,1)}}</strong><div class="text-sm text-amber-400">★★★★★</div><span class="text-[10px] text-slate-400">{{$reviews->count()}} viajero(s) verificado(s)</span></div><p class="text-xs leading-relaxed text-slate-500">Opiniones publicadas por viajeros con una reserva confirmada y un viaje completado con este operador.</p></div><div class="grid gap-3">@foreach($reviews as $review)<article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"><div class="flex items-center justify-between gap-3"><div class="flex items-center gap-2.5"><span class="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800">{{mb_strtoupper(mb_substr($review->user->name,0,1))}}</span><strong class="text-xs text-slate-900">{{$review->user->name}}</strong></div><span class="text-xs text-amber-400">{{str_repeat('★',$review->rating)}}</span></div><p class="mt-3 text-xs leading-relaxed text-slate-600">{{$review->comment}}</p>@auth<details class="mt-3"><summary class="cursor-pointer list-none text-[10px] font-bold text-slate-400 hover:text-rose-600">⚑ Reportar opinión</summary><form method="POST" action="{{route('companies.reviews.report',[$organization,$review])}}" class="mt-2 flex flex-wrap gap-2 rounded-xl bg-slate-50 p-3">@csrf<select name="reason" required class="h-9 flex-1 rounded-lg border-slate-200 text-xs"><option value="harassment">Insultos o acoso</option><option value="false_information">Información falsa</option><option value="spam">Spam</option><option value="personal_data">Datos personales</option><option value="other">Otro motivo</option></select><button class="rounded-lg bg-rose-600 px-3 text-xs font-black text-white">Reportar</button></form></details>@endauth</article>@endforeach</div>@else<div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-7"><h2 class="text-base font-extrabold text-emerald-950">Opiniones vinculadas a viajes reales</h2><p class="mt-2 text-xs text-emerald-900/75">Esta sección publica únicamente experiencias de pasajeros que completaron una reserva confirmada.</p></div>@endif
+                @if($reviews->count())<div class="flex items-center gap-5 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm"><div class="border-r border-slate-100 pr-6 text-center"><strong class="text-4xl text-slate-900">{{number_format($average,1)}}</strong><div class="text-sm text-amber-400">★★★★★</div><span class="text-[10px] text-slate-400">{{$reviews->count()}} viajero(s) verificado(s)</span></div><p class="text-sm leading-relaxed text-slate-500">Comentarios de viajeros registrados en NavegaYA.</p></div><div class="grid gap-3">@foreach($reviews as $review)<article class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"><div class="flex items-center justify-between gap-3"><div class="flex items-center gap-2.5"><span class="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800">{{mb_strtoupper(mb_substr($review->user->name,0,1))}}</span><strong class="text-xs text-slate-900">{{$review->user->name}}</strong></div><span class="text-xs text-amber-400">{{str_repeat('★',$review->rating)}}</span></div><p class="mt-3 text-xs leading-relaxed text-slate-600">{{$review->comment}}</p>@auth<details class="mt-3"><summary class="cursor-pointer list-none text-[10px] font-bold text-slate-400 hover:text-rose-600">⚑ Reportar opinión</summary><form method="POST" action="{{route('companies.reviews.report',[$organization,$review])}}" class="mt-2 flex flex-wrap gap-2 rounded-xl bg-slate-50 p-3">@csrf<select name="reason" required class="h-9 flex-1 rounded-lg border-slate-200 text-xs"><option value="harassment">Insultos o acoso</option><option value="false_information">Información falsa</option><option value="spam">Spam</option><option value="personal_data">Datos personales</option><option value="other">Otro motivo</option></select><button class="rounded-lg bg-rose-600 px-3 text-xs font-black text-white">Reportar</button></form></details>@endauth</article>@endforeach</div>@else<div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-7"><h2 class="text-base font-extrabold text-emerald-950">Todavía no hay comentarios</h2><p class="mt-2 text-sm text-emerald-900/75">Cuando un viajero registrado comente, su opinión aparecerá aquí.</p></div>@endif
             </section>
 
             <section id="politicas" x-show="tab==='politicas'" class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm"><h2 class="text-sm font-extrabold text-slate-900">Condiciones de transporte</h2><ul class="mt-4 space-y-3 text-xs leading-relaxed text-slate-600"><li class="flex gap-2.5"><span class="font-bold text-emerald-700">✓</span><span><strong>Presentación:</strong> llega con anticipación al muelle y lleva el documento físico del pasajero.</span></li><li class="flex gap-2.5"><span class="font-bold text-emerald-700">✓</span><span><strong>Equipaje:</strong> una maleta de hasta 15 kg y un bolso de mano; confirma cargas especiales con la empresa.</span></li><li class="flex gap-2.5"><span class="font-bold text-emerald-700">✓</span><span><strong>Condiciones fluviales:</strong> la autorización de zarpe depende de la Capitanía y de las condiciones del río.</span></li><li class="flex gap-2.5"><span class="font-bold text-emerald-700">✓</span><span><strong>Abordaje:</strong> el boleto digital y el DNI físico permiten validar al pasajero sin imprimir.</span></li></ul></section>

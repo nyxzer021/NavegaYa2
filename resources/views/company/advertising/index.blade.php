@@ -31,14 +31,14 @@
     <div class="grid items-start gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <h3 class="text-lg font-black text-slate-950">Nuevo anuncio</h3>
-            <p class="mt-1 text-sm text-slate-500">La publicidad usa el cupo del plan. No genera un cobro aparte.</p>
+            <p class="mt-1 text-sm text-slate-500">Los anuncios de la portada son opcionales. La ficha de tu empresa en Empresas no depende de este plan.</p>
             @if(! $subscription)
-                <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950">
-                    <strong class="block">Plan publicitario pendiente</strong>
-                    <span class="mt-1 block">Pide la activación y NavegaYA asignará el cupo de tu empresa.</span>
-                    <a href="{{ route('messages.index', ['asunto' => 'Solicitud de activación del plan publicitario', 'mensaje' => 'Solicito la activación del plan publicitario de mi empresa.']) }}" class="mt-3 inline-flex min-h-10 items-center rounded-xl bg-[#062c21] px-4 text-sm font-bold text-white">Solicitar activación</a>
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+                    <strong class="block text-slate-950">Sin anuncios en la portada</strong>
+                    <span class="mt-1 block">Puedes publicar tu información, flota y fotos en la ficha pública. El anuncio de la página principal se activa solo si tu empresa tiene un cupo.</span>
+                    <a href="{{ route('company.profile.edit') }}" class="mt-3 inline-flex min-h-10 items-center rounded-xl bg-[#062c21] px-4 text-sm font-bold text-white">Completar ficha pública</a>
                 </div>
-            @endif
+            @else
             <form method="POST" action="{{ route('company.advertising.store') }}" enctype="multipart/form-data" class="mt-5 space-y-4">
                 @csrf
                 <label class="block text-sm font-semibold text-slate-700">Título del anuncio<input name="title" value="{{ old('title') }}" required maxlength="160" placeholder="Ej. Viaja de Iquitos a Nauta" class="mt-1 h-11 w-full rounded-xl border-slate-200 bg-slate-50 px-3 text-sm font-semibold"></label>
@@ -51,6 +51,7 @@
                 </label>
                 <button @disabled(! $subscription || ($limit > 0 && $activeCount >= $limit)) class="h-11 w-full rounded-xl bg-amber-400 text-sm font-black text-emerald-950 disabled:cursor-not-allowed disabled:opacity-50">Enviar a revisión</button>
             </form>
+            @endif
         </section>
 
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">

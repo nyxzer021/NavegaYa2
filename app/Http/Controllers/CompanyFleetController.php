@@ -131,6 +131,45 @@ class CompanyFleetController extends Controller
         return back()->with('success', 'Embarcación enviada a revisión. NavegaYA notificará aquí el resultado.');
     }
 
+    public function updateTransport(Request $request): RedirectResponse
+    {
+        $organization = $this->organization();
+        $data = $request->validate([
+            'transport' => ['required', Rule::in(['fluvial', 'aereo'])],
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $hasRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
+        $hasAir = in_array($organization->modality, ['aereo', 'mixto'], true);
+        if ($data['transport'] === 'fluvial') {
+            $hasRiver = $request->boolean('enabled');
+        } else {
+            $hasAir = $request->boolean('enabled');
+        }
+
+        if (! $hasRiver && ! $hasAir) {
+            return back()->withErrors(['transport' => 'La empresa necesita al menos un tipo de transporte.']);
+        }
+        if (! $hasRiver && $organization->vessels()->exists()) {
+            return back()->withErrors(['transport' => 'No puedes quitar las lanchas mientras haya embarcaciones registradas.']);
+        }
+        if (! $hasAir && $organization->aircraft()->exists()) {
+            return back()->withErrors(['transport' => 'No puedes quitar las avionetas mientras haya aeronaves registradas.']);
+        }
+
+        $organization->update([
+            'modality' => $hasRiver && $hasAir ? 'mixto' : ($hasAir ? 'aereo' : 'fluvial'),
+        ]);
+
+        $message = match ($organization->modality) {
+            'mixto' => 'Quedaron habilitadas las lanchas y las avionetas.',
+            'aereo' => 'La operación quedó en avionetas.',
+            default => 'La operación quedó en lanchas y motonaves.',
+        };
+
+        return back()->with('success', $message);
+    }
+
     private function organization(): Organization
     {
         return Organization::query()->whereKey(AdminScope::organizationId(auth()->user()))->whereIn('status', ['active', 'pending'])->firstOrFail();

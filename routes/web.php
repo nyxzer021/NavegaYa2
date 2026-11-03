@@ -51,6 +51,7 @@ use App\Http\Controllers\Company\CompanySalesController;
 use App\Http\Controllers\Company\CompanySettlementController;
 use App\Http\Controllers\Company\CompanyStaffController as CompanyPortalStaffController;
 use App\Http\Controllers\CompanyActivationController;
+use App\Http\Controllers\CompanyPublicProfileController;
 use App\Http\Controllers\CompanyCounterController;
 use App\Http\Controllers\CompanyDashboardController;
 use App\Http\Controllers\CompanyRegistrationController;
@@ -97,6 +98,7 @@ Route::get('/negocios/registro', [MarketplaceBusinessController::class, 'create'
 Route::post('/negocios/registro', [MarketplaceBusinessController::class, 'store'])->middleware(['guest', 'throttle:5,1'])->name('marketplace.register.store');
 Route::get('/empresas/{organization}', [PublicCompanyController::class, 'show'])->name('companies.show');
 Route::post('/empresas/{organization}/valoraciones', [PublicCompanyController::class, 'review'])->middleware(['auth', 'verified'])->name('companies.review');
+Route::post('/empresas/{organization}/comentarios', [PublicCompanyController::class, 'comment'])->middleware(['auth', 'verified'])->name('companies.comment');
 Route::post('/empresas/{organization}/reportar-perfil', [PublicContentReportController::class, 'profile'])->middleware('auth')->name('companies.profile.report');
 Route::post('/empresas/{organization}/valoraciones/{review}/reportar', [PublicContentReportController::class, 'review'])->middleware('auth')->name('companies.reviews.report');
 Route::get('/anuncio/{ad}', [DiscoverController::class, 'advertisement'])->name('discover.ad');
@@ -125,6 +127,11 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::post('/publicidad', [CompanyAdvertisingController::class, 'store'])->name('advertising.store');
     Route::patch('/publicidad/{advertisement}/pausar', [CompanyAdvertisingController::class, 'pause'])->name('advertising.pause');
     Route::get('/flota', [CompanyFleetController::class, 'index'])->name('fleet.index');
+    Route::get('/ficha', [CompanyPublicProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/ficha', [CompanyPublicProfileController::class, 'update'])->name('profile.update');
+    Route::post('/ficha/fotos', [CompanyPublicProfileController::class, 'storePhotos'])->name('profile.photos.store');
+    Route::delete('/ficha/fotos/{photo}', [CompanyPublicProfileController::class, 'destroyPhoto'])->name('profile.photos.destroy');
+    Route::patch('/flota/operacion', [CompanyFleetController::class, 'updateTransport'])->name('fleet.transport.update');
     Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
     Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');
     Route::get('/liquidaciones', fn () => redirect()->route('company.commissions.index'))->name('settlements.index');

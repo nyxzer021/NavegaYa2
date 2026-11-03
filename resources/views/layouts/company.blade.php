@@ -91,6 +91,9 @@
                     </div>
                     <div class="order-3 space-y-1">
                         <p class="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">Comercial</p>
+                        <a href="{{ route('company.profile.edit') }}" class="{{ $menuLink }} {{ request()->routeIs('company.profile.*') ? $menuOn : $menuOff }}">
+                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10"><x-nav-icon name="building" class="h-4 w-4" /></span><span>Ficha pública</span>
+                        </a>
                         @if($isOperational)
                         <a href="{{ route('company.commissions.index') }}" class="{{ $menuLink }} {{ request()->routeIs('company.commissions.*', 'company.settlements.*') ? $menuOn : $menuOff }}">
                             <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10"><x-nav-icon name="chart" class="h-4 w-4" /></span><span>Comisión del convenio</span>

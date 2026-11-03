@@ -26,15 +26,13 @@ class PublicCompanyController
     {
         abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
         $organization->load([
+            'photos',
             'vessels.basePort',
-            'vessels.departures',
             'transportRoutes.originPort',
             'transportRoutes.destinationPort',
-            'transportRoutes.departures.vessel.organization',
-            'transportRoutes.departures.reservations.seats',
+            'transportRoutes.departures' => fn ($query) => $query->where('departure_at', '>=', now()->startOfDay())->with(['vessel.organization', 'reservations.seats']),
             'aircraft',
-            'airRoutes.departures.aircraft.organization',
-            'airRoutes.departures.reservations.seats',
+            'airRoutes.departures' => fn ($query) => $query->where('departure_at', '>=', now()->startOfDay())->with(['aircraft.organization', 'reservations.seats']),
         ]);
         $reviews = CompanyReview::with('user')->where('organization_id', $organization->id)->where('status', 'published')->latest()->get();
         $average = round((float) $reviews->avg('rating'), 1);
@@ -86,6 +84,34 @@ class PublicCompanyController
 
         return redirect()->to(route('companies.show', $organization).'#opiniones')
             ->with('success', 'Tu opinión fue enviada y está pendiente de revisión.');
+    }
+
+    public function comment(Request $request, Organization $organization): RedirectResponse
+    {
+        abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
+        $data = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['required', 'string', 'min:10', 'max:1000'],
+        ]);
+        $exists = CompanyReview::query()
+            ->where('organization_id', $organization->id)
+            ->where('user_id', $request->user()->id)
+            ->whereNull('reservation_id')
+            ->exists();
+        if ($exists) {
+            return back()->with('success', 'Ya publicaste un comentario en esta empresa.');
+        }
+
+        CompanyReview::create([
+            'organization_id' => $organization->id,
+            'user_id' => $request->user()->id,
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
+            'status' => 'published',
+        ]);
+
+        return redirect()->to(route('companies.show', $organization).'#opiniones')
+            ->with('success', 'Tu comentario ya se ve en la ficha de la empresa.');
     }
 
     private function reservationsForCompany(User $user, int $organizationId): Builder

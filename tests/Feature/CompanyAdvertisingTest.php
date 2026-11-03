@@ -63,7 +63,8 @@ class CompanyAdvertisingTest extends TestCase
 
         $this->actingAs($user)->get(route('company.advertising.index'))
             ->assertOk()
-            ->assertSee('Solicitar activación');
+            ->assertSee('Completar ficha pública')
+            ->assertDontSee('Solicitar activación');
         $this->actingAs($user)->get(route('messages.index', [
             'asunto' => 'Solicitud de activación del plan publicitario',
             'mensaje' => 'Solicito la activación del plan publicitario de mi empresa.',

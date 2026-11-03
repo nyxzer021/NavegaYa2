@@ -86,6 +86,11 @@ class Organization extends Model
         return $this->hasMany(CompanyReview::class);
     }
 
+    public function photos(): HasMany
+    {
+        return $this->hasMany(OrganizationPhoto::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function settlements(): HasMany
     {
         return $this->hasMany(Settlement::class);

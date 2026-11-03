@@ -19,10 +19,11 @@
 <x-company-field name="address" label="Dirección fiscal" placeholder="Dirección principal" class="sm:col-span-2" required />
 </div>
 <div class="mt-3">
-<span class="mb-2 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Tipo de operación</span>
-<div class="grid grid-cols-3 gap-2">
-@foreach(['fluvial' => 'Fluvial', 'aereo' => 'Aéreo', 'mixto' => 'Ambos'] as $value => $label)
-<label class="ny-choice">
+<span class="mb-1 block text-sm font-semibold text-slate-700">Qué transportas</span>
+<p class="mb-2 text-sm text-slate-500">Puedes elegir las dos. Si más adelante sumas la otra, la habilitas en tu panel.</p>
+<div class="grid gap-2 sm:grid-cols-3">
+@foreach(['fluvial' => 'Lanchas y motonaves', 'aereo' => 'Avionetas', 'mixto' => 'Las dos'] as $value => $label)
+<label class="ny-choice !h-auto min-h-11 px-2 py-2 text-center leading-snug">
 <input type="radio" name="modality" value="{{ $value }}" class="sr-only" @checked(old('modality', 'fluvial') === $value) required>{{ $label }}
 </label>
 @endforeach

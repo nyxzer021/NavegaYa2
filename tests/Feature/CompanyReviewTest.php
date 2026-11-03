@@ -77,4 +77,20 @@ class CompanyReviewTest extends TestCase
 
         $this->assertDatabaseCount('company_reviews', 0);
     }
+
+    public function test_registered_traveler_can_comment_a_company_without_a_trip(): void
+    {
+        $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Selva Fast', 'commercial_name' => 'Selva Fast', 'ruc' => '20600513959', 'email' => 'selva@example.test', 'status' => 'active']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('companies.comment', $company), [
+            'rating' => 4,
+            'comment' => 'La atención en el muelle fue clara y puntual.',
+        ])->assertRedirect(route('companies.show', $company).'#opiniones');
+
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('Selva Fast')
+            ->assertSee('La atención en el muelle fue clara y puntual.');
+    }
 }

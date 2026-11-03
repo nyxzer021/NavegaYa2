@@ -66,7 +66,76 @@ class CompanyPortalTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.fleet.index'))
             ->assertOk()->assertSee('Rápida Segura')->assertSee('Cerrar sesión')->assertSee($admin->name)
+            ->assertSee('Asientos que puede vender')
             ->assertDontSee('text-[9px]', false);
+    }
+
+    public function test_company_seat_designer_starts_inside_capacity(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Plano', '20999990001');
+        $vessel = Vessel::create([
+            'organization_id' => $organization->id, 'name' => 'Henry II',
+            'registration_number' => '1545245', 'vessel_type' => 'lancha',
+            'seat_capacity' => 30, 'status' => 'draft',
+        ]);
+
+        $this->actingAs($admin)->get(route('company.vessels.seats.edit', $vessel))
+            ->assertOk()
+            ->assertSee('Asientos por fila, lado izquierdo')
+            ->assertSee('Filas de esta cubierta')
+            ->assertSee('Crear esta cubierta')
+            ->assertSee('value="7"', false)
+            ->assertSee('Te quedan')
+            ->assertDontSee('>Filas<', false);
+    }
+
+    public function test_company_admin_can_publish_its_public_profile(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Ficha', '20777770001');
+
+        $this->actingAs($admin)->get(route('company.profile.edit'))
+            ->assertOk()
+            ->assertSee('Ficha pública')
+            ->assertSee('Galería');
+
+        $this->actingAs($admin)->patch(route('company.profile.update'), [
+            'public_description' => 'Salidas diarias desde Pebas.',
+            'service_hours' => 'Todos los días 06:00–18:00',
+            'show_public_whatsapp' => '1',
+        ])->assertRedirect();
+
+        $this->assertSame('Salidas diarias desde Pebas.', $organization->fresh()->public_description);
+        $this->assertSame('published', $organization->fresh()->profile_content_status);
+    }
+
+    public function test_company_can_enable_both_transports_from_its_fleet(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Mixto', '20888880001');
+
+        $this->actingAs($admin)->get(route('company.fleet.index'))
+            ->assertOk()
+            ->assertSee('Lanchas y motonaves')
+            ->assertSee('Habilitar avionetas')
+            ->assertDontSee('Nueva aeronave');
+
+        $this->actingAs($admin)->patch(route('company.fleet.transport.update'), [
+            'transport' => 'aereo', 'enabled' => '1',
+        ])->assertRedirect();
+
+        $this->assertSame('mixto', $organization->fresh()->modality);
+        $this->actingAs($admin)->get(route('company.fleet.index'))
+            ->assertSee('Nueva embarcación')
+            ->assertSee('Nueva aeronave');
+
+        Vessel::create([
+            'organization_id' => $organization->id, 'name' => 'Selva Fast',
+            'registration_number' => 'DICAPI-MIX', 'vessel_type' => 'lancha',
+            'seat_capacity' => 30, 'status' => 'draft',
+        ]);
+        $this->actingAs($admin)->patch(route('company.fleet.transport.update'), [
+            'transport' => 'fluvial', 'enabled' => '0',
+        ])->assertSessionHasErrors('transport');
+        $this->assertSame('mixto', $organization->fresh()->modality);
     }
 
     public function test_company_manifest_is_available_only_for_its_own_departure(): void
