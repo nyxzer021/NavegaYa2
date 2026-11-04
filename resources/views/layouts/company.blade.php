@@ -61,7 +61,7 @@
             <nav class="flex flex-1 flex-col gap-5" data-menu-lead="{{ $isOperational || $isCounter ? 'operacion' : 'configuracion' }}">
                 <div class="space-y-1 {{ $isOperational || $isCounter ? 'order-1' : 'order-2' }}">
                     <p class="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">Operación</p>
-                    @unless($isCounter)<a href="{{ route('company.dashboard') }}" class="{{ $menuLink }} {{ request()->routeIs('company.dashboard') ? $menuOn : $menuOff }}"><span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10"><x-nav-icon name="dashboard" class="h-4 w-4" /></span><span>Resumen</span></a>@endunless
+                    @unless($isCounter)<a href="{{ route('company.dashboard') }}" class="{{ $menuLink }} {{ request()->routeIs('company.dashboard') ? $menuOn : $menuOff }}"><span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10"><x-nav-icon name="dashboard" class="h-4 w-4" /></span><span>Dash</span></a>@endunless
                     @if($isOperational)
                     <a href="{{ route('company.departures.index') }}" class="{{ $menuLink }} {{ request()->routeIs('company.departures.*') && !request()->routeIs('company.boarding.*') ? $menuOn : $menuOff }}">
                         <span class="grid h-7 w-7 place-items-center rounded-lg bg-white/10"><x-nav-icon name="calendar" class="h-4 w-4" /></span><span>Salidas y despacho</span>

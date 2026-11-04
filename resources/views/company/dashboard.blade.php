@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Centro de operación')
-@section('page-title', 'Centro de operación')
+@section('title', 'Dash')
+@section('page-title', 'Dash')
 @section('content')
 @php
     $name = $company->commercial_name ?: $company->legal_name;
@@ -49,6 +49,52 @@
                 <span class="text-sm font-bold">Revisar</span>
             </a>
         @endif
+
+        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <a href="{{ route('company.sales.index') }}" class="rounded-2xl border border-[#6ee7b7] bg-[#ecfdf5] p-4">
+                <span class="text-sm font-semibold text-emerald-800">Pasajes vendidos</span>
+                <strong class="mt-2 block text-3xl font-black text-[#064e3b]">{{ $month['ticket_count'] }}</strong>
+                <span class="mt-1 block text-sm text-emerald-900">S/ {{ number_format($month['ticket_amount'], 2) }} cobrados en {{ now()->translatedFormat('F') }}</span>
+            </a>
+            <a href="{{ route('company.fleet.index') }}" class="rounded-2xl border border-[#d5e6df] bg-white p-4">
+                <span class="text-sm font-semibold text-slate-600">Embarcaciones activas</span>
+                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $month['active_vessels'] }}</strong>
+                <span class="mt-1 block text-sm text-slate-500">Habilitadas para vender</span>
+            </a>
+            <a href="{{ route('company.fleet.index') }}" class="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                <span class="text-sm font-semibold text-orange-800">En mantenimiento</span>
+                <strong class="mt-2 block text-3xl font-black text-orange-950">{{ $month['maintenance_vessels'] }}</strong>
+                <span class="mt-1 block text-sm text-orange-800">No salen a vender</span>
+            </a>
+            <a href="{{ route('company.departures.index') }}" class="rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-4">
+                <span class="text-sm font-semibold text-amber-800">Reprogramadas</span>
+                <strong class="mt-2 block text-3xl font-black text-[#78350f]">{{ $month['rescheduled'] }}</strong>
+                <span class="mt-1 block text-sm text-amber-900">Salidas del mes con nueva fecha</span>
+            </a>
+            <article class="rounded-2xl border border-[#d5e6df] bg-white p-4">
+                <span class="text-sm font-semibold text-slate-600">Pasajes pendientes</span>
+                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $month['pending_tickets'] }}</strong>
+                <span class="mt-1 block text-sm text-slate-500">Reservas que aún no se pagaron</span>
+            </article>
+            <a href="{{ route('support.index') }}" class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                <span class="text-sm font-semibold text-rose-800">Reclamos del mes</span>
+                <strong class="mt-2 block text-3xl font-black text-rose-950">{{ $month['claims'] }}</strong>
+                <span class="mt-1 block text-sm text-rose-800">Solicitudes de soporte de la empresa</span>
+            </a>
+            <article class="rounded-2xl border border-dashed border-slate-300 bg-white p-4 sm:col-span-2">
+                <span class="text-sm font-semibold text-slate-600">Gastos de mantenimiento</span>
+                <strong class="mt-2 block text-xl font-black text-slate-950">Sin registro</strong>
+                <span class="mt-1 block text-sm text-slate-500">El sistema todavía no guarda facturas ni gastos de la embarcación.</span>
+            </article>
+        </section>
+
+        <section class="rounded-2xl border border-[#d5e6df] bg-white p-5 shadow-sm">
+            <h3 class="text-lg font-black text-slate-950">Salidas diarias por embarcación</h3>
+            <p class="text-sm text-slate-500">Últimos 14 días. Cada color es una embarcación.</p>
+            <div class="mt-4 h-64">
+                <canvas id="vesselDeparturesChart" aria-label="Salidas diarias por embarcación"></canvas>
+            </div>
+        </section>
 
         <section class="grid gap-3 sm:grid-cols-3">
             <a href="{{ route('company.departures.index') }}" class="rounded-2xl border border-[#6ee7b7] bg-[#ecfdf5] p-5">
@@ -119,4 +165,27 @@
         </section>
     @endif
 </div>
+@if($company->status === 'active')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.getElementById('vesselDeparturesChart');
+        var chart = @json($departureChart);
+        if (!canvas || typeof Chart === 'undefined' || chart.datasets.length === 0) {
+            if (canvas) canvas.insertAdjacentHTML('afterend', '<p class="text-sm text-slate-500">No hay salidas en los últimos 14 días.</p>');
+            return;
+        }
+        new Chart(canvas, {
+            type: 'bar',
+            data: chart,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    });
+</script>
+@endif
 @endsection

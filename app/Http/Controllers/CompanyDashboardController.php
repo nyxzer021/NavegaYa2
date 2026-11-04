@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\AirDeparture;
 use App\Models\CargoShipment;
 use App\Models\Payment;
+use App\Models\Reservation;
 use App\Models\RouteDeparture;
+use App\Models\SupportTicket;
 use App\Services\MarketplaceSales;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -37,6 +39,8 @@ class CompanyDashboardController extends Controller
             'attentionCount' => $todayDepartures->whereIn('status', ['delayed', 'rescheduled', 'suspended', 'cancelled'])->count() + $pendingCargoCount,
             'todayDepartures' => $todayDepartures,
             'upcomingDepartures' => $this->upcomingDepartures($organization),
+            'month' => $this->monthSnapshot($organization),
+            'departureChart' => $this->departureChart($organization),
         ]);
     }
 
@@ -118,6 +122,80 @@ class CompanyDashboardController extends Controller
             'capacity' => (int) ($unit?->seat_capacity ?? 0),
             'confirmed_seats' => (int) $confirmedSeats,
             'status' => $departure->status ?? 'scheduled',
+        ];
+    }
+
+    /**
+     * @return array<string, int|float|string>
+     */
+    private function monthSnapshot($organization): array
+    {
+        $from = now()->startOfMonth();
+        $to = now()->endOfMonth();
+        $payments = Payment::query()
+            ->whereIn('status', ['confirmed', 'succeeded'])
+            ->where(function (Builder $query): void {
+                $query->whereNull('purpose')->orWhere('purpose', 'ticket');
+            })
+            ->whereBetween('paid_at', [$from, $to])
+            ->where(function (Builder $query) use ($organization): void {
+                $query->whereHas('reservation.departure.transportRoute', fn (Builder $route) => $route->where('organization_id', $organization->id))
+                    ->orWhereHas('reservation.airDeparture.airRoute', fn (Builder $route) => $route->where('organization_id', $organization->id));
+            });
+        $statuses = $organization->vessels->countBy('status');
+
+        return [
+            'ticket_count' => (clone $payments)->count(),
+            'ticket_amount' => (float) (clone $payments)->sum('amount'),
+            'active_vessels' => (int) ($statuses['ready'] ?? 0),
+            'maintenance_vessels' => (int) ($statuses['maintenance'] ?? 0),
+            'rescheduled' => RouteDeparture::query()
+                ->whereHas('transportRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
+                ->whereBetween('departure_at', [$from, $to])
+                ->where('status', 'rescheduled')
+                ->count(),
+            'pending_tickets' => Reservation::query()
+                ->where('status', 'pending_payment')
+                ->where(function (Builder $query) use ($organization): void {
+                    $query->whereHas('departure.transportRoute', fn (Builder $route) => $route->where('organization_id', $organization->id))
+                        ->orWhereHas('airDeparture.airRoute', fn (Builder $route) => $route->where('organization_id', $organization->id));
+                })
+                ->count(),
+            'claims' => SupportTicket::query()
+                ->where('organization_id', $organization->id)
+                ->whereBetween('created_at', [$from, $to])
+                ->count(),
+        ];
+    }
+
+    /**
+     * @return array{labels: array<int, string>, datasets: array<int, array<string, mixed>>}
+     */
+    private function departureChart($organization): array
+    {
+        $start = now()->subDays(13)->startOfDay();
+        $days = collect(range(0, 13))->map(fn (int $offset) => $start->copy()->addDays($offset));
+        $grouped = RouteDeparture::query()
+            ->whereHas('transportRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
+            ->whereBetween('departure_at', [$start, now()->endOfDay()])
+            ->with('vessel')
+            ->get()
+            ->groupBy(fn (RouteDeparture $departure): string => $departure->vessel?->name ?? 'Sin unidad');
+        $colors = ['#062c21', '#f59e0b', '#047857', '#78350f', '#0f766e'];
+        $datasets = [];
+        $index = 0;
+        foreach ($grouped as $name => $rows) {
+            $datasets[] = [
+                'label' => $name,
+                'data' => $days->map(fn ($day): int => $rows->filter(fn (RouteDeparture $departure): bool => $departure->departure_at->isSameDay($day))->count())->all(),
+                'backgroundColor' => $colors[$index % count($colors)],
+            ];
+            $index++;
+        }
+
+        return [
+            'labels' => $days->map(fn ($day) => $day->translatedFormat('d M'))->all(),
+            'datasets' => $datasets,
         ];
     }
 
