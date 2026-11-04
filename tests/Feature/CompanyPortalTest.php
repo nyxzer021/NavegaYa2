@@ -278,6 +278,38 @@ class CompanyPortalTest extends TestCase
             ]);
     }
 
+    public function test_schedule_form_accepts_separate_date_and_time(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Fecha', '20999999997');
+        $departure = $this->departure($organization, 'Nave Fecha', 'Iquitos', 'Lagunas');
+
+        $this->actingAs($admin)->post(route('company.departures.store'), [
+            'master_route_id' => $departure->transportRoute->master_route_id,
+            'vessel_id' => $departure->vessel_id,
+            'departure_date' => '2026-11-05',
+            'departure_time' => '17:12',
+            'fare' => '180',
+        ])->assertRedirect(route('company.departures.index'));
+
+        $created = RouteDeparture::query()->where('fare', 180)->first();
+        $this->assertNotNull($created);
+        $this->assertSame('2026-11-05 17:12:00', $created->departure_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-05 16:27:00', $created->boarding_starts_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-05 20:12:00', $created->estimated_arrival_at->format('Y-m-d H:i:s'));
+    }
+
+    public function test_future_departure_shows_manifest_without_boarding_button(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Itinerario', '20999999998');
+        $this->departure($organization, 'Nave Futura', 'Lagunas', 'Pebas');
+
+        $this->actingAs($admin)->get(route('company.departures.index'))
+            ->assertOk()
+            ->assertSee('Itinerario')
+            ->assertSee('Manifiesto')
+            ->assertDontSee('>Embarque</a>', false);
+    }
+
     public function test_pending_company_can_prepare_its_profile_and_fleet_but_cannot_operate(): void
     {
         $organization = Organization::create([
@@ -373,7 +405,9 @@ class CompanyPortalTest extends TestCase
             ->assertSee('25%')
             ->assertSee('1 de 4 asientos')
             ->assertSee('S/ 8.25')
-            ->assertSee('Vender pasaje')
+            ->assertSee('Venta en muelle')
+            ->assertSee('Embarcar')
+            ->assertDontSee('Vender pasaje')
             ->assertSee('Programada')
             ->assertDontSee('Cobrado hoy')
             ->assertDontSee('Cuenta bancaria');

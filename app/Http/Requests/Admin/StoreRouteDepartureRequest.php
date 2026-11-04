@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRouteDepartureRequest extends FormRequest
@@ -9,6 +10,33 @@ class StoreRouteDepartureRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $merged = [];
+        $departure = $this->joined('departure_date', 'departure_time');
+        if ($departure !== null) {
+            $merged['departure_at'] = $departure;
+            if ($this->joined('boarding_date', 'boarding_time') === null) {
+                $merged['boarding_starts_at'] = Carbon::parse($departure)->subMinutes(45)->format('Y-m-d H:i:s');
+            }
+            if ($this->joined('arrival_date', 'arrival_time') === null) {
+                $merged['estimated_arrival_at'] = Carbon::parse($departure)->addHours(3)->format('Y-m-d H:i:s');
+            }
+        }
+        foreach ([
+            'boarding_starts_at' => ['boarding_date', 'boarding_time'],
+            'estimated_arrival_at' => ['arrival_date', 'arrival_time'],
+            'cargo_reception_starts_at' => ['cargo_date', 'cargo_time'],
+        ] as $target => $parts) {
+            $value = $this->joined($parts[0], $parts[1]);
+            if ($value !== null) {
+                $merged[$target] = $value;
+            }
+        }
+
+        $this->merge($merged);
     }
 
     public function rules(): array
@@ -55,5 +83,14 @@ class StoreRouteDepartureRequest extends FormRequest
             'fare' => 'precio del pasaje',
             'notes' => 'nota para pasajeros',
         ];
+    }
+
+    private function joined(string $date, string $time): ?string
+    {
+        if (! $this->filled($date) || ! $this->filled($time)) {
+            return null;
+        }
+
+        return $this->input($date).' '.$this->input($time);
     }
 }

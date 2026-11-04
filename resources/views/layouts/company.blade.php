@@ -14,7 +14,7 @@
         [x-cloak] { display: none !important; }
         .company-shell { display: flex; flex-direction: row; height: 100vh; min-height: 100vh; width: 100%; overflow: hidden; }
         .company-sidebar { position: relative; flex: 0 0 16rem; width: 16rem; min-width: 16rem; max-width: 16rem; height: 100vh; overflow-y: auto; }
-        .company-main { flex: 1 1 0%; min-width: 0; width: calc(100% - 16rem); height: 100vh; overflow-y: auto; }
+        .company-main { flex: 1 1 0%; min-width: 0; width: calc(100% - 16rem); height: 100vh; overflow-y: auto; background: #f3faf6; }
         .company-menu-toggle { display: none; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; border: 0; border-radius: 12px; background: #062c21; color: #fff; font-weight: 800; }
         @media (max-width: 1023px) {
             .company-menu-toggle { display: inline-flex; }

@@ -4,46 +4,149 @@
 @section('content')
 @php
     $editing = isset($departureRecord) && $departureRecord;
-    $dateValue = fn ($name) => old($name, $editing && $departureRecord->{$name} ? $departureRecord->{$name}->format('Y-m-d\TH:i') : null);
-    $field = 'mt-1.5 h-12 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-800 focus:border-emerald-600 focus:ring-emerald-600';
+    $moment = function (string $dateName, string $timeName, ?string $column) use ($editing, $departureRecord): array {
+        $date = old($dateName);
+        $time = old($timeName);
+        if (! $date && ! $time && $editing && $departureRecord->{$column}) {
+            $date = $departureRecord->{$column}->format('Y-m-d');
+            $time = $departureRecord->{$column}->format('H:i');
+        }
+
+        return [$date, $time];
+    };
+    [$departureDate, $departureTime] = $moment('departure_date', 'departure_time', 'departure_at');
+    [$boardingDate, $boardingTime] = $moment('boarding_date', 'boarding_time', 'boarding_starts_at');
+    [$arrivalDate, $arrivalTime] = $moment('arrival_date', 'arrival_time', 'estimated_arrival_at');
+    [$cargoDate, $cargoTime] = $moment('cargo_date', 'cargo_time', 'cargo_reception_starts_at');
 @endphp
-<div class="mx-auto max-w-7xl space-y-4">
- <div class="flex items-center justify-between gap-3"><a class="text-xs font-bold text-emerald-800" href="{{ route('company.departures.index') }}">← Volver a salidas</a>@if($editing)<span class="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-black text-amber-800">La nueva tarifa se aplica solo a ventas futuras</span>@endif</div>
- <form class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm" method="POST" action="{{ $editing ? route('company.departures.update', $departureRecord) : route('company.departures.store') }}">
-  @csrf @if($editing) @method('PATCH') @endif
-  <header class="flex flex-col justify-between gap-4 bg-[#062c21] px-6 py-5 text-white sm:flex-row sm:items-center sm:px-8"><div><span class="text-[10px] font-bold uppercase tracking-[.18em] text-emerald-300">Gestión de itinerario</span><h2 class="mt-1 text-2xl font-black">{{ $editing ? 'Editar salida y tarifa' : 'Programar nueva salida' }}</h2><p class="mt-1 text-xs text-emerald-100/70">Ruta, unidad, horario y precio en una sola vista.</p></div><div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-xs"><strong class="block text-emerald-200">Tarifa flexible</strong>Puede modificarse antes de cada venta.</div></header>
-  <div class="grid gap-x-5 gap-y-4 p-6 lg:grid-cols-3 lg:p-8">
-   <label class="text-xs font-bold text-slate-700 lg:col-span-2">Tramo maestro oficial<select name="master_route_id" required class="{{ $field }}"><option value="">Selecciona una ruta</option>@foreach($routes as $route)<option value="{{ $route->id }}" @selected(old('master_route_id', $selectedRouteId) == $route->id)>{{ $route->code }} · {{ $route->origin_city }} → {{ $route->destination_city }}</option>@endforeach</select></label>
-   <label class="text-xs font-bold text-slate-700">Embarcación<select name="vessel_id" required class="{{ $field }}"><option value="">Selecciona una unidad</option>@foreach($vessels as $vessel)<option value="{{ $vessel->id }}" @selected(old('vessel_id', $departureRecord->vessel_id ?? null) == $vessel->id)>{{ $vessel->name }} · {{ $vessel->seat_capacity }} asientos</option>@endforeach</select></label>
-   <label class="text-xs font-bold text-slate-700">Fecha y hora de salida<input type="datetime-local" name="departure_at" required value="{{ $dateValue('departure_at') }}" class="{{ $field }}">@error('departure_at')<span class="mt-1 block font-semibold text-rose-700">{{ $message }}</span>@enderror</label>
-   <label class="text-xs font-bold text-slate-700">Inicio de embarque<input type="datetime-local" name="boarding_starts_at" required value="{{ $dateValue('boarding_starts_at') }}" class="{{ $field }}"><span class="mt-1 block font-medium text-slate-500">Al elegir la salida, se completa 45 minutos antes. Tiene que quedar antes del zarpe.</span>@error('boarding_starts_at')<span class="mt-1 block font-semibold text-rose-700">{{ $message }}</span>@enderror</label>
-   <label class="text-xs font-bold text-slate-700">Llegada estimada<input type="datetime-local" name="estimated_arrival_at" value="{{ $dateValue('estimated_arrival_at') }}" class="{{ $field }}"><span class="mt-1 block font-medium text-slate-500">Debe ser después de la salida.</span>@error('estimated_arrival_at')<span class="mt-1 block font-semibold text-rose-700">{{ $message }}</span>@enderror</label>
-   <label class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-black text-amber-950">Precio del pasaje<span class="relative mt-2 block"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-amber-800">S/</span><input type="number" name="fare" required min="0.01" step="0.01" value="{{ old('fare', $departureRecord->fare ?? null) }}" placeholder="0.00" class="h-12 w-full rounded-2xl border-amber-200 bg-white pl-12 pr-4 text-lg font-black text-slate-900 focus:border-amber-500 focus:ring-amber-500"></span></label>
-   <label class="text-xs font-bold text-slate-700 lg:col-span-2">Nota para pasajeros<input name="notes" value="{{ old('notes', $departureRecord->notes ?? null) }}" class="{{ $field }}" placeholder="Ej. presentarse 30 minutos antes"></label>
-   <details class="rounded-2xl border border-emerald-100 bg-emerald-50/60 lg:col-span-3" {{ old('cargo_enabled', $departureRecord->cargo_enabled ?? false) ? 'open' : '' }}><summary class="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-sm font-black text-emerald-950"><span>Encomienda en esta salida</span><span class="text-xs font-bold text-emerald-700">Opcional</span></summary><p class="px-5 pt-3 text-xs text-emerald-800">Indica si esta salida recibe carga. El precio de Pequeño, Mediano y Grande se edita en Ficha pública.</p><div class="grid gap-4 border-t border-emerald-100 p-5 sm:grid-cols-3"><label class="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-xs font-bold text-slate-700"><input type="checkbox" name="cargo_enabled" value="1" @checked(old('cargo_enabled', $departureRecord->cargo_enabled ?? false)) class="rounded-lg border-emerald-300 text-emerald-700">Recibir carga</label><label class="text-xs font-bold text-slate-700">Inicio de recepción<input type="datetime-local" name="cargo_reception_starts_at" value="{{ $dateValue('cargo_reception_starts_at') }}" class="{{ $field }} bg-white"></label><label class="text-xs font-bold text-slate-700">Indicaciones<input name="cargo_notes" value="{{ old('cargo_notes', $departureRecord->cargo_notes ?? null) }}" class="{{ $field }} bg-white" placeholder="Condiciones o restricciones"></label></div></details>
-   @if($errors->any())<div class="rounded-2xl bg-rose-50 p-4 text-xs text-rose-700 lg:col-span-3"><ul class="list-disc pl-4">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-  </div>
-  <footer class="flex flex-col-reverse justify-end gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:px-8"><a href="{{ route('company.departures.index') }}" class="rounded-2xl px-5 py-3 text-center text-xs font-bold text-slate-500">Cancelar</a><button class="rounded-2xl bg-amber-500 px-7 py-3 text-xs font-black text-slate-950 shadow-sm hover:bg-amber-400">{{ $editing ? 'Guardar datos y tarifa' : 'Publicar salida' }}</button></footer>
- </form>
+<div class="ny-schedule mx-auto max-w-3xl">
+    <a class="text-sm font-bold text-emerald-800" href="{{ route('company.departures.index') }}">← Volver a salidas</a>
+    <form class="mt-3 overflow-hidden rounded-2xl border border-[#d5e6df] bg-white shadow-sm" method="POST" action="{{ $editing ? route('company.departures.update', $departureRecord) : route('company.departures.store') }}">
+        @csrf
+        @if($editing) @method('PATCH') @endif
+        <div class="border-t-4 border-[#fbbf24] px-5 py-5 sm:px-6">
+            <h2 class="text-xl font-black text-slate-950">{{ $editing ? 'Editar salida y tarifa' : 'Programar nueva salida' }}</h2>
+            <p class="mt-1 text-sm text-slate-500">Tramo, embarcación, horario y precio.</p>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <label class="text-sm font-semibold text-slate-800 sm:col-span-2">Tramo
+                    <select name="master_route_id" required>
+                        <option value="">Selecciona una ruta</option>
+                        @foreach($routes as $route)
+                            <option value="{{ $route->id }}" @selected(old('master_route_id', $selectedRouteId) == $route->id)>{{ $route->code }} · {{ $route->origin_city }} → {{ $route->destination_city }}</option>
+                        @endforeach
+                    </select>
+                    @error('master_route_id')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                </label>
+                <label class="text-sm font-semibold text-slate-800 sm:col-span-2">Embarcación
+                    <select name="vessel_id" required>
+                        <option value="">Selecciona una unidad</option>
+                        @foreach($vessels as $vessel)
+                            <option value="{{ $vessel->id }}" @selected(old('vessel_id', $departureRecord->vessel_id ?? null) == $vessel->id)>{{ $vessel->name }} · {{ $vessel->seat_capacity }} asientos</option>
+                        @endforeach
+                    </select>
+                    @error('vessel_id')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Fecha de salida
+                    <input type="date" name="departure_date" required value="{{ $departureDate }}">
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Hora de zarpe
+                    <input type="time" name="departure_time" required value="{{ $departureTime }}">
+                    @error('departure_at')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Embarque
+                    <span class="mt-1 grid grid-cols-2 gap-2">
+                        <input type="date" name="boarding_date" required value="{{ $boardingDate }}">
+                        <input type="time" name="boarding_time" required value="{{ $boardingTime }}">
+                    </span>
+                    <span class="mt-1 block text-xs font-medium text-slate-500">Se completa 45 minutos antes del zarpe.</span>
+                    @error('boarding_starts_at')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Llegada estimada
+                    <span class="mt-1 grid grid-cols-2 gap-2">
+                        <input type="date" name="arrival_date" value="{{ $arrivalDate }}">
+                        <input type="time" name="arrival_time" value="{{ $arrivalTime }}">
+                    </span>
+                    <span class="mt-1 block text-xs font-medium text-slate-500">Se completa 3 horas después. Fecha y hora.</span>
+                    @error('estimated_arrival_at')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Precio del pasaje
+                    <span class="ny-money"><span>S/</span><input type="number" name="fare" required min="0.01" step="0.01" value="{{ old('fare', $departureRecord->fare ?? null) }}" placeholder="0.00"></span>
+                    @error('fare')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Nota para pasajeros
+                    <input name="notes" value="{{ old('notes', $departureRecord->notes ?? null) }}" placeholder="Presentarse 30 minutos antes">
+                </label>
+            </div>
+            <details class="mt-4 rounded-xl border border-emerald-100 bg-[#ecfdf5]" {{ old('cargo_enabled', $departureRecord->cargo_enabled ?? false) ? 'open' : '' }}>
+                <summary class="cursor-pointer list-none px-4 py-3 text-sm font-bold text-emerald-950">Encomienda en esta salida <span class="float-right text-xs font-semibold text-emerald-700">Opcional</span></summary>
+                <div class="grid gap-3 border-t border-emerald-100 px-4 py-3 sm:grid-cols-2">
+                    <p class="text-xs text-emerald-800 sm:col-span-2">Los precios Pequeño, Mediano y Grande se editan en Ficha pública.</p>
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-800"><input type="checkbox" name="cargo_enabled" value="1" @checked(old('cargo_enabled', $departureRecord->cargo_enabled ?? false))> Recibir carga</label>
+                    <label class="text-sm font-semibold text-slate-800">Inicio de recepción
+                        <span class="mt-1 grid grid-cols-2 gap-2"><input type="date" name="cargo_date" value="{{ $cargoDate }}"><input type="time" name="cargo_time" value="{{ $cargoTime }}"></span>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-800 sm:col-span-2">Indicaciones
+                        <input name="cargo_notes" value="{{ old('cargo_notes', $departureRecord->cargo_notes ?? null) }}" placeholder="Condiciones o restricciones">
+                    </label>
+                </div>
+            </details>
+            @if($errors->any())
+                <div class="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>
+            @endif
+        </div>
+        <footer class="flex items-center justify-end gap-3 border-t border-slate-100 px-5 py-3 sm:px-6">
+            <a href="{{ route('company.departures.index') }}" class="inline-flex h-10 items-center px-3 text-sm font-bold text-slate-500">Cancelar</a>
+            <button class="inline-flex h-10 items-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">{{ $editing ? 'Guardar datos y tarifa' : 'Publicar salida' }}</button>
+        </footer>
+    </form>
 </div>
+<style>
+    .ny-schedule label { display: grid; gap: 6px; }
+    .ny-schedule input, .ny-schedule select {
+        height: 40px !important; min-height: 40px !important; width: 100%;
+        padding: 0 12px !important; border: 1px solid #d5e6df !important; border-radius: 12px !important;
+        background: #fff !important; color: #173b33; font-size: 14px; font-weight: 600; box-shadow: none !important;
+    }
+    .ny-schedule input:focus, .ny-schedule select:focus { border-color: #087669 !important; box-shadow: 0 0 0 4px rgba(242,182,36,.28) !important; outline: 0 !important; }
+    .ny-schedule input[type="date"], .ny-schedule input[type="time"] { cursor: pointer; }
+    .ny-money { display: flex; height: 40px; align-items: center; gap: 8px; border-radius: 12px; background: #fffbeb; padding: 0 12px; border: 1px solid #fbbf24; }
+    .ny-money span { font-weight: 800; color: #92400e; }
+    .ny-money input { height: 24px !important; min-height: 0 !important; border: 0 !important; background: transparent !important; padding: 0 !important; box-shadow: none !important; }
+    .ny-schedule summary::-webkit-details-marker { display: none; }
+</style>
 <script>
     (function () {
-        var departure = document.querySelector('[name="departure_at"]');
-        var boarding = document.querySelector('[name="boarding_starts_at"]');
-        var arrival = document.querySelector('[name="estimated_arrival_at"]');
-        if (!departure || !boarding || !arrival) return;
-        function shift(value, minutes) {
-            var date = new Date(value);
-            if (Number.isNaN(date.getTime())) return '';
-            date.setMinutes(date.getMinutes() + minutes);
-            var pad = function (part) { return String(part).padStart(2, '0'); };
-            return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
-        }
-        departure.addEventListener('change', function () {
-            if (!departure.value) return;
-            if (!boarding.value || boarding.value > departure.value) boarding.value = shift(departure.value, -45);
-            if (!arrival.value || arrival.value <= departure.value) arrival.value = shift(departure.value, 180);
+        var form = document.querySelector('.ny-schedule');
+        if (!form) return;
+        form.querySelectorAll('input[type="date"], input[type="time"]').forEach(function (input) {
+            input.addEventListener('click', function () {
+                if (typeof input.showPicker === 'function') {
+                    try { input.showPicker(); } catch (error) {}
+                }
+            });
         });
+        var departureDate = form.querySelector('[name="departure_date"]');
+        var departureTime = form.querySelector('[name="departure_time"]');
+        var boardingDate = form.querySelector('[name="boarding_date"]');
+        var boardingTime = form.querySelector('[name="boarding_time"]');
+        var arrivalDate = form.querySelector('[name="arrival_date"]');
+        var arrivalTime = form.querySelector('[name="arrival_time"]');
+        function pad(part) { return String(part).padStart(2, '0'); }
+        function stamp(date, time) { return date && time ? new Date(date + 'T' + time) : null; }
+        function write(dateInput, timeInput, date) {
+            dateInput.value = date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+            timeInput.value = pad(date.getHours()) + ':' + pad(date.getMinutes());
+        }
+        function fill() {
+            var departure = stamp(departureDate.value, departureTime.value);
+            if (!departure || Number.isNaN(departure.getTime())) return;
+            var boarding = stamp(boardingDate.value, boardingTime.value);
+            var arrival = stamp(arrivalDate.value, arrivalTime.value);
+            if (!boarding || boarding.getTime() > departure.getTime()) write(boardingDate, boardingTime, new Date(departure.getTime() - 45 * 60000));
+            if (!arrival || arrival.getTime() <= departure.getTime()) write(arrivalDate, arrivalTime, new Date(departure.getTime() + 180 * 60000));
+        }
+        departureDate.addEventListener('change', fill);
+        departureTime.addEventListener('change', fill);
     }());
 </script>
 @endsection

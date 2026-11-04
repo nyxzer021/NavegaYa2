@@ -6,7 +6,6 @@
     $name = $company->commercial_name ?: $company->legal_name;
     $hasAir = $company->aircraft->isNotEmpty();
     $hasRiver = $company->vessels->isNotEmpty();
-    $statusLabels = ['scheduled' => 'Programada', 'boarding' => 'Embarcando', 'in_transit' => 'En tránsito', 'departed' => 'En tránsito', 'completed' => 'Completada', 'delayed' => 'Retrasada', 'rescheduled' => 'Reprogramada', 'suspended' => 'Suspendida', 'cancelled' => 'Cancelada'];
     $modality = $hasAir && ! $hasRiver ? 'Aéreo' : ($hasAir && $hasRiver ? 'Fluvial y aéreo' : 'Fluvial');
 @endphp
 <div class="mx-auto max-w-5xl space-y-5">
@@ -17,10 +16,8 @@
                 <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $name }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ $modality }} · {{ now()->translatedFormat('l d \d\e F') }}</p>
             </div>
-            @if($company->status === 'active')
-                <a href="{{ route('company.pos.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Vender pasaje</a>
-            @else
-                <a href="{{ route('company.fleet.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Completar flota</a>
+            @if($company->status !== 'active')
+                <a href="{{ route('company.fleet.index') }}" class="inline-flex h-10 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Completar flota</a>
             @endif
         </div>
     </section>
@@ -54,19 +51,19 @@
         @endif
 
         <section class="grid gap-3 sm:grid-cols-3">
-            <a href="{{ route('company.departures.index') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <span class="text-sm font-semibold text-slate-500">Salidas de hoy</span>
-                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $todayDepartureCount }}</strong>
+            <a href="{{ route('company.departures.index') }}" class="rounded-2xl border border-[#6ee7b7] bg-[#ecfdf5] p-5">
+                <span class="text-sm font-semibold text-emerald-800">Salidas de hoy</span>
+                <strong class="mt-2 block text-3xl font-black text-[#064e3b]">{{ $todayDepartureCount }}</strong>
             </a>
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <span class="text-sm font-semibold text-slate-500">Ocupación</span>
-                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $todayOccupancyLabel }}%</strong>
-                <span class="mt-1 block text-sm text-slate-500">{{ $todayConfirmedSeats }} de {{ $todaySeatCapacity }} {{ $todaySeatCapacity === 1 ? 'asiento' : 'asientos' }}</span>
+            <article class="rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-5">
+                <span class="text-sm font-semibold text-amber-800">Ocupación</span>
+                <strong class="mt-2 block text-3xl font-black text-[#78350f]">{{ $todayOccupancyLabel }}%</strong>
+                <span class="mt-1 block text-sm text-amber-900">{{ $todayConfirmedSeats }} de {{ $todaySeatCapacity }} {{ $todaySeatCapacity === 1 ? 'asiento' : 'asientos' }}</span>
             </article>
-            <a href="{{ route('company.commissions.index') }}" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <span class="text-sm font-semibold text-slate-500">Por cobrar</span>
-                <strong class="mt-2 block text-3xl font-black text-slate-950">S/ {{ number_format($commissionReceivable, 2) }}</strong>
-                <span class="mt-1 block text-sm text-slate-500">Comisión del convenio</span>
+            <a href="{{ route('company.commissions.index') }}" class="rounded-2xl bg-[#062c21] p-5 text-white">
+                <span class="text-sm font-semibold text-emerald-100">Por cobrar</span>
+                <strong class="mt-2 block text-3xl font-black text-[#fbbf24]">S/ {{ number_format($commissionReceivable, 2) }}</strong>
+                <span class="mt-1 block text-sm text-emerald-100">Comisión del convenio</span>
             </a>
         </section>
 
@@ -83,7 +80,7 @@
                             <span class="mt-0.5 block text-sm text-slate-700">{{ $row['origin'] }} → {{ $row['destination'] }}</span>
                             <span class="block text-sm text-slate-500">{{ $row['unit'] }} · {{ $row['confirmed_seats'] }} {{ $row['confirmed_seats'] === 1 ? 'pasajero' : 'pasajeros' }}</span>
                         </div>
-                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">{{ $statusLabels[$row['status']] ?? 'Programada' }}</span>
+                        <x-company-status :status="$row['status']" />
                     </article>
                 @endforeach
             </section>
@@ -106,7 +103,7 @@
                         <span class="block text-sm text-slate-500">{{ $row['unit'] }} · {{ $freeSeats }} {{ $freeSeats === 1 ? 'libre' : 'libres' }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ $statusLabels[$row['status']] ?? \App\Support\PanelLabel::status($row['status']) }}</span>
+                        <x-company-status :status="$row['status']" />
                         @if(! $row['is_air'])
                             <a href="{{ route('company.boarding.show', $row['model']) }}" class="inline-flex min-h-10 items-center rounded-xl bg-[#062c21] px-4 text-sm font-bold text-white">Embarcar</a>
                         @endif
@@ -116,7 +113,7 @@
                 <div class="px-5 py-12 text-center">
                     <strong class="block text-slate-800">No hay salidas para hoy</strong>
                     <p class="mt-1 text-sm text-slate-500">Programa una salida para comenzar la operación.</p>
-                    <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-emerald-800 px-5 text-sm font-bold text-emerald-900">Programar salida</a>
+                    <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex h-10 items-center text-sm font-bold text-emerald-800">Programar salida</a>
                 </div>
             @endforelse
         </section>

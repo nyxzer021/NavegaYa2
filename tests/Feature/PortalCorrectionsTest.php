@@ -107,10 +107,11 @@ class PortalCorrectionsTest extends TestCase
             ->assertSee('Boletos vendidos')
             ->assertSee('Comisión del convenio')
             ->assertSee('Salidas de hoy')
-            ->assertSee('Vender pasaje')
+            ->assertSee('Venta en muelle')
+            ->assertDontSee('Vender pasaje')
             ->assertSee('company-menu-toggle', false)
             ->assertSee('data-menu-lead="operacion"', false)
-            ->assertSee('bg-amber-400')
+            ->assertSee('text-amber-400', false)
             ->assertDontSee('Cobrado hoy')
             ->assertDontSee('text-[9px]', false);
     }

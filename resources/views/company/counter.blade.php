@@ -2,9 +2,12 @@
 @section('title', 'Control de embarque')
 @section('page-title', 'Control de embarque')
 @section('content')
-@php($name = $company->commercial_name ?: $company->legal_name)
+@php
+    $name = $company->commercial_name ?: $company->legal_name;
+    $isCounter = auth()->user()->roles()->where('code', 'company_counter')->exists();
+@endphp
 <div class="mx-auto max-w-5xl space-y-5">
-    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <section class="rounded-2xl border border-[#d5e6df] bg-white p-5 shadow-sm">
         <p class="text-sm font-semibold text-emerald-800">Portal Counter · {{ now()->translatedFormat('d \d\e F') }}</p>
         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $name }}</h2>
         <p class="mt-1 text-sm text-slate-500">{{ $base }}@if(in_array($company->modality, ['fluvial', 'mixto'], true)) · Río {{ $riverStatus }}@endif</p>
@@ -32,7 +35,7 @@
             </article>
         @empty
             <div class="px-5 py-12 text-center">
-                <strong class="block text-slate-800">Hoy no hay un zarpe para embarcar</strong>
+                <strong class="block text-slate-800">Hoy no zarpa nadie</strong>
                 <p class="mt-1 text-sm text-slate-500">El control de pasajeros se abre el día de la salida. Las rutas ya programadas están abajo.</p>
             </div>
         @endforelse
@@ -58,7 +61,9 @@
             <div class="px-5 py-10 text-center">
                 <strong class="block text-slate-800">No hay rutas programadas</strong>
                 <p class="mt-1 text-sm text-slate-500">Programa una salida para registrar pasajeros y controlar el embarque.</p>
-                <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Programar salida</a>
+                @unless($isCounter)
+                    <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex h-10 items-center text-sm font-bold text-emerald-800">Programar salida</a>
+                @endunless
             </div>
         @endforelse
     </section>
