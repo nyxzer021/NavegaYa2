@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Control de embarque')
-@section('page-title', 'Control de Embarque')
+@section('title', 'Embarque')
+@section('page-title', 'Embarque')
 @section('content')
 @php
     $route = $departure->transportRoute;

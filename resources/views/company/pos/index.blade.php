@@ -1,6 +1,6 @@
 @extends('layouts.company')
 @section('title', 'Venta en muelle')
-@section('page-title', 'Punto de Venta en Muelle')
+@section('page-title', 'Venta en muelle')
 @section('content')
 <div class="mx-auto max-w-6xl space-y-5">
  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p class="text-sm font-semibold text-emerald-800">Agencia física · muelle</p><h2 class="mt-1 text-2xl font-black text-slate-950">Vender pasaje en el muelle</h2><p class="mt-1 max-w-2xl text-sm text-slate-500">Cobra la tarifa en efectivo y entrega el boleto. NavegaYA no cobra comisión por esta venta. Solo aparecen los zarpes de hoy.</p></div></div></section>

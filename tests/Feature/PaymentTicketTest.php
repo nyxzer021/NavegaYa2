@@ -98,7 +98,7 @@ class PaymentTicketTest extends TestCase
             ->assertSee('Pablo Pago')
             ->assertSee('BOL-BOARDING-01')
             ->assertSee('0 de 1')
-            ->assertSee('pasajeros a bordo')
+            ->assertSee('a bordo')
             ->assertDontSee('min-w-[820px]', false);
 
         $this->actingAs($admin)->patch(route('company.boarding.toggle', [$reservation->departure, $ticket]))->assertRedirect();
@@ -125,7 +125,7 @@ class PaymentTicketTest extends TestCase
         $this->actingAs($admin)
             ->get(route('company.boarding.show', $reservation->departure))
             ->assertOk()
-            ->assertSee('Control de Embarque')
+            ->assertSee('Embarque')
             ->assertSee('Pablo Pago')
             ->assertSee('Escanear DNI o Código QR');
 

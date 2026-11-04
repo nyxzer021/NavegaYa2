@@ -40,7 +40,6 @@ class CompanyDashboardController extends Controller
             'todayDepartures' => $todayDepartures,
             'upcomingDepartures' => $this->upcomingDepartures($organization),
             'month' => $this->monthSnapshot($organization),
-            'departureChart' => $this->departureChart($organization),
         ]);
     }
 
@@ -147,6 +146,8 @@ class CompanyDashboardController extends Controller
         return [
             'ticket_count' => (clone $payments)->count(),
             'ticket_amount' => (float) (clone $payments)->sum('amount'),
+            'vessel_count' => $organization->vessels->count(),
+            'seat_capacity' => (int) $organization->vessels->sum('seat_capacity'),
             'active_vessels' => (int) ($statuses['ready'] ?? 0),
             'maintenance_vessels' => (int) ($statuses['maintenance'] ?? 0),
             'rescheduled' => RouteDeparture::query()
@@ -174,37 +175,6 @@ class CompanyDashboardController extends Controller
                     'kind' => $vessel->maintenance_kind === 'reparacion' ? 'Reparación' : 'Mantenimiento',
                 ])
                 ->values(),
-        ];
-    }
-
-    /**
-     * @return array{labels: array<int, string>, datasets: array<int, array<string, mixed>>}
-     */
-    private function departureChart($organization): array
-    {
-        $start = now()->subDays(13)->startOfDay();
-        $days = collect(range(0, 13))->map(fn (int $offset) => $start->copy()->addDays($offset));
-        $grouped = RouteDeparture::query()
-            ->whereHas('transportRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
-            ->whereBetween('departure_at', [$start, now()->endOfDay()])
-            ->with('vessel')
-            ->get()
-            ->groupBy(fn (RouteDeparture $departure): string => $departure->vessel?->name ?? 'Sin unidad');
-        $colors = ['#062c21', '#f59e0b', '#047857', '#78350f', '#0f766e'];
-        $datasets = [];
-        $index = 0;
-        foreach ($grouped as $name => $rows) {
-            $datasets[] = [
-                'label' => $name,
-                'data' => $days->map(fn ($day): int => $rows->filter(fn (RouteDeparture $departure): bool => $departure->departure_at->isSameDay($day))->count())->all(),
-                'backgroundColor' => $colors[$index % count($colors)],
-            ];
-            $index++;
-        }
-
-        return [
-            'labels' => $days->map(fn ($day) => $day->translatedFormat('d M'))->all(),
-            'datasets' => $datasets,
         ];
     }
 

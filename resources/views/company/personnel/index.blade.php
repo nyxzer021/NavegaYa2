@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Personal y accesos')
-@section('page-title', 'Personal y accesos')
+@section('title', 'Equipo')
+@section('page-title', 'Equipo')
 @section('content')
 <div class="mx-auto max-w-6xl space-y-5" x-data="{ open: {{ $errors->any() ? 'true' : 'false' }} }">
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

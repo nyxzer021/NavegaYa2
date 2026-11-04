@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Control de embarque')
-@section('page-title', 'Control de embarque')
+@section('title', 'Embarque')
+@section('page-title', 'Embarque')
 @section('content')
 @php
     $name = $company->commercial_name ?: $company->legal_name;

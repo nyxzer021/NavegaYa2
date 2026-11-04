@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title','Soporte e incidencias')
-@section('page-title','Soporte e incidencias')
+@section('title','Soporte')
+@section('page-title','Soporte')
 @section('content')
     @include('support._content')
 @endsection

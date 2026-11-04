@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title','Mis salidas')
-@section('page-title','Mis Salidas y Despacho')
+@section('title','Salidas')
+@section('page-title','Salidas')
 @section('content')
 @php
     $isCounter = auth()->user()->roles()->where('code', 'company_counter')->exists();

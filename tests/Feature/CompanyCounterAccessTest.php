@@ -37,7 +37,7 @@ class CompanyCounterAccessTest extends TestCase
             ->assertSee('Portal Counter')
             ->assertSee(route('company.departures.index'), false)
             ->assertDontSee('Recaudación hoy');
-        $this->actingAs($counter)->get(route('company.departures.index'))->assertOk()->assertSee('Mis Salidas y Despacho')->assertSee('Ocupación')->assertDontSee('Cobrado hoy');
+        $this->actingAs($counter)->get(route('company.departures.index'))->assertOk()->assertSee('Salidas')->assertSee('Ocupación')->assertDontSee('Cobrado hoy');
         $this->actingAs($counter)->get(route('company.fleet.index'))->assertForbidden();
         $this->actingAs($counter)->get(route('company.staff.index'))->assertForbidden();
         $this->actingAs($counter)->get(route('company.settlements.index'))->assertForbidden();

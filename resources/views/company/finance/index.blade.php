@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Comisión del convenio')
-@section('page-title', 'Comisión del convenio')
+@section('title', 'Cargo de servicio NavegaYA')
+@section('page-title', 'Cargo de servicio NavegaYA')
 @section('content')
 <div class="space-y-5">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

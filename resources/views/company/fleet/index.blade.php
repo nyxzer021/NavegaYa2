@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title','Mi flota')
-@section('page-title','Mi Flota')
+@section('title','Flota')
+@section('page-title','Flota')
 @section('content')
 @php($hasRiver=in_array($organization->modality ?: 'fluvial',['fluvial','mixto'],true))
 @php($hasAir=in_array($organization->modality ?: 'fluvial',['aereo','mixto'],true))

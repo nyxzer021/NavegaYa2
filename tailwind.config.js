@@ -14,6 +14,30 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                ny: {
+                    brand: '#064E3B',
+                    interaction: '#087F5B',
+                    canvas: '#F7F9F8',
+                    card: '#FFFFFF',
+                    ink: '#10231D',
+                    muted: '#607069',
+                    action: '#F4B820',
+                    danger: '#9F1239',
+                    warning: '#92400E',
+                },
+            },
+            borderRadius: {
+                control: '8px',
+                card: '12px',
+            },
+            fontSize: {
+                'ny-xs': '12px',
+                'ny-sm': '14px',
+                'ny-md': '16px',
+                'ny-lg': '20px',
+                'ny-xl': '28px',
+            },
         },
     },
 

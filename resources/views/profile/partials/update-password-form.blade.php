@@ -1,4 +1,4 @@
-<section>
+<section id="cambiar-contrasena">
     <header>
         <h2 class="text-lg font-black text-slate-900">Contraseña</h2>
         <p class="mt-1 text-sm text-slate-600">Usa una contraseña larga y distinta de la de otros sitios.</p>

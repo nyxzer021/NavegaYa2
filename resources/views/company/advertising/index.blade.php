@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Publicidad y campañas')
-@section('page-title', 'Publicidad y campañas')
+@section('title', 'Publicidad')
+@section('page-title', 'Publicidad')
 @section('content')
 @php($activeCount = $campaigns->whereIn('status', ['lead_pending', 'active', 'paused'])->count())
 <div class="mx-auto max-w-6xl space-y-5">
