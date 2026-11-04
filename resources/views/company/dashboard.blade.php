@@ -50,66 +50,72 @@
             </a>
         @endif
 
-        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="{{ route('company.sales.index') }}" class="rounded-2xl border border-[#6ee7b7] bg-[#ecfdf5] p-4">
-                <span class="text-sm font-semibold text-emerald-800">Pasajes vendidos</span>
-                <strong class="mt-2 block text-3xl font-black text-[#064e3b]">{{ $month['ticket_count'] }}</strong>
-                <span class="mt-1 block text-sm text-emerald-900">S/ {{ number_format($month['ticket_amount'], 2) }} cobrados en {{ now()->translatedFormat('F') }}</span>
+        <section class="grid grid-cols-2 gap-2 lg:grid-cols-3">
+            <a href="{{ route('company.sales.index') }}" class="rounded-xl border border-[#6ee7b7] bg-[#ecfdf5] px-3 py-2">
+                <span class="text-xs font-semibold text-emerald-800">Pasajes vendidos</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-[#064e3b]">{{ $month['ticket_count'] }}</strong>
+                <span class="mt-1 block text-xs text-emerald-900">S/ {{ number_format($month['ticket_amount'], 2) }} en {{ now()->translatedFormat('F') }}</span>
             </a>
-            <a href="{{ route('company.fleet.index') }}" class="rounded-2xl border border-[#d5e6df] bg-white p-4">
-                <span class="text-sm font-semibold text-slate-600">Embarcaciones activas</span>
-                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $month['active_vessels'] }}</strong>
-                <span class="mt-1 block text-sm text-slate-500">Habilitadas para vender</span>
+            <a href="{{ route('company.fleet.index') }}" class="rounded-xl border border-[#d5e6df] bg-white px-3 py-2">
+                <span class="text-xs font-semibold text-slate-600">Embarcaciones activas</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-slate-950">{{ $month['active_vessels'] }}</strong>
+                <span class="mt-1 block text-xs text-slate-500">Habilitadas para vender</span>
             </a>
-            <a href="{{ route('company.fleet.index') }}" class="rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                <span class="text-sm font-semibold text-orange-800">En mantenimiento</span>
-                <strong class="mt-2 block text-3xl font-black text-orange-950">{{ $month['maintenance_vessels'] }}</strong>
-                <span class="mt-1 block text-sm text-orange-800">No salen a vender</span>
+            <a href="{{ route('company.fleet.index') }}" class="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2">
+                <span class="text-xs font-semibold text-orange-800">En mantenimiento</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-orange-950">{{ $month['maintenance_vessels'] }}</strong>
+                <span class="mt-1 block text-xs text-orange-800">No salen a vender</span>
             </a>
-            <a href="{{ route('company.departures.index') }}" class="rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-4">
-                <span class="text-sm font-semibold text-amber-800">Reprogramadas</span>
-                <strong class="mt-2 block text-3xl font-black text-[#78350f]">{{ $month['rescheduled'] }}</strong>
-                <span class="mt-1 block text-sm text-amber-900">Salidas del mes con nueva fecha</span>
+            <a href="{{ route('company.departures.index') }}" class="rounded-xl border border-[#fbbf24] bg-[#fffbeb] px-3 py-2">
+                <span class="text-xs font-semibold text-amber-800">Reprogramadas</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-[#78350f]">{{ $month['rescheduled'] }}</strong>
+                <span class="mt-1 block text-xs text-amber-900">Salidas del mes</span>
             </a>
-            <article class="rounded-2xl border border-[#d5e6df] bg-white p-4">
-                <span class="text-sm font-semibold text-slate-600">Pasajes pendientes</span>
-                <strong class="mt-2 block text-3xl font-black text-slate-950">{{ $month['pending_tickets'] }}</strong>
-                <span class="mt-1 block text-sm text-slate-500">Reservas que aún no se pagaron</span>
+            <article class="rounded-xl border border-[#d5e6df] bg-white px-3 py-2">
+                <span class="text-xs font-semibold text-slate-600">Pasajes pendientes</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-slate-950">{{ $month['pending_tickets'] }}</strong>
+                <span class="mt-1 block text-xs text-slate-500">Aún no se pagaron</span>
             </article>
-            <a href="{{ route('support.index') }}" class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
-                <span class="text-sm font-semibold text-rose-800">Reclamos del mes</span>
-                <strong class="mt-2 block text-3xl font-black text-rose-950">{{ $month['claims'] }}</strong>
-                <span class="mt-1 block text-sm text-rose-800">Solicitudes de soporte de la empresa</span>
+            <a href="{{ route('support.index') }}" class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
+                <span class="text-xs font-semibold text-rose-800">Reclamos del mes</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-rose-950">{{ $month['claims'] }}</strong>
+                <span class="mt-1 block text-xs text-rose-800">Soporte de la empresa</span>
             </a>
-            <article class="rounded-2xl border border-dashed border-slate-300 bg-white p-4 sm:col-span-2">
-                <span class="text-sm font-semibold text-slate-600">Gastos de mantenimiento</span>
-                <strong class="mt-2 block text-xl font-black text-slate-950">Sin registro</strong>
-                <span class="mt-1 block text-sm text-slate-500">El sistema todavía no guarda facturas ni gastos de la embarcación.</span>
+            <article class="col-span-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 lg:col-span-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-orange-800">Mantenimiento programado</span>
+                    <a href="{{ route('company.fleet.index') }}" class="text-xs font-bold text-orange-900">Anotar fecha</a>
+                </div>
+                @forelse($month['maintenance'] as $item)
+                    <p class="mt-1 text-xs text-orange-950"><strong>{{ $item['on']->translatedFormat('d M') }}</strong> · {{ $item['name'] }} · {{ $item['kind'] }}</p>
+                @empty
+                    <p class="mt-1 text-xs text-orange-900">Ninguna fecha programada.</p>
+                @endforelse
             </article>
         </section>
 
-        <section class="rounded-2xl border border-[#d5e6df] bg-white p-5 shadow-sm">
-            <h3 class="text-lg font-black text-slate-950">Salidas diarias por embarcación</h3>
-            <p class="text-sm text-slate-500">Últimos 14 días. Cada color es una embarcación.</p>
-            <div class="mt-4 h-64">
+        <section class="rounded-xl border border-[#d5e6df] bg-white px-3 py-3 shadow-sm">
+            <h3 class="text-sm font-black text-slate-950">Salidas diarias por embarcación</h3>
+            <p class="text-xs text-slate-500">Últimos 14 días. Cada color es una embarcación.</p>
+            <div class="mt-2 h-44">
                 <canvas id="vesselDeparturesChart" aria-label="Salidas diarias por embarcación"></canvas>
             </div>
         </section>
 
-        <section class="grid gap-3 sm:grid-cols-3">
-            <a href="{{ route('company.departures.index') }}" class="rounded-2xl border border-[#6ee7b7] bg-[#ecfdf5] p-5">
-                <span class="text-sm font-semibold text-emerald-800">Salidas de hoy</span>
-                <strong class="mt-2 block text-3xl font-black text-[#064e3b]">{{ $todayDepartureCount }}</strong>
+        <section class="grid grid-cols-3 gap-2">
+            <a href="{{ route('company.departures.index') }}" class="rounded-xl border border-[#6ee7b7] bg-[#ecfdf5] px-3 py-2">
+                <span class="text-xs font-semibold text-emerald-800">Salidas de hoy</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-[#064e3b]">{{ $todayDepartureCount }}</strong>
             </a>
-            <article class="rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-5">
-                <span class="text-sm font-semibold text-amber-800">Ocupación</span>
-                <strong class="mt-2 block text-3xl font-black text-[#78350f]">{{ $todayOccupancyLabel }}%</strong>
-                <span class="mt-1 block text-sm text-amber-900">{{ $todayConfirmedSeats }} de {{ $todaySeatCapacity }} {{ $todaySeatCapacity === 1 ? 'asiento' : 'asientos' }}</span>
+            <article class="rounded-xl border border-[#fbbf24] bg-[#fffbeb] px-3 py-2">
+                <span class="text-xs font-semibold text-amber-800">Ocupación</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-[#78350f]">{{ $todayOccupancyLabel }}%</strong>
+                <span class="mt-1 block text-xs text-amber-900">{{ $todayConfirmedSeats }} de {{ $todaySeatCapacity }} {{ $todaySeatCapacity === 1 ? 'asiento' : 'asientos' }}</span>
             </article>
-            <a href="{{ route('company.commissions.index') }}" class="rounded-2xl bg-[#062c21] p-5 text-white">
-                <span class="text-sm font-semibold text-emerald-100">Por cobrar</span>
-                <strong class="mt-2 block text-3xl font-black text-[#fbbf24]">S/ {{ number_format($commissionReceivable, 2) }}</strong>
-                <span class="mt-1 block text-sm text-emerald-100">Comisión del convenio</span>
+            <a href="{{ route('company.commissions.index') }}" class="rounded-xl bg-[#062c21] px-3 py-2 text-white">
+                <span class="text-xs font-semibold text-emerald-100">Por cobrar</span>
+                <strong class="mt-0.5 block text-lg font-black leading-none text-[#fbbf24]">S/ {{ number_format($commissionReceivable, 2) }}</strong>
+                <span class="mt-1 block text-xs text-emerald-100">Comisión del convenio</span>
             </a>
         </section>
 

@@ -342,7 +342,11 @@ class CompanyPortalTest extends TestCase
         $organization->update(['commission_rate' => 7.5]);
         $departure = $this->departure($organization, 'Nave del Día', 'Iquitos', 'Pebas');
         $departure->update(['departure_at' => now()->setTime(15, 0), 'status' => 'scheduled']);
-        $departure->vessel->update(['seat_capacity' => 4]);
+        $departure->vessel->update([
+            'seat_capacity' => 4,
+            'maintenance_scheduled_on' => now()->addDays(10)->toDateString(),
+            'maintenance_kind' => 'reparacion',
+        ]);
         $confirmedSeat = $departure->vessel->seats()->create(['code' => '1A', 'row_position' => 1, 'column_position' => 1, 'deck' => 1, 'is_available' => true]);
         $heldSeat = $departure->vessel->seats()->create(['code' => '1B', 'row_position' => 1, 'column_position' => 2, 'deck' => 1, 'is_available' => true]);
         $confirmed = Reservation::create([
@@ -402,7 +406,9 @@ class CompanyPortalTest extends TestCase
             ->assertSee('Pasajes vendidos')
             ->assertSee('Embarcaciones activas')
             ->assertSee('Salidas diarias por embarcación')
-            ->assertSee('Sin registro')
+            ->assertSee('Mantenimiento programado')
+            ->assertSee('Reparación')
+            ->assertDontSee('Gastos de mantenimiento')
             ->assertSee('Salidas de hoy')
             ->assertSee('15:00')
             ->assertSee('Iquitos')

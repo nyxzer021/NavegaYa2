@@ -66,6 +66,10 @@ class CompanyFleetController extends Controller
             'vessel_type' => ['required', Rule::in(['lancha', 'motonave', 'rapido', 'ferry', 'otro'])],
             'seat_capacity' => ['required', 'integer', 'min:1', 'max:2000'],
             'base_port_id' => ['nullable', 'exists:ports,id'],
+            'maintenance_scheduled_on' => ['nullable', 'date'],
+            'maintenance_kind' => ['nullable', 'required_with:maintenance_scheduled_on', Rule::in(['mantenimiento', 'reparacion'])],
+        ], [
+            'maintenance_kind.required_with' => 'Indica si es mantenimiento o reparación.',
         ]);
 
         $seatCount = $vessel->seats()->count();
@@ -84,6 +88,11 @@ class CompanyFleetController extends Controller
             return back()->withInput()->withErrors([
                 'seat_capacity' => 'No puedes reducir la capacidad mientras existan reservas vigentes en salidas futuras.',
             ]);
+        }
+
+        if (blank($data['maintenance_scheduled_on'] ?? null)) {
+            $data['maintenance_scheduled_on'] = null;
+            $data['maintenance_kind'] = null;
         }
 
         $requiresReview = collect(['registration_number', 'vessel_type', 'seat_capacity'])

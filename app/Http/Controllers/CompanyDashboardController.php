@@ -126,7 +126,7 @@ class CompanyDashboardController extends Controller
     }
 
     /**
-     * @return array<string, int|float|string>
+     * @return array<string, mixed>
      */
     private function monthSnapshot($organization): array
     {
@@ -165,6 +165,15 @@ class CompanyDashboardController extends Controller
                 ->where('organization_id', $organization->id)
                 ->whereBetween('created_at', [$from, $to])
                 ->count(),
+            'maintenance' => $organization->vessels
+                ->filter(fn ($vessel): bool => $vessel->maintenance_scheduled_on !== null && $vessel->maintenance_scheduled_on->gte(today()))
+                ->sortBy('maintenance_scheduled_on')
+                ->map(fn ($vessel): array => [
+                    'name' => $vessel->name,
+                    'on' => $vessel->maintenance_scheduled_on,
+                    'kind' => $vessel->maintenance_kind === 'reparacion' ? 'Reparación' : 'Mantenimiento',
+                ])
+                ->values(),
         ];
     }
 
