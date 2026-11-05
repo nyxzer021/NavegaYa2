@@ -156,6 +156,15 @@ class AdminCompanyController extends Controller
             ->groupBy('channel')
             ->get()
             ->keyBy('channel');
+        $commissionCompanies = Organization::query()
+            ->where('type', 'transport_company')
+            ->when($request->filled('commission_search'), fn ($query) => $query->where(fn ($nested) => $nested
+                ->where('legal_name', 'like', '%'.$request->string('commission_search').'%')
+                ->orWhere('commercial_name', 'like', '%'.$request->string('commission_search').'%')
+                ->orWhere('ruc', 'like', '%'.$request->string('commission_search').'%')))
+            ->orderBy('commercial_name')
+            ->orderBy('legal_name')
+            ->get();
 
         return view('admin.companies.index', [
             'companies' => $companies,
@@ -168,6 +177,7 @@ class AdminCompanyController extends Controller
             'airTicketsToday' => $airTicketsToday,
             'activeOperatorsToday' => $activeOperatorsToday,
             'commissionSummary' => $commissionSummary,
+            'commissionCompanies' => $commissionCompanies,
         ]);
     }
 
@@ -246,6 +256,27 @@ class AdminCompanyController extends Controller
         });
 
         return redirect()->route('admin.companies.index')->with('success', 'Empresa actualizada correctamente.');
+    }
+
+    public function updateCommission(Request $request, Organization $organization): RedirectResponse
+    {
+        abort_unless($organization->type === 'transport_company', 404);
+        $data = $request->validate([
+            'commission_rate' => ['required', 'numeric', 'between:0,100'],
+        ], [
+            'commission_rate.required' => 'Indica el porcentaje del convenio.',
+            'commission_rate.numeric' => 'El porcentaje debe ser un número.',
+            'commission_rate.between' => 'El porcentaje va de 0 a 100.',
+        ]);
+        $organization->update(['commission_rate' => $data['commission_rate']]);
+        $name = $organization->commercial_name ?: $organization->legal_name;
+        $rate = (float) $data['commission_rate'];
+        $message = $rate === 0.0
+            ? 'Se quitó la comisión de '.$name.'. Sus pasajes web ya no suman ese cargo.'
+            : 'La comisión de '.$name.' quedó en '.number_format($rate, 2).'%.';
+
+        return redirect()->route('admin.companies.index', ['tab' => 'comisiones'])
+            ->with('success', $message);
     }
 
     public function toggleStatus(Organization $organization): RedirectResponse

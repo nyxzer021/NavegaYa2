@@ -98,12 +98,60 @@
 @endif
 
 @if($activeTab === 'comisiones')
-    <section class="grid min-h-[360px] gap-4 p-5 md:grid-cols-2 lg:p-6">
-        @foreach(['fluvial' => ['🚤', 'Pasajes fluviales'], 'aereo' => ['✈️', 'Pasajes aéreos']] as $channel => $meta)
-            @php($summary = $commissionSummary->get($channel))
-            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div class="flex items-center justify-between"><span class="text-2xl">{{ $meta[0] }}</span><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-700">{{ $summary?->operators_count ?? 0 }} operadores activos</span></div><h3 class="mt-4 text-lg font-black text-slate-950">{{ $meta[1] }}</h3><p class="mt-1 text-xs text-slate-500">Promedio contractual vigente sobre cada boleto procesado en la plataforma.</p><p class="mt-5 text-3xl font-black text-[#062c21]">{{ number_format((float) ($summary?->average_rate ?? 0), 2) }}%</p><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Comisión promedio configurada</span></article>
-        @endforeach
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 md:col-span-2"><strong>Modelo comercial:</strong> la comisión se calcula sobre pagos confirmados. Cada operador puede tener una tasa propia administrada desde “Permisos / Editar”.</div>
+    <section class="min-h-[360px]">
+        <form method="GET" action="{{ route('admin.companies.index') }}" class="flex flex-wrap gap-3 border-b border-slate-200 p-4 lg:px-6">
+            <input type="hidden" name="tab" value="comisiones">
+            <input type="search" name="commission_search" value="{{ request('commission_search') }}" placeholder="Buscar empresa o RUC" class="h-10 min-w-64 flex-1 rounded-xl border-slate-200 bg-slate-50 text-xs">
+            <button class="rounded-xl bg-[#062c21] px-5 text-xs font-bold text-white">Filtrar</button>
+            <a href="{{ route('admin.companies.index', ['tab' => 'comisiones']) }}" class="px-3 py-3 text-xs font-bold text-emerald-700">Limpiar</a>
+        </form>
+        <header class="border-b border-slate-100 p-5">
+            <p class="text-[10px] font-black uppercase tracking-wider text-emerald-700">Convenio por empresa</p>
+            <h3 class="text-lg font-black text-slate-950">Comisión que paga el pasajero</h3>
+            <p class="mt-1 max-w-3xl text-xs text-slate-500">Cada empresa de transporte tiene su porcentaje. En la venta web el pasajero paga ese convenio sobre la tarifa. Quitar deja el porcentaje en 0 y conserva la empresa y los cobros ya registrados.</p>
+        </header>
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[860px] text-left text-xs">
+                <thead class="bg-slate-50 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                    <tr><th class="p-4">Empresa</th><th class="p-4">Modalidad</th><th class="p-4">Estado</th><th class="p-4">Comisión al pasajero</th><th class="p-4 text-right">Acciones</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                @forelse($commissionCompanies as $company)
+                    <tr>
+                        <td class="p-4">
+                            <a href="{{ route('admin.companies.show', $company) }}" class="font-black text-slate-900 hover:text-emerald-700">{{ $company->commercial_name ?: $company->legal_name }}</a>
+                            <span class="mt-0.5 block text-[10px] text-slate-400">RUC {{ $company->ruc }}</span>
+                        </td>
+                        <td class="p-4">{{ match($company->modality){'aereo'=>'Aérea','mixto'=>'Mixta',default=>'Fluvial'} }}</td>
+                        <td class="p-4">{{ match($company->status){'active'=>'Activa','suspended'=>'Suspendida','pending'=>'Pendiente','pending_verification'=>'Por verificar',default=>$company->status} }}</td>
+                        <td class="p-4">
+                            <form method="POST" action="{{ route('admin.companies.commission.update', $company) }}" class="flex items-center gap-2">
+                                @csrf
+                                @method('PATCH')
+                                <input type="number" name="commission_rate" required min="0" max="100" step="0.01" value="{{ number_format((float) $company->commission_rate, 2, '.', '') }}" class="h-10 w-24 rounded-lg border-slate-200 text-sm font-bold">
+                                <span class="font-bold text-slate-500">%</span>
+                                <button class="rounded-lg bg-[#062c21] px-3 py-2 text-[10px] font-black text-white">Guardar</button>
+                            </form>
+                        </td>
+                        <td class="p-4 text-right">
+                            @if((float) $company->commission_rate > 0)
+                                <form method="POST" action="{{ route('admin.companies.commission.update', $company) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="commission_rate" value="0">
+                                    <button class="rounded-lg bg-rose-50 px-3 py-2 text-[10px] font-bold text-rose-700">Quitar</button>
+                                </form>
+                            @else
+                                <span class="text-[10px] font-bold text-slate-400">Sin comisión</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="p-12 text-center text-slate-400">No hay empresas de transporte con esta búsqueda.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
     </section>
 @endif
 </x-admin.module-workspace>

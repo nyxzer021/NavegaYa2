@@ -60,7 +60,7 @@ $port=$isAir?($trip->airport_name ?? 'Aeropuerto regional'):($route->originPort-
 <h2 class="border-b border-slate-100 pb-3 text-xs font-black uppercase tracking-wider text-slate-800">Resumen del pago</h2>
 <div class="space-y-2.5 text-xs">
 <div class="flex justify-between text-slate-600"><span>Subtotal de pasajes</span><strong class="text-slate-900">S/ {{number_format($subtotal,2)}}</strong></div>
-<div class="flex justify-between gap-4 text-slate-600"><span>Gestión de reserva ({{number_format($percent,0)}}%)</span><strong class="shrink-0 text-slate-900">S/ {{number_format($fee,2)}}</strong></div>
+<div class="flex justify-between gap-4 text-slate-600"><span>Comisión del convenio @if($singleRate)({{ number_format($percent, 2) }}%)@endif</span><strong class="shrink-0 text-slate-900">S/ {{number_format($fee,2)}}</strong></div>
 <div class="flex justify-between gap-4 text-slate-600"><span>Emisión digital y soporte</span><strong class="shrink-0 text-emerald-700">Incluido</strong></div>
 <div class="flex items-baseline justify-between border-t border-slate-200 pt-4"><div><strong class="block text-sm text-slate-900">Total a pagar</strong><span class="text-[10px] font-medium text-slate-400">Importe final en PEN</span></div><strong class="text-3xl font-black text-slate-900">S/ {{number_format($total,2)}}</strong></div>
 </div>

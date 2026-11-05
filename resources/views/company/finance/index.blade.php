@@ -7,7 +7,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h2 class="text-2xl font-black text-slate-950">Comisión del convenio</h2>
-                <p class="mt-1 max-w-2xl text-sm text-slate-500">Tu empresa cobra la tarifa del pasaje. NavegaYA cobra el porcentaje pactado. Aquí ves esa tarifa y la comisión, sin la cuenta bancaria de la plataforma.</p>
+                <p class="mt-1 max-w-2xl text-sm text-slate-500">Tu empresa cobra la tarifa del pasaje. En la venta web el pasajero paga el porcentaje del convenio de tu empresa, no un porcentaje único para todas. La venta en muelle no suma ese cargo.</p>
             </div>
             <a href="{{ route('company.sales.index') }}" class="inline-flex min-h-10 w-fit items-center rounded-xl border border-emerald-800 px-4 text-sm font-bold text-emerald-900">Ver boletos vendidos</a>
         </div>

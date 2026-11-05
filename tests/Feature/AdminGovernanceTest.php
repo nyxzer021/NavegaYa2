@@ -424,6 +424,40 @@ class AdminGovernanceTest extends TestCase
         $this->assertTrue($companyAdmin->roles()->where('code', 'company_admin')->exists());
     }
 
+    public function test_super_admin_sets_and_clears_a_transport_company_commission(): void
+    {
+        $superAdmin = $this->userWithRole('super_admin');
+        $organization = Organization::create([
+            'type' => 'transport_company',
+            'legal_name' => 'Amazonía Express SAC',
+            'commercial_name' => 'Amazonía Express',
+            'ruc' => '20987654322',
+            'email' => 'comision@amazonia.test',
+            'status' => 'active',
+            'commission_rate' => 8,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('admin.companies.index', ['tab' => 'comisiones']))
+            ->assertOk()
+            ->assertSee('Amazonía Express')
+            ->assertSee('Comisión que paga el pasajero')
+            ->assertSee('Quitar');
+
+        $this->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 7.5])
+            ->assertRedirect(route('admin.companies.index', ['tab' => 'comisiones']));
+        $this->assertSame('7.50', $organization->fresh()->commission_rate);
+
+        $this->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 0])
+            ->assertRedirect(route('admin.companies.index', ['tab' => 'comisiones']));
+        $this->assertSame('0.00', $organization->fresh()->commission_rate);
+
+        $this->actingAs($this->userWithRole('company_admin'))
+            ->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 12])
+            ->assertForbidden();
+        $this->assertSame('0.00', $organization->fresh()->commission_rate);
+    }
+
     private function userWithRole(string $code): User
     {
         $user = User::factory()->create();

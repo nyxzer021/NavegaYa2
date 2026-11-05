@@ -4,25 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Models\CheckoutOrder;
 use App\Models\Reservation;
-use App\Models\SystemSetting;
 use App\Services\BookingPaymentService;
+use App\Services\MarketplaceSales;
 use App\Support\BoardingQr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CartController extends Controller
 {
+    public function __construct(private readonly MarketplaceSales $sales) {}
+
     public function index(Request $request): View
     {
         $reservations = $this->reservations($request);
-        $subtotal = (float) $reservations->sum('total_amount');
-        $percent = (float) SystemSetting::value('platform_fee_percent', '10');
-        $fee = round($subtotal * $percent / 100, 2);
+        $priced = $this->priced($reservations);
 
-        return view('cart.index', compact('reservations', 'subtotal', 'percent', 'fee') + ['total' => $subtotal + $fee]);
+        return view('cart.index', [
+            'reservations' => $reservations,
+            'subtotal' => $priced['subtotal'],
+            'percent' => $priced['percent'],
+            'singleRate' => $priced['single_rate'],
+            'fee' => $priced['fee'],
+            'total' => $priced['total'],
+        ]);
     }
 
     public function remove(Request $request, Reservation $reservation): RedirectResponse
@@ -43,9 +51,10 @@ class CartController extends Controller
     {
         $reservations = $this->reservations($request);
         abort_if($reservations->isEmpty(), 422, 'El carrito está vacío.');
-        $subtotal = (float) $reservations->sum('total_amount');
-        $percent = (float) SystemSetting::value('platform_fee_percent', '10');
-        $fee = round($subtotal * $percent / 100, 2);
+        $priced = $this->priced($reservations);
+        $subtotal = $priced['subtotal'];
+        $percent = $priced['percent'];
+        $fee = $priced['fee'];
         $first = $reservations->first();
         $order = DB::transaction(function () use ($reservations, $subtotal, $percent, $fee, $first) {
             $order = CheckoutOrder::create(['user_id' => auth()->id(), 'code' => 'ORD-'.now()->format('ymd').'-'.Str::upper(Str::random(7)), 'contact_name' => $first->contact_name, 'contact_email' => $first->contact_email, 'contact_phone' => $first->contact_phone, 'subtotal_amount' => $subtotal, 'platform_fee_amount' => $fee, 'total_amount' => $subtotal + $fee, 'platform_fee_percent' => $percent, 'expires_at' => now()->addMinutes(15)]);
@@ -127,7 +136,38 @@ class CartController extends Controller
     {
         $ids = $request->session()->get('cart_reservation_ids', []);
 
-        return Reservation::with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'airDeparture.airRoute', 'airDeparture.aircraft', 'seats.seat', 'seats.aircraftSeat'])->whereIn('id', $ids)->where('status', 'pending_payment')->whereNull('checkout_order_id')->where('expires_at', '>', now())->get();
+        return Reservation::with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.transportRoute.organization', 'departure.vessel', 'airDeparture.airRoute.organization', 'airDeparture.aircraft', 'seats.seat', 'seats.aircraftSeat'])->whereIn('id', $ids)->where('status', 'pending_payment')->whereNull('checkout_order_id')->where('expires_at', '>', now())->get();
+    }
+
+    /**
+     * @param  Collection<int, Reservation>  $reservations
+     * @return array{subtotal: float, fee: float, percent: float, single_rate: bool, total: float}
+     */
+    private function priced(Collection $reservations): array
+    {
+        $subtotal = 0.0;
+        $fee = 0.0;
+        $percents = [];
+        foreach ($reservations as $reservation) {
+            $quote = $this->sales->quote($reservation);
+            $subtotal += $quote['base_amount'] - $quote['discount_amount'];
+            $fee += $quote['service_fee_amount'];
+            $percents[] = number_format($quote['service_fee_percent'], 2, '.', '');
+        }
+        $subtotal = round($subtotal, 2);
+        $fee = round($fee, 2);
+        $unique = collect($percents)->unique()->values();
+        $percent = $unique->count() === 1
+            ? (float) $unique->first()
+            : ($subtotal > 0 ? round($fee / $subtotal * 100, 2) : 0.0);
+
+        return [
+            'subtotal' => $subtotal,
+            'fee' => $fee,
+            'percent' => $percent,
+            'single_rate' => $unique->count() <= 1,
+            'total' => round($subtotal + $fee, 2),
+        ];
     }
 
     private function order(Request $request, string $code): CheckoutOrder

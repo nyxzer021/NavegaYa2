@@ -88,15 +88,15 @@ class SaleLedgerTest extends TestCase
         $reservation->refresh();
         $payment = Payment::where('reservation_id', $reservation->id)->firstOrFail();
         $this->assertSame('180.00', $reservation->base_amount);
-        $this->assertSame('18.00', $reservation->service_fee_amount);
-        $this->assertSame('198.00', $reservation->total_amount);
-        $this->assertSame('198.00', $payment->amount);
+        $this->assertSame('14.40', $reservation->service_fee_amount);
+        $this->assertSame('194.40', $reservation->total_amount);
+        $this->assertSame('194.40', $payment->amount);
         $this->assertSame('8.00', $payment->commission_rate);
-        $this->assertSame('15.84', $payment->commission_amount);
+        $this->assertSame('15.55', $payment->commission_amount);
 
         $departure->update(['fare' => 200]);
-        $this->assertSame('198.00', $reservation->fresh()->total_amount);
-        $this->assertSame('15.84', $payment->fresh()->commission_amount);
+        $this->assertSame('194.40', $reservation->fresh()->total_amount);
+        $this->assertSame('15.55', $payment->fresh()->commission_amount);
     }
 
     public function test_marketplace_gmv_uses_ticket_payments_and_the_saved_agreement(): void

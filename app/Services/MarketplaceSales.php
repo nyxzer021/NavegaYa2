@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Reservation;
-use App\Models\SystemSetting;
 use Illuminate\Database\Eloquent\Builder;
 
 class MarketplaceSales
@@ -35,7 +34,7 @@ class MarketplaceSales
         $net = round(max(0, $base - $discount), 2);
         $percent = $reservation->sales_channel === 'counter'
             ? 0.0
-            : (float) SystemSetting::value('platform_fee_percent', '10');
+            : $this->passengerFeePercent($reservation);
         $fee = round($net * $percent / 100, 2);
 
         return [
@@ -60,6 +59,15 @@ class MarketplaceSales
             'commission_amount' => $commission,
             'operator_net' => round($charged - $commission, 2),
         ];
+    }
+
+    public function passengerFeePercent(Reservation $reservation): float
+    {
+        $reservation->loadMissing(['departure.transportRoute.organization', 'airDeparture.airRoute.organization']);
+        $organization = $reservation->departure?->transportRoute?->organization
+            ?? $reservation->airDeparture?->airRoute?->organization;
+
+        return round((float) ($organization?->commission_rate ?? 0), 2);
     }
 
     public function charged(Reservation $reservation): float

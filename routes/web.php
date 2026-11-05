@@ -228,6 +228,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::post('/solicitudes/marcar-revisadas', [AdminRequestInboxController::class, 'markSeen'])->name('requests.mark-seen');
     Route::resource('/empresas', AdminCompanyController::class)
         ->parameters(['empresas' => 'organization'])->names('companies');
+    Route::patch('/empresas/{organization}/comision', [AdminCompanyController::class, 'updateCommission'])->name('companies.commission.update');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
     Route::get('/empresas/{organization}/documentos/{document}', [AdminCompanyController::class, 'downloadDocument'])->name('companies.documents.download');
     Route::get('/flota-unidades', fn () => redirect()->route('admin.companies.index'))->name('fleet.index');
