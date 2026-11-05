@@ -64,9 +64,7 @@ class CompanyPortalMenu
 
     public function baseLabel(): string
     {
-        $base = trim((string) $this->organization->base_city);
-
-        return $base !== '' ? $base : __('company_portal.requires_implementation');
+        return CompanyBase::label($this->organization) ?? __('company_portal.requires_implementation');
     }
 
     public function modalityLabel(): string

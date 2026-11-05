@@ -109,7 +109,9 @@
     $publishedRouteCount = $organization->transportRoutes->count() + $organization->airRoutes->count();
     $description = trim((string) $organization->public_description);
     $brief = $description !== '' ? \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', $description), 180) : null;
-    $locationLabel = $dock?->name ?: ($organization->address ?: $organization->base_city);
+    $baseLabel = \App\Support\CompanyBase::label($organization);
+    $fleetPhrase = \App\Support\CompanyBase::fleetPhrase($organization);
+    $locationLabel = $baseLabel ?: ($organization->address ?: null);
     $metaParts = array_values(array_filter([$locationLabel, $operatorMode, $organization->service_hours]));
     $routeLines = $organization->transportRoutes->map(function ($route) {
         $origin = $route->originPort?->city ?: $route->originPort?->name;
@@ -188,7 +190,7 @@
     </section>
 
     <div class="company-stats my-4">
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong>{{ $fleet->count() }}</strong><em>Flota</em></span></article>
+        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong>{{ $fleet->count() }}</strong><em>{{ $fleetPhrase }}</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m0 14h16M8 19v-4m4 4V9m4 10v-6"/></svg><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-4 4 3 3-2 6 4"/></svg><span><strong>{{ $gallery->count() }}</strong><em>Fotos</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.6 5.4L20.5 9.3l-4.2 4.1 1 5.9L12 16.8 6.7 19.3l1-5.9L3.5 9.3l5.9-.9L12 3Z"/></svg><span><strong class="{{ $reviews->count() ? '' : 'is-empty' }}">{{ $reviews->count() ? number_format($average, 1) : 'Sin reseñas' }}</strong><em>Calificación</em></span></article>
@@ -243,7 +245,7 @@
             </section>
         </div>
         <aside class="company-side">
-            @if($organization->phone || $supportNumber || $organization->service_hours || $organization->address || $dock || $organization->website)
+            @if($organization->phone || $supportNumber || $organization->service_hours || $organization->address || $baseLabel || $organization->website)
                 <article class="company-card">
                     <h3>Contacto</h3>
                     @if($organization->phone || $supportNumber)
@@ -259,8 +261,8 @@
                     @if($organization->address)
                         <p class="mt-3"><span class="company-kicker">Dirección</span>{{ $organization->address }}</p>
                     @endif
-                    @if($dock)
-                        <p class="mt-3"><span class="company-kicker">{{ $hasAir && ! $hasRiver ? 'Terminal' : 'Puerto o muelle' }}</span>{{ $dock->name }}@if($dock->city) · {{ $dock->city }}@endif</p>
+                    @if($baseLabel)
+                        <p class="mt-3"><span class="company-kicker">Puerto base</span>{{ $baseLabel }}</p>
                     @endif
                     @if($organization->website)
                         <p class="mt-3"><span class="company-kicker">Sitio web</span><a href="{{ $organization->website }}" target="_blank" rel="noopener" class="underline">Sitio oficial</a></p>

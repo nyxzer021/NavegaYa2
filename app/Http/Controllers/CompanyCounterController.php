@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
 use App\Support\AdminScope;
+use App\Support\CompanyBase;
 use Illuminate\View\View;
 
 class CompanyCounterController extends Controller
@@ -33,13 +34,15 @@ class CompanyCounterController extends Controller
             ->where('departure_at', '>', $from)->where('departure_at', '<=', $until)->with(['airRoute', 'aircraft', 'reservations.seats'])->orderBy('departure_at')->limit(6)->get()
             ->map(fn ($item) => $this->row($item, true)) : collect();
         $upcoming = $upcomingRiver->concat($upcomingAir)->sortBy('departure_at')->take(6)->values();
-        $base = $company->vessels()->with('basePort')->first()?->basePort?->name ?? $company->address ?? 'Base operativa';
+        $base = CompanyBase::label($company) ?? __('company_portal.requires_implementation');
+        $schedule = $departures->map(fn (array $row): array => $row + ['when' => 'today'])
+            ->concat($upcoming->map(fn (array $row): array => $row + ['when' => 'later']))
+            ->values();
 
         return view('company.counter', [
             'organization' => $company,
             'company' => $company,
-            'departures' => $departures,
-            'upcoming' => $upcoming,
+            'schedule' => $schedule,
             'base' => $base,
             'riverStatus' => match (strtolower((string) SystemSetting::value('river_status', 'normal'))) {
                 'rising' => 'En aumento',

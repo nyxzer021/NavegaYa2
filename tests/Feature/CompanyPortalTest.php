@@ -404,7 +404,8 @@ class CompanyPortalTest extends TestCase
             ->assertSeeInOrder(['Operación', 'Mi empresa'])
             ->assertSee('Inicio')
             ->assertSee('Pasajes vendidos')
-            ->assertSee('Embarcaciones activas')
+            ->assertSee('1 registrada · 1 habilitada')
+            ->assertSee('En línea')
             ->assertSee('Asientos de la flota')
             ->assertDontSee('Salidas diarias por embarcación')
             ->assertSee('Mantenimiento programado')
@@ -415,12 +416,26 @@ class CompanyPortalTest extends TestCase
             ->assertDontSee('3 libres')
             ->assertSee('25%')
             ->assertSee('1 de 4 asientos')
-            ->assertSee('S/ 8.25')
+            ->assertSee('S/ 110.00')
+            ->assertDontSee('S/ 8.25')
+            ->assertDontSee('Comisión del convenio')
             ->assertSee('Venta en muelle')
             ->assertDontSee('Embarcar')
             ->assertDontSee('Vender pasaje')
             ->assertDontSee('Cobrado hoy')
             ->assertDontSee('Cuenta bancaria');
+    }
+
+    public function test_boarding_uses_one_list_when_only_today_has_a_departure(): void
+    {
+        [$admin, $organization] = $this->companyAdmin('Operador Embarque', '20999999993');
+        $departure = $this->departure($organization, 'Nave de Hoy', 'Iquitos', 'Lagunas');
+        $departure->update(['departure_at' => now()->setTime(15, 30)]);
+
+        $this->actingAs($admin)->get(route('company.counter.index'))
+            ->assertOk()
+            ->assertSee('15:30')
+            ->assertDontSee('No hay rutas programadas');
     }
 
     private function companyAdmin(string $name, string $ruc): array
