@@ -265,6 +265,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/comision', [AdminCompanyController::class, 'updateCommission'])->name('companies.commission.update');
     Route::patch('/empresas/{organization}/puerto-base', [AdminCompanyController::class, 'updateBasePort'])->name('companies.base-port.update');
+    Route::patch('/empresas/{organization}/datos', [AdminCompanyController::class, 'updateIdentity'])->name('companies.identity.update');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
     Route::get('/empresas/{organization}/documentos/{document}', [AdminCompanyController::class, 'downloadDocument'])->name('companies.documents.download');
     Route::get('/modalidades-por-aprobar', [AdminCompanyOperationController::class, 'modalities'])->name('companies.modalities.index');
@@ -292,6 +293,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/flota-permisos/{vessel}/verify', [AdminFleetComplianceController::class, 'verifyVessel'])->name('fleet-compliance.verify');
     Route::get('/comisiones-facturacion', [AdminSettlementController::class, 'index'])->name('commissions.index');
     Route::post('/comisiones-facturacion/{organization}/cobros', [AdminSettlementController::class, 'recordCollection'])->name('commissions.store');
+    Route::post('/comisiones-facturacion/{organization}/anulaciones', [AdminSettlementController::class, 'voidLegacy'])->name('commissions.void');
     Route::get('/liquidaciones', fn () => redirect()->route('admin.commissions.index'))->name('settlements.index');
     Route::get('/ventas-globales', [AdminSalesController::class, 'index'])->name('sales.index');
     Route::get('/tours-experiencias', [AdminTourController::class, 'index'])->name('tours.index');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\Port;
@@ -19,9 +20,18 @@ class CompanyDetailsController extends Controller
         $organization = $this->organization($request);
         $organization->load(['modalities', 'documents', 'basePort']);
 
+        $correction = AuditLog::query()
+            ->where('event', 'company_identity_corrected')
+            ->where('subject_type', $organization->getMorphClass())
+            ->where('subject_id', $organization->id)
+            ->latest('created_at')
+            ->first();
+
         return view('company.details', [
             'organization' => $organization,
             'ports' => $organization->catalogPorts(),
+            'correction' => $correction,
+            'correctionAuthor' => $correction?->user?->name,
         ]);
     }
 
@@ -51,7 +61,7 @@ class CompanyDetailsController extends Controller
             'contact_name.required' => 'Indica al representante legal.',
             'base_port_id.exists' => 'Elige un puerto activo del catálogo.',
         ]);
-        if ($data['base_port_id'] && ! $organization->acceptsCatalogPort(Port::query()->findOrFail($data['base_port_id']))) {
+        if (($data['base_port_id'] ?? null) && ! $organization->acceptsCatalogPort(Port::query()->findOrFail($data['base_port_id']))) {
             return back()->withErrors(['base_port_id' => 'Ese puerto no corresponde a tus modalidades aprobadas.'])->withInput();
         }
 

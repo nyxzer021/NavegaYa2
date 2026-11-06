@@ -5,6 +5,12 @@
 <div class="mx-auto max-w-4xl space-y-4">
     @if(session('success'))<x-ui.card><p class="text-sm font-semibold text-emerald-800">{{ session('success') }}</p></x-ui.card>@endif
     @if($errors->any())<x-ui.card><p class="text-sm font-semibold text-rose-800">{{ $errors->first() }}</p></x-ui.card>@endif
+    @if($correction)
+        <x-ui.card>
+            <p class="text-sm font-semibold text-slate-800">NavegaYA corrigió los datos de la empresa el {{ $correction->created_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}. Lo hizo {{ $correctionAuthor ?: 'un administrador' }}.</p>
+            <p class="mt-1 text-sm text-slate-600">Motivo: {{ $correction->changes['reason'] ?? 'Sin motivo registrado' }}</p>
+        </x-ui.card>
+    @endif
 
     <x-ui.card>
         <form method="POST" action="{{ route('company.details.update') }}" enctype="multipart/form-data" class="space-y-4">

@@ -24,7 +24,7 @@ class CompanyFinanceController extends Controller
             ->get();
         $current = $payments->filter(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment));
         $legacy = $payments->reject(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment))
-            ->filter(fn (Payment $payment): bool => (float) $payment->commission_amount > 0);
+            ->filter(fn (Payment $payment): bool => (float) $payment->commission_amount > 0 && $payment->commission_status !== 'voided');
 
         return view('company.finance.index', [
             'organization' => $organization,

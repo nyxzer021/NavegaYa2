@@ -120,6 +120,28 @@
         </form>
     </section>
 
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="font-black text-slate-900">Datos de la empresa</h2>
+        <p class="mt-1 text-xs text-slate-500">Corregir estos datos pide un motivo y queda auditado. El RUC solo se cambia desde aquí. La empresa ve el cambio, la fecha y quién lo hizo.</p>
+        @if($errors->any())<p class="mt-3 text-xs font-semibold text-rose-800">{{ $errors->first() }}</p>@endif
+        <form method="POST" action="{{ route('admin.companies.identity.update', $organization) }}" enctype="multipart/form-data" class="mt-4 grid gap-3 sm:grid-cols-2">
+            @csrf
+            @method('PATCH')
+            <label class="text-xs font-bold text-slate-600">RUC<input name="ruc" required maxlength="11" value="{{ old('ruc', $organization->ruc) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Razón social<input name="legal_name" required value="{{ old('legal_name', $organization->legal_name) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Nombre comercial<input name="commercial_name" value="{{ old('commercial_name', $organization->commercial_name) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600 sm:col-span-2">Dirección fiscal<input name="address" required value="{{ old('address', $organization->address) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Representante legal<input name="contact_name" required value="{{ old('contact_name', $organization->contact_name) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">DNI del representante<input name="representative_document_number" value="{{ old('representative_document_number', $organization->representative_document_number) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Ficha RUC<input type="file" name="ruc_document" accept=".pdf,.jpg,.jpeg,.png" class="mt-1 block w-full text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Vencimiento de la ficha RUC<input type="date" name="ruc_expires_on" value="{{ old('ruc_expires_on') }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Documento del representante<input type="file" name="representative_document" accept=".pdf,.jpg,.jpeg,.png" class="mt-1 block w-full text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">Vencimiento del documento<input type="date" name="representative_expires_on" value="{{ old('representative_expires_on') }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600 sm:col-span-2">Motivo<input name="reason" required minlength="5" maxlength="500" value="{{ old('reason') }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
+            <button class="h-11 w-fit rounded-xl bg-[#062c21] px-4 text-xs font-black text-white">Guardar corrección</button>
+        </form>
+    </section>
+
     <div class="space-y-5">
             @if(in_array($organization->modality, ['fluvial', 'mixto']))
                 <section class="overflow-hidden rounded-2xl border border-emerald-200/70 bg-white shadow-sm">

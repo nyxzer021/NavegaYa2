@@ -44,7 +44,7 @@
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <header class="border-b border-slate-100 px-5 py-4">
             <h2 class="font-black text-slate-900">Cargos de servicio por empresa</h2>
-            <p class="text-[10px] text-slate-400">El porcentaje vigente se aplica solo a las ventas nuevas.</p>
+            <p class="text-[10px] text-slate-400">El porcentaje vigente se aplica solo a las ventas nuevas. Estas ventas no generan una deuda de la empresa.</p>
         </header>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[720px] text-left text-xs">
@@ -78,21 +78,60 @@
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <header class="border-b border-slate-100 px-5 py-4">
             <h2 class="font-black text-slate-900">Comisiones anteriores al cambio</h2>
-            <p class="text-[10px] text-slate-400">Estos registros descontaban el porcentaje a la empresa. No se modifican.</p>
+            <p class="text-[10px] text-slate-400">Estos registros descontaban el porcentaje a la empresa. El importe no se borra. Una anulada deja de sumar.</p>
         </header>
+        @if($errors->has('payment_id') || $errors->has('reason') || $errors->has('reference'))
+            <p class="border-b border-rose-100 bg-rose-50 px-5 py-3 text-xs font-semibold text-rose-800">{{ $errors->first('payment_id') ?: $errors->first('reason') ?: $errors->first('reference') }}</p>
+        @endif
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[640px] text-left text-xs">
+            <table class="w-full min-w-[860px] text-left text-xs">
                 <thead class="bg-slate-50 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                    <tr><th class="p-4">Empresa</th><th class="p-4 text-right">Importe guardado</th></tr>
+                    <tr>
+                        <th class="p-4">Empresa</th>
+                        <th class="p-4">Fecha</th>
+                        <th class="p-4 text-right">Importe guardado</th>
+                        <th class="p-4">Estado</th>
+                        <th class="p-4">Acciones</th>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                @forelse($legacySummaries as $summary)
+                @forelse($legacyPayments as $payment)
+                    @php
+                        $company = $payment->reservation?->departure?->transportRoute?->organization
+                            ?? $payment->reservation?->airDeparture?->airRoute?->organization;
+                        $open = in_array($payment->commission_status, ['pending', 'invoiced'], true);
+                        $statusLabel = match ($payment->commission_status) {
+                            'paid' => 'Cobrada',
+                            'voided' => 'Anulada',
+                            default => 'Pendiente',
+                        };
+                    @endphp
                     <tr>
-                        <td class="p-4 font-black text-slate-900">{{ $summary->organization->commercial_name ?: $summary->organization->legal_name }}</td>
-                        <td class="p-4 text-right font-black">S/ {{ number_format($summary->amount, 2) }}</td>
+                        <td class="p-4 font-black text-slate-900">{{ $company?->commercial_name ?: $company?->legal_name }}</td>
+                        <td class="p-4 text-slate-500">{{ $payment->paid_at?->format('d/m/Y') }}</td>
+                        <td class="p-4 text-right font-black">S/ {{ number_format((float) $payment->commission_amount, 2) }}</td>
+                        <td class="p-4">{{ $statusLabel }}</td>
+                        <td class="p-4">
+                            @if($open && $company)
+                                <form method="POST" action="{{ route('admin.commissions.store', $company) }}" class="flex flex-wrap items-center gap-2">
+                                    @csrf
+                                    <input type="hidden" name="payment_id" value="{{ $payment->id }}">
+                                    <input type="hidden" name="period_start" value="{{ $payment->paid_at?->toDateString() }}">
+                                    <input type="hidden" name="period_end" value="{{ $payment->paid_at?->toDateString() }}">
+                                    <input name="reference" required maxlength="120" placeholder="Referencia" class="h-9 w-36 rounded-lg border-slate-200 text-xs">
+                                    <button class="h-9 rounded-lg bg-[#062c21] px-3 text-[10px] font-black text-white">Registrar cobro</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.commissions.void', $company) }}" class="mt-2 flex flex-wrap items-center gap-2">
+                                    @csrf
+                                    <input type="hidden" name="payment_id" value="{{ $payment->id }}">
+                                    <input name="reason" required minlength="5" maxlength="500" placeholder="Motivo de la anulación" class="h-9 w-56 rounded-lg border-slate-200 text-xs">
+                                    <button class="h-9 rounded-lg border border-slate-300 px-3 text-[10px] font-black text-slate-700">Anular</button>
+                                </form>
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="2" class="p-8 text-center text-slate-400">No hay comisiones anteriores en este periodo.</td></tr>
+                    <tr><td colspan="5" class="p-8 text-center text-slate-400">No hay comisiones anteriores en este periodo.</td></tr>
                 @endforelse
                 </tbody>
             </table>

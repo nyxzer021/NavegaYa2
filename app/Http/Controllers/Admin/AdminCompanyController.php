@@ -331,11 +331,88 @@ class AdminCompanyController extends Controller
         return back()->with('success', 'Puerto base actualizado. La empresa lo ve en su panel.');
     }
 
+    public function updateIdentity(Request $request, Organization $organization): RedirectResponse
+    {
+        abort_unless($organization->type === 'transport_company', 404);
+        $data = $request->validate([
+            'ruc' => ['required', 'digits:11', Rule::unique('organizations', 'ruc')->ignore($organization->id)],
+            'legal_name' => ['required', 'string', 'max:180'],
+            'commercial_name' => ['nullable', 'string', 'max:180'],
+            'address' => ['required', 'string', 'max:255'],
+            'contact_name' => ['required', 'string', 'max:180'],
+            'representative_document_number' => ['nullable', 'string', 'max:20'],
+            'representative_email' => ['nullable', 'email', 'max:255'],
+            'representative_phone' => ['nullable', 'string', 'max:30'],
+            'ruc_expires_on' => ['nullable', 'date'],
+            'representative_expires_on' => ['nullable', 'date'],
+            'ruc_reference' => ['nullable', 'string', 'max:80'],
+            'representative_reference' => ['nullable', 'string', 'max:80'],
+            'ruc_document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'representative_document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'ruc.required' => 'Indica el RUC.',
+            'ruc.digits' => 'El RUC tiene 11 dígitos.',
+            'ruc.unique' => 'Ese RUC ya está registrado.',
+            'legal_name.required' => 'Indica la razón social.',
+            'address.required' => 'Indica la dirección fiscal.',
+            'contact_name.required' => 'Indica al representante legal.',
+            'reason.required' => 'Indica el motivo de la corrección.',
+            'reason.min' => 'El motivo debe tener al menos 5 caracteres.',
+        ]);
+        $fields = ['ruc', 'legal_name', 'commercial_name', 'address', 'contact_name', 'representative_document_number', 'representative_email', 'representative_phone'];
+        $changes = [];
+        foreach ($fields as $field) {
+            $before = $organization->{$field};
+            $after = $data[$field] ?? null;
+            if ((string) $before !== (string) $after) {
+                $changes[$field] = ['from' => $before, 'to' => $after];
+            }
+        }
+        $organization->update(collect($data)->only($fields)->all());
+        $this->replaceDocument($request, $organization, 'ruc_document', 'ruc', $data['ruc_expires_on'] ?? null, $data['ruc_reference'] ?? null);
+        $this->replaceDocument($request, $organization, 'representative_document', 'representative', $data['representative_expires_on'] ?? null, $data['representative_reference'] ?? null);
+        AuditRecorder::record($request, 'company_identity_corrected', $organization, [
+            'fields' => $changes,
+            'reason' => $data['reason'],
+        ]);
+
+        return back()->with('success', 'Datos de la empresa corregidos. La empresa ve el cambio en su panel.');
+    }
+
     public function toggleStatus(Organization $organization): RedirectResponse
     {
         $organization->update(['status' => $organization->status === 'active' ? 'suspended' : 'active']);
 
         return back()->with('success', 'Estado de la empresa actualizado.');
+    }
+
+    private function replaceDocument(Request $request, Organization $organization, string $field, string $type, ?string $expiresOn, ?string $reference): void
+    {
+        $document = $organization->documents()->where('type', $type)->latest('id')->first();
+        if (! $request->hasFile($field) && $expiresOn === null && $reference === null) {
+            return;
+        }
+        if ($document && ! $request->hasFile($field)) {
+            $document->update(array_filter([
+                'expires_on' => $expiresOn,
+                'reference_number' => $reference,
+            ], fn ($value) => $value !== null));
+
+            return;
+        }
+        if (! $request->hasFile($field)) {
+            return;
+        }
+        $file = $request->file($field);
+        OrganizationDocument::query()->create([
+            'organization_id' => $organization->id,
+            'type' => $type,
+            'path' => $file->store('organization-documents/'.$organization->id),
+            'original_name' => $file->getClientOriginalName(),
+            'expires_on' => $expiresOn,
+            'reference_number' => $reference,
+        ]);
     }
 
     public function destroy(Organization $organization): RedirectResponse
