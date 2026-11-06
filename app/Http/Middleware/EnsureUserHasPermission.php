@@ -29,7 +29,7 @@ class EnsureUserHasPermission
         'admin.ads.' => 'ads', 'admin.advertisements.' => 'ads', 'admin.advertising-subscriptions.' => 'ads',
         'admin.destinations.' => 'ads', 'admin.destination-listings.' => 'ads', 'admin.business-categories.' => 'ads',
         'admin.tours.' => 'ads', 'admin.tourism-partners.' => 'ads',
-        'admin.moderation.' => 'audit', 'admin.audit.' => 'audit', 'admin.users.' => 'users',
+        'admin.moderation.' => 'audit', 'admin.content-moderation.' => 'audit', 'admin.audit.' => 'audit', 'admin.users.' => 'users',
         'admin.settings.' => 'settings',
         'admin.home-hero.' => 'settings',
         'admin.site-heroes.' => 'settings',

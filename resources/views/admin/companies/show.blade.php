@@ -5,6 +5,7 @@
 @endsection
 
 @section('content')
+<p class="mb-4"><a href="{{ route('companies.show', $organization) }}" class="font-bold text-emerald-800">Ver la página pública</a></p>
 @php
     $name = $organization->commercial_name ?: $organization->legal_name;
     $activeFleet = $organization->vessels->where('status', 'ready')->count()

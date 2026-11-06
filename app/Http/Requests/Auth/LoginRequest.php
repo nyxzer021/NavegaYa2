@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\UserSanction;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -47,6 +48,16 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        $user = $this->user();
+        $block = $user ? UserSanction::activeBlock($user) : null;
+        if ($block) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => $block->loginMessage(),
             ]);
         }
 

@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Reservation extends Model
 {
-    protected $fillable = ['user_id', 'checkout_order_id', 'route_departure_id', 'air_departure_id', 'code', 'contact_name', 'contact_email', 'contact_phone', 'contact_document', 'total_amount', 'base_amount', 'discount_amount', 'service_fee_amount', 'status', 'sales_channel', 'payment_method', 'expires_at', 'paid_at'];
+    protected $fillable = ['user_id', 'checkout_order_id', 'route_departure_id', 'air_departure_id', 'code', 'contact_name', 'contact_email', 'contact_phone', 'contact_document', 'total_amount', 'base_amount', 'discount_amount', 'service_fee_amount', 'status', 'sales_channel', 'payment_method', 'expires_at', 'paid_at',
+        'travel_policy_version_id', 'platform_terms_version_id',
+    ];
 
     protected function casts(): array
     {

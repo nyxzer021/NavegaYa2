@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Organization;
+use App\Models\OrganizationBanner;
 use App\Models\OrganizationPhoto;
 use App\Support\AdminScope;
 use App\Support\CompanyPublicPresentation;
 use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CompanyPublicProfileController extends Controller
@@ -65,12 +68,48 @@ class CompanyPublicProfileController extends Controller
             $organization->photos()->create([
                 'path' => Storage::url($photo->store('company-profiles', 'public')),
                 'caption' => $data['caption'] ?? null,
+                'alt_text' => $data['caption'] ?? null,
+                'status' => 'pending',
                 'sort_order' => $next,
             ]);
         }
         $organization->update(['profile_content_status' => 'published']);
 
-        return back()->with('success', 'Las fotos ya aparecen en la ficha pública.');
+        return back()->with('success', 'Las fotos quedaron pendientes de revisión. No se publican solas.');
+    }
+
+    public function storeBanner(Request $request): RedirectResponse
+    {
+        $organization = $this->organization($request);
+        $data = $request->validate([
+            'banner' => ['required', 'image', 'mimes:webp,jpg,jpeg,png', 'max:5120'],
+            'focal_x' => ['nullable', 'numeric', 'between:0,100'],
+            'focal_y' => ['nullable', 'numeric', 'between:0,100'],
+        ], [
+            'banner.max' => 'La portada no puede pasar de 5 MB.',
+            'banner.image' => 'La portada debe ser una imagen.',
+        ]);
+        if ($organization->banners()->count() >= 2) {
+            return back()->withErrors(['banner' => 'Solo puedes publicar dos portadas.']);
+        }
+        $position = (int) $organization->banners()->max('position') + 1;
+        $organization->banners()->create([
+            'path' => $this->storeBannerFile($request->file('banner')),
+            'focal_x' => $data['focal_x'] ?? 50,
+            'focal_y' => $data['focal_y'] ?? 50,
+            'position' => $position,
+        ]);
+
+        return back()->with('success', 'La portada quedó publicada.');
+    }
+
+    public function destroyBanner(Request $request, OrganizationBanner $banner): RedirectResponse
+    {
+        $organization = $this->organization($request);
+        abort_unless((int) $banner->organization_id === (int) $organization->id, 404);
+        $banner->delete();
+
+        return back()->with('success', 'La portada se quitó.');
     }
 
     public function destroyPhoto(Request $request, OrganizationPhoto $photo): RedirectResponse
@@ -198,6 +237,35 @@ class CompanyPublicProfileController extends Controller
         }
 
         return round((float) $value, 2);
+    }
+
+    private function storeBannerFile(UploadedFile $file): string
+    {
+        $binary = file_get_contents($file->getRealPath());
+        $image = function_exists('imagecreatefromstring') && function_exists('imagewebp') ? @imagecreatefromstring((string) $binary) : false;
+        if ($image === false) {
+            return Storage::url($file->store('company-banners', 'public'));
+        }
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $targetWidth = min(1920, $width);
+        $targetHeight = (int) round($height * ($targetWidth / max(1, $width)));
+        if ($targetHeight > 480) {
+            $targetHeight = 480;
+            $targetWidth = max(1, (int) round($width * (480 / max(1, $height))));
+        }
+        $canvas = imagecreatetruecolor(max(1, $targetWidth), max(1, $targetHeight));
+        imagecopyresampled($canvas, $image, 0, 0, 0, 0, imagesx($canvas), imagesy($canvas), $width, $height);
+        $relative = 'company-banners/'.Str::uuid().'.webp';
+        $absolute = storage_path('app/public/'.$relative);
+        if (! is_dir(dirname($absolute))) {
+            mkdir(dirname($absolute), 0775, true);
+        }
+        imagewebp($canvas, $absolute, 82);
+        imagedestroy($image);
+        imagedestroy($canvas);
+
+        return Storage::url($relative);
     }
 
     private function organization(Request $request): Organization

@@ -67,16 +67,21 @@ class AdminSettingsController
             'baggage_allowance_river_kg' => ['required', 'integer', 'min:0', 'max:200'],
             'baggage_allowance_air_kg' => ['required', 'integer', 'min:0', 'max:100'],
             'parcel_weight_threshold_kg' => ['required', 'integer', 'min:0', 'max:500'],
+            'baggage_hand_kg' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'baggage_hold_kg' => ['nullable', 'integer', 'min:0', 'max:200'],
         ], [
             'baggage_allowance_river_kg.required' => 'Indica el equipaje fluvial.',
             'baggage_allowance_air_kg.required' => 'Indica el equipaje aéreo.',
             'parcel_weight_threshold_kg.required' => 'Indica el umbral de encomienda.',
         ]);
         foreach ($data as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
             SystemSetting::updateOrCreate(['key' => $key], ['value' => (string) $value]);
         }
 
-        return back()->with('success', 'Umbrales guardados. Todavía no se usan en la venta.');
+        return back()->with('success', 'Umbrales guardados. El resumen público usa estos valores cuando la empresa no definió los suyos.');
     }
 
     public function updateTheme(Request $request): RedirectResponse

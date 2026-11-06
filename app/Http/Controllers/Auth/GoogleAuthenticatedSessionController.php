@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\UserSanction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -44,6 +45,11 @@ class GoogleAuthenticatedSessionController extends Controller
 
         Role::firstOrCreate(['code' => 'customer'], ['name' => 'Cliente / pasajero', 'description' => 'Compra pasajes y consulta únicamente sus propios boletos y códigos QR.'])
             ->users()->syncWithoutDetaching([$user->id]);
+
+        $block = UserSanction::activeBlock($user);
+        if ($block) {
+            return redirect()->route('login')->withErrors(['email' => $block->loginMessage()]);
+        }
 
         $user->claimGuestPurchases();
 

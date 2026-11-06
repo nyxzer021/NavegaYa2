@@ -103,6 +103,7 @@
         }
     }
     $gallery = $gallery->unique('src')->values();
+    $commentPhoto = $organization->photos->first();
     $dock = $ports->first();
     $supportNumber = $organization->publicWhatsapp();
     $cargoNumber = $organization->publicWhatsapp('cargo');
@@ -135,7 +136,7 @@
         : null;
 @endphp
 
-<div class="pb-24" id="company-ficha" style="background:#F7F9F8;color:#10231D;{{ $menuStyle }}">
+<div class="pb-24" id="company-ficha" style="background:#F7F9F8;color:#10231D;{{ $menuStyle }}@if($organization->public_primary_color)--company-primary:{{ $organization->public_primary_color }};@endif @if($organization->public_accent_color)--company-accent:{{ $organization->public_accent_color }};@endif">
 <main class="company-wrap pt-4">
     <a href="{{ route('companies.index') }}" class="mb-4 inline-flex text-sm font-bold text-emerald-800">← Empresas</a>
     @if(session('success'))<div class="mb-4 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-semibold text-white">{{ session('success') }}</div>@endif
@@ -192,7 +193,7 @@
     </section>
 
     <div class="company-stats my-4">
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong>{{ $fleet->count() }}</strong><em>{{ $fleetPhrase }}</em></span></article>
+        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong class="is-empty">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m0 14h16M8 19v-4m4 4V9m4 10v-6"/></svg><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-4 4 3 3-2 6 4"/></svg><span><strong>{{ $gallery->count() }}</strong><em>Fotos</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.6 5.4L20.5 9.3l-4.2 4.1 1 5.9L12 16.8 6.7 19.3l1-5.9L3.5 9.3l5.9-.9L12 3Z"/></svg><span><strong class="{{ $reviews->count() ? '' : 'is-empty' }}">{{ $reviews->count() ? number_format($average, 1) : 'Sin reseñas' }}</strong><em>Calificación</em></span></article>
@@ -204,10 +205,16 @@
         <button type="button" data-open="flota" class="company-tab">Flota</button>
         <button type="button" data-open="salidas" class="company-tab">Salidas</button>
         <button type="button" data-open="opiniones" class="company-tab">Testimonios{{ $reviews->count() ? ' ('.$reviews->count().')' : '' }}</button>
+        <button type="button" data-open="politicas" class="company-tab">Políticas de viaje</button>
+        <button type="button" data-open="donde-comprar" class="company-tab">Dónde comprar</button>
     </nav>
 
     <section data-panel="informacion" class="company-panel company-layout mt-5">
         <div class="grid gap-4">
+            <article class="company-card">
+                <h2>Equipaje</h2>
+                <p class="mt-2">Equipaje incluido: mano {{ $baggage['hand'] }} kg, bodega {{ $baggage['hold'] }} kg, aéreo {{ $baggage['air'] }} kg. Desde {{ $baggage['cargo'] }} kg se registra como carga.</p>
+            </article>
             @if($description !== '')
                 <article class="company-card">
                     <h2 id="company-information-title">Información de la empresa</h2>
@@ -310,9 +317,49 @@
                 <p class="mt-2 text-sm text-slate-600">La empresa todavía no publicó fotografías propias.</p>
             </div>
         @endif
+        @if($commentPhoto)
+            <div class="mt-4 rounded-3xl bg-white p-4" data-photo-comments="{{ route('companies.photos.comments', [$organization, $commentPhoto]) }}">
+                <h3 class="text-base font-black">Comentarios de la foto</h3>
+                <ul data-comment-list class="mt-2 space-y-1 text-sm"></ul>
+                @auth
+                    <form class="mt-3 flex flex-wrap gap-2" action="{{ route('companies.photos.comments.store', [$organization, $commentPhoto]) }}" method="POST">
+                        @csrf
+                        <textarea name="body" required minlength="2" maxlength="500" class="min-h-16 flex-1 rounded-xl border border-slate-200 p-2 text-sm" placeholder="Escribe un comentario"></textarea>
+                        <button type="button" data-emoji="😊" class="h-11 rounded-xl border px-3">😊</button>
+                        <button class="h-11 rounded-xl bg-[#F4B820] px-3 text-sm font-extrabold">Comentar</button>
+                    </form>
+                @endauth
+            </div>
+            <script>
+                (function () {
+                    var box = document.querySelector('[data-photo-comments]');
+                    if (!box) return;
+                    var load = function () {
+                        fetch(box.getAttribute('data-photo-comments'), { headers: { 'Accept': 'application/json' } })
+                            .then(function (response) { return response.json(); })
+                            .then(function (data) {
+                                var list = box.querySelector('[data-comment-list]');
+                                list.textContent = '';
+                                (data.comments || []).forEach(function (item) {
+                                    var row = document.createElement('li');
+                                    row.textContent = item.author + ': ' + item.body;
+                                    list.appendChild(row);
+                                });
+                            });
+                    };
+                    load();
+                    window.setInterval(load, 12000);
+                    box.addEventListener('click', function (event) {
+                        var emoji = event.target && event.target.getAttribute && event.target.getAttribute('data-emoji');
+                        var field = box.querySelector('textarea');
+                        if (emoji && field) field.value += emoji;
+                    });
+                })();
+            </script>
+        @endif
     </section>
 
-    <section data-panel="flota" class="company-panel mt-5 grid gap-4 sm:grid-cols-2" hidden>
+    <section id="flota" data-panel="flota" class="company-panel mt-5 grid gap-4 sm:grid-cols-2" hidden>
         @forelse($fleet as $index => $fleetItem)
             @php
                 $unit = $fleetItem['unit'];
@@ -369,7 +416,7 @@
         </div>
         @foreach($departures as $item)
             <div data-departure data-origin="{{ $item['origin'] }}" data-destination="{{ $item['destination'] }}" data-date="{{ $item['departure']->departure_at->toDateString() }}" data-vehicle="{{ $item['mode'] }}-{{ $item['vehicle']->id }}">
-                <x-departure-card :departure="$item['departure']" />
+                <x-ui.departure-card :departure="$item['departure']" />
             </div>
         @endforeach
         <p id="salida-empty" class="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-sm text-slate-600" hidden>Ninguna salida coincide con la búsqueda.</p>
@@ -462,7 +509,7 @@
     (function () {
         var root = document.getElementById('company-ficha');
         if (!root) return;
-        var names = ['informacion', 'galeria', 'flota', 'salidas', 'opiniones'];
+        var names = ['informacion', 'galeria', 'flota', 'salidas', 'opiniones', 'politicas', 'donde-comprar'];
         var cargoType = 'mediano';
         var cargoWeight = 5;
         var cargoLabels = { pequeno: 'pequeña', mediano: 'mediana', grande: 'grande' };
@@ -682,5 +729,27 @@
         show(names.indexOf(start) === -1 ? 'informacion' : start);
     })();
 </script>
+<a href="#salidas" class="fixed inset-x-4 bottom-4 z-40 flex h-12 items-center justify-center rounded-xl bg-[#F4B820] text-base font-extrabold text-[#10231D] shadow-lg lg:hidden">Comprar</a>
+<section id="politicas" data-panel="politicas" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
+    <h2>Políticas de viaje</h2>
+    <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">
+        @foreach($policyPoints as $point)
+            <li>{{ $point }}</li>
+        @endforeach
+    </ul>
+    @if($travelPolicy)
+        <a href="{{ route('companies.policy', $organization) }}" class="company-map mt-4">Leer la política completa</a>
+    @endif
+</section>
+<section id="donde-comprar" data-panel="donde-comprar" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
+    <h2>Dónde comprar</h2>
+    <ul class="mt-3 space-y-2 text-sm">
+        @forelse($organization->sites->where('is_active', true)->where('show_on_where_to_buy', true)->where('hidden_by_admin', false) as $site)
+            <li><strong>{{ $site->name }}</strong> · {{ $site->city }} · {{ $site->address }}</li>
+        @empty
+            <li>La empresa todavía no publicó puntos de venta.</li>
+        @endforelse
+    </ul>
+</section>
 </div>
 </x-public-layout>

@@ -4,9 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanyReview;
 use App\Models\Organization;
+use App\Models\OrganizationPhoto;
+use App\Models\PhotoComment;
+use App\Models\PhotoLike;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\UserSanction;
+use App\Support\BaggageAllowance;
+use App\Support\TravelPolicy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -26,7 +33,10 @@ class PublicCompanyController
     {
         abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
         $organization->load([
-            'photos',
+            'photos' => fn ($query) => $query->where('status', 'published')->orderBy('sort_order'),
+            'banners',
+            'pageSections',
+            'sites',
             'vessels.basePort',
             'transportRoutes.originPort',
             'transportRoutes.destinationPort',
@@ -54,11 +64,16 @@ class PublicCompanyController
                 })->exists();
         }
 
-        return view('companies.show', compact('organization', 'reviews', 'average', 'completedReservations', 'hasUpcomingTrip'));
+        $baggage = BaggageAllowance::for($organization);
+        $policyPoints = TravelPolicy::publicPoints($organization);
+        $travelPolicy = $organization->travelPolicies()->where('kind', 'company_travel')->first()?->current();
+
+        return view('companies.show', compact('organization', 'reviews', 'average', 'completedReservations', 'hasUpcomingTrip', 'baggage', 'policyPoints', 'travelPolicy'));
     }
 
     public function review(Request $request, Organization $organization): RedirectResponse
     {
+        $this->guardParticipation($request->user());
         abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
         $data = $request->validate([
             'reservation_id' => ['required', 'integer', 'exists:reservations,id'],
@@ -88,6 +103,7 @@ class PublicCompanyController
 
     public function comment(Request $request, Organization $organization): RedirectResponse
     {
+        $this->guardParticipation($request->user());
         abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
         $data = $request->validate([
             'rating' => ['required', 'integer', 'between:1,5'],
@@ -112,6 +128,64 @@ class PublicCompanyController
 
         return redirect()->to(route('companies.show', $organization).'#opiniones')
             ->with('success', 'Tu comentario ya se ve en la ficha de la empresa.');
+    }
+
+    public function photoComments(Organization $organization, OrganizationPhoto $photo): JsonResponse
+    {
+        abort_unless((int) $photo->organization_id === (int) $organization->id && $photo->status === 'published', 404);
+        $comments = $photo->comments()->where('status', 'published')->with('user:id,name')->latest()->limit(40)->get()
+            ->map(fn (PhotoComment $comment) => [
+                'id' => $comment->id,
+                'author' => $comment->user?->name ?: 'Viajero',
+                'body' => $comment->body,
+                'at' => $comment->created_at?->format('d/m/Y H:i'),
+            ]);
+
+        return response()->json(['comments' => $comments]);
+    }
+
+    public function storePhotoComment(Request $request, Organization $organization, OrganizationPhoto $photo): JsonResponse
+    {
+        $this->guardParticipation($request->user());
+        abort_unless((int) $photo->organization_id === (int) $organization->id && $photo->status === 'published', 404);
+        $data = $request->validate(['body' => ['required', 'string', 'min:2', 'max:500'], 'parent_id' => ['nullable', 'integer']]);
+        $comment = $photo->comments()->create([
+            'user_id' => $request->user()->id,
+            'parent_id' => $data['parent_id'] ?? null,
+            'body' => $data['body'],
+            'status' => 'pending',
+        ]);
+
+        return response()->json(['id' => $comment->id, 'status' => 'pending'], 201);
+    }
+
+    public function togglePhotoLike(Request $request, Organization $organization, OrganizationPhoto $photo): JsonResponse
+    {
+        abort_unless((int) $photo->organization_id === (int) $organization->id && $photo->status === 'published', 404);
+        $existing = PhotoLike::query()->where('organization_photo_id', $photo->id)->where('user_id', $request->user()->id)->first();
+        if ($existing) {
+            $existing->delete();
+        } else {
+            PhotoLike::create(['organization_photo_id' => $photo->id, 'user_id' => $request->user()->id]);
+        }
+
+        return response()->json(['likes' => $photo->likes()->count()]);
+    }
+
+    public function policy(Organization $organization): View
+    {
+        abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
+        $document = $organization->travelPolicies()->where('kind', 'company_travel')->first();
+        $version = $document?->current();
+        abort_unless($version, 404);
+
+        return view('companies.policy', compact('organization', 'version'));
+    }
+
+    private function guardParticipation(User $user): void
+    {
+        $block = UserSanction::activeBlock($user);
+        abort_if($block, 403, $block?->loginMessage() ?? 'Tu cuenta no puede publicar.');
     }
 
     private function reservationsForCompany(User $user, int $organizationId): Builder

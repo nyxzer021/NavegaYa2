@@ -3,12 +3,15 @@
 namespace App\Support;
 
 use App\Models\Advertisement;
+use App\Models\CompanyReview;
 use App\Models\ContentReport;
 use App\Models\DestinationListing;
 use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\OrganizationModality;
+use App\Models\OrganizationPhoto;
 use App\Models\Payment;
+use App\Models\PhotoComment;
 use App\Models\SupportTicket;
 use App\Models\Vessel;
 use Illuminate\Support\Collection;
@@ -63,6 +66,7 @@ class AdminRequestInbox
                 'status' => 'Solicitud comercial pendiente', 'created_at' => $advertisement->created_at,
                 'url' => route('admin.advertisements.index', ['status' => 'lead_pending']), 'action' => 'Revisar campaña',
             ]))
+            ->concat($this->contentToModerate())
             ->concat(ContentReport::query()->whereIn('status', ['open', 'in_review'])->with('reporter')->get()->map(fn ($report) => [
                 'type' => 'report', 'icon' => 'alert', 'area' => 'Usuarios e incidencias',
                 'title' => $report->reporter?->name ?: 'Reporte de visitante',
@@ -90,6 +94,33 @@ class AdminRequestInbox
             ]))
             ->sortByDesc(fn ($item) => $item['created_at']?->timestamp ?? 0)
             ->values();
+    }
+
+    private function contentToModerate(): Collection
+    {
+        $photos = OrganizationPhoto::query()->where('status', 'pending')->with('organization')->get()->map(fn ($photo) => [
+            'type' => 'content_moderation', 'icon' => 'page', 'area' => 'Contenido por moderar',
+            'title' => $photo->organization?->commercial_name ?: $photo->organization?->legal_name ?: 'Foto de empresa',
+            'detail' => $photo->caption ?: 'Foto pendiente de revisión',
+            'status' => 'Pendiente', 'created_at' => $photo->created_at,
+            'url' => route('admin.content-moderation.index'), 'action' => 'Moderar contenido',
+        ]);
+        $comments = PhotoComment::query()->where('status', 'pending')->with('user')->get()->map(fn ($comment) => [
+            'type' => 'content_moderation', 'icon' => 'page', 'area' => 'Contenido por moderar',
+            'title' => $comment->user?->name ?: 'Comentario de foto',
+            'detail' => $comment->body,
+            'status' => 'Pendiente', 'created_at' => $comment->created_at,
+            'url' => route('admin.content-moderation.index'), 'action' => 'Moderar contenido',
+        ]);
+        $reviews = CompanyReview::query()->where('status', 'pending')->with('organization')->get()->map(fn ($review) => [
+            'type' => 'content_moderation', 'icon' => 'page', 'area' => 'Contenido por moderar',
+            'title' => $review->organization?->commercial_name ?: $review->organization?->legal_name ?: 'Opinión',
+            'detail' => $review->comment,
+            'status' => 'Pendiente', 'created_at' => $review->created_at,
+            'url' => route('admin.content-moderation.index'), 'action' => 'Moderar contenido',
+        ]);
+
+        return $photos->concat($comments)->concat($reviews);
     }
 
     private function expiringDocuments(): Collection

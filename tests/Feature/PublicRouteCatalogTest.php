@@ -22,7 +22,7 @@ class PublicRouteCatalogTest extends TestCase
         $vessel = Vessel::create(['organization_id' => $company->id, 'name' => 'Nave Catálogo', 'registration_number' => 'CAT-01', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
         $route = TransportRoute::create(['organization_id' => $company->id, 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id, 'status' => 'active']);
         RouteDeparture::create(['transport_route_id' => $route->id, 'vessel_id' => $vessel->id, 'departure_at' => now()->addDay(), 'boarding_starts_at' => now()->addDay()->subHour(), 'fare' => 75, 'status' => 'scheduled']);
-        $this->get(route('routes.index'))->assertOk()->assertSee('Nave Catálogo')->assertSee('La salida puede demorar 1 o 2 horas')->assertSee('https://wa.me/51953540705', false)->assertSee('Elegir asiento');
+        $this->get(route('routes.index'))->assertOk()->assertSee('Nave Catálogo')->assertSee('La salida puede demorar 1 o 2 horas')->assertSee('https://wa.me/51953540705', false)->assertSee('Elegir lugar');
         $this->get(route('routes.index', ['origin' => 'Iquitos']))->assertOk()->assertSee('Iquitos → Nauta');
     }
 

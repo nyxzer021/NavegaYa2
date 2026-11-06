@@ -17,6 +17,12 @@
     <style>html,body{background:var(--ny-background)!important}body{font-family:'Plus Jakarta Sans',sans-serif!important}[x-cloak]{display:none!important}</style>
 </head>
 <body class="ny-public-portal bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+    @auth
+        @php($accountWarning = \App\Models\UserSanction::activeWarning(auth()->user()))
+        @if($accountWarning)
+            <p role="status" class="bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-950">Advertencia de NavegaYA: {{ $accountWarning->reason }}</p>
+        @endif
+    @endauth
     @include('layouts.partials.topbar')
     @include('layouts.partials.header', ['current' => $current ?? ''])
     <main class="w-full flex-grow">{{ $slot ?? '' }}@yield('content')</main>

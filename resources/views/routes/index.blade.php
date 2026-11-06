@@ -25,7 +25,7 @@
 @else
 @foreach($dateGroups as $date=>$items)<div class="mb-3 mt-7 flex items-center gap-3"><span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase text-emerald-800">{{\Carbon\Carbon::parse($date)->isToday()?'Hoy':(\Carbon\Carbon::parse($date)->isTomorrow()?'Mañana':\Carbon\Carbon::parse($date)->translatedFormat('D d M'))}}</span><span class="text-xs capitalize text-slate-500">{{\Carbon\Carbon::parse($date)->translatedFormat('l d \d\e F')}}</span></div>
 @foreach($items as $departure)
-<x-departure-card :departure="$departure" />
+<x-ui.departure-card :departure="$departure" />
 @endforeach
 @endforeach
 @endif
