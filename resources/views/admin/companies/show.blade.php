@@ -294,6 +294,7 @@
                 </section>
             @endif
         </div>
+        @include('admin.companies.operation')
 </div>
 @endsection
 

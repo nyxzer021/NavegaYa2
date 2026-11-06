@@ -62,6 +62,12 @@ class CompanyProvisioningService
             $role = Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador de empresa']);
             $user->organizations()->attach($organization->id, ['status' => $status]);
             $user->roles()->attach($role->id, ['organization_id' => $organization->id]);
+            if (($data['type'] ?? 'transport_company') === 'transport_company') {
+                $status = $isAdminInitiated ? 'approved' : 'requested';
+                foreach (Organization::codesFromLegacy($organization->modality) as $code) {
+                    $organization->modalities()->create(['code' => $code, 'status' => $status]);
+                }
+            }
 
             return [$organization, $user];
         });

@@ -6,6 +6,8 @@ use App\Models\Advertisement;
 use App\Models\ContentReport;
 use App\Models\DestinationListing;
 use App\Models\Organization;
+use App\Models\OrganizationDocument;
+use App\Models\OrganizationModality;
 use App\Models\Payment;
 use App\Models\SupportTicket;
 use App\Models\Vessel;
@@ -68,6 +70,14 @@ class AdminRequestInbox
                 'status' => $report->priority === 'high' ? 'Prioridad alta' : 'Reporte pendiente', 'created_at' => $report->created_at,
                 'url' => route('admin.moderation.index'), 'action' => 'Revisar reporte',
             ]))
+            ->concat(OrganizationModality::query()->where('status', 'requested')->with('organization')->get()->map(fn ($modality) => [
+                'type' => 'modality', 'icon' => 'company_details', 'area' => 'Modalidades por aprobar',
+                'title' => ($modality->organization?->commercial_name ?: $modality->organization?->legal_name ?: 'Empresa').' · '.$modality->label(),
+                'detail' => 'Permiso '.($modality->permit_number ?: 'sin número'),
+                'status' => 'Solicitada', 'created_at' => $modality->updated_at,
+                'url' => route('admin.companies.modalities.index'), 'action' => 'Revisar modalidad',
+            ]))
+            ->concat($this->expiringDocuments())
             ->concat(SupportTicket::query()->whereIn('status', ['open', 'in_progress', 'waiting_user'])->with(['user', 'organization'])->get()->map(fn ($ticket) => [
                 'type' => 'support', 'icon' => 'support', 'area' => 'Consultas y soporte',
                 'title' => $ticket->subject,
@@ -80,6 +90,31 @@ class AdminRequestInbox
             ]))
             ->sortByDesc(fn ($item) => $item['created_at']?->timestamp ?? 0)
             ->values();
+    }
+
+    private function expiringDocuments(): Collection
+    {
+        $today = now()->toDateString();
+        $until = now()->addDays(30)->toDateString();
+        $documents = OrganizationDocument::query()->with('organization')->whereBetween('expires_on', [$today, $until])->get()->map(fn ($document) => [
+            'type' => 'expiring_document', 'icon' => 'alert', 'area' => 'Documentos por vencer (≤ 30 días)',
+            'title' => $document->organization?->commercial_name ?: $document->organization?->legal_name ?: 'Empresa',
+            'detail' => $document->type.' · '.($document->expires_on?->format('d/m/Y') ?: ''),
+            'status' => 'Por vencer', 'created_at' => $document->updated_at,
+            'url' => $document->organization ? route('admin.companies.show', $document->organization).'#documentos' : route('admin.companies.documents.expiring'),
+            'action' => 'Ver documento',
+        ]);
+        $permits = OrganizationModality::query()->with('organization')->where(function ($query) use ($today, $until): void {
+            $query->whereBetween('permit_expires_on', [$today, $until])->orWhereBetween('aoc_expires_on', [$today, $until]);
+        })->get()->map(fn ($modality) => [
+            'type' => 'expiring_document', 'icon' => 'alert', 'area' => 'Documentos por vencer (≤ 30 días)',
+            'title' => ($modality->organization?->commercial_name ?: $modality->organization?->legal_name ?: 'Empresa').' · '.$modality->label(),
+            'detail' => 'Permiso '.($modality->permit_expires_on?->format('d/m/Y') ?: 'sin fecha'),
+            'status' => 'Por vencer', 'created_at' => $modality->updated_at,
+            'url' => route('admin.companies.documents.expiring'), 'action' => 'Ver documento',
+        ]);
+
+        return $documents->concat($permits);
     }
 
     public function summary(): array

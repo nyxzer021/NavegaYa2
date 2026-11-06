@@ -13,6 +13,9 @@ return [
         'river' => 'River',
         'air' => 'Air',
         'mixed' => 'Mixed',
+        'fluvial' => 'River',
+        'aereo' => 'Air',
+        'aereo_fluvial' => 'Seaplane',
     ],
     'sales' => [
         'active' => 'Web sales active',
@@ -24,7 +27,7 @@ return [
     ],
     'lock' => [
         'pending' => 'The company is under review',
-        'branch' => 'Requires a branch that receives cargo. Branches arrive in a later stage.',
+        'branch' => 'Requires an active branch that receives cargo.',
         'own_sales' => 'Requires implementation: sales do not yet store which user recorded them.',
     ],
     'search' => 'Search ticket, passenger or departure',

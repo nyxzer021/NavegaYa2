@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\PhoneNumber;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -15,7 +17,10 @@ class Organization extends Model
     }
 
     protected $fillable = [
-        'type', 'modality', 'base_city', 'legal_name', 'commercial_name', 'contact_name', 'ruc', 'email', 'phone', 'whatsapp', 'whatsapp_message', 'service_hours', 'show_public_whatsapp',
+        'type', 'modality', 'base_city', 'base_port_id', 'legal_name', 'commercial_name', 'contact_name',
+        'representative_document_number', 'representative_email', 'representative_phone',
+        'ruc', 'email', 'phone', 'whatsapp', 'whatsapp_message', 'whatsapp_cargo', 'whatsapp_hours_from', 'whatsapp_hours_until', 'whatsapp_show_outside_hours',
+        'service_hours', 'show_public_whatsapp', 'whatsapp_hidden_by_admin', 'whatsapp_hidden_reason', 'whatsapp_hidden_by', 'whatsapp_hidden_at',
         'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
         'bank_name', 'bank_account', 'bank_cci',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
@@ -29,6 +34,9 @@ class Organization extends Model
             'contact_verified_at' => 'datetime',
             'is_marketplace_paused' => 'boolean',
             'show_public_whatsapp' => 'boolean',
+            'whatsapp_show_outside_hours' => 'boolean',
+            'whatsapp_hidden_by_admin' => 'boolean',
+            'whatsapp_hidden_at' => 'datetime',
             'public_presentation' => 'array',
             'commission_rate' => 'decimal:2',
             'commission_starts_on' => 'date',
@@ -60,6 +68,92 @@ class Organization extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(OrganizationDocument::class);
+    }
+
+    public function modalities(): HasMany
+    {
+        return $this->hasMany(OrganizationModality::class);
+    }
+
+    public function sites(): HasMany
+    {
+        return $this->hasMany(OrganizationSite::class);
+    }
+
+    public function basePort(): BelongsTo
+    {
+        return $this->belongsTo(Port::class, 'base_port_id');
+    }
+
+    public function hasModality(string $code): bool
+    {
+        $this->loadMissing('modalities');
+
+        return $this->modalities->contains(fn (OrganizationModality $row): bool => $row->code === $code && $row->status === 'approved');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function codesFromLegacy(?string $modality): array
+    {
+        return match ($modality) {
+            'aereo' => ['aereo'],
+            'mixto' => ['fluvial', 'aereo'],
+            default => ['fluvial'],
+        };
+    }
+
+    /**
+     * @param  list<string>  $codes
+     */
+    public static function legacyFromCodes(array $codes): string
+    {
+        $hasRiver = in_array('fluvial', $codes, true);
+        $hasAir = in_array('aereo', $codes, true) || in_array('aereo_fluvial', $codes, true);
+
+        return match (true) {
+            $hasRiver && $hasAir => 'mixto',
+            $hasAir => 'aereo',
+            default => 'fluvial',
+        };
+    }
+
+    public function syncLegacyModality(): void
+    {
+        $approved = $this->modalities()->where('status', 'approved')->pluck('code');
+        if ($approved->isEmpty()) {
+            return;
+        }
+        $legacy = self::legacyFromCodes($approved->all());
+        if ($this->modality !== $legacy) {
+            $this->forceFill(['modality' => $legacy])->save();
+        }
+    }
+
+    public function publicWhatsapp(string $purpose = 'ticket'): ?string
+    {
+        if (! $this->show_public_whatsapp || $this->whatsapp_hidden_by_admin) {
+            return null;
+        }
+        $raw = $purpose === 'cargo' ? ($this->whatsapp_cargo ?: $this->whatsapp) : $this->whatsapp;
+
+        return PhoneNumber::peru($raw);
+    }
+
+    public function whatsappNotice(): ?string
+    {
+        if (! $this->whatsapp_show_outside_hours || ! $this->whatsapp_hours_from) {
+            return null;
+        }
+        $now = now()->format('H:i');
+        $from = substr((string) $this->whatsapp_hours_from, 0, 5);
+        $until = $this->whatsapp_hours_until ? substr((string) $this->whatsapp_hours_until, 0, 5) : null;
+        $inside = $until === null || $until === $from
+            ? false
+            : ($until > $from ? ($now >= $from && $now <= $until) : ($now >= $from || $now <= $until));
+
+        return $inside ? null : 'Te responderemos desde las '.$from.'.';
     }
 
     public function transportRoutes(): HasMany

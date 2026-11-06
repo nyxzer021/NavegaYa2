@@ -18,16 +18,32 @@
 <x-company-field name="base_city" label="Ciudad base" placeholder="Iquitos" required />
 <x-company-field name="address" label="Dirección fiscal" placeholder="Dirección principal" class="sm:col-span-2" required />
 </div>
-<div class="mt-3">
-<span class="mb-1 block text-sm font-semibold text-slate-700">Qué transportas</span>
-<p class="mb-2 text-sm text-slate-500">Puedes elegir las dos. Si más adelante sumas la otra, la habilitas en tu panel.</p>
-<div class="grid gap-2 sm:grid-cols-3">
-@foreach(['fluvial' => 'Lanchas y motonaves', 'aereo' => 'Avionetas', 'mixto' => 'Las dos'] as $value => $label)
-<label class="ny-choice !h-auto min-h-11 px-2 py-2 text-center leading-snug">
-<input type="radio" name="modality" value="{{ $value }}" class="sr-only" @checked(old('modality', 'fluvial') === $value) required>{{ $label }}
-</label>
+<div class="mt-3" data-registration-modalities>
+<span class="mb-1 block text-sm font-semibold text-slate-700">Modalidades</span>
+<p class="mb-2 text-sm text-slate-500">Marca las que vas a operar. Cada una queda solicitada hasta que NavegaYA la apruebe.</p>
+<div class="grid gap-2">
+@foreach(['fluvial' => 'Fluvial', 'aereo' => 'Aéreo', 'aereo_fluvial' => 'Aéreo fluvial'] as $value => $label)
+<label class="flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" name="modalities[]" value="{{ $value }}" @checked(in_array($value, old('modalities', []), true))> {{ $label }}</label>
 @endforeach
 </div>
+<div class="mt-3 grid gap-3" data-mod="fluvial">
+<p class="text-sm font-semibold text-slate-700">Permiso fluvial</p>
+<label class="text-sm">Alcance<select name="fluvial_permit_scope" class="mt-1 w-full rounded-xl border-slate-200"><option value="regional">Regional</option><option value="national">Nacional</option></select></label>
+<x-company-field name="fluvial_permit_number" label="Número de permiso" />
+<x-company-field name="fluvial_permit_expires_on" label="Vencimiento" type="date" />
+<label class="ny-file"><span>Permiso de operación</span><input type="file" name="fluvial_permit" accept=".pdf,.jpg,.jpeg,.png" class="sr-only" data-ny-file><strong data-ny-file-label>Elegir archivo</strong></label>
+</div>
+@foreach(['aereo' => 'Aéreo', 'aereo_fluvial' => 'Aéreo fluvial'] as $value => $label)
+<div class="mt-3 grid gap-3" data-mod="{{ $value }}">
+<p class="text-sm font-semibold text-slate-700">Permiso {{ $label }}</p>
+<x-company-field :name="$value.'_permit_number'" label="Número MTC/DGAC" />
+<x-company-field :name="$value.'_permit_expires_on'" label="Vencimiento del permiso" type="date" />
+<label class="ny-file"><span>Permiso MTC/DGAC</span><input type="file" name="{{ $value }}_permit" accept=".pdf,.jpg,.jpeg,.png" class="sr-only" data-ny-file><strong data-ny-file-label>Elegir archivo</strong></label>
+<x-company-field :name="$value.'_aoc_number'" label="Número de AOC" />
+<x-company-field :name="$value.'_aoc_expires_on'" label="Vencimiento del AOC" type="date" />
+<label class="ny-file"><span>AOC</span><input type="file" name="{{ $value }}_aoc" accept=".pdf,.jpg,.jpeg,.png" class="sr-only" data-ny-file><strong data-ny-file-label>Elegir archivo</strong></label>
+</div>
+@endforeach
 </div>
 </fieldset>
 <fieldset class="ny-form-section">
@@ -46,7 +62,7 @@
 <fieldset class="ny-form-section">
 <p class="ny-form-kicker">Documentos <span class="font-medium normal-case tracking-normal text-slate-500">· PDF, JPG o PNG, máximo 5 MB</span></p>
 <div class="grid gap-2">
-@foreach([['ruc_document', 'Ficha RUC'], ['representative_document', 'Documento del representante'], ['operating_permit', 'Permiso de operación']] as [$name, $label])
+@foreach([['ruc_document', 'Ficha RUC'], ['representative_document', 'Documento del representante']] as [$name, $label])
 <label class="ny-file"><span>{{ $label }}</span><input type="file" name="{{ $name }}" accept=".pdf,.jpg,.jpeg,.png" required class="sr-only" data-ny-file><strong data-ny-file-label>Elegir archivo</strong></label>
 @endforeach
 </div>
@@ -59,5 +75,8 @@
 </section>
 </div>
 </div>
-<script>document.querySelectorAll('[data-ny-file]').forEach(input=>input.addEventListener('change',()=>{const name=input.files&&input.files[0]?input.files[0].name:'Elegir archivo';input.parentElement.querySelector('[data-ny-file-label]').textContent=name}))</script>
+<script>
+document.querySelectorAll('[data-ny-file]').forEach(input=>input.addEventListener('change',()=>{const name=input.files&&input.files[0]?input.files[0].name:'Elegir archivo';input.parentElement.querySelector('[data-ny-file-label]').textContent=name}));
+(function(){const root=document.querySelector('[data-registration-modalities]');if(!root)return;function paint(){root.querySelectorAll('[data-mod]').forEach(block=>{const box=root.querySelector('input[value="'+block.getAttribute('data-mod')+'"]');block.hidden=!(box&&box.checked)})}root.addEventListener('change',paint);paint()})();
+</script>
 </x-public-layout>

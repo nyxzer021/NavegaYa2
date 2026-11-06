@@ -5,13 +5,14 @@ namespace Database\Seeders;
 use App\Models\DestinationCity;
 use App\Models\DestinationListing;
 use App\Models\SystemSetting;
+use App\Support\PhoneNumber;
 use Illuminate\Database\Seeder;
 
 class GuideDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $phone = SystemSetting::value('whatsapp_number', '51900000000');
+        $phone = PhoneNumber::peru(SystemSetting::value('whatsapp_number'));
         $cities = collect([
             ['name' => 'Iquitos', 'river' => 'Amazonas'],
             ['name' => 'Nauta', 'river' => 'Marañón'],

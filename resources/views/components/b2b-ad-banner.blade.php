@@ -13,8 +13,8 @@
     <aside data-b2b-carousel {{ $attributes->merge(['class' => 'relative my-5 h-[285px] overflow-hidden rounded-2xl bg-[#062c21] shadow-xl sm:h-[330px]']) }} aria-label="Promociones destacadas">
         @foreach($ads as $index => $ad)
             @php
-                $phone = preg_replace('/[^0-9]/', '', (string) $ad->phone_whatsapp);
-                $href = $ad->target_url ? route('discover.ad', $ad) : 'https://wa.me/'.$phone;
+                $phone = \App\Support\PhoneNumber::peru($ad->phone_whatsapp);
+                $href = $ad->target_url ? route('discover.ad', $ad) : ($phone ? 'https://wa.me/'.$phone : null);
             @endphp
             <article data-b2b-slide class="absolute inset-0 {{ $index ? 'hidden' : '' }}">
                 @if($ad->creative_url)<img src="{{ $ad->creative_url }}" alt="Promoción de {{ $ad->business_name }}" class="absolute inset-0 h-full w-full object-cover">@endif
@@ -23,7 +23,7 @@
                     <span class="w-fit rounded-md border border-amber-300/40 bg-amber-300/15 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300">Patrocinado · {{ $ad->city_destination ?: 'Loreto' }}</span>
                     <h3 class="mt-4 text-2xl font-black leading-tight sm:text-3xl">{{ $ad->title ?: $ad->business_name }}</h3>
                     <p class="mt-3 line-clamp-2 text-xs leading-6 text-emerald-50/85 sm:text-sm">{{ $ad->description ?: 'Descubre esta recomendación para tu viaje por Loreto.' }}</p>
-                    @if($ad->target_url || $phone)<a href="{{ $href }}" target="_blank" rel="sponsored noopener" class="mt-5 inline-flex w-fit rounded-lg bg-amber-400 px-5 py-3 text-xs font-black text-emerald-950 transition hover:bg-amber-300">Ver promoción →</a>@endif
+                    @if($href)<a href="{{ $href }}" target="_blank" rel="sponsored noopener" class="mt-5 inline-flex w-fit rounded-lg bg-amber-400 px-5 py-3 text-xs font-black text-emerald-950 transition hover:bg-amber-300">Ver promoción →</a>@endif
                 </div>
             </article>
         @endforeach

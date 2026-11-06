@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Advertisement;
+use App\Models\CompanyReview;
 use App\Models\DestinationCity;
 use App\Models\DestinationListing;
 use App\Models\DestinationListingImage;
-use App\Models\CompanyReview;
+use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -43,29 +44,36 @@ class GuideController extends Controller
     {
         abort_unless($listing->is_active && $listing->status === 'published', 404);
         $listing->increment('views');
-        $reviews=$listing->organization->reviews()->with('user')->where('status','approved')->latest()->take(20)->get();
-        return view('guide.show', ['listing' => $listing->load(['city','images.reviews.user','offers'=>fn($q)=>$q->where('is_active',true)]), 'types' => MarketplaceBusinessController::TYPES, 'reviews'=>$reviews, 'ratingAverage'=>round((float)$reviews->avg('rating'),1)]);
+        $reviews = $listing->organization->reviews()->with('user')->where('status', 'approved')->latest()->take(20)->get();
+
+        return view('guide.show', ['listing' => $listing->load(['city', 'images.reviews.user', 'offers' => fn ($q) => $q->where('is_active', true)]), 'types' => MarketplaceBusinessController::TYPES, 'reviews' => $reviews, 'ratingAverage' => round((float) $reviews->avg('rating'), 1)]);
     }
 
     public function contact(DestinationListing $listing): RedirectResponse
     {
-        abort_unless($listing->is_active && $listing->status==='published' && $listing->contact_phone,404); $listing->increment('contact_clicks');
-        return redirect()->away('https://wa.me/'.preg_replace('/\D/','',$listing->contact_phone).'?text='.urlencode('Hola, vi su página en NavegaYA y deseo información.'));
+        abort_unless($listing->is_active && $listing->status === 'published' && $listing->contact_phone, 404);
+        $listing->increment('contact_clicks');
+        $phone = PhoneNumber::peru($listing->contact_phone);
+        abort_unless($phone, 404);
+
+        return redirect()->away('https://wa.me/'.$phone.'?text='.urlencode('Hola, vi su página en NavegaYA y deseo información.'));
     }
 
     public function review(Request $request, DestinationListing $listing): RedirectResponse
     {
-        abort_unless($listing->is_active && $listing->status==='published',404);
-        $data=$request->validate(['rating'=>['required','integer','between:1,5'],'comment'=>['required','string','min:10','max:1200']]);
-        CompanyReview::updateOrCreate(['organization_id'=>$listing->organization_id,'user_id'=>$request->user()->id,'reservation_id'=>null],$data+['status'=>'pending']);
-        return back()->with('success','Gracias. Tu opinión fue enviada a moderación.');
+        abort_unless($listing->is_active && $listing->status === 'published', 404);
+        $data = $request->validate(['rating' => ['required', 'integer', 'between:1,5'], 'comment' => ['required', 'string', 'min:10', 'max:1200']]);
+        CompanyReview::updateOrCreate(['organization_id' => $listing->organization_id, 'user_id' => $request->user()->id, 'reservation_id' => null], $data + ['status' => 'pending']);
+
+        return back()->with('success', 'Gracias. Tu opinión fue enviada a moderación.');
     }
 
     public function reviewImage(Request $request, DestinationListing $listing, DestinationListingImage $image): RedirectResponse
     {
         abort_unless($listing->is_active && $listing->status === 'published' && $image->destination_listing_id === $listing->id, 404);
-        $data = $request->validate(['rating'=>['required','integer','between:1,5'],'comment'=>['required','string','min:3','max:700']]);
-        $image->reviews()->updateOrCreate(['user_id'=>$request->user()->id], $data + ['status'=>'published']);
+        $data = $request->validate(['rating' => ['required', 'integer', 'between:1,5'], 'comment' => ['required', 'string', 'min:3', 'max:700']]);
+        $image->reviews()->updateOrCreate(['user_id' => $request->user()->id], $data + ['status' => 'published']);
+
         return back()->with('success', 'Tu comentario y valoración se publicaron en la fotografía.');
     }
 }

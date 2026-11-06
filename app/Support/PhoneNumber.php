@@ -6,12 +6,12 @@ final class PhoneNumber
 {
     public static function peru(?string $value): ?string
     {
-        $digits = preg_replace('/\D+/', '', (string) $value);
-        if ($digits === '') {
-            return null;
+        $digits = preg_replace('/\D+/', '', (string) $value) ?? '';
+        if (preg_match('/^9\d{8}$/', $digits) === 1) {
+            $digits = '51'.$digits;
         }
-        if (strlen($digits) === 9 && str_starts_with($digits, '9')) {
-            return '51'.$digits;
+        if (preg_match('/^519\d{8}$/', $digits) !== 1 || $digits === '51900000000') {
+            return null;
         }
 
         return $digits;

@@ -54,6 +54,6 @@ class PublicNavigationTest extends TestCase
     public function test_company_registration_is_highlighted_only_during_affiliation(): void
     {
         $this->get(route('home'))->assertOk()->assertDontSee('aria-current="page"', false);
-        $this->get(route('company.registration'))->assertOk()->assertSee('aria-current="page"', false)->assertSee('Lanchas y motonaves')->assertSee('Las dos');
+        $this->get(route('company.registration'))->assertOk()->assertSee('aria-current="page"', false)->assertSee('Fluvial')->assertSee('Aéreo fluvial');
     }
 }

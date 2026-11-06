@@ -104,8 +104,10 @@
     }
     $gallery = $gallery->unique('src')->values();
     $dock = $ports->first();
-    $supportNumber = $organization->show_public_whatsapp ? \App\Support\PhoneNumber::peru($organization->whatsapp ?: $organization->phone) : null;
-    $whatsappText = $organization->whatsapp_message ?: 'Hola, vi su perfil en NavegaYA y quisiera información sobre sus viajes.';
+    $supportNumber = $organization->publicWhatsapp();
+    $cargoNumber = $organization->publicWhatsapp('cargo');
+    $supportLabel = \App\Support\PhoneNumber::display($supportNumber);
+    $whatsappText = trim(($organization->whatsapp_message ?: 'Hola, vi su perfil en NavegaYA y quisiera información sobre sus viajes.').($organization->whatsappNotice() ? ' '.$organization->whatsappNotice() : ''));
     $publishedRouteCount = $organization->transportRoutes->count() + $organization->airRoutes->count();
     $description = trim((string) $organization->public_description);
     $brief = $description !== '' ? \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', $description), 180) : null;
@@ -239,8 +241,8 @@
                 <p id="cargo-quote" class="mt-4 text-2xl font-black text-[#10231D]"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}</span></span></p>
                 <p id="cargo-note" class="company-cargo-note">Referencia para cotizar. La empresa confirma el precio final.</p>
                 <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-3 w-full accent-[#087F5B]" aria-label="Peso aproximado">
-                @if($supportNumber)
-                    <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote mt-3">Consultar por WhatsApp</a>
+                @if($cargoNumber)
+                    <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $cargoNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote mt-3">Consultar por WhatsApp</a>
                 @endif
             </section>
         </div>
@@ -251,8 +253,8 @@
                     @if($organization->phone || $supportNumber)
                         <p class="mt-2"><span class="company-kicker">Teléfono</span>{{ $organization->phone ?: $supportNumber }}</p>
                     @endif
-                    @if($supportNumber)
-                        <p class="mt-2"><span class="company-kicker">WhatsApp</span>{{ $supportNumber }}</p>
+                    @if($supportLabel)
+                        <p class="mt-2"><span class="company-kicker">WhatsApp</span>{{ $supportLabel }}</p>
                         <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="company-go company-go-wa mt-3">Contactar por WhatsApp</a>
                     @endif
                     @if($organization->service_hours)

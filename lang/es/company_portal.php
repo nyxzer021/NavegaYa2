@@ -13,6 +13,9 @@ return [
         'river' => 'Fluvial',
         'air' => 'Aérea',
         'mixed' => 'Mixta',
+        'fluvial' => 'Fluvial',
+        'aereo' => 'Aéreo',
+        'aereo_fluvial' => 'Aéreo fluvial',
     ],
     'sales' => [
         'active' => 'Ventas web activas',
@@ -24,7 +27,7 @@ return [
     ],
     'lock' => [
         'pending' => 'La empresa está en validación',
-        'branch' => 'Requiere una sede que reciba carga. Las sedes llegan en una etapa posterior.',
+        'branch' => 'Requiere una sede activa que reciba carga.',
         'own_sales' => 'Requiere implementación: las ventas todavía no guardan qué usuario las registró.',
     ],
     'search' => 'Buscar boleto, pasajero o salida',

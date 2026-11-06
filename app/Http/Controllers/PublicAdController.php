@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Advertisement;
-use App\Models\SystemSetting;
 use App\Models\SubscriptionPlan;
+use App\Models\SystemSetting;
+use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,7 +17,7 @@ class PublicAdController extends AdvertisingController
         return view('public.advertise', [
             'businessTypes' => Advertisement::BUSINESS_TYPES,
             'placements' => Advertisement::PLACEMENTS,
-            'supportNumber' => preg_replace('/\D+/', '', (string) SystemSetting::value('whatsapp_number', '51900000000')),
+            'supportNumber' => PhoneNumber::peru(SystemSetting::value('whatsapp_number')),
             'plans' => SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get(),
         ]);
     }

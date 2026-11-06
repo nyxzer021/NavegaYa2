@@ -148,6 +148,15 @@ class CompanyFleetController extends Controller
             'enabled' => ['required', 'boolean'],
         ]);
 
+        if ($organization->modalities()->exists() && $request->boolean('enabled')) {
+            $allowed = $data['transport'] === 'aereo'
+                ? ($organization->hasModality('aereo') || $organization->hasModality('aereo_fluvial'))
+                : $organization->hasModality('fluvial');
+            if (! $allowed) {
+                return back()->withErrors(['transport' => 'Esa modalidad todavía no está aprobada. Solicítala en Datos de la empresa.']);
+            }
+        }
+
         $hasRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
         $hasAir = in_array($organization->modality, ['aereo', 'mixto'], true);
         if ($data['transport'] === 'fluvial') {

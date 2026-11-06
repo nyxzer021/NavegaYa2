@@ -29,6 +29,14 @@ class AdminOrganizationReviewController extends Controller
             return back()->with('error', 'No se puede aprobar: el correo de contacto aún no fue confirmado.');
         }
         $organization->update(['status' => 'active', 'verified_at' => now()]);
+        if ($organization->modalities()->doesntExist()) {
+            foreach (Organization::codesFromLegacy($organization->modality) as $code) {
+                $organization->modalities()->create(['code' => $code, 'status' => 'approved', 'reviewed_at' => now()]);
+            }
+        } else {
+            $organization->modalities()->where('status', 'requested')->update(['status' => 'approved', 'reviewed_at' => now()]);
+        }
+        $organization->syncLegacyModality();
         $organization->users()->updateExistingPivot($organization->users()->pluck('users.id'), ['status' => 'active']);
         if ($organization->users()->exists()) {
             return back()->with('status', 'Empresa aprobada. La cuenta administradora ya puede ingresar.');

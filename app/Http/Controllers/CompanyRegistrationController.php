@@ -26,11 +26,32 @@ class CompanyRegistrationController extends Controller
             $organization = $provisioning->submitApplication($request->validated());
             foreach (['ruc_document' => 'ruc', 'representative_document' => 'representative', 'operating_permit' => 'operating_permit'] as $field => $type) {
                 $file = $request->file($field);
+                if (! $file) {
+                    continue;
+                }
                 OrganizationDocument::create([
                     'organization_id' => $organization->id,
                     'type' => $type,
                     'path' => $file->store('organization-documents/'.$organization->id),
                     'original_name' => $file->getClientOriginalName(),
+                ]);
+            }
+            foreach ($request->modalityCodes() as $code) {
+                $prefix = $code === 'fluvial' ? 'fluvial' : $code;
+                $permit = $code === 'fluvial' ? ($request->file('fluvial_permit') ?: $request->file('operating_permit')) : $request->file($prefix.'_permit');
+                $aoc = $code === 'fluvial' ? null : $request->file($prefix.'_aoc');
+                $organization->modalities()->create([
+                    'code' => $code,
+                    'status' => 'requested',
+                    'permit_scope' => $code === 'fluvial' ? $request->input('fluvial_permit_scope') : null,
+                    'permit_number' => $request->input($prefix.'_permit_number'),
+                    'permit_expires_on' => $request->input($prefix.'_permit_expires_on'),
+                    'permit_path' => $permit?->store('organization-documents/'.$organization->id),
+                    'permit_original_name' => $permit?->getClientOriginalName(),
+                    'aoc_number' => $code === 'fluvial' ? null : $request->input($prefix.'_aoc_number'),
+                    'aoc_expires_on' => $code === 'fluvial' ? null : $request->input($prefix.'_aoc_expires_on'),
+                    'aoc_path' => $aoc?->store('organization-documents/'.$organization->id),
+                    'aoc_original_name' => $aoc?->getClientOriginalName(),
                 ]);
             }
 

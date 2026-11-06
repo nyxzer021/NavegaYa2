@@ -8,21 +8,11 @@ class CompanyBase
 {
     public static function label(Organization $organization): ?string
     {
-        $organization->loadMissing(['vessels.basePort']);
-        $ports = $organization->vessels
-            ->map(fn ($vessel) => $vessel->basePort)
-            ->filter()
-            ->unique('id')
-            ->values();
-
-        if ($ports->count() === 1) {
-            $port = $ports->first();
+        $organization->loadMissing('basePort');
+        if ($organization->basePort) {
+            $port = $organization->basePort;
 
             return $port->city ? $port->name.' · '.$port->city : $port->name;
-        }
-
-        if ($ports->count() > 1) {
-            return null;
         }
 
         $city = trim((string) $organization->base_city);

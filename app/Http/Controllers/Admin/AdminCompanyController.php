@@ -200,6 +200,7 @@ class AdminCompanyController extends Controller
         $organization->load([
             'vessels' => fn ($query) => $query->latest(),
             'aircraft' => fn ($query) => $query->latest(),
+            'modalities', 'sites', 'documents', 'basePort',
         ]);
 
         return view('admin.companies.show', compact('organization'));
@@ -228,12 +229,9 @@ class AdminCompanyController extends Controller
             'admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($admin)],
             'admin_password' => [$admin ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
         ]);
-        $data['whatsapp'] = PhoneNumber::peru($data['whatsapp'] ?? null);
-        $data['show_public_whatsapp'] = $request->boolean('show_public_whatsapp');
-
         DB::transaction(function () use ($organization, $admin, $data): void {
             $organization->update(collect($data)->only([
-                'legal_name', 'commercial_name', 'phone', 'whatsapp', 'whatsapp_message', 'service_hours', 'show_public_whatsapp', 'base_city', 'modality', 'commission_rate',
+                'legal_name', 'commercial_name', 'phone', 'service_hours', 'base_city', 'modality', 'commission_rate',
                 'commercial_plan', 'agreement_number', 'commission_starts_on', 'commission_ends_on', 'commission_notes',
             ])->all());
             if ($admin) {

@@ -48,9 +48,7 @@ class CompanyPortalMenu
 
     public function baseLabel(): string
     {
-        $base = trim((string) $this->organization->base_city);
-
-        return $base !== '' ? $base : __('company_portal.requires_implementation');
+        return CompanyBase::label($this->organization) ?: __('company_portal.requires_implementation');
     }
 
     /**
@@ -70,6 +68,12 @@ class CompanyPortalMenu
 
     public function modalityLabel(): string
     {
+        $this->organization->loadMissing('modalities');
+        $approved = $this->organization->modalities->where('status', 'approved');
+        if ($approved->isNotEmpty()) {
+            return $approved->map(fn ($row) => __('company_portal.modality.'.$row->code))->implode(' · ');
+        }
+
         return match ($this->organization->modality) {
             'aereo' => __('company_portal.modality.air'),
             'mixto' => __('company_portal.modality.mixed'),

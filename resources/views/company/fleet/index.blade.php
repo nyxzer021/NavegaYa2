@@ -2,8 +2,11 @@
 @section('title','Flota')
 @section('page-title','Flota')
 @section('content')
-@php($hasRiver=in_array($organization->modality ?: 'fluvial',['fluvial','mixto'],true))
-@php($hasAir=in_array($organization->modality ?: 'fluvial',['aereo','mixto'],true))
+@php
+    $usesApproval = $organization->modalities()->exists();
+    $hasRiver = $usesApproval ? $organization->hasModality('fluvial') : in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
+    $hasAir = $usesApproval ? ($organization->hasModality('aereo') || $organization->hasModality('aereo_fluvial')) : in_array($organization->modality ?: 'fluvial', ['aereo', 'mixto'], true);
+@endphp
 <div class="mx-auto max-w-7xl space-y-6">
 <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
     <p class="text-sm font-semibold text-emerald-800">{{ $hasRiver && $hasAir ? 'Lanchas y avionetas' : ($hasAir ? 'Avionetas' : 'Lanchas y motonaves') }}</p>
@@ -15,6 +18,7 @@
     <p class="mt-1 text-sm text-slate-500">Puedes tener las dos. Quitar una solo es posible si todavía no tiene unidades registradas.</p>
     <div class="mt-4 grid gap-3 sm:grid-cols-2">
         @foreach(['fluvial' => ['Lanchas y motonaves', 'Matrícula DICAPI y plano de asientos.', $hasRiver, $vessels->isNotEmpty()], 'aereo' => ['Avionetas', 'Matrícula DGAC y asientos de la aeronave.', $hasAir, $aircraft->isNotEmpty()]] as $transport => [$title, $copy, $enabled, $inUse])
+            @if($usesApproval && ! $enabled) @continue @endif
             <article class="rounded-2xl border border-slate-200 p-4">
                 <div class="flex items-start justify-between gap-3">
                     <div>
