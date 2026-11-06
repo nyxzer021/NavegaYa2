@@ -6,6 +6,7 @@ use App\Http\Requests\Admin\StorePortRequest;
 use App\Models\GeographicDepartment;
 use App\Models\GeographicDistrict;
 use App\Models\GeographicProvince;
+use App\Models\OrganizationSite;
 use App\Models\Port;
 use App\Models\Vessel;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,7 @@ class AdminPortController extends Controller
     {
         return view('admin.ports.index', $this->formData([
             'ports' => Port::with(['department', 'province', 'district'])
-                ->withCount(['originMasterRoutes', 'destinationMasterRoutes', 'originRoutes', 'destinationRoutes', 'baseVessels'])
+                ->withCount(['originMasterRoutes', 'destinationMasterRoutes', 'originRoutes', 'destinationRoutes', 'baseVessels', 'baseOrganizations', 'organizationSites'])
                 ->when($request->filled('search'), fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'like', '%'.$request->string('search').'%')->orWhere('city', 'like', '%'.$request->string('search').'%')))
                 ->when($request->filled('modality'), fn ($query) => $query->where('modality', $request->string('modality')))
                 ->orderBy('modality')->orderBy('city')->orderBy('name')->get(),
@@ -52,7 +53,14 @@ class AdminPortController extends Controller
 
     public function update(StorePortRequest $request, Port $port): RedirectResponse
     {
-        $port->update($this->normalized($request));
+        $data = $this->normalized($request);
+        if ($request->exists('is_active')) {
+            $data['is_active'] = $request->boolean('is_active');
+        }
+        if ($port->is_active && array_key_exists('is_active', $data) && $data['is_active'] === false && $this->assignedAsBase($port)) {
+            return back()->with('error', 'Este puerto es la base de una empresa o de una sede. Reasígnalo antes de desactivarlo.');
+        }
+        $port->update($data);
 
         return $this->saved($port, 'Puerto actualizado correctamente.');
     }
@@ -77,12 +85,18 @@ class AdminPortController extends Controller
             || $port->destinationMasterRoutes()->exists()
             || $port->originRoutes()->exists()
             || $port->destinationRoutes()->exists()
-            || Vessel::where('base_port_id', $port->id)->exists();
+            || Vessel::where('base_port_id', $port->id)->exists()
+            || $this->assignedAsBase($port);
         if ($inUse) {
-            return back()->with('error', 'No se puede eliminar este terminal porque está vinculado a un tramo, una ruta operativa o una embarcación. Elimina o reasigna primero esos registros.');
+            return back()->with('error', 'No se puede eliminar este terminal porque está vinculado a un tramo, una ruta, una embarcación o es el puerto base de una empresa. Reasígnalo primero.');
         } $port->delete();
 
         return redirect()->route('admin.ports.index')->with('success', 'Puerto eliminado correctamente.');
+    }
+
+    private function assignedAsBase(Port $port): bool
+    {
+        return $port->baseOrganizations()->exists() || OrganizationSite::query()->where('port_id', $port->id)->exists();
     }
 
     private function saved(Port $port, string $success): RedirectResponse

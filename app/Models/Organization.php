@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Collection;
 
 class Organization extends Model
 {
@@ -90,6 +91,61 @@ class Organization extends Model
         $this->loadMissing('modalities');
 
         return $this->modalities->contains(fn (OrganizationModality $row): bool => $row->code === $code && $row->status === 'approved');
+    }
+
+    /**
+     * Modalidades aprobadas. Si la empresa todavía no tiene filas, se usa la modalidad heredada.
+     *
+     * @return list<string>
+     */
+    public function approvedModalityCodes(): array
+    {
+        $this->loadMissing('modalities');
+        if ($this->modalities->isNotEmpty()) {
+            return $this->modalities
+                ->where('status', 'approved')
+                ->pluck('code')
+                ->values()
+                ->all();
+        }
+
+        return self::codesFromLegacy($this->modality);
+    }
+
+    /**
+     * El catálogo no tiene un tipo propio de acuatizaje. El aéreo fluvial usa
+     * los puertos y muelles fluviales activos; el aéreo usa aeródromos.
+     */
+    public function acceptsCatalogPort(Port $port): bool
+    {
+        if (! $port->is_active) {
+            return false;
+        }
+
+        $codes = $this->approvedModalityCodes();
+        $side = $port->publicSide();
+        if (in_array('fluvial', $codes, true) && $side === 'fluvial') {
+            return true;
+        }
+        if (in_array('aereo', $codes, true) && $side === 'aereo') {
+            return true;
+        }
+
+        return in_array('aereo_fluvial', $codes, true) && $side === 'fluvial';
+    }
+
+    /**
+     * @return Collection<int, Port>
+     */
+    public function catalogPorts(): Collection
+    {
+        return Port::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->orderBy('city')
+            ->get()
+            ->filter(fn (Port $port): bool => $this->acceptsCatalogPort($port))
+            ->values();
     }
 
     /**

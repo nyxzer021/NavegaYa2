@@ -29,7 +29,7 @@ class CompanyPortalMenuTest extends TestCase
                 'Ayuda', 'Mensajes con NavegaYA', 'Soporte', 'WhatsApp de atención',
             ])
             ->assertSee('Ventas web: por configurar')
-            ->assertSee('Iquitos')
+            ->assertSee('Puerto base por definir')
             ->assertDontSee('Boletos vendidos')
             ->assertDontSee('Cargo de servicio NavegaYA');
 
@@ -63,6 +63,7 @@ class CompanyPortalMenuTest extends TestCase
             ->assertSee('Punto de venta')
             ->assertSee('Cierre de caja')
             ->assertSee('Mis ventas')
+            ->assertDontSee('Programar salida')
             ->assertDontSee('Cobros y conciliación')
             ->assertDontSee('Datos de la empresa')
             ->assertDontSee('Usuarios y privilegios')

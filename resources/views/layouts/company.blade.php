@@ -94,7 +94,11 @@
                     <div class="min-w-0">
                         <strong class="block truncate text-sm font-bold" title="{{ $companyName }}">{{ $companyName }}</strong>
                         <span class="block truncate text-[12.5px] text-white/70">{{ $portal->modalityLabel() }}</span>
-                        <span class="block truncate text-[12.5px] text-white/70">{{ $portal->baseLabel() }}</span>
+                        @if($portal->hasBasePort())
+                            <span class="block truncate text-[12.5px] text-white/70">{{ $portal->baseLabel() }}</span>
+                        @else
+                            <a href="{{ route('company.details.index') }}" class="block truncate text-[12.5px] font-semibold text-[#F4B820]">{{ $portal->baseLabel() }}</a>
+                        @endif
                     </div>
                 </div>
                 <span class="company-chip">{{ $sales['label'] }}</span>

@@ -21,7 +21,7 @@ class CompanyDetailsController extends Controller
 
         return view('company.details', [
             'organization' => $organization,
-            'ports' => Port::query()->where('is_active', true)->orderBy('name')->orderBy('city')->get(),
+            'ports' => $organization->catalogPorts(),
         ]);
     }
 
@@ -31,7 +31,7 @@ class CompanyDetailsController extends Controller
         $data = $request->validate([
             'legal_name' => ['required', 'string', 'max:180'],
             'commercial_name' => ['nullable', 'string', 'max:180'],
-            'base_port_id' => ['nullable', 'integer', Rule::exists('ports', 'id')],
+            'base_port_id' => ['nullable', 'integer', Rule::exists('ports', 'id')->where('is_active', true)],
             'address' => ['required', 'string', 'max:255'],
             'base_city' => ['required', 'string', 'max:100'],
             'contact_name' => ['required', 'string', 'max:180'],
@@ -49,7 +49,11 @@ class CompanyDetailsController extends Controller
             'address.required' => 'Indica la dirección fiscal.',
             'base_city.required' => 'Indica la ciudad.',
             'contact_name.required' => 'Indica al representante legal.',
+            'base_port_id.exists' => 'Elige un puerto activo del catálogo.',
         ]);
+        if ($data['base_port_id'] && ! $organization->acceptsCatalogPort(Port::query()->findOrFail($data['base_port_id']))) {
+            return back()->withErrors(['base_port_id' => 'Ese puerto no corresponde a tus modalidades aprobadas.'])->withInput();
+        }
 
         $organization->update(collect($data)->only([
             'legal_name', 'commercial_name', 'base_port_id', 'address', 'base_city',

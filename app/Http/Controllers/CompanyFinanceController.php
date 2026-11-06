@@ -22,21 +22,28 @@ class CompanyFinanceController extends Controller
             ->with(['reservation.departure.transportRoute.originPort', 'reservation.departure.transportRoute.destinationPort', 'reservation.airDeparture.airRoute'])
             ->latest('paid_at')
             ->get();
+        $current = $payments->filter(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment));
+        $legacy = $payments->reject(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment))
+            ->filter(fn (Payment $payment): bool => (float) $payment->commission_amount > 0);
 
         return view('company.finance.index', [
             'organization' => $organization,
-            'companyFare' => (float) $payments->sum(fn (Payment $payment): float => $this->sales->fareOf($payment)),
+            'companyFare' => (float) $current->sum(fn (Payment $payment): float => $this->sales->fareOf($payment)),
             'commissionRate' => (float) $organization->commission_rate,
-            'commissionGenerated' => (float) $payments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-            'commissionCollected' => (float) $payments->where('commission_status', 'paid')->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-            'commissionReceivable' => (float) $payments->whereIn('commission_status', ['pending', 'invoiced'])->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-            'recentPayments' => $payments->take(12)->map(fn (Payment $payment): array => [
+            'travelerFees' => (float) $current->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+            'salesCount' => $current->count(),
+            'recentPayments' => $current->take(12)->map(fn (Payment $payment): array => [
                 'code' => $payment->reservation?->code ?? $payment->provider_reference,
                 'paid_at' => $payment->paid_at,
                 'channel' => $payment->reservation?->sales_channel === 'counter' ? 'Muelle' : 'En línea',
                 'fare' => $this->sales->fareOf($payment),
+                'fee' => $this->sales->commissionOf($payment),
+            ]),
+            'legacyPayments' => $legacy->map(fn (Payment $payment): array => [
+                'code' => $payment->reservation?->code ?? $payment->provider_reference,
+                'paid_at' => $payment->paid_at,
+                'fare' => $this->sales->fareOf($payment),
                 'commission' => $this->sales->commissionOf($payment),
-                'commission_status' => $payment->commission_status,
             ]),
         ]);
     }

@@ -47,17 +47,19 @@ class MarketplaceSales
     }
 
     /**
+     * NavegaYA solo registra el cargo de servicio que ya pagó el pasajero.
+     * commission_amount es service_fee_amount. La empresa recibe
+     * operator_net = base_amount − discount_amount, sin otro descuento.
+     *
+     * @param  array{base_amount: float|int, discount_amount: float|int, service_fee_percent: float|int, service_fee_amount: float|int}  $quote
      * @return array{commission_rate: float, commission_amount: float, operator_net: float}
      */
-    public function commission(float $charged, ?float $rate): array
+    public function commission(array $quote): array
     {
-        $rate = round((float) ($rate ?? 0), 2);
-        $commission = round($charged * $rate / 100, 2);
-
         return [
-            'commission_rate' => $rate,
-            'commission_amount' => $commission,
-            'operator_net' => round($charged - $commission, 2),
+            'commission_rate' => round((float) $quote['service_fee_percent'], 2),
+            'commission_amount' => round((float) $quote['service_fee_amount'], 2),
+            'operator_net' => round(max(0, (float) $quote['base_amount'] - (float) $quote['discount_amount']), 2),
         ];
     }
 
@@ -104,19 +106,18 @@ class MarketplaceSales
         return round(max(0, (float) $payment->amount - $fee), 2);
     }
 
+    public function usesPassengerFee(Payment $payment): bool
+    {
+        return data_get($payment->provider_payload, 'commission_model') === 'passenger_fee';
+    }
+
+    /**
+     * Importe guardado al confirmar. Las ventas nuevas guardan el cargo del pasajero;
+     * las anteriores guardan el descuento que se aplicaba a la empresa. No se recalcula.
+     */
     public function commissionOf(Payment $payment): float
     {
-        if ((float) $payment->commission_amount > 0 || (float) $payment->commission_rate > 0) {
-            return round((float) $payment->commission_amount, 2);
-        }
-
-        if ($payment->provider === 'pos' || $payment->purpose === 'subscription' || $payment->reservation_id === null) {
-            return 0.0;
-        }
-
-        $rate = (float) ($this->organization($payment)?->commission_rate ?? 0);
-
-        return round((float) $payment->amount * $rate / 100, 2);
+        return round((float) $payment->commission_amount, 2);
     }
 
     public function organization(Payment $payment): ?Organization

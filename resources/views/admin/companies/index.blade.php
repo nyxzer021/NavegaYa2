@@ -108,7 +108,7 @@
         <header class="border-b border-slate-100 p-5">
             <p class="text-[10px] font-black uppercase tracking-wider text-emerald-700">Convenio por empresa</p>
             <h3 class="text-lg font-black text-slate-950">Comisión que paga el pasajero</h3>
-            <p class="mt-1 max-w-3xl text-xs text-slate-500">Cada empresa de transporte tiene su porcentaje. En la venta web el pasajero paga ese convenio sobre la tarifa. Quitar deja el porcentaje en 0 y conserva la empresa y los cobros ya registrados.</p>
+            <p class="mt-1 max-w-3xl text-xs text-slate-500">Cada empresa tiene su porcentaje. En la web lo paga el viajero y la empresa recibe su tarifa completa. El cambio pide un motivo, queda auditado y aplica solo a las ventas nuevas.</p>
         </header>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[860px] text-left text-xs">
@@ -130,6 +130,7 @@
                                 @method('PATCH')
                                 <input type="number" name="commission_rate" required min="0" max="100" step="0.01" value="{{ number_format((float) $company->commission_rate, 2, '.', '') }}" class="h-10 w-24 rounded-lg border-slate-200 text-sm font-bold">
                                 <span class="font-bold text-slate-500">%</span>
+                                <input name="reason" required minlength="5" maxlength="500" placeholder="Motivo del cambio" class="h-10 w-44 rounded-lg border-slate-200 text-xs">
                                 <button class="rounded-lg bg-[#062c21] px-3 py-2 text-[10px] font-black text-white">Guardar</button>
                             </form>
                         </td>
@@ -139,6 +140,7 @@
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="commission_rate" value="0">
+                                    <input name="reason" required minlength="5" maxlength="500" placeholder="Motivo" class="h-8 w-28 rounded-lg border-slate-200 text-[10px]">
                                     <button class="rounded-lg bg-rose-50 px-3 py-2 text-[10px] font-bold text-rose-700">Quitar</button>
                                 </form>
                             @else

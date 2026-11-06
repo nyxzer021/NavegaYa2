@@ -74,8 +74,9 @@ class CompanyOperationProfileTest extends TestCase
         ])->assertNotFound();
         $this->assertSame('Muelle ajeno', $site->fresh()->name);
         $this->assertSame($other->id, $site->fresh()->organization_id);
+        $port = Port::create(['name' => 'Puerto Propio', 'city' => 'Iquitos', 'region' => 'Loreto', 'modality' => 'fluvial', 'is_active' => true]);
         $this->actingAs($admin)->post(route('company.sites.store'), [
-            'name' => 'Muelle propio', 'kind' => 'dock', 'address' => 'Puerto', 'city' => 'Iquitos', 'is_active' => '1',
+            'name' => 'Muelle propio', 'kind' => 'dock', 'port_id' => $port->id, 'address' => 'Puerto', 'city' => 'Iquitos', 'is_active' => '1',
         ])->assertRedirect();
         $this->assertDatabaseHas('organization_sites', ['organization_id' => $organization->id, 'name' => 'Muelle propio']);
         $this->assertDatabaseMissing('organization_sites', ['organization_id' => $other->id, 'name' => 'Muelle propio']);

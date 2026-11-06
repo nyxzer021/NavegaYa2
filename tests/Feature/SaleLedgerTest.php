@@ -92,11 +92,14 @@ class SaleLedgerTest extends TestCase
         $this->assertSame('194.40', $reservation->total_amount);
         $this->assertSame('194.40', $payment->amount);
         $this->assertSame('8.00', $payment->commission_rate);
-        $this->assertSame('15.55', $payment->commission_amount);
+        $this->assertSame('14.40', $payment->commission_amount);
+        $this->assertSame('180.00', $payment->operator_net);
+        $this->assertSame('passenger_fee', $payment->provider_payload['commission_model']);
 
         $departure->update(['fare' => 200]);
         $this->assertSame('194.40', $reservation->fresh()->total_amount);
-        $this->assertSame('15.55', $payment->fresh()->commission_amount);
+        $this->assertSame('14.40', $payment->fresh()->commission_amount);
+        $this->assertSame('180.00', $payment->fresh()->operator_net);
     }
 
     public function test_marketplace_gmv_uses_ticket_payments_and_the_saved_agreement(): void
@@ -135,10 +138,12 @@ class SaleLedgerTest extends TestCase
             'provider' => 'sandbox',
             'provider_reference' => 'DEMO-GMV',
             'amount' => 198,
-            'commission_rate' => 0,
-            'commission_amount' => 0,
+            'commission_rate' => 8,
+            'commission_amount' => 14.40,
+            'operator_net' => 183.60,
             'status' => 'confirmed',
             'paid_at' => now(),
+            'provider_payload' => ['commission_model' => 'passenger_fee'],
         ]);
         Payment::create([
             'purpose' => 'subscription',
@@ -157,7 +162,7 @@ class SaleLedgerTest extends TestCase
         $this->actingAs($admin)->get(route('admin.commissions.index'))
             ->assertOk()
             ->assertSee('198.00')
-            ->assertSee('15.84')
+            ->assertSee('14.40')
             ->assertDontSee('1,500.00');
 
         $this->actingAs($admin)->get(route('admin.sales.index'))
@@ -291,10 +296,12 @@ class SaleLedgerTest extends TestCase
             'provider' => 'sandbox',
             'provider_reference' => 'DEMO-ING',
             'amount' => 198,
-            'commission_rate' => 0,
-            'commission_amount' => 0,
+            'commission_rate' => 8,
+            'commission_amount' => 14.40,
+            'operator_net' => 183.60,
             'status' => 'confirmed',
             'paid_at' => now(),
+            'provider_payload' => ['commission_model' => 'passenger_fee'],
         ]);
         Payment::create([
             'purpose' => 'subscription',
@@ -311,7 +318,7 @@ class SaleLedgerTest extends TestCase
         $this->actingAs($admin)->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('Ingreso NavegaYA')
-            ->assertSee('15.84')
+            ->assertSee('14.40')
             ->assertSee('Anuncios de empresas')
             ->assertSee('750.00');
     }
@@ -349,6 +356,99 @@ class SaleLedgerTest extends TestCase
         $this->assertSame('180.00', $reservation->total_amount);
         $this->assertSame('0.00', $reservation->service_fee_amount);
         $this->assertSame('0.00', Payment::firstOrFail()->commission_amount);
+        $this->assertSame('180.00', Payment::firstOrFail()->operator_net);
+    }
+
+    public function test_passenger_pays_the_agreement_and_the_company_keeps_the_fare(): void
+    {
+        Mail::fake();
+        [$departure, $seat] = $this->departure('TAR-100', now()->addDay(), now()->addDays(2));
+        $departure->transportRoute->organization->update(['commission_rate' => 8]);
+        $departure->update(['fare' => 100]);
+        $legacy = Payment::create([
+            'reservation_id' => $this->heldReservation($departure, $seat, 'NY-VIEJA', 100)->id,
+            'purpose' => 'ticket',
+            'method' => 'yape',
+            'provider' => 'sandbox',
+            'provider_reference' => 'VIEJA-100',
+            'amount' => 108,
+            'commission_rate' => 8,
+            'commission_amount' => 8.64,
+            'operator_net' => 99.36,
+            'status' => 'confirmed',
+            'paid_at' => now()->subDay(),
+        ]);
+
+        $web = $this->heldReservation($departure, $this->extraSeat($departure, '1B'), 'NY-WEB-100', 100);
+        app(BookingPaymentService::class)->confirm($web, [
+            'method' => 'yape', 'provider' => 'sandbox', 'provider_reference' => 'WEB-100',
+        ]);
+        $counter = $this->heldReservation($departure, $this->extraSeat($departure, '1C'), 'NY-MUELLE-100', 100, 'counter');
+        app(BookingPaymentService::class)->confirm($counter, [
+            'method' => 'cash_dock', 'provider' => 'pos', 'provider_reference' => 'MUELLE-100',
+        ]);
+        $discounted = $this->heldReservation($departure, $this->extraSeat($departure, '1D'), 'NY-DESC-100', 100);
+        $discounted->update(['discount_amount' => 10]);
+        app(BookingPaymentService::class)->confirm($discounted, [
+            'method' => 'yape', 'provider' => 'sandbox', 'provider_reference' => 'DESC-100',
+        ]);
+
+        $webPayment = Payment::where('provider_reference', 'WEB-100')->firstOrFail();
+        $this->assertSame('108.00', $web->fresh()->total_amount);
+        $this->assertSame('8.00', $webPayment->commission_amount);
+        $this->assertSame('100.00', $webPayment->operator_net);
+
+        $counterPayment = Payment::where('provider_reference', 'MUELLE-100')->firstOrFail();
+        $this->assertSame('100.00', $counter->fresh()->total_amount);
+        $this->assertSame('0.00', $counter->fresh()->service_fee_amount);
+        $this->assertSame('0.00', $counterPayment->commission_amount);
+        $this->assertSame('100.00', $counterPayment->operator_net);
+
+        $discountPayment = Payment::where('provider_reference', 'DESC-100')->firstOrFail();
+        $this->assertSame('7.20', $discounted->fresh()->service_fee_amount);
+        $this->assertSame('97.20', $discounted->fresh()->total_amount);
+        $this->assertSame('7.20', $discountPayment->commission_amount);
+        $this->assertSame('90.00', $discountPayment->operator_net);
+
+        $this->assertSame('8.64', $legacy->fresh()->commission_amount);
+        $this->assertSame('99.36', $legacy->fresh()->operator_net);
+        $this->assertNull(data_get($legacy->fresh()->provider_payload, 'commission_model'));
+    }
+
+    private function heldReservation(RouteDeparture $departure, VesselSeat $seat, string $code, float $amount, string $channel = 'web'): Reservation
+    {
+        $reservation = Reservation::create([
+            'route_departure_id' => $departure->id,
+            'code' => $code,
+            'contact_name' => 'Pasajero',
+            'contact_email' => strtolower($code).'@test.pe',
+            'contact_phone' => '999000111',
+            'total_amount' => $amount,
+            'status' => 'pending_payment',
+            'sales_channel' => $channel,
+            'expires_at' => now()->addMinutes(10),
+        ]);
+        ReservationSeat::create([
+            'reservation_id' => $reservation->id,
+            'route_departure_id' => $departure->id,
+            'vessel_seat_id' => $seat->id,
+            'passenger_name' => 'Pasajero',
+            'document_number' => '12345678',
+        ]);
+
+        return $reservation;
+    }
+
+    private function extraSeat(RouteDeparture $departure, string $code): VesselSeat
+    {
+        return VesselSeat::create([
+            'vessel_id' => $departure->vessel_id,
+            'code' => $code,
+            'deck' => 'principal',
+            'seat_class' => 'standard',
+            'row_position' => 1,
+            'column_position' => ord(substr($code, -1)) - 64,
+        ]);
     }
 
     /**

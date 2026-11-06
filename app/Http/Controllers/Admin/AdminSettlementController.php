@@ -16,15 +16,24 @@ class AdminSettlementController extends Controller
 {
     public function __construct(private readonly MarketplaceSales $sales) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
         $payments = $this->sales->ticketPayments()
             ->with([
                 'reservation.departure.transportRoute.organization',
                 'reservation.airDeparture.airRoute.organization',
             ])
+            ->when($filters['from'] ?? null, fn (Builder $query, string $from) => $query->where('paid_at', '>=', Carbon::parse($from)->startOfDay()))
+            ->when($filters['to'] ?? null, fn (Builder $query, string $to) => $query->where('paid_at', '<=', Carbon::parse($to)->endOfDay()))
             ->latest('paid_at')
             ->get();
+        $current = $payments->filter(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment));
+        $legacy = $payments->reject(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment))
+            ->filter(fn (Payment $payment): bool => (float) $payment->commission_amount > 0);
 
         $organizations = Organization::query()
             ->where('type', 'transport_company')
@@ -32,26 +41,36 @@ class AdminSettlementController extends Controller
             ->orderBy('commercial_name')
             ->get();
 
-        $summaries = $organizations->map(function (Organization $organization) use ($payments): object {
-            $organizationPayments = $payments->filter(
+        $summaries = $organizations->map(function (Organization $organization) use ($current): object {
+            $organizationPayments = $current->filter(
                 fn (Payment $payment): bool => $this->organizationId($payment) === $organization->id
             );
 
             return (object) [
                 'organization' => $organization,
-                'gmv' => (float) $organizationPayments->sum('amount'),
-                'generated' => (float) $organizationPayments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-                'collected' => (float) $organizationPayments->where('commission_status', 'paid')->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-                'pending' => (float) $organizationPayments->whereIn('commission_status', ['pending', 'invoiced'])->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+                'sales' => (float) $organizationPayments->sum('amount'),
+                'fees' => (float) $organizationPayments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
             ];
         });
+        $legacySummaries = $organizations->map(function (Organization $organization) use ($legacy): object {
+            $organizationPayments = $legacy->filter(
+                fn (Payment $payment): bool => $this->organizationId($payment) === $organization->id
+            );
+
+            return (object) [
+                'organization' => $organization,
+                'amount' => (float) $organizationPayments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+            ];
+        })->filter(fn (object $summary): bool => $summary->amount > 0)->values();
 
         return view('admin.settlements.index', [
             'summaries' => $summaries,
-            'grossVolume' => (float) $payments->sum('amount'),
-            'commissionGenerated' => (float) $payments->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-            'commissionCollected' => (float) $payments->where('commission_status', 'paid')->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
-            'commissionReceivable' => (float) $payments->whereIn('commission_status', ['pending', 'invoiced'])->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+            'legacySummaries' => $legacySummaries,
+            'from' => $filters['from'] ?? null,
+            'to' => $filters['to'] ?? null,
+            'webSales' => (float) $current->sum('amount'),
+            'serviceFees' => (float) $current->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
+            'legacyTotal' => (float) $legacy->sum(fn (Payment $payment): float => $this->sales->commissionOf($payment)),
         ]);
     }
 
@@ -72,24 +91,19 @@ class AdminSettlementController extends Controller
             })
             ->get();
 
-        abort_if($pending->isEmpty(), 422, 'No existen comisiones pendientes para el período seleccionado.');
+        $pending = $pending->reject(fn (Payment $payment): bool => $this->sales->usesPassengerFee($payment))
+            ->filter(fn (Payment $payment): bool => (float) $payment->commission_amount > 0);
+        abort_if($pending->isEmpty(), 422, 'No hay comisiones anteriores pendientes en el período seleccionado.');
 
         foreach ($pending as $payment) {
-            $commission = $this->sales->commissionOf($payment);
-            $rate = (float) $payment->commission_rate > 0
-                ? (float) $payment->commission_rate
-                : (float) ($organization->commission_rate ?? 0);
             $payment->update([
-                'commission_rate' => $rate,
-                'commission_amount' => $commission,
-                'operator_net' => round((float) $payment->amount - $commission, 2),
                 'commission_status' => 'paid',
                 'commission_paid_at' => now(),
                 'commission_reference' => $data['reference'],
             ]);
         }
 
-        return back()->with('success', 'Cobro de comisión registrado. No se realizó ninguna transferencia al operador.');
+        return back()->with('success', 'Se marcó la comisión anterior como cobrada. Los importes guardados no cambiaron.');
     }
 
     private function organizationId(Payment $payment): ?int

@@ -27,7 +27,7 @@ class MarketplaceCommissionArchitectureTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.commissions.index'))
             ->assertOk()
-            ->assertSee('Comisiones y Facturación')
+            ->assertSee('Ingresos por cargo de servicio')
             ->assertSee('Sin fondos de operadores en custodia')
             ->assertDontSee('Registrar transferencia');
     }
@@ -50,11 +50,12 @@ class MarketplaceCommissionArchitectureTest extends TestCase
         $this->actingAs($admin)
             ->get(route('company.commissions.index'))
             ->assertOk()
-            ->assertSee('Comisión del convenio')
+            ->assertSee('Cargo de servicio NavegaYA: lo paga el viajero en la web. Tu tarifa se recibe completa.')
             ->assertSee('Tarifa de tu empresa')
-            ->assertSee('Comisión generada')
-            ->assertSee('Por cobrar')
+            ->assertSee('Cargos pagados por los viajeros')
             ->assertSee('7.50%')
+            ->assertDontSee('Por cobrar')
+            ->assertDontSee('Comisión generada')
             ->assertDontSee('Cuenta bancaria')
             ->assertDontSee('CCI');
     }
@@ -108,9 +109,10 @@ class MarketplaceCommissionArchitectureTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.commissions.index'))
             ->assertOk()
+            ->assertSee('Comisiones anteriores al cambio')
             ->assertSee('S/ 100.00')
             ->assertSee('S/ 8.25')
-            ->assertSee('Por cobrar')
+            ->assertDontSee('Por cobrar')
             ->assertDontSee('Cuenta bancaria');
     }
 }

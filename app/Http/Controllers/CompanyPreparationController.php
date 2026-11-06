@@ -23,7 +23,7 @@ class CompanyPreparationController extends Controller
 
         $isAdmin = $request->user()->roles()->where('code', 'company_admin')->exists();
         $isCounter = $request->user()->roles()->where('code', 'company_counter')->exists();
-        abort_unless($isAdmin || ($page === 'cash_close' && $isCounter), 403);
+        abort_unless($isAdmin || ($isCounter && in_array($page, ['cash_close', 'parcels', 'freight'], true)), 403);
 
         $organization = $request->user()->organizations()
             ->where('organizations.type', 'transport_company')

@@ -92,11 +92,32 @@
                 <strong class="mt-1 block text-lg font-black">{{ $totalCapacity }} asientos</strong>
             </div>
             <div class="rounded-2xl bg-black/20 p-3 text-center">
-                <span class="block text-[10px] font-bold uppercase tracking-wider text-emerald-300/80">Comisión NavegaYA</span>
+                <span class="block text-[10px] font-bold uppercase tracking-wider text-emerald-300/80">Cargo de servicio al viajero</span>
                 <strong class="mt-1 block text-lg font-black text-amber-300">{{ number_format((float) $organization->commission_rate, 2) }}%</strong>
                 <span class="mt-0.5 block text-[9px] font-bold uppercase text-emerald-100/60">{{ match($organization->commercial_plan ?? 'standard') { 'initial' => 'Nivel inicial', 'strategic' => 'Nivel estratégico', 'custom' => 'Acuerdo personalizado', default => 'Nivel estándar' } }}{{ $organization->agreement_number ? ' · '.$organization->agreement_number : '' }}</span>
             </div>
         </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="font-black text-slate-900">Puerto base</h2>
+        <p class="mt-1 text-xs text-slate-500">Hoy: {{ $organization->basePort ? $organization->basePort->name.' · '.$organization->basePort->city : 'Puerto base por definir' }}. El cambio pide un motivo y queda auditado.</p>
+        <form method="POST" action="{{ route('admin.companies.base-port.update', $organization) }}" class="mt-3 flex flex-wrap items-end gap-3">
+            @csrf
+            @method('PATCH')
+            <label class="text-xs font-bold text-slate-600">Puerto del catálogo
+                <select name="base_port_id" required class="mt-1 block h-11 min-w-64 rounded-xl border-slate-200 bg-slate-50 text-sm">
+                    <option value="">Elige un puerto activo</option>
+                    @foreach($ports as $port)
+                        <option value="{{ $port->id }}" @selected((string) old('base_port_id', $organization->base_port_id) === (string) $port->id)>{{ $port->name }} · {{ $port->city }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="text-xs font-bold text-slate-600">Motivo
+                <input name="reason" required minlength="5" maxlength="500" value="{{ old('reason') }}" class="mt-1 block h-11 w-64 rounded-xl border-slate-200 bg-slate-50 text-sm">
+            </label>
+            <button class="h-11 rounded-xl bg-[#062c21] px-4 text-xs font-black text-white">Guardar puerto base</button>
+        </form>
     </section>
 
     <div class="space-y-5">

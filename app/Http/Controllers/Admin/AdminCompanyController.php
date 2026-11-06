@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\Payment;
+use App\Models\Port;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Services\CompanyProvisioningService;
+use App\Support\AuditRecorder;
 use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -203,7 +205,10 @@ class AdminCompanyController extends Controller
             'modalities', 'sites', 'documents', 'basePort',
         ]);
 
-        return view('admin.companies.show', compact('organization'));
+        return view('admin.companies.show', [
+            'organization' => $organization,
+            'ports' => Port::query()->where('is_active', true)->orderBy('name')->orderBy('city')->get(),
+        ]);
     }
 
     public function update(Request $request, Organization $organization): RedirectResponse
@@ -229,6 +234,17 @@ class AdminCompanyController extends Controller
             'admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($admin)],
             'admin_password' => [$admin ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
         ]);
+        $previousRate = (float) $organization->commission_rate;
+        $rateChanged = round($previousRate, 2) !== round((float) $data['commission_rate'], 2);
+        $reason = null;
+        if ($rateChanged) {
+            $reason = $request->validate([
+                'commission_reason' => ['required', 'string', 'min:5', 'max:500'],
+            ], [
+                'commission_reason.required' => 'Indica el motivo del cambio de convenio.',
+                'commission_reason.min' => 'El motivo del convenio debe tener al menos 5 caracteres.',
+            ])['commission_reason'];
+        }
         DB::transaction(function () use ($organization, $admin, $data): void {
             $organization->update(collect($data)->only([
                 'legal_name', 'commercial_name', 'phone', 'service_hours', 'base_city', 'modality', 'commission_rate',
@@ -252,6 +268,12 @@ class AdminCompanyController extends Controller
                 $admin->roles()->attach($role->id, ['organization_id' => $organization->id]);
             }
         });
+        if ($rateChanged) {
+            AuditRecorder::record($request, 'company_commission_changed', $organization, [
+                'commission_rate' => ['from' => $previousRate, 'to' => (float) $data['commission_rate']],
+                'reason' => $reason,
+            ]);
+        }
 
         return redirect()->route('admin.companies.index')->with('success', 'Empresa actualizada correctamente.');
     }
@@ -261,12 +283,22 @@ class AdminCompanyController extends Controller
         abort_unless($organization->type === 'transport_company', 404);
         $data = $request->validate([
             'commission_rate' => ['required', 'numeric', 'between:0,100'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
         ], [
             'commission_rate.required' => 'Indica el porcentaje del convenio.',
             'commission_rate.numeric' => 'El porcentaje debe ser un número.',
             'commission_rate.between' => 'El porcentaje va de 0 a 100.',
+            'reason.required' => 'Indica el motivo del cambio de convenio.',
+            'reason.min' => 'El motivo del convenio debe tener al menos 5 caracteres.',
         ]);
+        $previousRate = (float) $organization->commission_rate;
         $organization->update(['commission_rate' => $data['commission_rate']]);
+        if (round($previousRate, 2) !== round((float) $data['commission_rate'], 2)) {
+            AuditRecorder::record($request, 'company_commission_changed', $organization, [
+                'commission_rate' => ['from' => $previousRate, 'to' => (float) $data['commission_rate']],
+                'reason' => $data['reason'],
+            ]);
+        }
         $name = $organization->commercial_name ?: $organization->legal_name;
         $rate = (float) $data['commission_rate'];
         $message = $rate === 0.0
@@ -274,7 +306,29 @@ class AdminCompanyController extends Controller
             : 'La comisión de '.$name.' quedó en '.number_format($rate, 2).'%.';
 
         return redirect()->route('admin.companies.index', ['tab' => 'comisiones'])
-            ->with('success', $message);
+            ->with('success', $message.'. Aplica solo a las ventas nuevas.');
+    }
+
+    public function updateBasePort(Request $request, Organization $organization): RedirectResponse
+    {
+        abort_unless($organization->type === 'transport_company', 404);
+        $data = $request->validate([
+            'base_port_id' => ['required', 'integer', Rule::exists('ports', 'id')->where('is_active', true)],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'base_port_id.required' => 'Elige el puerto base.',
+            'base_port_id.exists' => 'Elige un puerto activo del catálogo.',
+            'reason.required' => 'Indica el motivo del cambio de puerto base.',
+            'reason.min' => 'El motivo debe tener al menos 5 caracteres.',
+        ]);
+        $previous = $organization->base_port_id;
+        $organization->update(['base_port_id' => $data['base_port_id']]);
+        AuditRecorder::record($request, 'company_base_port_changed', $organization, [
+            'base_port_id' => ['from' => $previous, 'to' => (int) $data['base_port_id']],
+            'reason' => $data['reason'],
+        ]);
+
+        return back()->with('success', 'Puerto base actualizado. La empresa lo ve en su panel.');
     }
 
     public function toggleStatus(Organization $organization): RedirectResponse

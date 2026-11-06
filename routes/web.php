@@ -113,13 +113,13 @@ Route::get('/destinos/{city}', [DiscoverController::class, 'show'])->name('disco
 Route::post('/destinos/{city}/valoraciones', [DiscoverController::class, 'review'])->middleware(['auth', 'verified'])->name('discover.review');
 
 Route::get('/dashboard', DashboardController::class)->middleware('auth')->name('dashboard');
-Route::get('/empresa/panel', [CompanyDashboardController::class, 'index'])->middleware(['auth', 'role:company_admin'])->name('company.dashboard');
-Route::patch('/empresa/panel/perfil', [CompanyDashboardController::class, 'updateProfile'])->middleware(['auth', 'role:company_admin'])->name('company.dashboard.profile');
-Route::post('/empresa/personal', [CompanyStaffController::class, 'store'])->middleware(['auth', 'role:company_admin'])->name('company.staff.store');
-Route::patch('/empresa/personal/{user}/estado', [CompanyStaffController::class, 'toggle'])->middleware(['auth', 'role:company_admin'])->name('company.staff.toggle');
-Route::delete('/empresa/personal/{user}', [CompanyStaffController::class, 'destroy'])->middleware(['auth', 'role:company_admin'])->name('company.staff.destroy');
-Route::get('/empresa/despacho', [CompanyCounterController::class, 'index'])->middleware(['auth', 'role:company_admin|company_counter'])->name('company.counter.index');
-Route::middleware(['auth', 'role:company_admin|company_counter'])->prefix('empresa')->name('company.')->group(function () {
+Route::get('/empresa/panel', [CompanyDashboardController::class, 'index'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.dashboard');
+Route::patch('/empresa/panel/perfil', [CompanyDashboardController::class, 'updateProfile'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.dashboard.profile');
+Route::post('/empresa/personal', [CompanyStaffController::class, 'store'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.store');
+Route::patch('/empresa/personal/{user}/estado', [CompanyStaffController::class, 'toggle'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.toggle');
+Route::delete('/empresa/personal/{user}', [CompanyStaffController::class, 'destroy'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.destroy');
+Route::get('/empresa/despacho', [CompanyCounterController::class, 'index'])->middleware(['auth', 'role:company_admin|company_counter', 'company.profile'])->name('company.counter.index');
+Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {
     Route::get('/salidas', [CompanyDepartureController::class, 'index'])->name('departures.index');
     Route::post('/salidas', [CompanyDepartureController::class, 'store'])->name('departures.store');
     Route::get('/salidas/{departure}/embarque', [CompanyBoardingController::class, 'show'])->name('boarding.show');
@@ -129,7 +129,7 @@ Route::middleware(['auth', 'role:company_admin|company_counter'])->prefix('empre
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
     Route::get('/cierre-de-caja', [CompanyPreparationController::class, 'show'])->defaults('page', 'cash_close')->name('cash-close.index');
 });
-Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('company.')->group(function () {
+Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {
     Route::get('/publicidad', [CompanyAdvertisingController::class, 'index'])->name('advertising.index');
     Route::post('/publicidad', [CompanyAdvertisingController::class, 'store'])->name('advertising.store');
     Route::patch('/publicidad/{advertisement}/pausar', [CompanyAdvertisingController::class, 'pause'])->name('advertising.pause');
@@ -186,7 +186,7 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::get('/finanzas', fn () => redirect()->route('company.commissions.index'))->name('finance.index');
     Route::patch('/finanzas/cuenta', [CompanyDashboardController::class, 'updateBank'])->name('finance.bank');
 });
-Route::middleware(['auth', 'role:company_admin'])->prefix('empresa/salidas')->name('company.departures.')->group(function () {
+Route::middleware(['auth', 'role:company_admin', 'company.profile'])->prefix('empresa/salidas')->name('company.departures.')->group(function () {
     Route::get('/programar', [AdminTransportRouteController::class, 'createDeparture'])->name('create');
     Route::get('/{departure}/editar', [AdminTransportRouteController::class, 'editDeparture'])->name('edit');
     Route::patch('/{departure}', [AdminTransportRouteController::class, 'updateDeparture'])->name('update');
@@ -264,6 +264,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::resource('/empresas', AdminCompanyController::class)
         ->parameters(['empresas' => 'organization'])->names('companies');
     Route::patch('/empresas/{organization}/comision', [AdminCompanyController::class, 'updateCommission'])->name('companies.commission.update');
+    Route::patch('/empresas/{organization}/puerto-base', [AdminCompanyController::class, 'updateBasePort'])->name('companies.base-port.update');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
     Route::get('/empresas/{organization}/documentos/{document}', [AdminCompanyController::class, 'downloadDocument'])->name('companies.documents.download');
     Route::get('/modalidades-por-aprobar', [AdminCompanyOperationController::class, 'modalities'])->name('companies.modalities.index');

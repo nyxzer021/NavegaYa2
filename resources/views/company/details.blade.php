@@ -20,6 +20,7 @@
                             <option value="{{ $port->id }}" @selected((string) old('base_port_id', $organization->base_port_id) === (string) $port->id)>{{ $port->name }} · {{ $port->city }}</option>
                         @endforeach
                     </select>
+                    <a href="{{ route('messages.index', ['asunto' => 'Solicitud de puerto base']) }}" class="mt-2 inline-block text-sm font-semibold text-emerald-800">¿No está tu puerto? Solicítalo a NavegaYA</a>
                 </label>
                 <x-ui.input name="address" label="Dirección fiscal" value="{{ old('address', $organization->address) }}" required class="sm:col-span-2" />
                 <x-ui.input name="base_city" label="Ciudad" value="{{ old('base_city', $organization->base_city) }}" required />

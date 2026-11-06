@@ -15,9 +15,7 @@ class CompanyBase
             return $port->city ? $port->name.' · '.$port->city : $port->name;
         }
 
-        $city = trim((string) $organization->base_city);
-
-        return $city !== '' ? $city : null;
+        return null;
     }
 
     public static function fleetPhrase(Organization $organization): string

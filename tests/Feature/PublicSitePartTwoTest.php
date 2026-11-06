@@ -20,7 +20,7 @@ class PublicSitePartTwoTest extends TestCase
         $destination = Port::create(['name' => 'Puerto Pebas', 'city' => 'Pebas', 'district' => 'Pebas', 'province' => 'Mariscal Ramón Castilla', 'region' => 'Loreto', 'modality' => 'fluvial', 'port_type' => 'puerto', 'is_active' => true]);
         MasterRoute::create(['code' => 'TEST-1', 'modality' => 'fluvial', 'origin_city' => 'Lagunas', 'destination_city' => 'Pebas', 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id, 'estimated_duration_text' => '4 h 40 min', 'estimated_duration_minutes' => 280, 'status' => 'active']);
 
-        $this->get('/descubrir')->assertOk()->assertSee('1 ruta registrada');
+        $this->get('/descubrir')->assertOk()->assertSee('1 ruta publicada');
     }
 
     public function test_duration_is_formatted_from_minutes(): void

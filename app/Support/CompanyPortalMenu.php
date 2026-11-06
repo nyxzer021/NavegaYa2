@@ -46,9 +46,14 @@ class CompanyPortalMenu
         return ['label' => __('company_portal.sales.configure'), 'tone' => 'amber'];
     }
 
+    public function hasBasePort(): bool
+    {
+        return $this->organization->base_port_id !== null;
+    }
+
     public function baseLabel(): string
     {
-        return CompanyBase::label($this->organization) ?: __('company_portal.requires_implementation');
+        return CompanyBase::label($this->organization) ?? __('company_portal.base_undefined');
     }
 
     /**
@@ -200,12 +205,6 @@ class CompanyPortalMenu
 
     private function lockReason(string $key, string $profile, bool $needsActive): ?string
     {
-        if ($profile === 'seller' && in_array($key, ['parcels', 'freight'], true)) {
-            return __('company_portal.lock.branch');
-        }
-        if ($profile === 'seller' && $key === 'sales') {
-            return __('company_portal.lock.own_sales');
-        }
         if (($needsActive || $key === 'advertising') && ! $this->isOperational()) {
             return __('company_portal.lock.pending');
         }

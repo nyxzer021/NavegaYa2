@@ -95,6 +95,16 @@ class Port extends Model
         return $this->hasMany(MasterRoute::class, 'destination_port_id');
     }
 
+    public function baseOrganizations(): HasMany
+    {
+        return $this->hasMany(Organization::class, 'base_port_id');
+    }
+
+    public function organizationSites(): HasMany
+    {
+        return $this->hasMany(OrganizationSite::class);
+    }
+
     public function baseVessels(): HasMany
     {
         return $this->hasMany(Vessel::class, 'base_port_id');

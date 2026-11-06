@@ -447,7 +447,7 @@
         </div>
     </section>
 
-    <x-b2b-ad-banner placement="company_footer" :city="$organization->base_city" class="mt-8" />
+    <x-b2b-ad-banner placement="company_footer" :city="$organization->basePort?->city" class="mt-8" />
 </main>
 <dialog id="company-photo" class="company-viewer">
     <div class="company-viewer-bar">

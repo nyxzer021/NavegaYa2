@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureCompanyPortalProfile;
 use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\SecurityHeaders;
@@ -8,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,7 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->validateCsrfTokens(except: ['webhooks/culqi']);
-        $middleware->alias(['role' => EnsureUserHasRole::class, 'permission' => EnsureUserHasPermission::class]);
+        $middleware->alias([
+            'role' => EnsureUserHasRole::class,
+            'permission' => EnsureUserHasPermission::class,
+            'company.profile' => EnsureCompanyPortalProfile::class,
+        ]);
+        $middleware->prependToPriorityList(SubstituteBindings::class, EnsureCompanyPortalProfile::class);
         $middleware->appendToGroup('web', SetPublicLocale::class);
         $middleware->append(SecurityHeaders::class);
     })

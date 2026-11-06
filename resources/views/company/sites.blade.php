@@ -20,6 +20,14 @@
                                 @endforeach
                             </select>
                         </label>
+                        <label class="ny-ui-field sm:col-span-2"><span>Puerto o aeródromo del catálogo</span>
+                            <select name="port_id" required>
+                                <option value="">Elige un puerto activo</option>
+                                @foreach($ports as $port)
+                                    <option value="{{ $port->id }}" @selected((string) old('port_id', $site->port_id) === (string) $port->id)>{{ $port->name }} · {{ $port->city }}</option>
+                                @endforeach
+                            </select>
+                        </label>
                         <x-ui.input name="address" label="Dirección" value="{{ $site->address }}" required />
                         <x-ui.input name="city" label="Ciudad" value="{{ $site->city }}" required />
                         <x-ui.input name="hours" label="Horario" value="{{ $site->hours }}" />
@@ -48,6 +56,14 @@
                     <option value="dock">Muelle</option>
                     <option value="office">Oficina</option>
                     <option value="airfield">Aeródromo</option>
+                </select>
+            </label>
+            <label class="ny-ui-field sm:col-span-2"><span>Puerto o aeródromo del catálogo</span>
+                <select name="port_id" required>
+                    <option value="">Elige un puerto activo</option>
+                    @foreach($ports as $port)
+                        <option value="{{ $port->id }}" @selected((string) old('port_id') === (string) $port->id)>{{ $port->name }} · {{ $port->city }}</option>
+                    @endforeach
                 </select>
             </label>
             <x-ui.input name="address" label="Dirección" required />

@@ -57,18 +57,19 @@
                 <table class="w-full min-w-[820px] text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
-                            <th class="px-6 py-4">Terminal</th><th class="px-4 py-4">Tipo</th><th class="px-4 py-4">Ciudad / provincia</th><th class="px-4 py-4">Río o pista</th><th class="px-6 py-4">Estado</th><th class="px-6 py-4"></th>
+                            <th class="px-6 py-4">Terminal</th><th class="px-4 py-4">Tipo</th><th class="px-4 py-4">Ciudad / provincia</th><th class="px-4 py-4">Río o pista</th><th class="px-4 py-4">Empresas</th><th class="px-6 py-4">Estado</th><th class="px-6 py-4"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($ports as $port)
-                            @php($portInUse = ($port->origin_master_routes_count + $port->destination_master_routes_count + $port->origin_routes_count + $port->destination_routes_count + $port->base_vessels_count) > 0)
-                            @if($loop->first || $ports[$loop->index - 1]->modality !== $port->modality)<tr class="bg-slate-100/80"><td colspan="6" class="px-6 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-700">{{ $port->modality === 'aereo' ? '✈ Aeródromos y terminales aéreas' : '🚤 Puertos, muelles y embarcaderos fluviales' }}</td></tr>@endif
+                            @php($portInUse = ($port->origin_master_routes_count + $port->destination_master_routes_count + $port->origin_routes_count + $port->destination_routes_count + $port->base_vessels_count + $port->base_organizations_count + $port->organization_sites_count) > 0)
+                            @if($loop->first || $ports[$loop->index - 1]->modality !== $port->modality)<tr class="bg-slate-100/80"><td colspan="7" class="px-6 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-700">{{ $port->modality === 'aereo' ? '✈ Aeródromos y terminales aéreas' : '🚤 Puertos, muelles y embarcaderos fluviales' }}</td></tr>@endif
                             <tr class="hover:bg-slate-50">
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $port->name }}</td>
                                 <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $port->modality==='aereo'?'bg-violet-50 text-violet-700':'bg-sky-50 text-sky-700' }}">{{ $port->modality==='aereo'?'✈ Aéreo':'⚓ Fluvial' }}</span></td>
                                 <td class="px-4 py-4 text-slate-700">{{ $port->placeName() }}<br><span class="text-[10px] text-slate-400">{{ $port->province->name ?? 'Loreto' }} · {{ $port->region }}</span></td>
                                 <td class="px-4 py-4 text-slate-700">{{ $port->river ?: 'No registrado' }}</td>
+                                <td class="px-4 py-4 font-bold text-slate-800">{{ $port->base_organizations_count }}</td>
                                 <td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold {{ $port->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $port->is_active ? 'Activo' : 'Inactivo' }}</span></td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="{{ route('admin.ports.edit', $port) }}" class="font-bold text-[#146e60]">Editar</a>
@@ -80,7 +81,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-6 py-12 text-center text-slate-500">Aún no hay puertos registrados. Crea el primero para comenzar a construir rutas.</td></tr>
+                            <tr><td colspan="7" class="px-6 py-12 text-center text-slate-500">Aún no hay puertos registrados. Crea el primero para comenzar a construir rutas.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -58,6 +58,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SupportTicket::class);
     }
 
+    public function isCompanyAdmin(): bool
+    {
+        return $this->roles()->where('code', 'company_admin')->exists();
+    }
+
     public function isCustomer(): bool
     {
         return $this->roles()->whereIn('code', ['customer', 'traveler', 'passenger'])->exists();

@@ -3,6 +3,7 @@
 return [
     'portal' => 'Operator portal',
     'requires_implementation' => 'Requires implementation',
+    'base_undefined' => 'Home port not set',
     'preparation_label' => 'In preparation',
     'menu_button' => 'Menu',
     'role' => [

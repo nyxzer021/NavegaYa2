@@ -17,7 +17,7 @@ class BookingPaymentService
 
     public function confirm(Reservation $reservation, array $paymentData, ?float $commissionRate = null): Reservation
     {
-        $confirmed = DB::transaction(function () use ($reservation, $paymentData, $commissionRate) {
+        $confirmed = DB::transaction(function () use ($reservation, $paymentData) {
             $reservation = Reservation::query()->lockForUpdate()->findOrFail($reservation->id);
             if ($reservation->status === 'confirmed') {
                 return $reservation;
@@ -25,12 +25,8 @@ class BookingPaymentService
             abort_unless($reservation->status === 'pending_payment' && ! $reservation->expires_at?->isPast(), 422);
 
             $reservation->loadMissing(['departure.transportRoute.organization', 'airDeparture.airRoute.organization', 'seats']);
-            $organization = $reservation->isAir()
-                ? $reservation->airDeparture->airRoute->organization
-                : $reservation->departure->transportRoute->organization;
             $quote = $this->sales->quote($reservation);
-            $rate = $commissionRate ?? (float) ($organization->commission_rate ?? 0);
-            $commission = $this->sales->commission($quote['charged_amount'], $rate);
+            $commission = $this->sales->commission($quote);
 
             Payment::updateOrCreate(
                 ['provider_reference' => $paymentData['provider_reference']],
@@ -53,6 +49,7 @@ class BookingPaymentService
                         'base_amount' => $quote['base_amount'],
                         'discount_amount' => $quote['discount_amount'],
                         'service_fee_amount' => $quote['service_fee_amount'],
+                        'commission_model' => 'passenger_fee',
                     ]),
                 ],
             );

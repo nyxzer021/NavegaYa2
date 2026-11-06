@@ -43,7 +43,7 @@ class AdminGovernanceTest extends TestCase
         $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Supervisión de itinerarios');
         $this->get(route('admin.fleet.index'))->assertRedirect(route('admin.companies.index'));
         $this->get(route('admin.settlements.index'))->assertRedirect(route('admin.commissions.index'));
-        $this->get(route('admin.commissions.index'))->assertOk()->assertSee('Comisiones y Facturación');
+        $this->get(route('admin.commissions.index'))->assertOk()->assertSee('Ingresos por cargo de servicio');
         $this->get(route('admin.sales.index'))->assertOk();
         $this->get(route('admin.ports.index'))->assertOk();
         $this->get(route('admin.master-routes.index'))->assertOk();
@@ -444,11 +444,12 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Comisión que paga el pasajero')
             ->assertSee('Quitar');
 
-        $this->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 7.5])
+        $this->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 7.5, 'reason' => 'Ajuste del convenio'])
             ->assertRedirect(route('admin.companies.index', ['tab' => 'comisiones']));
         $this->assertSame('7.50', $organization->fresh()->commission_rate);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'company_commission_changed', 'subject_id' => $organization->id]);
 
-        $this->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 0])
+        $this->patch(route('admin.companies.commission.update', $organization), ['commission_rate' => 0, 'reason' => 'Se retira el convenio'])
             ->assertRedirect(route('admin.companies.index', ['tab' => 'comisiones']));
         $this->assertSame('0.00', $organization->fresh()->commission_rate);
 

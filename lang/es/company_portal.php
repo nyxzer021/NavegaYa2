@@ -3,6 +3,7 @@
 return [
     'portal' => 'Portal del operador',
     'requires_implementation' => 'Requiere implementación',
+    'base_undefined' => 'Puerto base por definir',
     'preparation_label' => 'En preparación',
     'menu_button' => 'Menú',
     'role' => [

@@ -4,7 +4,18 @@
 @section('content')
 <div class="mx-auto max-w-6xl space-y-5">
  <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p class="text-sm font-semibold text-emerald-800">Agencia física · muelle</p><h2 class="mt-1 text-2xl font-black text-slate-950">Vender pasaje en el muelle</h2><p class="mt-1 max-w-2xl text-sm text-slate-500">Cobra la tarifa en efectivo y entrega el boleto. NavegaYA no cobra comisión por esta venta. Solo aparecen los zarpes de hoy.</p></div></div></section>
- @if($departures->isEmpty())<div class="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm"><strong class="block text-slate-800">Hoy no hay una salida para vender en el muelle</strong><p class="mt-1 text-sm text-slate-500">Programa el zarpe del día. El pasajero paga solo la tarifa de la empresa.</p><a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex h-10 items-center text-sm font-bold text-emerald-800">Programar salida</a>@if($upcoming->isNotEmpty())<div class="mt-6 text-left"><p class="text-sm font-bold text-slate-700">Ya programadas para otro día</p><ul class="mt-2 space-y-2">@foreach($upcoming as $departure)<li class="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{{ $departure->departure_at->translatedFormat('D d M · H:i') }} · {{ $departure->transportRoute->originPort->city }} → {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</li>@endforeach</ul></div>@endif</div>@else
+ @if($departures->isEmpty())
+ <div class="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+  <strong class="block text-slate-800">Hoy no hay una salida para vender en el muelle</strong>
+  <p class="mt-1 text-sm text-slate-500">El pasajero paga solo la tarifa de la empresa.</p>
+  @if(auth()->user()?->isCompanyAdmin())
+   <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex h-10 items-center text-sm font-bold text-emerald-800">Programar salida</a>
+  @endif
+  @if($upcoming->isNotEmpty())
+   <div class="mt-6 text-left"><p class="text-sm font-bold text-slate-700">Ya programadas para otro día</p><ul class="mt-2 space-y-2">@foreach($upcoming as $departure)<li class="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{{ $departure->departure_at->translatedFormat('D d M · H:i') }} · {{ $departure->transportRoute->originPort->city }} → {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</li>@endforeach</ul></div>
+  @endif
+ </div>
+ @else
  <form method="GET" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><label class="text-sm font-semibold text-slate-600">Salida de hoy</label><div class="mt-1 flex gap-2"><select name="departure" class="h-11 flex-1 rounded-xl border-slate-200 bg-slate-50 text-xs font-bold" onchange="this.form.submit()">@foreach($departures as $departure)<option value="{{ $departure->id }}" @selected($selectedDeparture?->id === $departure->id)>{{ $departure->departure_at->format('H:i') }} · {{ $departure->transportRoute->originPort->city }} ➔ {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</option>@endforeach</select></div></form>
  <form method="POST" action="{{ route('company.pos.store') }}" class="grid gap-5 lg:grid-cols-[1fr_380px]">@csrf<input type="hidden" name="departure_id" value="{{ $selectedDeparture->id }}">
   @include('components.vessel-deck-styles')

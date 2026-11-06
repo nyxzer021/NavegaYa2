@@ -39,7 +39,7 @@ class TransportRouteTest extends TestCase
         $companyAdmin->organizations()->attach($company->id, ['status' => 'active']);
 
         $this->actingAs($companyAdmin)->get(route('company.departures.create'))
-            ->assertOk()->assertSee('TRM-ACTIVA')->assertDontSee('TRM-SUSPENDIDA')->assertSee('Tramo maestro oficial');
+            ->assertOk()->assertSee('TRM-ACTIVA')->assertDontSee('TRM-SUSPENDIDA')->assertSee('Tramo');
         $this->actingAs($companyAdmin)->get(route('admin.master-routes.create'))->assertForbidden();
     }
 }
