@@ -236,7 +236,7 @@ class CompanyPortalMenu
             $this->row('channels', 'parcels', 'company.parcels.index', ['company.parcels.*'], $channels, true),
             $this->row('channels', 'freight', 'company.freight.index', ['company.freight.*'], $channels, true),
             $this->row('channels', 'cash_close', 'company.cash-close.index', ['company.cash-close.*'], $channels, true),
-            $this->row('finance', 'sales', 'company.sales.index', ['company.sales.*'], $finance, true),
+            $this->row('finance', 'sales', 'company.sales.index', ['company.sales.*', 'company.commissions.*'], $finance, true),
             $this->row('finance', 'collections', 'company.collections.index', ['company.collections.*'], $finance, true),
             $this->row('finance', 'refunds', 'company.refunds.index', ['company.refunds.*'], $finance, true),
             $this->row('finance', 'agency_commissions', 'company.agency-commissions.index', ['company.agency-commissions.*'], $finance, true),

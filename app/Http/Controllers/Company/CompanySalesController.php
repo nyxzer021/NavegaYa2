@@ -25,12 +25,15 @@ class CompanySalesController extends Controller
         $webSales = (float) (clone $payments)->whereHas('reservation', fn (Builder $query) => $query->where('sales_channel', 'web'))->sum('amount');
         $counterSales = (float) (clone $payments)->whereHas('reservation', fn (Builder $query) => $query->where('sales_channel', 'counter'))->sum('amount');
         $totalTickets = $this->tickets($organization->id, $from, $to)->count();
+        $travelerServiceFee = (float) (clone $payments)
+            ->where('provider_payload->commission_model', 'passenger_fee')
+            ->sum('commission_amount');
         $dailySales = (clone $payments)->selectRaw('DATE(paid_at) as sale_date, SUM(amount) as total')
             ->groupBy(DB::raw('DATE(paid_at)'))->orderBy('sale_date')->pluck('total', 'sale_date');
         $tickets = $this->tickets($organization->id, $from, $to)
             ->with($this->ticketRelations())->latest('tickets.created_at')->paginate(15)->withQueryString();
 
-        return view('company.sales.index', compact('organization', 'from', 'to', 'totalRevenue', 'totalTickets', 'webSales', 'counterSales', 'dailySales', 'tickets'));
+        return view('company.sales.index', compact('organization', 'from', 'to', 'totalRevenue', 'totalTickets', 'webSales', 'counterSales', 'dailySales', 'tickets', 'travelerServiceFee'));
     }
 
     public function export(Request $request): StreamedResponse

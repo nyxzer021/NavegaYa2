@@ -47,10 +47,16 @@ class MarketplaceCommissionArchitectureTest extends TestCase
         $admin->roles()->attach($role, ['organization_id' => $organization->id]);
         $admin->organizations()->attach($organization->id, ['status' => 'active']);
 
-        $this->actingAs($admin)
+        $response = $this->actingAs($admin)
             ->get(route('company.commissions.index'))
             ->assertOk()
-            ->assertSee('Cargo de servicio NavegaYA: lo paga el viajero en la web. Tu tarifa se recibe completa.')
+            ->assertSee('Cargo de servicio NavegaYA: lo paga el viajero en la web. Tu tarifa se recibe completa.');
+        $response->assertSee('href="'.route('company.sales.index').'" class="company-nav-link is-on"', false);
+        $this->assertMatchesRegularExpression(
+            '/Ventas y finanzas\s*<span[^>]*>›<\/span>\s*Historial de ventas\s*<span[^>]*>›<\/span>\s*<strong>Cargo de servicio<\/strong>/',
+            $response->getContent(),
+        );
+        $response
             ->assertSee('Tarifa de tu empresa')
             ->assertSee('Cargos pagados por los viajeros')
             ->assertSee('7.50%')
@@ -106,6 +112,10 @@ class MarketplaceCommissionArchitectureTest extends TestCase
             'status' => 'confirmed',
             'paid_at' => now(),
         ]);
+
+        $this->actingAs($admin)->get(route('company.sales.index'))
+            ->assertOk()
+            ->assertSee('Cargo de servicio pagado por los viajeros en el periodo: S/ 0.00 · Tu tarifa se recibe completa');
 
         $this->actingAs($admin)->get(route('company.commissions.index'))
             ->assertOk()

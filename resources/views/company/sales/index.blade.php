@@ -3,6 +3,13 @@
 @section('page-title', 'Historial de ventas')
 @section('content')
 <div class="mx-auto max-w-7xl space-y-6">
+    <section class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm font-semibold text-slate-800">Cargo de servicio pagado por los viajeros en el periodo: S/ {{ number_format($travelerServiceFee, 2) }} · Tu tarifa se recibe completa</p>
+        @if(auth()->user()?->isCompanyAdmin())
+            <a href="{{ route('company.commissions.index') }}" class="inline-flex h-10 shrink-0 items-center text-sm font-bold text-emerald-800">Ver detalle</a>
+        @endif
+    </section>
+
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>

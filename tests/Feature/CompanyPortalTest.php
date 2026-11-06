@@ -166,6 +166,8 @@ class CompanyPortalTest extends TestCase
         $this->actingAs($admin)->get(route('company.sales.index'))
             ->assertOk()
             ->assertSee('Boletos vendidos de Operador Comercial')
+            ->assertSee('Cargo de servicio pagado por los viajeros en el periodo: S/ 0.00 · Tu tarifa se recibe completa')
+            ->assertSee('Ver detalle')
             ->assertSee('Total pagado por viajeros')
             ->assertSee('Evolución de ingresos')
             ->assertSee('0 días con ventas')

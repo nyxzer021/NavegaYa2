@@ -132,7 +132,12 @@
                 <button type="button" class="company-menu-toggle" aria-controls="company-sidebar" aria-expanded="false" aria-label="{{ __('company_portal.menu_button') }}"><x-ui.icon name="menu" class="h-5 w-5" /></button>
                 <p class="company-crumb">
                     @if($current && $current['group'])
-                        {{ $current['group'] }} <span aria-hidden="true">›</span> <strong>{{ $current['label'] }}</strong>
+                        {{ $current['group'] }} <span aria-hidden="true">›</span>
+                        @if(request()->routeIs('company.commissions.*'))
+                            {{ $current['label'] }} <span aria-hidden="true">›</span> <strong>Cargo de servicio</strong>
+                        @else
+                            <strong>{{ $current['label'] }}</strong>
+                        @endif
                     @else
                         <strong>{{ $pageTitle }}</strong>
                     @endif
