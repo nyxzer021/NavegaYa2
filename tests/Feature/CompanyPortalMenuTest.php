@@ -18,13 +18,20 @@ class CompanyPortalMenuTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.dashboard'))
             ->assertOk()
-            ->assertSee('Inicio')
-            ->assertSee('Cobros y conciliación')
-            ->assertSee('Reembolsos')
-            ->assertSee('Pagos en línea')
-            ->assertSee('Requiere implementación')
-            ->assertSee('Cargo de servicio NavegaYA')
-            ->assertDontSee('Boletos vendidos');
+            ->assertSeeInOrder([
+                'Inicio',
+                'Mi empresa', 'Datos de la empresa', 'Sedes y terminales', 'Pagos en línea',
+                'Canales de venta', 'Punto de venta', 'Agencias autorizadas', 'Encomiendas', 'Envío de carga', 'Cierre de caja',
+                'Ventas y finanzas', 'Historial de ventas', 'Cobros y conciliación', 'Reembolsos', 'Comisiones de agencias', 'Comprobantes', 'Reportes',
+                'Operación', 'Flota', 'Rutas', 'Programación de salidas', 'Tarifas y descuentos', 'Embarque y manifiestos', 'Tripulación', 'Incidencias',
+                'Usuarios y privilegios', 'Usuarios', 'Perfiles y permisos', 'Auditoría',
+                'Contenido', 'Página de la empresa', 'Secciones de la página', 'Galería y opiniones', 'Políticas de viaje', 'Apariencia', 'Campañas publicitarias',
+                'Ayuda', 'Mensajes con NavegaYA', 'Soporte', 'WhatsApp de atención',
+            ])
+            ->assertSee('Ventas web: por configurar')
+            ->assertSee('Iquitos')
+            ->assertDontSee('Boletos vendidos')
+            ->assertDontSee('Cargo de servicio NavegaYA');
 
         $this->actingAs($admin)->get(route('company.collections.index'))
             ->assertOk()
@@ -51,10 +58,53 @@ class CompanyPortalMenuTest extends TestCase
         $this->actingAs($counter)->get(route('company.collections.index'))->assertForbidden();
         $this->actingAs($counter)->get(route('company.refunds.index'))->assertForbidden();
         $this->actingAs($counter)->get(route('company.online-payments.index'))->assertForbidden();
-        $this->actingAs($counter)->get(route('company.counter.index'))
+        $this->actingAs($counter)->get(route('company.pos.index'))
             ->assertOk()
-            ->assertSee('Embarque')
-            ->assertDontSee('Cobros y conciliación');
+            ->assertSee('Punto de venta')
+            ->assertSee('Cierre de caja')
+            ->assertSee('Mis ventas')
+            ->assertDontSee('Cobros y conciliación')
+            ->assertDontSee('Datos de la empresa')
+            ->assertDontSee('Usuarios y privilegios')
+            ->assertDontSee('Página de la empresa')
+            ->assertDontSee('Flota');
+        $this->actingAs($counter)->get(route('company.cash-close.index'))->assertOk()->assertSee('Cierre de caja');
+    }
+
+    public function test_super_admin_menu_follows_the_same_group_order(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador'])->id);
+
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Inicio',
+                'Bandeja de solicitudes',
+                'Empresas',
+                'Empresas y afiliaciones',
+                'Agencias autorizadas',
+                'Conexiones de pago',
+                'Canales y ventas',
+                'Ventas de pasajes',
+                'Reportes',
+                'Operación',
+                'Flota por validar',
+                'Supervisión de salidas',
+                'Marketplace',
+                'Negocios anunciantes',
+                'Contenido y moderación',
+                'Políticas base',
+                'Sistema',
+                'Auditoría',
+                'Ayuda',
+                'Mensajes con empresas',
+            ]);
+
+        $this->actingAs($admin)->get(route('admin.agencies.index'))
+            ->assertOk()
+            ->assertSee('Agencias autorizadas')
+            ->assertSee('En preparación');
     }
 
     /**

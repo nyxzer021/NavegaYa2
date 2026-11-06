@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Ventas')
-@section('page-title', 'Ventas')
+@section('title', 'Historial de ventas')
+@section('page-title', 'Historial de ventas')
 @section('content')
 <div class="mx-auto max-w-7xl space-y-6">
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

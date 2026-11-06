@@ -17,6 +17,8 @@ class EnsureUserHasPermission
 {
     private const ROUTE_PERMISSIONS = [
         'admin.requests.' => 'companies', 'admin.support.' => 'companies', 'admin.companies.' => 'companies',
+        'admin.agencies.' => 'companies', 'admin.payment-connections.' => 'settings', 'admin.base-policies.' => 'settings',
+        'admin.reconciliation.' => 'reports',
         'admin.organizations.' => 'companies', 'admin.organization-directory.' => 'companies', 'admin.fleet-compliance.' => 'fleet',
         'admin.operation.' => 'routes', 'admin.itineraries.' => 'routes', 'admin.supervision.' => 'routes',
         'admin.ports.' => 'ports', 'admin.master-routes.' => 'routes', 'admin.transport-routes.' => 'routes',

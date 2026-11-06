@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ trim($__env->yieldContent('title')) ?: \App\Support\AdminPageTitle::fromRoute(request()->route()?->getName()) }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -14,6 +17,19 @@
     </script>
 
     <style>
+.ny-admin-portal{font-family:'Plus Jakarta Sans',sans-serif}
+.ny-admin-portal .ny-side{background:#062C21}
+.ny-portal-label{margin:14px 8px 6px;color:#d7ebe3;font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.ny-portal-link{position:relative;display:flex;align-items:center;gap:10px;min-height:40px;margin:2px 0;border-radius:8px;padding:4px 8px;color:#d7ebe3;font-size:13.5px;font-weight:600;text-decoration:none}
+.ny-portal-link.is-on{background:rgba(255,255,255,.11);color:#fff;box-shadow:inset 3px 0 0 #F4B820}
+.ny-portal-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.ny-portal-link:focus-visible{outline:2px solid #F4B820;outline-offset:2px}
+.ny-portal-icon{display:grid;width:26px;height:26px;flex:0 0 26px;place-items:center;border-radius:7px;color:#fff}
+.ny-portal-icon svg{width:15px;height:15px}
+.ny-portal-badge{margin-left:auto;border-radius:999px;background:#F4B820;color:#10231D;padding:0 6px;font-size:12.5px;font-weight:700}
+.ny-category{font-size:12.5px}
+@media(max-width:1023px){.ny-admin-portal .ny-menu-toggle{z-index:120}}
+.ny-subname,.ny-user-role{font-size:12.5px}
 
 [x-cloak]{display:none!important}
 

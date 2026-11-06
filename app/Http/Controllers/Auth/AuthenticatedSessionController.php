@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
         }
         $roles = $user->roles()->pluck('code');
         $destination = match (true) {
-            $roles->contains('company_counter') => route('company.counter.index', absolute: false),
+            $roles->contains('company_counter') => route('company.pos.index', absolute: false),
             $roles->contains('company_admin') => route('company.dashboard', absolute: false),
             $roles->contains('marketplace_admin') => route('marketplace.dashboard', absolute: false),
             $roles->intersect(['customer', 'traveler', 'passenger'])->isNotEmpty() => route('travels.index', absolute: false),

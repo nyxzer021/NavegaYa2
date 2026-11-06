@@ -13,18 +13,33 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                panel: ['Plus Jakarta Sans', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 ny: {
                     brand: '#064E3B',
                     interaction: '#087F5B',
-                    canvas: '#F7F9F8',
+                    deep: '#0F6E56',
+                    menu: '#062C21',
+                    canvas: '#F6F8F7',
                     card: '#FFFFFF',
+                    line: '#E6ECE9',
                     ink: '#10231D',
                     muted: '#607069',
                     action: '#F4B820',
                     danger: '#9F1239',
                     warning: '#92400E',
+                    group: {
+                        home: '#BA7517',
+                        company: '#185FA5',
+                        channels: '#D85A30',
+                        finance: '#3B6D11',
+                        operation: '#0F6E56',
+                        users: '#534AB7',
+                        content: '#993556',
+                        help: '#5F5E5A',
+                        marketplace: '#534AB7',
+                    },
                 },
             },
             borderRadius: {
@@ -32,7 +47,7 @@ export default {
                 card: '12px',
             },
             fontSize: {
-                'ny-xs': '12px',
+                'ny-xs': '12.5px',
                 'ny-sm': '14px',
                 'ny-md': '16px',
                 'ny-lg': '20px',

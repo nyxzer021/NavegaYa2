@@ -32,10 +32,10 @@ class CompanyCounterAccessTest extends TestCase
             ->assertSee('md:hidden', false)
             ->assertDontSee('text-[9px]', false)
             ->assertDontSee('min-w-[720px]', false);
-        $this->actingAs($counter)->get(route('dashboard'))->assertRedirect(route('company.counter.index'));
+        $this->actingAs($counter)->get(route('dashboard'))->assertRedirect(route('company.pos.index'));
         $this->actingAs($counter)->get(route('company.counter.index'))->assertOk()
             ->assertSee('Portal Counter')
-            ->assertSee(route('company.departures.index'), false)
+            ->assertDontSee(route('company.departures.index'), false)
             ->assertDontSee('Recaudación hoy');
         $this->actingAs($counter)->get(route('company.departures.index'))->assertOk()->assertSee('Salidas')->assertSee('Ocupación')->assertDontSee('Cobrado hoy');
         $this->actingAs($counter)->get(route('company.fleet.index'))->assertForbidden();

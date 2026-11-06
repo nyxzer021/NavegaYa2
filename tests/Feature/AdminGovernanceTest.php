@@ -34,11 +34,11 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Realizadas')
             ->assertSee('Pendientes')
             ->assertSee('Reprogramadas')
-            ->assertSee('Supervisión de Itinerarios')
+            ->assertSee('Supervisión de salidas')
             ->assertSee('Rendimiento financiero por operador')
             ->assertSee('Publicidad y anunciantes')
-            ->assertSee('Auditoría de Actividad')
-            ->assertSee('Menú y Páginas');
+            ->assertSee('Auditoría')
+            ->assertSee('Menú y páginas del sitio');
         $this->actingAs($admin)->get(route('admin.companies.index'))->assertOk()->assertSee('Red de empresas transportistas');
         $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Supervisión de itinerarios');
         $this->get(route('admin.fleet.index'))->assertRedirect(route('admin.companies.index'));

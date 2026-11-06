@@ -104,10 +104,10 @@ class PortalCorrectionsTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.dashboard'))
             ->assertOk()
-            ->assertSee('Ventas')
-            ->assertSee('Cargo de servicio NavegaYA')
+            ->assertSee('Punto de venta')
+            ->assertSee('Historial de ventas')
             ->assertSee('Salidas de hoy')
-            ->assertSee('Venta en muelle')
+            ->assertDontSee('Cargo de servicio NavegaYA')
             ->assertDontSee('Vender pasaje')
             ->assertSee('company-menu-toggle', false)
             ->assertSee('data-menu-lead="operacion"', false)

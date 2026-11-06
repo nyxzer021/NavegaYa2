@@ -95,7 +95,7 @@ class CompanyPortalTest extends TestCase
 
         $this->actingAs($admin)->get(route('company.profile.edit'))
             ->assertOk()
-            ->assertSee('Ficha pública')
+            ->assertSee('Página de la empresa')
             ->assertSee('Galería');
 
         $this->actingAs($admin)->patch(route('company.profile.update'), [
@@ -401,7 +401,7 @@ class CompanyPortalTest extends TestCase
             ->assertOk()
             ->assertSee('data-menu-lead="operacion"', false)
             ->assertSee('Mi empresa')
-            ->assertSeeInOrder(['Operación', 'Mi empresa'])
+            ->assertSeeInOrder(['Mi empresa', 'Canales de venta', 'Ventas y finanzas', 'Operación'])
             ->assertSee('Inicio')
             ->assertSee('Pasajes vendidos')
             ->assertSee('1 registrada · 1 habilitada')
@@ -419,7 +419,7 @@ class CompanyPortalTest extends TestCase
             ->assertSee('S/ 110.00')
             ->assertDontSee('S/ 8.25')
             ->assertDontSee('Comisión del convenio')
-            ->assertSee('Venta en muelle')
+            ->assertSee('Punto de venta')
             ->assertDontSee('Embarcar')
             ->assertDontSee('Vender pasaje')
             ->assertDontSee('Cobrado hoy')

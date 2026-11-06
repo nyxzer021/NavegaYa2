@@ -1,6 +1,6 @@
 @extends('layouts.company')
-@section('title', 'Ficha pública')
-@section('page-title', 'Ficha pública')
+@section('title', 'Página de la empresa')
+@section('page-title', 'Página de la empresa')
 @section('content')
 <style>
     .ficha-menu-preview{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;padding:.4rem;border:2px solid var(--menu-stroke,#fbbf24);border-radius:999px;background:var(--menu-bar,#062c21)}

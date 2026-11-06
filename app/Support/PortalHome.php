@@ -14,7 +14,7 @@ class PortalHome
         $roles = $user?->roles->pluck('code') ?? collect();
 
         return match (true) {
-            $roles->contains('company_counter') => ['url' => route('company.counter.index'), 'label' => 'Volver a mi panel'],
+            $roles->contains('company_counter') => ['url' => route('company.pos.index'), 'label' => 'Volver a mi panel'],
             $roles->contains('company_admin') => ['url' => route('company.dashboard'), 'label' => 'Volver a mi panel'],
             $roles->contains('marketplace_admin') => ['url' => route('marketplace.dashboard'), 'label' => 'Volver a mi panel'],
             $roles->intersect(['super_admin', 'admin'])->isNotEmpty() => ['url' => route('admin.dashboard'), 'label' => 'Volver a mi panel'],

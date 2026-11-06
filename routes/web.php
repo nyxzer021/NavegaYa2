@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminFleetComplianceController;
 use App\Http\Controllers\Admin\AdminFleetController;
 use App\Http\Controllers\Admin\AdminItineraryController;
 use App\Http\Controllers\Admin\AdminModerationController;
+use App\Http\Controllers\Admin\AdminPreparationController;
 use App\Http\Controllers\Admin\AdminRefundController;
 use App\Http\Controllers\Admin\AdminRequestInboxController;
 use App\Http\Controllers\Admin\AdminSalesController;
@@ -122,6 +123,7 @@ Route::middleware(['auth', 'role:company_admin|company_counter'])->prefix('empre
     Route::get('/salidas/{departure}/manifiesto', [CompanyDepartureController::class, 'manifest'])->name('departures.manifest');
     Route::get('/pos', [CompanyPosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
+    Route::get('/cierre-de-caja', [CompanyPreparationController::class, 'show'])->defaults('page', 'cash_close')->name('cash-close.index');
 });
 Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('company.')->group(function () {
     Route::get('/publicidad', [CompanyAdvertisingController::class, 'index'])->name('advertising.index');
@@ -138,6 +140,25 @@ Route::middleware(['auth', 'role:company_admin'])->prefix('empresa')->name('comp
     Route::get('/cobros', [CompanyPreparationController::class, 'show'])->defaults('page', 'collections')->name('collections.index');
     Route::get('/reembolsos', [CompanyPreparationController::class, 'show'])->defaults('page', 'refunds')->name('refunds.index');
     Route::get('/pagos-en-linea', [CompanyPreparationController::class, 'show'])->defaults('page', 'payments')->name('online-payments.index');
+    Route::get('/datos', [CompanyPreparationController::class, 'show'])->defaults('page', 'company_details')->name('details.index');
+    Route::get('/sedes', [CompanyPreparationController::class, 'show'])->defaults('page', 'branches')->name('branches.index');
+    Route::get('/agencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'agencies')->name('agencies.index');
+    Route::get('/encomiendas', [CompanyPreparationController::class, 'show'])->defaults('page', 'parcels')->name('parcels.index');
+    Route::get('/envio-de-carga', [CompanyPreparationController::class, 'show'])->defaults('page', 'freight')->name('freight.index');
+    Route::get('/comisiones-de-agencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'agency_commissions')->name('agency-commissions.index');
+    Route::get('/comprobantes', [CompanyPreparationController::class, 'show'])->defaults('page', 'receipts')->name('receipts.index');
+    Route::get('/reportes', [CompanyPreparationController::class, 'show'])->defaults('page', 'reports')->name('reports.index');
+    Route::get('/rutas', [CompanyPreparationController::class, 'show'])->defaults('page', 'routes')->name('routes.index');
+    Route::get('/tarifas', [CompanyPreparationController::class, 'show'])->defaults('page', 'fares')->name('fares.index');
+    Route::get('/tripulacion', [CompanyPreparationController::class, 'show'])->defaults('page', 'crew')->name('crew.index');
+    Route::get('/incidencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'incidents')->name('incidents.index');
+    Route::get('/perfiles', [CompanyPreparationController::class, 'show'])->defaults('page', 'roles')->name('roles.index');
+    Route::get('/auditoria', [CompanyPreparationController::class, 'show'])->defaults('page', 'audit')->name('audit.index');
+    Route::get('/secciones', [CompanyPreparationController::class, 'show'])->defaults('page', 'page_sections')->name('page-sections.index');
+    Route::get('/galeria', [CompanyPreparationController::class, 'show'])->defaults('page', 'gallery')->name('gallery.index');
+    Route::get('/politicas', [CompanyPreparationController::class, 'show'])->defaults('page', 'policies')->name('policies.index');
+    Route::get('/apariencia', [CompanyPreparationController::class, 'show'])->defaults('page', 'appearance')->name('appearance.index');
+    Route::get('/whatsapp-atencion', [CompanyPreparationController::class, 'show'])->defaults('page', 'whatsapp')->name('whatsapp.index');
     Route::get('/liquidaciones', fn () => redirect()->route('company.commissions.index'))->name('settlements.index');
     Route::get('/ventas', [CompanySalesController::class, 'index'])->name('sales.index');
     Route::get('/ventas/exportar', [CompanySalesController::class, 'export'])->name('sales.export');
@@ -224,6 +245,10 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('admin')->name('admin.')->group(function () {
     Route::patch('/solicitudes/soporte/{supportTicket}', [SupportTicketController::class, 'respond'])->name('support.respond');
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/agencias-autorizadas', [AdminPreparationController::class, 'show'])->defaults('page', 'agencies')->name('agencies.index');
+    Route::get('/conexiones-de-pago', [AdminPreparationController::class, 'show'])->defaults('page', 'payment_connections')->name('payment-connections.index');
+    Route::get('/cobros-conciliacion', [AdminPreparationController::class, 'show'])->defaults('page', 'reconciliation')->name('reconciliation.index');
+    Route::get('/politicas-base', [AdminPreparationController::class, 'show'])->defaults('page', 'base_policies')->name('base-policies.index');
     Route::get('/solicitudes', [AdminRequestInboxController::class, 'index'])->name('requests.index');
     Route::post('/solicitudes/marcar-revisadas', [AdminRequestInboxController::class, 'markSeen'])->name('requests.mark-seen');
     Route::resource('/empresas', AdminCompanyController::class)

@@ -12,7 +12,7 @@ class DashboardController extends Controller
     {
         $roles = auth()->user()->roles->pluck('code');
         if ($roles->contains('company_counter')) {
-            return redirect()->route('company.counter.index');
+            return redirect()->route('company.pos.index');
         }
         if ($roles->contains('company_admin')) {
             return redirect()->route('company.dashboard');
