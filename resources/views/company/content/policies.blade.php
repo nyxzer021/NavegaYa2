@@ -1,7 +1,13 @@
 @extends('layouts.company')
+@section('title', 'Políticas de viaje')
 @section('content')
+<style>
+    trix-toolbar { max-width: 100%; }
+    trix-toolbar .trix-button-row { flex-wrap: wrap; }
+    trix-toolbar .trix-button-group { margin-bottom: 4px; }
+    trix-editor { max-width: 100%; overflow-wrap: anywhere; }
+</style>
 <div class="p-4 sm:p-6">
-    <h1 class="text-2xl font-black">Políticas de viaje</h1>
     @if(session('success'))<p class="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{{ session('success') }}</p>@endif
     @if($notice)
         <p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950">NavegaYA actualizó la política. Motivo: {{ $notice->changes['reason'] ?? 'sin motivo' }}. Lo hizo {{ $notice->changes['edited_by'] ?? 'un administrador' }}.</p>
@@ -24,7 +30,7 @@
     <ul class="mt-3 space-y-2">
         @foreach($versions as $version)
             <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-white p-3 text-sm">
-                <span>Versión {{ $version->version }} · {{ $version->published_at?->format('d/m/Y H:i') }} · {{ $version->reason }}</span>
+                <span>Versión {{ $version->version }} · {{ $version->published_at?->format('d/m/Y H:i') }}@if($version->reason) · {{ $version->reason }}@endif</span>
                 <form method="POST" action="{{ route('company.policies.restore', $version) }}">@csrf<button class="font-bold text-emerald-800">Restaurar</button></form>
             </li>
         @endforeach

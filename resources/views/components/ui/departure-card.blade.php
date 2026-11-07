@@ -24,11 +24,12 @@
 @endphp
 <article class="mb-3 rounded-2xl border border-slate-200 bg-white p-3 text-[13px] shadow-sm">
     <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="min-w-0">
+        <div class="min-w-0 flex-1">
             <strong class="block truncate text-sm text-slate-900">{{ $operator }}</strong>
-            <span class="text-slate-500">{{ $vehicle->name }} · {{ $origin }} {{ $terminal }} → {{ $destination }}</span>
+            <span class="mt-0.5 block text-slate-600">{{ $vehicle->name }} · {{ $origin }} → {{ $destination }}</span>
+            <span class="block text-slate-500">{{ $terminal }}</span>
         </div>
-        <time class="font-black text-slate-900">{{ $departure->departure_at->format('H:i') }}@if($arrival) – {{ $arrival->format('H:i') }}@endif</time>
+        <time class="shrink-0 font-black text-slate-900">{{ $departure->departure_at->format('H:i') }}@if($arrival) – {{ $arrival->format('H:i') }}@endif</time>
     </div>
     <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap gap-1">

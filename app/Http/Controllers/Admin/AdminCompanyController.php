@@ -205,9 +205,12 @@ class AdminCompanyController extends Controller
             'modalities', 'sites', 'documents', 'basePort',
         ]);
 
+        $travelDocument = $organization->travelPolicies()->where('kind', 'company_travel')->first();
+
         return view('admin.companies.show', [
             'organization' => $organization,
             'ports' => Port::query()->where('is_active', true)->orderBy('name')->orderBy('city')->get(),
+            'travelVersions' => $travelDocument?->versions()->orderByDesc('version')->limit(5)->get() ?? collect(),
         ]);
     }
 

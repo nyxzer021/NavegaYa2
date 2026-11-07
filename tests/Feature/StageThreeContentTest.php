@@ -14,6 +14,7 @@ use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\UserSanction;
 use App\Models\Vessel;
+use App\Support\TravelPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -159,6 +160,16 @@ class StageThreeContentTest extends TestCase
         $restored = $document->versions()->orderByDesc('version')->firstOrFail();
         $this->assertSame(3, $restored->version);
         $this->assertSame($first->body_html, $restored->body_html);
+    }
+
+    public function test_travel_policy_template_is_html_instead_of_raw_markdown(): void
+    {
+        $html = TravelPolicy::templateHtml();
+
+        $this->assertStringContainsString('<h1>', $html);
+        $this->assertStringContainsString('<strong>', $html);
+        $this->assertStringNotContainsString('## ', $html);
+        $this->assertStringNotContainsString('**', $html);
     }
 
     public function test_superadmin_policy_edit_is_audited_and_visible_to_the_company(): void

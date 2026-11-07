@@ -7,6 +7,7 @@ use App\Models\CompanyReview;
 use App\Models\Organization;
 use App\Models\OrganizationPhoto;
 use App\Models\PhotoComment;
+use App\Models\PolicyDocument;
 use App\Models\User;
 use App\Models\UserSanction;
 use App\Support\AuditRecorder;
@@ -62,6 +63,17 @@ class AdminContentPolicyController extends Controller
         ]);
 
         return back()->with('success', 'La política de la empresa quedó actualizada. La empresa verá el motivo.');
+    }
+
+    public function companies(): View
+    {
+        $documents = PolicyDocument::query()
+            ->where('kind', 'company_travel')
+            ->with(['organization', 'versions' => fn ($query) => $query->orderByDesc('version')])
+            ->orderBy('title')
+            ->get();
+
+        return view('admin.policies.companies', ['documents' => $documents]);
     }
 
     public function moderation(): View

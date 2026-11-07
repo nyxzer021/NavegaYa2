@@ -273,6 +273,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::get('/cobros-conciliacion', [AdminPreparationController::class, 'show'])->defaults('page', 'reconciliation')->name('reconciliation.index');
     Route::get('/politicas-base', [AdminContentPolicyController::class, 'base'])->name('base-policies.index');
     Route::post('/politicas-base', [AdminContentPolicyController::class, 'updateBase'])->name('base-policies.update');
+    Route::get('/politicas-de-empresas', [AdminContentPolicyController::class, 'companies'])->name('company-policies.index');
     Route::get('/contenido-por-moderar', [AdminContentPolicyController::class, 'moderation'])->name('content-moderation.index');
     Route::patch('/contenido-por-moderar/fotos/{photo}', [AdminContentPolicyController::class, 'updatePhoto'])->name('content-moderation.photos.update');
     Route::patch('/contenido-por-moderar/comentarios/{comment}', [AdminContentPolicyController::class, 'updateComment'])->name('content-moderation.comments.update');

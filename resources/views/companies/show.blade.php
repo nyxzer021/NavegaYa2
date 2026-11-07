@@ -6,6 +6,7 @@
     .company-stat svg{width:1.35rem;height:1.35rem;flex:none;color:#087F5B}
     .company-stat strong{display:block;font-size:1.35rem;line-height:1.1;color:#10231D}
     .company-stat strong.is-empty{font-size:1rem}
+    .company-stat strong.is-phrase{font-size:.95rem;line-height:1.3;font-weight:800}
     .company-stat em{font-style:normal;font-size:.75rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#607069}
     .company-tabs{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem;margin-top:1.25rem;padding:.4rem;border:1px solid #e4ebe7;border-radius:1rem;background:#fff;scrollbar-width:none}
     .company-tabs::-webkit-scrollbar{display:none}
@@ -35,8 +36,16 @@
     .company-fact .is-quiet{text-transform:none;letter-spacing:0;font-weight:600;color:#64748b}
     .company-viewer{width:min(960px,92vw);border:0;border-radius:1rem;padding:.5rem;background:#fff}
     .company-viewer::backdrop{background:rgba(6,44,33,.72)}
-    .company-logo{display:grid;place-items:center;width:6rem;height:6rem;margin-top:-3rem;overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:.45rem;box-shadow:0 8px 18px rgba(15,23,42,.08)}
+    .company-hero{position:relative}
+    .company-carousel{display:flex;height:9.5rem;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+    .company-carousel::-webkit-scrollbar{display:none}
+    .company-carousel img{flex:0 0 100%;width:100%;height:100%;object-fit:cover;scroll-snap-align:start}
+    .company-carousel-nav{position:absolute;right:.75rem;bottom:.75rem;display:flex;gap:.35rem}
+    .company-carousel-nav button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:rgba(6,44,33,.82);color:#fff;font-weight:800;cursor:pointer}
+    .company-logo{display:grid;place-items:center;position:relative;z-index:2;width:6rem;height:6rem;margin-top:1rem;overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:.45rem;box-shadow:0 8px 18px rgba(15,23,42,.08)}
     .company-logo img{width:100%;height:100%;object-fit:contain}
+    .company-buy{position:fixed;left:1rem;right:5.5rem;bottom:1rem;z-index:40;display:flex;height:48px;align-items:center;justify-content:center;border:0;border-radius:12px;background:#F4B820;color:#10231D;font-size:16px;font-weight:800;box-shadow:0 8px 20px rgba(16,35,29,.18)}
+    @media (min-width:1024px){.company-carousel{height:12rem}.company-buy{display:none}}
     .company-photo{overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#f8fafc}
     .company-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
     .company-viewer img{display:block;max-height:78vh;width:100%;object-fit:contain;border-radius:.75rem;background:#f8fafc}
@@ -52,6 +61,7 @@
     .company-cargo [data-cargo]{min-height:44px}
     .company-quiet{display:inline-flex;min-height:44px;align-items:center;border:1px solid #d5e0db;border-radius:.8rem;background:#fff;padding:0 .9rem;font-size:1rem;font-weight:700;color:#064E3B;cursor:pointer}
     .company-quiet:hover{background:#F7F9F8}
+    @media (max-width:639px){.company-stat:first-child{grid-column:1 / -1}}
     @media (min-width:640px){.company-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 @php
@@ -143,8 +153,22 @@
     @if($errors->any())<div class="mb-4 rounded-2xl bg-rose-50 px-5 py-4 text-sm text-rose-800"><strong>No pudimos enviar la opinión:</strong><ul class="mt-1 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
     <section class="rounded-3xl bg-white shadow-sm">
-        <div class="h-56 overflow-hidden rounded-t-3xl bg-[#064E3B] sm:h-72 lg:h-80">
-            <img src="{{ $profilePublished && $organization->cover_image_path ? $organization->cover_image_path : asset('images/navegaya-hero-rio.png') }}" alt="Operaciones de {{ $name }}" class="h-full w-full object-cover object-center">
+        <div class="company-hero overflow-hidden rounded-t-3xl bg-[#064E3B]">
+            @if($profilePublished && $organization->banners->isNotEmpty())
+                <div class="company-carousel" id="company-carousel">
+                    @foreach($organization->banners as $banner)
+                        <img src="{{ $banner->path }}" alt="Portada {{ $banner->position }} de {{ $name }}" style="object-position: {{ (float) $banner->focal_x }}% {{ (float) $banner->focal_y }}%">
+                    @endforeach
+                </div>
+                @if($organization->banners->count() > 1)
+                    <div class="company-carousel-nav">
+                        <button type="button" data-banner="-1" aria-label="Portada anterior">‹</button>
+                        <button type="button" data-banner="1" aria-label="Portada siguiente">›</button>
+                    </div>
+                @endif
+            @else
+                <img src="{{ $profilePublished && $organization->cover_image_path ? $organization->cover_image_path : asset('images/navegaya-hero-rio.png') }}" alt="Operaciones de {{ $name }}" class="h-56 w-full object-cover object-center sm:h-72 lg:h-80">
+            @endif
         </div>
         <div class="px-5 pb-6 sm:px-8">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -193,7 +217,7 @@
     </section>
 
     <div class="company-stats my-4">
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong class="is-empty">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></article>
+        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong class="is-phrase">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m0 14h16M8 19v-4m4 4V9m4 10v-6"/></svg><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-4 4 3 3-2 6 4"/></svg><span><strong>{{ $gallery->count() }}</strong><em>Fotos</em></span></article>
         <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.6 5.4L20.5 9.3l-4.2 4.1 1 5.9L12 16.8 6.7 19.3l1-5.9L3.5 9.3l5.9-.9L12 3Z"/></svg><span><strong class="{{ $reviews->count() ? '' : 'is-empty' }}">{{ $reviews->count() ? number_format($average, 1) : 'Sin reseñas' }}</strong><em>Calificación</em></span></article>
@@ -725,11 +749,21 @@
             cargoWeight = Number(range.value);
             paintCargo();
         });
+        var carousel = document.getElementById('company-carousel');
+        root.addEventListener('click', function (event) {
+            var step = event.target.closest && event.target.closest('[data-banner]');
+            if (!step || !carousel) return;
+            carousel.scrollBy({ left: carousel.clientWidth * Number(step.getAttribute('data-banner')), behavior: 'smooth' });
+        });
         var start = location.hash.replace('#', '');
         show(names.indexOf(start) === -1 ? 'informacion' : start);
+        window.addEventListener('hashchange', function () {
+            var next = location.hash.replace('#', '');
+            if (names.indexOf(next) !== -1) show(next);
+        });
     })();
 </script>
-<a href="#salidas" class="fixed inset-x-4 bottom-4 z-40 flex h-12 items-center justify-center rounded-xl bg-[#F4B820] text-base font-extrabold text-[#10231D] shadow-lg lg:hidden">Comprar</a>
+<button type="button" data-open="salidas" class="company-buy">Comprar</button>
 <section id="politicas" data-panel="politicas" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
     <h2>Políticas de viaje</h2>
     <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">

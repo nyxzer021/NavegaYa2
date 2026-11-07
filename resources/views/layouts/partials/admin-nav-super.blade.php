@@ -36,6 +36,8 @@
         ['label' => 'content', 'items' => [
             $item('moderation', route('admin.moderation.index'), request()->routeIs('admin.moderation.*'), '#993556', 'roles'),
             $item('base_policies', route('admin.base-policies.index'), request()->routeIs('admin.base-policies.*'), '#993556', 'policies'),
+            $item('company_policies', route('admin.company-policies.index'), request()->routeIs('admin.company-policies.*'), '#993556', 'policies'),
+            $item('content_moderation', route('admin.content-moderation.index'), request()->routeIs('admin.content-moderation.*'), '#993556', 'roles'),
             $item('navigation', route('admin.navigation.index'), request()->routeIs('admin.navigation.*'), '#993556', 'page'),
         ]],
         ['label' => 'system', 'items' => [

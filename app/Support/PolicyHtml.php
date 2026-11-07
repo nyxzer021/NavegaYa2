@@ -12,6 +12,6 @@ class PolicyHtml
         $html = preg_replace('#\s+on\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $html) ?? '';
         $html = preg_replace('#(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2#i', '$1=$2#$2', $html) ?? '';
 
-        return strip_tags($html, '<p><br><strong><em><b><i><ul><ol><li><h2><h3><h4><a><table><thead><tbody><tr><th><td><blockquote>');
+        return strip_tags($html, '<p><br><strong><em><b><i><ul><ol><li><h1><h2><h3><h4><a><blockquote><hr>');
     }
 }

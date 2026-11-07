@@ -1,7 +1,7 @@
 @extends('layouts.admin')
-@section('header')<h1 class="ny-page-title">Políticas base</h1>@endsection
 @section('content')
 <div class="space-y-4">
+    <h1 class="ny-page-title">Políticas base</h1>
     @if(session('success'))<p class="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{{ session('success') }}</p>@endif
     <form method="POST" action="{{ route('admin.base-policies.update') }}" class="space-y-3 rounded-2xl border bg-white p-4">
         @csrf
@@ -12,7 +12,7 @@
     </form>
     <ul class="space-y-2 text-sm">
         @foreach($versions as $version)
-            <li class="rounded-xl border bg-white p-3">Versión {{ $version->version }} · {{ $version->reason }}</li>
+            <li class="rounded-xl border bg-white p-3">Versión {{ $version->version }}@if($version->published_at) · {{ $version->published_at->format('d/m/Y H:i') }}@endif @if($version->reason) · {{ $version->reason }}@endif</li>
         @endforeach
     </ul>
 </div>

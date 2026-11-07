@@ -1,11 +1,26 @@
 @extends('layouts.admin')
 
-@section('header')
-    <h1 class="ny-page-title">Dossier del operador</h1>
-@endsection
-
 @section('content')
-<p class="mb-4"><a href="{{ route('companies.show', $organization) }}" class="font-bold text-emerald-800">Ver la página pública</a></p>
+<h1 class="ny-page-title mb-4">Dossier del operador</h1>
+<p class="mb-4 flex flex-wrap gap-4"><a href="{{ route('companies.show', $organization) }}" class="font-bold text-emerald-800">Ver la página pública</a><a href="{{ route('admin.company-policies.index') }}" class="font-bold text-emerald-800">Políticas de empresas</a></p>
+<section class="mb-6 rounded-2xl border bg-white p-4">
+    <h2 class="text-lg font-black">Política de viaje de la empresa</h2>
+    @if($travelVersions->isNotEmpty())
+        <ul class="mt-3 space-y-1 text-sm text-slate-700">
+            @foreach($travelVersions as $version)
+                <li>Versión {{ $version->version }}@if($version->published_at) · {{ $version->published_at->format('d/m/Y H:i') }}@endif @if($version->reason) · {{ $version->reason }}@endif</li>
+            @endforeach
+        </ul>
+    @else
+        <p class="mt-2 text-sm text-slate-600">Esta empresa todavía no tiene una política publicada.</p>
+    @endif
+    <form method="POST" action="{{ route('admin.companies.travel-policy.update', $organization) }}" class="mt-4 grid gap-3">
+        @csrf
+        <label class="text-sm font-semibold">Nueva versión<textarea name="body_html" rows="6" required class="mt-1 w-full rounded-lg border-slate-200">{{ old('body_html') }}</textarea></label>
+        <label class="text-sm font-semibold">Motivo<input name="reason" required minlength="5" class="mt-1 w-full rounded-lg border-slate-200" value="{{ old('reason') }}"></label>
+        <button class="h-10 w-fit rounded-lg bg-emerald-900 px-4 text-sm font-bold text-white">Publicar corrección</button>
+    </form>
+</section>
 @php
     $name = $organization->commercial_name ?: $organization->legal_name;
     $activeFleet = $organization->vessels->where('status', 'ready')->count()

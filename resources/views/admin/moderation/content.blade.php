@@ -1,7 +1,7 @@
 @extends('layouts.admin')
-@section('header')<h1 class="ny-page-title">Contenido por moderar</h1>@endsection
 @section('content')
 <div class="space-y-6">
+    <h1 class="ny-page-title">Contenido por moderar</h1>
     @if(session('success'))<p class="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{{ session('success') }}</p>@endif
     <section class="rounded-2xl border bg-white p-4">
         <h2 class="font-black">Fotos pendientes</h2>
@@ -43,7 +43,7 @@
         <h2 class="font-black">Sanción de usuario</h2>
         <form method="POST" action="{{ route('admin.content-moderation.sanctions.store') }}" class="mt-3 grid gap-2 sm:grid-cols-2">
             @csrf
-            <label class="text-sm font-semibold">Usuario<input name="user_id" required class="mt-1 w-full rounded-lg border-slate-200" placeholder="ID"></label>
+            <label class="text-sm font-semibold">Usuario<input name="user_id" required class="mt-1 w-full rounded-lg border-slate-200" placeholder="Número de usuario"></label>
             <label class="text-sm font-semibold">Tipo<select name="kind" class="mt-1 w-full rounded-lg border-slate-200"><option value="warning">Advertencia</option><option value="suspension">Suspensión</option><option value="ban">Bloqueo permanente</option></select></label>
             <label class="text-sm font-semibold">Hasta<input type="datetime-local" name="ends_at" class="mt-1 w-full rounded-lg border-slate-200"></label>
             <label class="text-sm font-semibold sm:col-span-2">Motivo<input name="reason" required minlength="5" class="mt-1 w-full rounded-lg border-slate-200"></label>

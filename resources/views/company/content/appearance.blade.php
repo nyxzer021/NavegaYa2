@@ -1,8 +1,8 @@
 @extends('layouts.company')
+@section('title', 'Apariencia')
 @section('content')
 <div class="p-4 sm:p-6">
-    <h1 class="text-2xl font-black">Apariencia de la página</h1>
-    <p class="mt-2 text-sm text-slate-600">Estos colores se aplican solo a la página pública de esta empresa.</p>
+    <p class="text-sm text-slate-600">Estos colores se aplican solo a la página pública de esta empresa.</p>
     @if(session('success'))<p class="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{{ session('success') }}</p>@endif
     <form method="POST" action="{{ route('company.appearance.update') }}" class="mt-5 grid max-w-xl gap-3">
         @csrf @method('PATCH')

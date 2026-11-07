@@ -25,6 +25,8 @@ return [
         'plans' => 'Plans and subscriptions',
         'moderation' => 'Moderation',
         'base_policies' => 'Base policies',
+        'company_policies' => 'Company policies',
+        'content_moderation' => 'Content to moderate',
         'navigation' => 'Site menu and pages',
         'users' => 'Users and permissions',
         'settings' => 'Settings',

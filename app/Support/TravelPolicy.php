@@ -20,6 +20,158 @@ class TravelPolicy
         return 'Política de viaje de NavegaYA. Equipaje de mano 10 kg, bodega 20 kg, aéreo 10 kg y carga desde 50 kg.';
     }
 
+    public static function templateHtml(): string
+    {
+        return PolicyHtml::clean(self::markdownToHtml(self::template()));
+    }
+
+    public static function markdownToHtml(string $markdown): string
+    {
+        $lines = preg_split("/\r\n|\n|\r/", $markdown) ?: [];
+        $html = [];
+        $buffer = [];
+        $mode = null;
+
+        $flush = function () use (&$buffer, &$mode, &$html): void {
+            if ($buffer === []) {
+                $mode = null;
+
+                return;
+            }
+
+            if ($mode === 'p') {
+                $html[] = '<p>'.implode('<br>', array_map(self::inline(...), $buffer)).'</p>';
+            } elseif ($mode === 'ul' || $mode === 'ol') {
+                $items = '';
+                foreach ($buffer as $item) {
+                    $items .= '<li>'.self::inline($item).'</li>';
+                }
+                $html[] = "<{$mode}>{$items}</{$mode}>";
+            } elseif ($mode === 'quote') {
+                $html[] = '<blockquote><p>'.implode('<br>', array_map(self::inline(...), $buffer)).'</p></blockquote>';
+            } elseif ($mode === 'table') {
+                $html[] = self::tableHtml($buffer);
+            }
+
+            $buffer = [];
+            $mode = null;
+        };
+
+        foreach ($lines as $line) {
+            $trim = trim($line);
+            if ($trim === '') {
+                $flush();
+
+                continue;
+            }
+
+            if (preg_match('/^(#{1,3})\s+(.+)$/', $trim, $heading)) {
+                $flush();
+                $tag = 'h1';
+                $html[] = "<{$tag}>".self::inline($heading[2])."</{$tag}>";
+
+                continue;
+            }
+
+            if ($trim === '---') {
+                $flush();
+                $html[] = '<hr>';
+
+                continue;
+            }
+
+            if (str_starts_with($trim, '>')) {
+                if ($mode !== 'quote') {
+                    $flush();
+                    $mode = 'quote';
+                }
+                $buffer[] = ltrim(substr($trim, 1));
+
+                continue;
+            }
+
+            if (str_starts_with($trim, '|')) {
+                if ($mode !== 'table') {
+                    $flush();
+                    $mode = 'table';
+                }
+                $buffer[] = $trim;
+
+                continue;
+            }
+
+            if (preg_match('/^\d+\.\s+(.+)$/', $trim, $item)) {
+                if ($mode !== 'ol') {
+                    $flush();
+                    $mode = 'ol';
+                }
+                $buffer[] = $item[1];
+
+                continue;
+            }
+
+            if (preg_match('/^[-*]\s+(.+)$/', $trim, $item)) {
+                if ($mode !== 'ul') {
+                    $flush();
+                    $mode = 'ul';
+                }
+                $buffer[] = $item[1];
+
+                continue;
+            }
+
+            if ($mode !== 'p') {
+                $flush();
+                $mode = 'p';
+            }
+            $buffer[] = $trim;
+        }
+
+        $flush();
+
+        return implode("\n", array_filter($html, fn (string $part): bool => $part !== ''));
+    }
+
+    private static function inline(string $text): string
+    {
+        $text = e($text);
+        $text = preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', $text) ?? $text;
+
+        return preg_replace('/\*(.+?)\*/u', '<em>$1</em>', $text) ?? $text;
+    }
+
+    /**
+     * @param  list<string>  $rows
+     */
+    private static function tableHtml(array $rows): string
+    {
+        $parsed = [];
+        foreach ($rows as $row) {
+            $cells = array_values(array_map(trim(...), explode('|', trim($row, " \t|"))));
+            $rule = $cells !== [] && array_all($cells, fn (string $cell): bool => (bool) preg_match('/^:?-+:?$/', $cell));
+            if ($rule || $cells === []) {
+                continue;
+            }
+            $parsed[] = $cells;
+        }
+
+        if ($parsed === []) {
+            return '';
+        }
+
+        $head = array_shift($parsed);
+        $html = '';
+        foreach ($parsed as $row) {
+            $lines = [];
+            foreach ($head as $index => $label) {
+                $lines[] = '<strong>'.self::inline($label).':</strong> '.self::inline($row[$index] ?? '');
+            }
+            $html .= '<p>'.implode('<br>', $lines).'</p>';
+        }
+
+        return $html;
+    }
+
     public static function ensureBase(): PolicyDocument
     {
         $document = PolicyDocument::query()->firstOrCreate(
@@ -30,7 +182,7 @@ class TravelPolicy
             $document->versions()->create([
                 'version' => 1,
                 'summary' => 'Plantilla base de NavegaYA.',
-                'body_html' => PolicyHtml::clean('<p>'.nl2br(e(self::template())).'</p>'),
+                'body_html' => self::templateHtml(),
                 'effective_on' => now()->toDateString(),
                 'published_at' => now(),
             ]);
@@ -50,7 +202,7 @@ class TravelPolicy
             $document->versions()->create([
                 'version' => 1,
                 'summary' => 'Copia de la plantilla base.',
-                'body_html' => $base?->body_html ?: PolicyHtml::clean('<p>'.e(self::template()).'</p>'),
+                'body_html' => $base?->body_html ?: self::templateHtml(),
                 'effective_on' => now()->toDateString(),
                 'published_at' => now(),
             ]);
