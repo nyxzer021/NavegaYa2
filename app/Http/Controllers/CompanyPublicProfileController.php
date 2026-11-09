@@ -8,6 +8,7 @@ use App\Models\OrganizationPhoto;
 use App\Support\AdminScope;
 use App\Support\CompanyPublicPresentation;
 use App\Support\PhoneNumber;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -266,6 +267,76 @@ class CompanyPublicProfileController extends Controller
         imagedestroy($canvas);
 
         return Storage::url($relative);
+    }
+
+    public function usePhotoAsCover(Request $request, OrganizationPhoto $photo): JsonResponse|RedirectResponse
+    {
+        $organization = $this->ownedPhoto($request, $photo);
+        $banners = $organization->banners()->orderBy('position')->get();
+        $replaceId = $request->integer('replace_id');
+        if ($banners->count() >= 2 && $replaceId === 0) {
+            return response()->json([
+                'choose' => true,
+                'banners' => $banners->map(fn (OrganizationBanner $banner): array => [
+                    'id' => $banner->id,
+                    'position' => $banner->position,
+                    'path' => $banner->path,
+                ])->values(),
+            ], 409);
+        }
+
+        if ($replaceId > 0) {
+            $banner = $banners->firstWhere('id', $replaceId);
+            abort_unless($banner, 404);
+            $banner->update(['path' => $photo->path, 'position' => 0]);
+        } else {
+            $organization->banners()->increment('position');
+            $organization->banners()->create([
+                'path' => $photo->path,
+                'focal_x' => 50,
+                'focal_y' => 50,
+                'position' => 0,
+            ]);
+        }
+
+        $ordered = $organization->banners()->orderBy('position')->orderBy('id')->get()->values();
+        if ($ordered->count() > 2) {
+            $ordered->slice(2)->each->delete();
+            $ordered = $ordered->take(2)->values();
+        }
+        foreach ($ordered as $index => $banner) {
+            $banner->update(['position' => $index + 1]);
+        }
+
+        $payload = [
+            'banners' => $organization->banners()->orderBy('position')->get(['id', 'path', 'position'])->map(fn (OrganizationBanner $banner): array => [
+                'id' => $banner->id,
+                'path' => $banner->path,
+                'position' => $banner->position,
+            ])->values(),
+        ];
+
+        return $request->expectsJson()
+            ? response()->json($payload)
+            : back()->with('success', 'La foto quedó como primera portada.');
+    }
+
+    public function usePhotoAsLogo(Request $request, OrganizationPhoto $photo): JsonResponse|RedirectResponse
+    {
+        $organization = $this->ownedPhoto($request, $photo);
+        $organization->update(['logo_path' => $photo->path]);
+
+        return $request->expectsJson()
+            ? response()->json(['logo' => $photo->path])
+            : back()->with('success', 'La foto quedó como logo.');
+    }
+
+    private function ownedPhoto(Request $request, OrganizationPhoto $photo): Organization
+    {
+        $organization = $this->organization($request);
+        abort_unless((int) $photo->organization_id === (int) $organization->id && $photo->status === 'published', 403);
+
+        return $organization;
     }
 
     private function organization(Request $request): Organization

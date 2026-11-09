@@ -50,11 +50,11 @@ class CompanyReviewTest extends TestCase
         CompanyReview::firstOrFail()->update(['status' => 'published']);
         $this->get(route('companies.show', $company))
             ->assertOk()
-            ->assertSee('5.0')
-            ->assertSee('Excelente atención')
+            ->assertDontSee('Excelente atención', false)
+            ->assertDontSee('★★★★★', false)
             ->assertSee('Información de la empresa')
             ->assertSee('Operador regional con atención diaria.')
-            ->assertSee('>Flota</button>', false)
+            ->assertSee('data-open="flota"', false)
             ->assertSee('/storage/company-profiles/amazonas.jpg', false);
     }
 
@@ -88,9 +88,16 @@ class CompanyReviewTest extends TestCase
             'comment' => 'La atención en el muelle fue clara y puntual.',
         ])->assertRedirect(route('companies.show', $company).'#opiniones');
 
+        $this->assertDatabaseHas('company_reviews', [
+            'organization_id' => $company->id,
+            'user_id' => $user->id,
+            'comment' => 'La atención en el muelle fue clara y puntual.',
+            'status' => 'published',
+        ]);
         $this->get(route('companies.show', $company))
             ->assertOk()
             ->assertSee('Selva Fast')
-            ->assertSee('La atención en el muelle fue clara y puntual.');
+            ->assertDontSee('La atención en el muelle fue clara y puntual.', false)
+            ->assertDontSee('★★★★', false);
     }
 }

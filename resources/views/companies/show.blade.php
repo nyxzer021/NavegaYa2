@@ -1,8 +1,11 @@
 <x-public-layout current="companies" :title="($organization->commercial_name ?: $organization->legal_name).' · Horarios y pasajes oficiales'">
 <style>
-    .company-wrap{width:min(1200px,calc(100% - 2rem));margin-inline:auto}
+    .company-wrap{width:min(1200px,calc(100% - 2rem));margin-inline:auto;--tone-salidas:#0F6E56;--tone-informacion:#185FA5;--tone-flota:#534AB7;--tone-galeria:#D4537E;--tone-agencias:#D85A30;--tone-carga:#BA7517;--tone-comentarios:#D4537E}
     .company-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
-    .company-stat{display:flex;align-items:center;gap:.75rem;border:1px solid #e4ebe7;border-radius:1rem;background:#fff;padding:.85rem 1rem}
+    .company-stat{display:flex;align-items:center;gap:.75rem;width:100%;border:1px solid #e4ebe7;border-radius:1rem;background:#fff;padding:.85rem 1rem;text-align:left;cursor:pointer}
+    .company-tone{display:grid;width:26px;height:26px;flex:none;place-items:center;border-radius:7px;color:#fff}
+    .company-tone svg{width:15px;height:15px}
+    .company-tone.is-salidas{background:var(--tone-salidas)}.company-tone.is-informacion{background:var(--tone-informacion)}.company-tone.is-flota{background:var(--tone-flota)}.company-tone.is-galeria,.company-tone.is-comentarios{background:var(--tone-galeria)}.company-tone.is-agencias{background:var(--tone-agencias)}.company-tone.is-carga{background:var(--tone-carga)}
     .company-stat svg{width:1.35rem;height:1.35rem;flex:none;color:#087F5B}
     .company-stat strong{display:block;font-size:1.35rem;line-height:1.1;color:#10231D}
     .company-stat strong.is-empty{font-size:1rem}
@@ -10,7 +13,7 @@
     .company-stat em{font-style:normal;font-size:.75rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#607069}
     .company-tabs{display:flex;gap:.35rem;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;position:sticky;top:4.25rem;z-index:40;scroll-margin-top:4.75rem;margin-top:1.25rem;padding:.4rem;border:1px solid #e4ebe7;border-radius:1rem;background:#fff;scrollbar-width:none}
     .company-tabs::-webkit-scrollbar{display:none}
-    .company-tab{display:inline-flex;min-height:44px;align-items:center;white-space:nowrap;border:0;border-radius:.8rem;background:transparent;padding:.4rem 1rem;font-size:1rem;font-weight:700;color:#607069;cursor:pointer}
+    .company-tab{display:inline-flex;min-height:44px;align-items:center;gap:.45rem;white-space:nowrap;border:0;border-radius:.8rem;background:transparent;padding:.4rem .7rem;font-size:1rem;font-weight:700;color:#607069;cursor:pointer}
     .company-tab:hover{background:#F7F9F8;color:#10231D}
     .company-tab:focus-visible{outline:2px solid #087F5B;outline-offset:2px}
     .company-tab.is-on{background:var(--menu-bar,#064E3B);color:#fff}
@@ -26,8 +29,10 @@
     .company-quote{display:inline-flex;min-height:44px;align-items:center;border:0;border-radius:.8rem;background:#F4B820;padding:0 1rem;font-size:1rem;font-weight:800;color:#10231D}
     .company-map{display:inline-flex;min-height:44px;align-items:center;border:1px solid #087F5B;border-radius:.8rem;background:#fff;padding:0 1rem;font-size:1rem;font-weight:700;color:#064E3B}
     .company-go{display:inline-flex;min-height:44px;align-items:center;justify-content:center;border-radius:.8rem;padding:0 1rem;font-size:1rem;font-weight:800}
+    .company-go-main{background:#0F6E56;color:#fff}
+    .company-go-gold{background:#F4B820;color:#10231D}
     .company-go-wa{background:#087F5B;color:#fff}
-    .company-go-seat{background:#F4B820;color:#10231D}
+    .company-go-seat{border:1px solid #d5e0db;background:#fff;color:#064E3B}
     @media (min-width:1024px){.company-layout{grid-template-columns:minmax(0,1fr) 320px;align-items:start}}
     .company-panel[hidden]{display:none!important}
     .company-fact{display:flex;flex-direction:column;justify-content:center;min-height:4.25rem;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:.65rem .8rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
@@ -37,15 +42,48 @@
     .company-viewer{width:min(960px,92vw);border:0;border-radius:1rem;padding:.5rem;background:#fff}
     .company-viewer::backdrop{background:rgba(6,44,33,.72)}
     .company-hero{position:relative}
-    .company-carousel{display:flex;height:9.5rem;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+    .company-carousel{display:flex;aspect-ratio:2.4/1;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
     .company-carousel::-webkit-scrollbar{display:none}
-    .company-carousel img{flex:0 0 100%;width:100%;height:100%;object-fit:cover;scroll-snap-align:start}
-    .company-carousel-nav{position:absolute;right:.75rem;bottom:.75rem;display:flex;gap:.35rem}
+    .company-slide{position:relative;flex:0 0 100%;height:100%;overflow:hidden;scroll-snap-align:start;background:#062C21}
+    .company-slide-blur{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;filter:blur(18px);transform:scale(1.08)}
+    .company-slide-photo{position:relative;z-index:1;width:100%;height:100%;object-fit:contain}
+    .company-carousel-nav{position:absolute;right:.75rem;bottom:3.2rem;z-index:3;display:flex;gap:.35rem}
     .company-carousel-nav button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:rgba(6,44,33,.82);color:#fff;font-weight:800;cursor:pointer}
-    .company-logo{display:grid;place-items:center;position:relative;z-index:2;width:6rem;height:6rem;margin-top:1rem;overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:.45rem;box-shadow:0 8px 18px rgba(15,23,42,.08)}
+    .company-logo{display:grid;place-items:center;position:absolute;z-index:2;left:1.5rem;bottom:-2.6rem;width:6.5rem;height:6.5rem;overflow:hidden;border:4px solid #fff;border-radius:999px;background:#fff;box-shadow:0 8px 18px rgba(16,35,29,.18)}
     .company-logo img{width:100%;height:100%;object-fit:contain}
-    .company-buy{position:fixed;left:1rem;right:5.5rem;bottom:1rem;z-index:40;display:flex;height:48px;align-items:center;justify-content:center;border:0;border-radius:12px;background:#F4B820;color:#10231D;font-size:16px;font-weight:800;box-shadow:0 8px 20px rgba(16,35,29,.18)}
-    @media (min-width:1024px){.company-carousel{height:12rem}.company-buy{display:none}}
+    .company-identity{padding-top:3.4rem}
+    .company-buy{position:fixed;left:1rem;right:5.5rem;bottom:1rem;z-index:40;display:flex;height:48px;align-items:center;justify-content:center;border:0;border-radius:12px;background:#0F6E56;color:#fff;font-size:16px;font-weight:800;box-shadow:0 8px 20px rgba(16,35,29,.18)}
+    #company-ficha{padding-bottom:calc(48px + 2rem)}
+    @media (max-width:639px){.company-logo{left:50%;transform:translateX(-50%)}}
+    @media (min-width:1024px){#company-ficha{padding-bottom:2rem}.company-buy{display:none}}
+    .company-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem}
+    .company-grid figure{position:relative;margin:0}
+    .company-grid button.company-photo{width:100%}
+    .company-more{position:absolute;top:.35rem;right:.35rem}
+    .company-more summary{display:grid;width:36px;height:36px;place-items:center;border-radius:8px;background:#fff;font-weight:800;cursor:pointer;list-style:none}
+    .company-more summary::-webkit-details-marker{display:none}
+    .company-more div{position:absolute;right:0;z-index:5;display:grid;min-width:12rem;margin-top:.25rem;border:1px solid #e4ebe7;border-radius:10px;background:#fff;padding:.35rem;box-shadow:0 8px 20px rgba(16,35,29,.12)}
+    .company-more button{min-height:36px;border:0;border-radius:8px;background:transparent;padding:0 .5rem;text-align:left;font-weight:700;cursor:pointer}
+    .company-lightbox{width:min(1080px,96vw);height:min(88vh,820px);max-height:92vh;border:0;border-radius:16px;padding:0;background:#fff;overflow:hidden}
+    .company-lightbox::backdrop{background:rgba(6,44,33,.72)}
+    .company-lightbox-grid{display:grid;height:100%;min-height:0}
+    .company-lightbox-photo{display:grid;height:100%;min-height:0;place-items:center;background:#062C21}
+    .company-lightbox-photo img{width:100%;height:100%;max-height:100%;object-fit:contain}
+    .company-lightbox-side{min-height:0;overflow:auto;padding:1rem}
+    @media (max-width:767px){.company-lightbox{height:auto;max-height:92vh;overflow:auto}.company-lightbox-grid{height:auto}.company-lightbox-photo{height:42vh}}
+    .company-seal{display:inline-flex;border-radius:999px;background:#E1F5EE;padding:.1rem .45rem;color:#04342C;font-size:.75rem;font-weight:800}
+    .company-emoji{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.4rem}
+    .company-emoji button{min-width:36px;min-height:36px;border:1px solid #e4ebe7;border-radius:8px;background:#fff}
+    .policy-modal{width:min(640px,94vw);max-height:88vh;border:0;border-radius:16px;padding:0;background:#fff;color:#10231D}
+    .policy-modal::backdrop{background:rgba(6,44,33,.72)}
+    .policy-modal header,.policy-modal .policy-body{padding:1rem 1.1rem}
+    .policy-modal header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e4ebe7}
+    .policy-tabs{display:flex;gap:.35rem;padding:.6rem 1.1rem 0}
+    .policy-tabs button{min-height:36px;border:0;border-radius:8px;background:#F7F9F8;padding:0 .8rem;font-weight:800}
+    .policy-tabs button.is-on{background:#0F6E56;color:#fff}
+    .policy-point{display:flex;gap:.7rem;margin-top:.8rem}
+    .policy-point strong{display:block}
+    @media (min-width:768px){.company-lightbox-grid{grid-template-columns:minmax(0,1.2fr) minmax(16rem,.8fr)}}
     .company-photo{overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#f8fafc}
     .company-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
     .company-viewer img{display:block;max-height:78vh;width:100%;object-fit:contain;border-radius:.75rem;background:#f8fafc}
@@ -61,7 +99,7 @@
     .company-cargo [data-cargo]{min-height:44px}
     .company-quiet{display:inline-flex;min-height:44px;align-items:center;border:1px solid #d5e0db;border-radius:.8rem;background:#fff;padding:0 .9rem;font-size:1rem;font-weight:700;color:#064E3B;cursor:pointer}
     .company-quiet:hover{background:#F7F9F8}
-    @media (max-width:639px){.company-stat:first-child{grid-column:1 / -1}}
+    @media (max-width:639px){.company-stat:first-child{grid-column:1 / -1}.company-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.company-tools{flex-wrap:nowrap}.company-tools .company-quiet{flex:1;justify-content:center;padding:0 .4rem;white-space:nowrap;font-size:14px}.company-actions .company-go-main{display:none}}
     @media (min-width:640px){.company-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 @php
@@ -140,13 +178,18 @@
         $mapQuery = trim($mapQuery.', '.$dock->city);
     }
     $copyPhone = $organization->phone ?: $supportNumber;
+    $modalityChip = $hasRiver && $hasAir ? 'Aéreo y fluvial' : ($hasAir ? 'Aéreo' : 'Fluvial');
+    $portChip = $baseLabel && $baseLabel !== 'Puerto base por definir' ? $baseLabel : null;
+    $dicapiChip = $organization->vessels->contains(fn ($unit) => filled($unit->dicapi_certificate_number) && $unit->inspection_expires_at && ! $unit->inspection_expires_at->isPast());
+    $slides = $profilePublished && $organization->banners->isNotEmpty()
+        ? $organization->banners
+        : collect([(object) ['path' => $profilePublished && $organization->cover_image_path ? $organization->cover_image_path : asset('images/navegaya-hero-rio.png'), 'position' => 1]]);
+    $threadsByPhoto = ($threads ?? collect())->groupBy('organization_photo_id');
+    $traveledLookup = array_flip($traveledIds ?? []);
     $shareUrl = route('companies.show', $organization);
-    $ownComment = auth()->check()
-        ? $reviews->first(fn ($review) => (int) $review->user_id === (int) auth()->id() && $review->reservation_id === null)
-        : null;
 @endphp
 
-<div class="pb-24" id="company-ficha" style="background:#F7F9F8;color:#10231D;{{ $menuStyle }}@if($organization->public_primary_color)--company-primary:{{ $organization->public_primary_color }};@endif @if($organization->public_accent_color)--company-accent:{{ $organization->public_accent_color }};@endif">
+<div id="company-ficha" style="background:#F7F9F8;color:#10231D;{{ $menuStyle }}@if($organization->public_primary_color)--company-primary:{{ $organization->public_primary_color }};@endif @if($organization->public_accent_color)--company-accent:{{ $organization->public_accent_color }};@endif">
 <main class="company-wrap pt-4">
     <a href="{{ route('companies.index') }}" class="mb-4 inline-flex text-sm font-bold text-emerald-800">← Empresas</a>
     @if(session('success'))<div class="mb-4 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-semibold text-white">{{ session('success') }}</div>@endif
@@ -154,48 +197,48 @@
 
     <section class="rounded-3xl bg-white shadow-sm">
         <div class="company-hero overflow-hidden rounded-t-3xl bg-[#064E3B]">
-            @if($profilePublished && $organization->banners->isNotEmpty())
-                <div class="company-carousel" id="company-carousel">
-                    @foreach($organization->banners as $banner)
-                        <img src="{{ $banner->path }}" alt="Portada {{ $banner->position }} de {{ $name }}" style="object-position: {{ (float) $banner->focal_x }}% {{ (float) $banner->focal_y }}%">
-                    @endforeach
+            <div class="company-carousel" id="company-carousel">
+                @foreach($slides as $banner)
+                    <div class="company-slide">
+                        <img class="company-slide-blur" src="{{ $banner->path }}" alt="" aria-hidden="true">
+                        <img class="company-slide-photo" src="{{ $banner->path }}" alt="Portada {{ $banner->position }} de {{ $name }}">
+                    </div>
+                @endforeach
+            </div>
+            @if($slides->count() > 1)
+                <div class="company-carousel-nav">
+                    <button type="button" data-banner="-1" aria-label="Portada anterior">‹</button>
+                    <button type="button" data-banner="1" aria-label="Portada siguiente">›</button>
                 </div>
-                @if($organization->banners->count() > 1)
-                    <div class="company-carousel-nav">
-                        <button type="button" data-banner="-1" aria-label="Portada anterior">‹</button>
-                        <button type="button" data-banner="1" aria-label="Portada siguiente">›</button>
-                    </div>
-                @endif
-            @else
-                <img src="{{ $profilePublished && $organization->cover_image_path ? $organization->cover_image_path : asset('images/navegaya-hero-rio.png') }}" alt="Operaciones de {{ $name }}" class="h-56 w-full object-cover object-center sm:h-72 lg:h-80">
             @endif
+            <div class="company-logo" id="company-logo">
+                @if($profilePublished && $organization->logo_path)
+                    <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}">
+                @else
+                    <span class="text-2xl font-black text-emerald-800">{{ mb_strtoupper(mb_substr($name, 0, 1)) }}</span>
+                @endif
+            </div>
         </div>
-        <div class="px-5 pb-6 sm:px-8">
+        <div class="company-identity px-5 pb-6 sm:px-8">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div class="min-w-0">
-                    <div class="company-logo">
-                        @if($profilePublished && $organization->logo_path)
-                            <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}" class="h-full w-full object-contain">
-                        @else
-                            <span class="text-2xl font-black text-emerald-800">{{ mb_strtoupper(mb_substr($name, 0, 1)) }}</span>
-                        @endif
-                    </div>
-                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                <div class="min-w-0 sm:pl-28">
+                    <div class="flex flex-wrap items-center gap-2">
                         <h1 class="text-3xl font-black tracking-tight text-[#10231D] sm:text-4xl">{{ $name }}</h1>
                         @if($organization->verified_at)
                             <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">Empresa verificada</span>
                         @endif
-                        @if($reviews->count())
-                            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">★ {{ number_format($average, 1) }}</span>
-                        @endif
                     </div>
-                    @if($metaParts)
-                        <p class="mt-2 text-sm font-semibold text-emerald-800">{{ implode(' · ', $metaParts) }}</p>
-                    @endif
+                    <p class="mt-2 text-sm font-semibold text-emerald-800">{{ $commentCount }} {{ $commentCount === 1 ? 'comentario' : 'comentarios' }} · {{ $reactionCount }} {{ $reactionCount === 1 ? 'reacción' : 'reacciones' }}</p>
+                    <p class="mt-2 flex flex-wrap gap-2 text-sm font-semibold text-[#10231D]">
+                        <span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $modalityChip }}</span>
+                        @if($portChip)<span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $portChip }}</span>@endif
+                        @if($dicapiChip)<span class="rounded-full bg-[#E1F5EE] px-3 py-1 text-[#04342C]">DICAPI vigente</span>@endif
+                        @if($organization->service_hours)<span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $organization->service_hours }}</span>@endif
+                    </p>
                     @if($brief)
                         <p class="mt-2 max-w-3xl text-base leading-7 text-[#607069]">{{ $brief }}</p>
                     @endif
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <div class="company-tools mt-3 flex flex-wrap items-center gap-2">
                         @if($copyPhone)
                             <button type="button" class="company-quiet" data-copy="{{ $copyPhone }}">Copiar teléfono</button>
                         @endif
@@ -203,37 +246,34 @@
                         <span id="company-toast" role="status" class="text-sm font-semibold text-emerald-800"></span>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 sm:mb-1 sm:shrink-0">
+                <div class="company-actions flex flex-wrap gap-2 sm:mb-1 sm:shrink-0">
+                    <button type="button" data-open="salidas" class="company-go company-go-main">Ver salidas y comprar</button>
                     @if($supportNumber)
-                        <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="company-go company-go-wa gap-2">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5" fill="currentColor"><path d="M12.04 2C6.58 2 2.15 6.4 2.15 11.83c0 1.74.46 3.44 1.34 4.94L2 22l5.39-1.41a10 10 0 0 0 4.65 1.18h.01c5.46 0 9.89-4.4 9.89-9.83C21.94 6.4 17.5 2 12.04 2zm5.76 14.17c-.24.68-1.4 1.3-1.94 1.38-.5.08-1.12.11-1.81-.11-.42-.14-.95-.31-1.64-.61-2.88-1.25-4.76-4.15-4.9-4.34-.14-.19-1.16-1.54-1.16-2.94s.73-2.08 1-2.37c.24-.28.64-.41 1.02-.41.12 0 .23 0 .33.01.3.01.45.03.65.5.24.58.82 2 .89 2.15.07.14.12.32.02.51-.09.19-.14.31-.28.48-.14.16-.29.36-.42.48-.14.13-.28.28-.12.54.16.26.72 1.18 1.54 1.91 1.06.95 1.95 1.24 2.23 1.38.28.14.44.12.6-.07.16-.19.7-.81.88-1.09.19-.28.37-.23.62-.14.26.09 1.63.77 1.91.91.28.14.46.21.53.32.07.12.07.68-.17 1.36z"/></svg>
-                            Contactar por WhatsApp
-                        </a>
+                        <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="company-go company-go-gold">WhatsApp</a>
                     @endif
-                    <button type="button" data-open="salidas" class="company-go company-go-seat">Ver salidas</button>
+                    <button type="button" data-open-policy class="company-go company-go-seat">Políticas de viaje</button>
                 </div>
             </div>
         </div>
     </section>
 
     <div class="company-stats my-4">
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg><span><strong class="is-phrase">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></article>
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m0 14h16M8 19v-4m4 4V9m4 10v-6"/></svg><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></article>
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-4 4 3 3-2 6 4"/></svg><span><strong>{{ $gallery->count() }}</strong><em>Fotos</em></span></article>
-        <article class="company-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.6 5.4L20.5 9.3l-4.2 4.1 1 5.9L12 16.8 6.7 19.3l1-5.9L3.5 9.3l5.9-.9L12 3Z"/></svg><span><strong class="{{ $reviews->count() ? '' : 'is-empty' }}">{{ $reviews->count() ? number_format($average, 1) : 'Sin reseñas' }}</strong><em>Calificación</em></span></article>
+        <button type="button" class="company-stat" data-jump="flota"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg></span><span><strong class="is-phrase">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></button>
+        <button type="button" class="company-stat" data-jump="salidas"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m0 14h16M8 19v-4m4 4V9m4 10v-6"/></svg></span><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></button>
+        <button type="button" class="company-stat" data-jump="galeria"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-4 4 3 3-2 6 4"/></svg></span><span><strong>{{ $organization->photos->count() }}</strong><em>Fotos</em></span></button>
+        <button type="button" class="company-stat" data-jump="galeria" data-comments="1"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 6h14v9H8l-3 3V6Z"/></svg></span><span><strong>{{ $commentCount }}</strong><em>Comentarios</em></span></button>
     </div>
 
     <nav id="empresa-menu" class="company-tabs" aria-label="Secciones de la empresa">
-        <button type="button" data-open="informacion" class="company-tab is-on">Información</button>
-        <button type="button" data-open="galeria" class="company-tab">Galería</button>
-        <button type="button" data-open="flota" class="company-tab">Flota</button>
-        <button type="button" data-open="salidas" class="company-tab">Salidas</button>
-        <button type="button" data-open="opiniones" class="company-tab">Testimonios{{ $reviews->count() ? ' ('.$reviews->count().')' : '' }}</button>
-        <button type="button" data-open="politicas" class="company-tab">Políticas de viaje</button>
-        <button type="button" data-open="donde-comprar" class="company-tab">Dónde comprar</button>
+        <button type="button" data-open="salidas" class="company-tab is-on"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m0 14h16"/></svg></span>Salidas y tarifas</button>
+        <button type="button" data-open="informacion" class="company-tab"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/></svg></span>Información</button>
+        <button type="button" data-open="flota" class="company-tab"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 16.5 12 20l9-3.5"/></svg></span>Flota</button>
+        <button type="button" data-open="galeria" class="company-tab"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></span>Galería</button>
+        <button type="button" data-open="agencias" class="company-tab"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6"/></svg></span>Agencias</button>
+        <button type="button" data-open="carga" class="company-tab"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h13v10H3zM16 11h3l2 3v4h-5"/></svg></span>Encomiendas y carga</button>
     </nav>
 
-    <section data-panel="informacion" class="company-panel company-layout mt-5">
+    <section id="informacion" data-panel="informacion" class="company-panel company-layout mt-5" hidden>
         <div class="grid gap-4">
             <article class="company-card">
                 <h2>Equipaje</h2>
@@ -261,21 +301,6 @@
                     <a target="_blank" rel="noopener" href="https://maps.google.com/?q={{ urlencode($mapQuery) }}" class="company-map">Ver mapa</a>
                 </article>
             @endif
-            <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}" data-price-pequeno="{{ number_format($presentation['cargo']['pequeno'], 2, '.', '') }}" data-price-mediano="{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}" data-price-grande="{{ number_format($presentation['cargo']['grande'], 2, '.', '') }}" data-port-note="{{ $presentation['cargo']['port_note'] }}">
-                <h3>Cotiza tu encomienda</h3>
-                <p class="mt-1 text-base text-[#607069]">El importe es referencial. La empresa confirma el precio final.</p>
-                <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <button type="button" data-cargo="pequeno" class="h-11 rounded-lg bg-emerald-50 px-3 text-base font-bold text-emerald-900">Pequeño</button>
-                    <button type="button" data-cargo="mediano" class="is-on h-11 rounded-lg bg-emerald-700 px-3 text-base font-bold text-white">Mediano</button>
-                    <button type="button" data-cargo="grande" class="h-11 rounded-lg bg-emerald-50 px-3 text-base font-bold text-emerald-900">Grande</button>
-                </div>
-                <p id="cargo-quote" class="mt-4 text-2xl font-black text-[#10231D]"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}</span></span></p>
-                <p id="cargo-note" class="company-cargo-note">Referencia para cotizar. La empresa confirma el precio final.</p>
-                <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-3 w-full accent-[#087F5B]" aria-label="Peso aproximado">
-                @if($cargoNumber)
-                    <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $cargoNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote mt-3">Consultar por WhatsApp</a>
-                @endif
-            </section>
         </div>
         <aside class="company-side">
             @if($organization->phone || $supportNumber || $organization->service_hours || $organization->address || $baseLabel || $organization->website)
@@ -326,13 +351,24 @@
         </aside>
     </section>
 
-    <section data-panel="galeria" class="company-panel mt-5" hidden>
-        @if($gallery->isNotEmpty())
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                @foreach($gallery as $image)
-                    <button type="button" data-photo="{{ $image['src'] }}" data-photo-alt="{{ $image['alt'] }}" class="company-photo text-left shadow-sm {{ $loop->first ? 'sm:col-span-2' : '' }}">
-                        <img src="{{ $image['src'] }}" alt="{{ $image['alt'] }}" loading="lazy">
-                    </button>
+    <section id="galeria" data-panel="galeria" class="company-panel mt-5" hidden>
+        @if($organization->photos->isNotEmpty())
+            <div class="company-grid">
+                @foreach($organization->photos as $photo)
+                    <figure>
+                        <button type="button" class="company-photo text-left" data-photo-open="{{ $photo->id }}" data-photo-index="{{ $loop->index }}" data-photo-src="{{ $photo->path }}" data-photo-alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" data-photo-comments="{{ route('companies.photos.comments', [$organization, $photo]) }}" data-photo-like="{{ route('companies.photos.likes', [$organization, $photo]) }}" data-photo-store="{{ route('companies.photos.comments.store', [$organization, $photo]) }}">
+                            <img src="{{ $photo->path }}" alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" loading="lazy">
+                        </button>
+                        @if($canManageMedia)
+                            <details class="company-more">
+                                <summary aria-label="Acciones de la foto">⋯</summary>
+                                <div>
+                                    <button type="button" data-set-cover="{{ $photo->id }}" data-cover-url="{{ route('company.gallery.photos.cover', $photo) }}">Establecer como portada</button>
+                                    <button type="button" data-set-logo="{{ $photo->id }}" data-logo-url="{{ route('company.gallery.photos.logo', $photo) }}">Establecer como logo/perfil</button>
+                                </div>
+                            </details>
+                        @endif
+                    </figure>
                 @endforeach
             </div>
         @else
@@ -341,46 +377,20 @@
                 <p class="mt-2 text-sm text-slate-600">La empresa todavía no publicó fotografías propias.</p>
             </div>
         @endif
-        @if($commentPhoto)
-            <div class="mt-4 rounded-3xl bg-white p-4" data-photo-comments="{{ route('companies.photos.comments', [$organization, $commentPhoto]) }}">
-                <h3 class="text-base font-black">Comentarios de la foto</h3>
-                <ul data-comment-list class="mt-2 space-y-1 text-sm"></ul>
-                @auth
-                    <form class="mt-3 flex flex-wrap gap-2" action="{{ route('companies.photos.comments.store', [$organization, $commentPhoto]) }}" method="POST">
-                        @csrf
-                        <textarea name="body" required minlength="2" maxlength="500" class="min-h-16 flex-1 rounded-xl border border-slate-200 p-2 text-sm" placeholder="Escribe un comentario"></textarea>
-                        <button type="button" data-emoji="😊" class="h-11 rounded-xl border px-3">😊</button>
-                        <button class="h-11 rounded-xl bg-[#F4B820] px-3 text-sm font-extrabold">Comentar</button>
-                    </form>
-                @endauth
+        @foreach($organization->photos as $photo)
+            <div hidden data-thread="{{ $photo->id }}">
+                @foreach($threadsByPhoto->get($photo->id, collect()) as $thread)
+                    <article>
+                        <strong>{{ $thread->user?->name ?: 'Viajero' }}</strong>
+                        @if(isset($traveledLookup[$thread->user_id]))<span class="company-seal">Viajó con la empresa</span>@endif
+                        <p>{{ $thread->body }}</p>
+                        @foreach($thread->replies as $reply)
+                            <p><strong>{{ $reply->user?->name ?: 'Viajero' }}</strong> @if(isset($traveledLookup[$reply->user_id]))<span class="company-seal">Viajó con la empresa</span>@endif {{ $reply->body }}</p>
+                        @endforeach
+                    </article>
+                @endforeach
             </div>
-            <script>
-                (function () {
-                    var box = document.querySelector('[data-photo-comments]');
-                    if (!box) return;
-                    var load = function () {
-                        fetch(box.getAttribute('data-photo-comments'), { headers: { 'Accept': 'application/json' } })
-                            .then(function (response) { return response.json(); })
-                            .then(function (data) {
-                                var list = box.querySelector('[data-comment-list]');
-                                list.textContent = '';
-                                (data.comments || []).forEach(function (item) {
-                                    var row = document.createElement('li');
-                                    row.textContent = item.author + ': ' + item.body;
-                                    list.appendChild(row);
-                                });
-                            });
-                    };
-                    load();
-                    window.setInterval(load, 12000);
-                    box.addEventListener('click', function (event) {
-                        var emoji = event.target && event.target.getAttribute && event.target.getAttribute('data-emoji');
-                        var field = box.querySelector('textarea');
-                        if (emoji && field) field.value += emoji;
-                    });
-                })();
-            </script>
-        @endif
+        @endforeach
     </section>
 
     <section id="flota" data-panel="flota" class="company-panel mt-5 grid gap-4 sm:grid-cols-2" hidden>
@@ -411,7 +421,7 @@
         @endforelse
     </section>
 
-    <section data-panel="salidas" class="company-panel mt-5 space-y-3" hidden>
+    <section id="salidas" data-panel="salidas" class="company-panel mt-5 space-y-3">
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
             <h2 class="text-base font-black text-emerald-950">Salidas</h2>
             <p class="mt-1 text-sm text-slate-600">Elige una salida para ver los asientos y reservar. El WhatsApp de cada salida incluye la ruta y la fecha.</p>
@@ -449,91 +459,96 @@
         @endif
     </section>
 
-    <section data-panel="opiniones" class="company-panel mt-5 space-y-4" hidden>
-        @if($reviews->count())
-            <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-emerald-950 shadow-sm">
-                <strong class="text-4xl font-black">{{ number_format($average, 1) }}</strong>
-                <div><div class="text-amber-500">★★★★★</div><span class="text-sm font-bold text-slate-600">{{ $reviews->count() }} testimonio(s)</span></div>
+    <section id="agencias" data-panel="agencias" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
+        <h2>Agencias</h2>
+        <p class="mt-1 text-sm text-[#607069]">Terminales propios y agencias autorizadas</p>
+        <ul class="mt-3 space-y-2 text-sm">
+            @forelse($organization->sites->where('is_active', true)->where('show_on_where_to_buy', true)->where('hidden_by_admin', false) as $site)
+                <li><strong>{{ $site->name }}</strong> · {{ $site->city }} · {{ $site->address }}</li>
+            @empty
+                <li>La empresa todavía no publicó puntos de venta.</li>
+            @endforelse
+        </ul>
+    </section>
+    <section id="carga" data-panel="carga" class="company-panel mt-5" hidden>
+        <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}" data-price-pequeno="{{ number_format($presentation['cargo']['pequeno'], 2, '.', '') }}" data-price-mediano="{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}" data-price-grande="{{ number_format($presentation['cargo']['grande'], 2, '.', '') }}" data-port-note="{{ $presentation['cargo']['port_note'] }}">
+            <h2>Encomiendas y carga</h2>
+            <p class="mt-1 text-base text-[#607069]">El importe es referencial. La empresa confirma el precio final.</p>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button type="button" data-cargo="pequeno" class="h-11 rounded-lg bg-emerald-50 px-3 text-base font-bold text-emerald-900">Pequeño</button>
+                <button type="button" data-cargo="mediano" class="is-on h-11 rounded-lg bg-emerald-700 px-3 text-base font-bold text-white">Mediano</button>
+                <button type="button" data-cargo="grande" class="h-11 rounded-lg bg-emerald-50 px-3 text-base font-bold text-emerald-900">Grande</button>
             </div>
-        @else
-            <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center"><h2 class="text-base font-black text-emerald-950">Todavía no hay comentarios</h2><p class="mt-2 text-sm text-slate-600">Cuando un viajero registrado comente, su opinión aparecerá aquí.</p></div>
-        @endif
-        @guest
-            <div class="flex flex-col justify-between gap-3 rounded-3xl bg-white p-5 shadow-sm sm:flex-row sm:items-center"><p class="text-sm font-semibold text-emerald-950">Inicia sesión para comentar esta empresa.</p><a href="{{ route('login') }}" class="inline-flex h-11 items-center rounded-full bg-emerald-900 px-4 text-sm font-bold text-white">Iniciar sesión</a></div>
-        @endguest
-        @auth
-            @if(! $ownComment)
-                <form method="POST" action="{{ route('companies.comment', $organization) }}" class="space-y-3 rounded-3xl bg-white p-5 shadow-sm">
-                    @csrf
-                    <h3 class="text-lg font-black text-emerald-950">Comenta esta empresa</h3>
-                    <p class="text-sm text-slate-600">Tu nombre se publica junto al comentario. No incluyas teléfonos ni documentos.</p>
-                    <div class="flex flex-wrap gap-2">@for($rating = 1; $rating <= 5; $rating++)<label class="cursor-pointer"><input required type="radio" name="rating" value="{{ $rating }}" class="peer sr-only"><span class="inline-flex h-10 items-center rounded-full bg-amber-100 px-3 text-sm font-bold text-amber-900 peer-checked:bg-amber-400 peer-checked:text-emerald-950">{{ $rating }} ★</span></label>@endfor</div>
-                    <textarea required minlength="10" maxlength="1000" name="comment" rows="3" placeholder="Cuenta cómo fue la atención, la embarcación o el viaje." class="w-full rounded-2xl border-emerald-100 text-sm">{{ old('comment') }}</textarea>
-                    <button class="inline-flex h-11 items-center rounded-full bg-amber-400 px-5 text-sm font-black text-emerald-950">Publicar comentario</button>
-                </form>
+            <p id="cargo-quote" class="mt-4 text-2xl font-black text-[#10231D]"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}</span></span></p>
+            <p id="cargo-note" class="company-cargo-note">Referencia para cotizar. La empresa confirma el precio final.</p>
+            <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-3 w-full accent-[#087F5B]" aria-label="Peso aproximado">
+            @if($cargoNumber)
+                <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $cargoNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote mt-3">Consultar por WhatsApp</a>
             @endif
-            @foreach($completedReservations as $reservation)
-                @php
-                    $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
-                    $route = $reservation->isAir() ? $trip?->airRoute : $trip?->transportRoute;
-                    $origin = $reservation->isAir() ? $route?->origin_city : $route?->originPort?->city;
-                    $destination = $reservation->isAir() ? $route?->destination_city : $route?->destinationPort?->city;
-                    $travelerReview = $reservation->companyReview;
-                    $reviewLabels = ['pending' => 'Pendiente de revisión', 'published' => 'Publicada', 'rejected' => 'No publicada'];
-                @endphp
-                <article class="rounded-3xl bg-white p-5 shadow-sm">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div><span class="text-xs font-bold text-emerald-700">Reserva {{ $reservation->code }}</span><h3 class="mt-1 text-lg font-black text-emerald-950">{{ $origin }} → {{ $destination }}</h3><p class="mt-1 text-sm text-slate-500">Viaje completado {{ $trip?->departure_at?->translatedFormat('d M Y · H:i') }}</p></div>
-                        @if($travelerReview)
-                            <span class="rounded-full px-3 py-1 text-xs font-black {{ $travelerReview->status === 'published' ? 'bg-emerald-100 text-emerald-800' : ($travelerReview->status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800') }}">{{ $reviewLabels[$travelerReview->status] ?? $travelerReview->status }}</span>
-                        @endif
-                    </div>
-                    @if($travelerReview)
-                        <div class="mt-4"><div class="text-amber-500">{{ str_repeat('★', $travelerReview->rating) }}{{ str_repeat('☆', 5 - $travelerReview->rating) }}</div><p class="mt-2 text-sm leading-6 text-slate-700">{{ $travelerReview->comment }}</p>@if($travelerReview->status === 'pending')<p class="mt-3 text-sm font-semibold text-amber-800">NavegaYA está revisando tu opinión. Se mostrará públicamente después de aprobarla.</p>@endif</div>
-                    @else
-                        <form method="POST" action="{{ route('companies.review', $organization) }}" class="mt-4 space-y-3">
-                            @csrf
-                            <input type="hidden" name="reservation_id" value="{{ $reservation->id }}">
-                            <fieldset><legend class="text-sm font-bold text-emerald-950">Califica este viaje</legend><div class="mt-2 flex flex-wrap gap-2">@for($rating = 1; $rating <= 5; $rating++)<label class="cursor-pointer"><input required type="radio" name="rating" value="{{ $rating }}" class="peer sr-only"><span class="inline-flex h-10 items-center rounded-full bg-amber-100 px-3 text-sm font-bold text-amber-900 peer-checked:bg-amber-400">{{ $rating }} ★</span></label>@endfor</div></fieldset>
-                            <textarea required minlength="10" maxlength="1000" name="comment" rows="4" placeholder="Describe la atención, puntualidad, comodidad y embarque." class="w-full rounded-2xl border-emerald-100 text-sm">{{ old('comment') }}</textarea>
-                            <button class="rounded-full bg-amber-400 px-5 py-3 text-sm font-black text-emerald-950">Enviar opinión</button>
-                        </form>
-                    @endif
-                </article>
-            @endforeach
-        @endauth
-        <div class="grid gap-3">
-            @foreach($reviews as $review)
-                <article class="rounded-3xl bg-white p-5 shadow-sm">
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-emerald-700 text-sm font-black text-white">{{ mb_strtoupper(mb_substr($review->user->name, 0, 1)) }}</span><strong class="text-emerald-950">{{ $review->user->name }}</strong></div>
-                        <span class="font-bold text-amber-500">{{ str_repeat('★', $review->rating) }}</span>
-                    </div>
-                    <p class="mt-3 text-sm leading-6 text-slate-700">{{ $review->comment }}</p>
-                    @auth
-                        <details class="mt-3"><summary class="cursor-pointer text-xs font-bold text-slate-400">Reportar opinión</summary><form method="POST" action="{{ route('companies.reviews.report', [$organization, $review]) }}" class="mt-2 flex flex-wrap gap-2">@csrf<select name="reason" required class="h-9 flex-1 rounded-xl border-slate-200 text-xs"><option value="harassment">Insultos o acoso</option><option value="false_information">Información falsa</option><option value="spam">Spam</option><option value="personal_data">Datos personales</option><option value="other">Otro motivo</option></select><button class="rounded-full bg-rose-600 px-3 text-xs font-black text-white">Reportar</button></form></details>
-                    @endauth
-                </article>
-            @endforeach
-        </div>
+        </section>
     </section>
 
     <x-b2b-ad-banner placement="company_footer" :city="$organization->basePort?->city" class="mt-8" />
 </main>
-<dialog id="company-photo" class="company-viewer">
-    <div class="company-viewer-bar">
-        <button type="button" data-photo-step="-1">Anterior</button>
-        <button type="button" data-photo-step="1">Siguiente</button>
-        <form method="dialog"><button>Cerrar</button></form>
+<dialog id="company-photo" class="company-lightbox" aria-label="Foto">
+    <div class="company-lightbox-grid">
+        <div class="company-lightbox-photo"><img id="company-photo-img" alt=""></div>
+        <div class="company-lightbox-side">
+            <div class="company-viewer-bar">
+                <button type="button" data-photo-step="-1">Anterior</button>
+                <button type="button" data-photo-step="1">Siguiente</button>
+                <button type="button" data-photo-close>Cerrar</button>
+            </div>
+            <p id="company-photo-count" class="company-viewer-count"></p>
+            <p class="mt-2 text-sm font-bold"><span id="company-photo-reactions">0</span> reacciones</p>
+            @auth
+                <button type="button" id="company-photo-like" class="company-quiet mt-2">Me gusta</button>
+            @endauth
+            <div id="company-photo-thread" class="mt-3 space-y-2 text-sm"></div>
+            @auth
+                <form id="company-photo-form" class="mt-3 space-y-2" method="POST">
+                    @csrf
+                    <input type="hidden" name="parent_id" value="">
+                    <textarea name="body" required minlength="2" maxlength="500" class="min-h-16 w-full rounded-xl border border-slate-200 p-2 text-sm" placeholder="Escribe un comentario"></textarea>
+                    <button type="button" id="company-emoji-toggle" class="company-quiet">Emojis</button>
+                    <div id="company-emoji-panel" class="company-emoji" hidden></div>
+                    <button class="company-go company-go-main">Comentar</button>
+                </form>
+            @endauth
+        </div>
     </div>
-    <img id="company-photo-img" alt="">
-    <p id="company-photo-count" class="company-viewer-count"></p>
+</dialog>
+<dialog id="policy-modal" class="policy-modal" aria-labelledby="policy-title">
+    <header>
+        <h2 id="policy-title">Políticas de viaje</h2>
+        <button type="button" data-policy-close aria-label="Cerrar">X</button>
+    </header>
+    <div class="policy-tabs" role="tablist">
+        <button type="button" data-policy-tab="resumen" class="is-on" role="tab" aria-selected="true">Resumen</button>
+        <button type="button" data-policy-tab="completo" role="tab" aria-selected="false">Completo</button>
+    </div>
+    <div class="policy-body" data-policy-panel="resumen">
+        <div class="policy-point"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="3" width="12" height="18" rx="2"/></svg></span><p><strong>Documentación</strong>Viaja con tu documento de identidad original.</p></div>
+        <div class="policy-point"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></span><p><strong>Presentación</strong>Llega entre 45 y 60 minutos antes del zarpe.</p></div>
+        <div class="policy-point"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16v11H4z"/></svg></span><p><strong>Equipaje</strong>Mano {{ $baggage['hand'] }} kg, bodega {{ $baggage['hold'] }} kg y aéreo {{ $baggage['air'] }} kg. Desde {{ $baggage['cargo'] }} kg se registra como carga.</p></div>
+        <div class="policy-point"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16M12 4v16"/></svg></span><p><strong>Cancelaciones y reprogramaciones</strong>Si la empresa cancela o reprograma, el pasajero elige reembolso total o cambio sin costo.</p></div>
+        <div class="policy-point"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 7v6c0 5 3.5 7.5 8 8 4.5-.5 8-3 8-8V7l-8-4Z"/></svg></span><p><strong>Conducta y objetos prohibidos</strong>La empresa puede negar el embarque por ebriedad, riesgo a otros pasajeros u objetos prohibidos.</p></div>
+        <button type="button" class="company-go company-go-main mt-4" data-policy-tab="completo">Ver documento completo</button>
+    </div>
+    <div class="policy-body" data-policy-panel="completo" hidden>
+        @if($travelPolicy)
+            <article class="text-sm leading-7">{!! \App\Support\PolicyHtml::clean($travelPolicy->body_html) !!}</article>
+        @else
+            <p>Esta empresa todavía no publicó el documento completo.</p>
+        @endif
+    </div>
 </dialog>
 <script>
     (function () {
         var root = document.getElementById('company-ficha');
         if (!root) return;
-        var names = ['informacion', 'galeria', 'flota', 'salidas', 'opiniones', 'politicas', 'donde-comprar'];
+        var names = ['salidas', 'informacion', 'flota', 'galeria', 'agencias', 'carga'];
+        var aliases = { testimonios: 'galeria', opiniones: 'galeria', experiencias: 'galeria', 'donde-comprar': 'agencias' };
         var cargoType = 'mediano';
         var cargoWeight = 5;
         var cargoLabels = { pequeno: 'pequeña', mediano: 'mediana', grande: 'grande' };
@@ -583,12 +598,7 @@
         }
         var vesselFilter = '';
         var vesselName = '';
-        var photos = [];
         var photoIndex = 0;
-        root.querySelectorAll('[data-photo]').forEach(function (button, index) {
-            photos.push({ src: button.getAttribute('data-photo'), alt: button.getAttribute('data-photo-alt') || 'Foto de la empresa' });
-            button.setAttribute('data-photo-index', String(index));
-        });
         function toast(text) {
             var el = document.getElementById('company-toast');
             if (!el) return;
@@ -651,20 +661,9 @@
                 note.textContent = vesselFilter ? 'Salidas de ' + vesselName : '';
             }
         }
-        function showPhoto(index) {
-            var viewerImg = document.getElementById('company-photo-img');
-            var label = document.getElementById('company-photo-count');
-            if (!photos.length || !viewerImg) return;
-            photoIndex = (index + photos.length) % photos.length;
-            viewerImg.src = photos[photoIndex].src;
-            viewerImg.alt = photos[photoIndex].alt;
-            if (label) label.textContent = (photoIndex + 1) + ' de ' + photos.length;
-            root.querySelectorAll('[data-photo-step]').forEach(function (button) {
-                button.disabled = photos.length < 2;
-            });
-        }
         function show(name) {
-            if (names.indexOf(name) === -1) name = 'informacion';
+            if (aliases[name]) name = aliases[name];
+            if (names.indexOf(name) === -1) name = 'salidas';
             root.querySelectorAll('[data-panel]').forEach(function (panel) {
                 panel.hidden = panel.getAttribute('data-panel') !== name;
             });
@@ -673,7 +672,194 @@
             });
             if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
         }
+        var policy = document.getElementById('policy-modal');
+        var policyReturn = null;
+        function openPolicy() {
+            if (!policy || typeof policy.showModal !== 'function') return;
+            policyReturn = document.activeElement;
+            document.body.style.overflow = 'hidden';
+            policy.showModal();
+            var close = policy.querySelector('[data-policy-close]');
+            if (close) close.focus();
+        }
+        function closePolicy() {
+            if (!policy) return;
+            policy.close();
+            document.body.style.overflow = '';
+            if (policyReturn && policyReturn.focus) policyReturn.focus();
+        }
+        function policyTab(name) {
+            policy.querySelectorAll('[data-policy-tab]').forEach(function (button) {
+                var on = button.getAttribute('data-policy-tab') === name;
+                button.classList.toggle('is-on', on);
+                button.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            policy.querySelectorAll('[data-policy-panel]').forEach(function (panel) {
+                panel.hidden = panel.getAttribute('data-policy-panel') !== name;
+            });
+        }
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && policy && policy.open) {
+                event.preventDefault();
+                closePolicy();
+            }
+            if (event.key !== 'Tab' || !policy || !policy.open) return;
+            var items = Array.prototype.filter.call(policy.querySelectorAll('button, a, textarea, input'), function (item) {
+                return !item.closest('[hidden]');
+            });
+            if (!items.length) return;
+            var first = items[0];
+            var last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        });
+        var photoDialog = document.getElementById('company-photo');
+        if (photoDialog) photoDialog.addEventListener('close', function () { document.body.style.overflow = ''; });
+        var photos = Array.prototype.slice.call(root.querySelectorAll('[data-photo-open]'));
+        var photoIndex = 0;
+        var emojis = ['😊', '👍', '❤️', '😮', '😢', '🙏', '🔥', '👏'];
+        var emojiPanel = document.getElementById('company-emoji-panel');
+        if (emojiPanel) {
+            emojis.forEach(function (emoji) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = emoji;
+                button.addEventListener('click', function () {
+                    var field = document.querySelector('#company-photo-form textarea');
+                    if (field) field.value += emoji;
+                });
+                emojiPanel.appendChild(button);
+            });
+        }
+        var emojiToggle = document.getElementById('company-emoji-toggle');
+        if (emojiToggle && emojiPanel) emojiToggle.addEventListener('click', function () { emojiPanel.hidden = !emojiPanel.hidden; });
+        function paintThread(photo) {
+            var box = document.getElementById('company-photo-thread');
+            var seed = root.querySelector('[data-thread="' + photo.getAttribute('data-photo-open') + '"]');
+            if (!box) return;
+            box.textContent = '';
+            if (seed) box.appendChild(seed.cloneNode(true));
+            var cloned = box.firstChild;
+            if (cloned) cloned.hidden = false;
+            fetch(photo.getAttribute('data-photo-comments'), { headers: { 'Accept': 'application/json' } })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    var reactions = document.getElementById('company-photo-reactions');
+                    if (reactions) reactions.textContent = String(data.reactions || 0);
+                    box.textContent = '';
+                    (data.comments || []).forEach(function (item) { box.appendChild(commentNode(item)); });
+                });
+        }
+        function commentNode(item) {
+            var article = document.createElement('article');
+            var author = document.createElement('strong');
+            author.textContent = item.author;
+            article.appendChild(author);
+            if (item.traveled) {
+                var seal = document.createElement('span');
+                seal.className = 'company-seal';
+                seal.textContent = 'Viajó con la empresa';
+                article.appendChild(seal);
+            }
+            var body = document.createElement('p');
+            body.textContent = item.body;
+            article.appendChild(body);
+            if (document.getElementById('company-photo-form') && !item.reply) {
+                var answer = document.createElement('button');
+                answer.type = 'button';
+                answer.className = 'company-quiet';
+                answer.textContent = 'Responder';
+                answer.addEventListener('click', function () {
+                    var parent = document.querySelector('#company-photo-form [name=parent_id]');
+                    var field = document.querySelector('#company-photo-form textarea');
+                    if (parent) parent.value = String(item.id);
+                    if (field) {
+                        field.placeholder = 'Respuesta para ' + item.author;
+                        field.focus();
+                    }
+                });
+                article.appendChild(answer);
+            }
+            (item.replies || []).forEach(function (reply) {
+                reply.reply = true;
+                article.appendChild(commentNode(reply));
+            });
+            return article;
+        }
+        function openPhoto(index) {
+            if (!photos.length) return;
+            photoIndex = (index + photos.length) % photos.length;
+            var photo = photos[photoIndex];
+            var viewer = document.getElementById('company-photo');
+            var image = document.getElementById('company-photo-img');
+            var label = document.getElementById('company-photo-count');
+            if (image) { image.src = photo.getAttribute('data-photo-src'); image.alt = photo.getAttribute('data-photo-alt') || ''; }
+            if (label) label.textContent = (photoIndex + 1) + ' de ' + photos.length;
+            var form = document.getElementById('company-photo-form');
+            if (form) {
+                form.action = photo.getAttribute('data-photo-store');
+                var parent = form.querySelector('[name=parent_id]');
+                var field = form.querySelector('textarea');
+                if (parent) parent.value = '';
+                if (field) field.placeholder = 'Escribe un comentario';
+            }
+            paintThread(photo);
+            document.body.style.overflow = 'hidden';
+            if (viewer && typeof viewer.showModal === 'function' && !viewer.open) viewer.showModal();
+        }
+        function applyMedia(kind, url, replaceId) {
+            var token = document.querySelector('meta[name="csrf-token"]');
+            var body = new FormData();
+            if (replaceId) body.append('replace_id', replaceId);
+            fetch(url, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token ? token.content : '' }, body: body })
+                .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, status: response.status, data: data }; }); })
+                .then(function (result) {
+                    if (result.status === 409 && result.data.choose) {
+                        var choice = result.data.banners.map(function (banner) { return banner.position + ' (' + banner.id + ')'; }).join(' o ');
+                        var picked = window.prompt('Ya hay dos portadas. Escribe el id de la que quieres reemplazar: ' + choice);
+                        if (picked) applyMedia(kind, url, picked);
+                        return;
+                    }
+                    if (!result.ok) return;
+                    if (kind === 'logo' && result.data.logo) {
+                        var logo = document.querySelector('#company-logo img') || document.createElement('img');
+                        logo.src = result.data.logo;
+                        logo.alt = 'Logo';
+                        var holder = document.getElementById('company-logo');
+                        if (holder && !holder.querySelector('img')) { holder.textContent = ''; holder.appendChild(logo); }
+                    }
+                    if (kind === 'cover' && result.data.banners) {
+                        var carousel = document.getElementById('company-carousel');
+                        if (!carousel) return;
+                        carousel.textContent = '';
+                        result.data.banners.forEach(function (banner) {
+                            var slide = document.createElement('div');
+                            slide.className = 'company-slide';
+                            var blur = document.createElement('img');
+                            blur.className = 'company-slide-blur';
+                            blur.alt = '';
+                            blur.src = banner.path;
+                            var photo = document.createElement('img');
+                            photo.className = 'company-slide-photo';
+                            photo.alt = 'Portada';
+                            photo.src = banner.path;
+                            slide.appendChild(blur);
+                            slide.appendChild(photo);
+                            carousel.appendChild(slide);
+                        });
+                    }
+                });
+        }
         root.addEventListener('click', function (event) {
+            var jump = event.target.closest('[data-jump]');
+            if (jump && root.contains(jump)) {
+                show(jump.getAttribute('data-jump'));
+                if (jump.hasAttribute('data-comments') && photos[0]) openPhoto(0);
+                document.getElementById('empresa-menu').scrollIntoView({ block: 'nearest' });
+                return;
+            }
+            var policyHit = event.target.closest('[data-open-policy]');
+            if (policyHit) { event.preventDefault(); openPolicy(); return; }
             var tab = event.target.closest('[data-open]');
             if (tab && root.contains(tab)) {
                 if (tab.hasAttribute('data-vessel')) {
@@ -699,14 +885,24 @@
             }
             var step = event.target.closest('[data-photo-step]');
             if (step && !step.disabled) {
-                showPhoto(photoIndex + Number(step.getAttribute('data-photo-step')));
+                openPhoto(photoIndex + Number(step.getAttribute('data-photo-step')));
                 return;
             }
-            var photo = event.target.closest('[data-photo]');
-            var viewer = document.getElementById('company-photo');
-            if (photo && viewer && typeof viewer.showModal === 'function') {
-                showPhoto(Number(photo.getAttribute('data-photo-index') || 0));
-                viewer.showModal();
+            var photo = event.target.closest('[data-photo-open]');
+            if (photo && !event.target.closest('.company-more')) {
+                openPhoto(Number(photo.getAttribute('data-photo-index') || 0));
+                return;
+            }
+            var cover = event.target.closest('[data-set-cover]');
+            if (cover) { applyMedia('cover', cover.getAttribute('data-cover-url')); return; }
+            var logo = event.target.closest('[data-set-logo]');
+            if (logo) { applyMedia('logo', logo.getAttribute('data-logo-url')); return; }
+            if (event.target.closest('[data-policy-close]')) { closePolicy(); return; }
+            var policyChoice = event.target.closest('[data-policy-tab]');
+            if (policyChoice) { policyTab(policyChoice.getAttribute('data-policy-tab')); return; }
+            if (event.target.closest('[data-photo-close]')) {
+                var viewerClose = document.getElementById('company-photo');
+                if (viewerClose) viewerClose.close();
                 return;
             }
             var copy = event.target.closest('[data-copy]');
@@ -741,8 +937,8 @@
         document.addEventListener('keydown', function (event) {
             var viewer = document.getElementById('company-photo');
             if (!viewer || !viewer.open) return;
-            if (event.key === 'ArrowLeft') showPhoto(photoIndex - 1);
-            if (event.key === 'ArrowRight') showPhoto(photoIndex + 1);
+            if (event.key === 'ArrowLeft') openPhoto(photoIndex - 1);
+            if (event.key === 'ArrowRight') openPhoto(photoIndex + 1);
         });
         var range = document.getElementById('cargo-range');
         if (range) range.addEventListener('input', function () {
@@ -756,34 +952,30 @@
             carousel.scrollBy({ left: carousel.clientWidth * Number(step.getAttribute('data-banner')), behavior: 'smooth' });
         });
         var start = location.hash.replace('#', '');
-        show(names.indexOf(start) === -1 ? 'informacion' : start);
+        var openPolicies = start === 'politicas' || new URLSearchParams(location.search).get('politica') === '1';
+        if (aliases[start]) start = aliases[start];
+        show(names.indexOf(start) === -1 ? 'salidas' : start);
         window.addEventListener('hashchange', function () {
             var next = location.hash.replace('#', '');
+            if (next === 'politicas') openPolicy();
+            if (aliases[next]) next = aliases[next];
             if (names.indexOf(next) !== -1) show(next);
+        });
+        if (openPolicies) openPolicy();
+        var like = document.getElementById('company-photo-like');
+        if (like) like.addEventListener('click', function () {
+            var photo = photos[photoIndex];
+            if (!photo) return;
+            var token = document.querySelector('meta[name="csrf-token"]');
+            fetch(photo.getAttribute('data-photo-like'), { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token ? token.content : '' } })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    var reactions = document.getElementById('company-photo-reactions');
+                    if (reactions && data.likes !== undefined) reactions.textContent = String(data.likes);
+                });
         });
     })();
 </script>
 <button type="button" data-open="salidas" class="company-buy">Comprar</button>
-<section id="politicas" data-panel="politicas" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
-    <h2>Políticas de viaje</h2>
-    <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">
-        @foreach($policyPoints as $point)
-            <li>{{ $point }}</li>
-        @endforeach
-    </ul>
-    @if($travelPolicy)
-        <a href="{{ route('companies.policy', $organization) }}" class="company-map mt-4">Leer la política completa</a>
-    @endif
-</section>
-<section id="donde-comprar" data-panel="donde-comprar" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
-    <h2>Dónde comprar</h2>
-    <ul class="mt-3 space-y-2 text-sm">
-        @forelse($organization->sites->where('is_active', true)->where('show_on_where_to_buy', true)->where('hidden_by_admin', false) as $site)
-            <li><strong>{{ $site->name }}</strong> · {{ $site->city }} · {{ $site->address }}</li>
-        @empty
-            <li>La empresa todavía no publicó puntos de venta.</li>
-        @endforelse
-    </ul>
-</section>
 </div>
 </x-public-layout>

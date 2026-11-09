@@ -91,7 +91,7 @@ class AdminCompanyOperationController extends Controller
             'reason' => $data['reason'],
         ]);
 
-        return back()->with('success', $site->hidden_by_admin ? 'La sede quedó oculta en Dónde comprar.' : 'La sede volvió a poder mostrarse.');
+        return back()->with('success', $site->hidden_by_admin ? 'La sede quedó oculta en Agencias.' : 'La sede volvió a poder mostrarse.');
     }
 
     public function hideWhatsapp(Request $request, Organization $organization): RedirectResponse

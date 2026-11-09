@@ -32,7 +32,7 @@
                         <x-ui.input name="city" label="Ciudad" value="{{ $site->city }}" required />
                         <x-ui.input name="hours" label="Horario" value="{{ $site->hours }}" />
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="receives_cargo" value="1" @checked($site->receives_cargo)> Recibe carga</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="show_on_where_to_buy" value="1" @checked($site->show_on_where_to_buy)> Visible en Dónde comprar</label>
+                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="show_on_where_to_buy" value="1" @checked($site->show_on_where_to_buy)> Visible en Agencias</label>
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" @checked($site->is_active)> Activa</label>
                         @if($site->hidden_by_admin)<p class="text-sm text-rose-800 sm:col-span-2">NavegaYA ocultó esta sede. {{ $site->hidden_reason }}</p>@endif
                         <div class="flex gap-2 sm:col-span-2">
@@ -70,7 +70,7 @@
             <x-ui.input name="city" label="Ciudad" required />
             <x-ui.input name="hours" label="Horario" />
             <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="receives_cargo" value="1"> Recibe carga</label>
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="show_on_where_to_buy" value="1" checked> Visible en Dónde comprar</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="show_on_where_to_buy" value="1" checked> Visible en Agencias</label>
             <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" checked> Activa</label>
             <div class="sm:col-span-2"><x-ui.button type="submit" variant="primary">Registrar sede</x-ui.button></div>
         </form>

@@ -10,7 +10,7 @@
 ---
 
 ## 1. Compra del pasaje
-1. El pasaje se compra en la web de NavegaYA, en los terminales de la empresa o en sus agencias autorizadas, que aparecen en "Dónde comprar". La empresa no responde por pasajes comprados en canales no listados.
+1. El pasaje se compra en la web de NavegaYA, en los terminales de la empresa o en sus agencias autorizadas, que aparecen en "Agencias". La empresa no responde por pasajes comprados en canales no listados.
 2. **Precio:**
    - en la web, el pasajero paga la tarifa de la empresa más el **cargo de servicio NavegaYA**, ambos detallados antes de pagar;
    - en los terminales y agencias no se cobra el cargo de servicio.

@@ -26,6 +26,28 @@
         <button class="rounded-xl bg-[#064E3B] px-4 text-sm font-bold text-white">Crear álbum</button>
     </form>
     <ul class="mt-3 text-sm">@foreach($organization->albums as $album)<li>{{ $album->title }}</li>@endforeach</ul>
-    <p class="mt-6 text-sm">Las fotos nuevas quedan pendientes hasta que NavegaYA las publique. El logo se cambia en la ficha pública.</p>
+    <p class="mt-6 text-sm">Las fotos nuevas quedan pendientes hasta que NavegaYA las publique. En la página pública, el menú de cada foto publicada permite ponerla de portada o de logo.</p>
+    <a href="{{ route('companies.show', $organization) }}#galeria" class="mt-3 inline-flex text-sm font-bold text-emerald-800">Ver la página pública</a>
+    <ul class="mt-4 space-y-3">
+        @foreach($organization->photos as $photo)
+            <li class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-3 text-sm">
+                <span>{{ $photo->caption ?: 'Foto '.$photo->id }} · {{ $photo->status === 'published' ? 'Publicada' : 'Pendiente' }}</span>
+                @if($photo->status === 'published')
+                    <span class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('company.gallery.photos.cover', $photo) }}">
+                            @csrf
+                            @if($organization->banners->count() >= 2)
+                                @foreach($organization->banners as $banner)
+                                    <label class="mr-2 text-xs"><input type="radio" name="replace_id" value="{{ $banner->id }}" required> Reemplazar portada {{ $banner->position }}</label>
+                                @endforeach
+                            @endif
+                            <button class="font-bold text-emerald-800">Establecer como portada</button>
+                        </form>
+                        <form method="POST" action="{{ route('company.gallery.photos.logo', $photo) }}">@csrf<button class="font-bold text-emerald-800">Establecer como logo/perfil</button></form>
+                    </span>
+                @endif
+            </li>
+        @endforeach
+    </ul>
 </div>
 @endsection

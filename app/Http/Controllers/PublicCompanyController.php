@@ -10,12 +10,14 @@ use App\Models\PhotoLike;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\UserSanction;
+use App\Support\AdminScope;
 use App\Support\BaggageAllowance;
 use App\Support\TravelPolicy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class PublicCompanyController
@@ -67,8 +69,26 @@ class PublicCompanyController
         $baggage = BaggageAllowance::for($organization);
         $policyPoints = TravelPolicy::publicPoints($organization);
         $travelPolicy = $organization->travelPolicies()->where('kind', 'company_travel')->first()?->current();
+        $photoIds = $organization->photos->pluck('id');
+        $threads = PhotoComment::query()
+            ->whereIn('organization_photo_id', $photoIds)
+            ->where('status', 'published')
+            ->whereNull('parent_id')
+            ->with(['user:id,name,email', 'replies' => fn ($query) => $query->where('status', 'published')->with('user:id,name,email')->oldest()])
+            ->oldest()
+            ->get();
+        $traveledIds = $this->traveledUserIds($organization->id, $threads->pluck('user_id')->merge($threads->flatMap(fn (PhotoComment $comment) => $comment->replies->pluck('user_id'))));
+        $commentCount = $threads->count() + $threads->sum(fn (PhotoComment $comment) => $comment->replies->count());
+        $reactionCount = $photoIds->isEmpty() ? 0 : PhotoLike::query()->whereIn('organization_photo_id', $photoIds)->count();
+        $viewer = auth()->user();
+        $canManageMedia = $viewer
+            && $viewer->roles()->where('code', 'company_admin')->exists()
+            && (int) AdminScope::organizationId($viewer) === (int) $organization->id;
 
-        return view('companies.show', compact('organization', 'reviews', 'average', 'completedReservations', 'hasUpcomingTrip', 'baggage', 'policyPoints', 'travelPolicy'));
+        return view('companies.show', compact(
+            'organization', 'reviews', 'average', 'completedReservations', 'hasUpcomingTrip',
+            'baggage', 'policyPoints', 'travelPolicy', 'threads', 'traveledIds', 'commentCount', 'reactionCount', 'canManageMedia',
+        ));
     }
 
     public function review(Request $request, Organization $organization): RedirectResponse
@@ -127,21 +147,20 @@ class PublicCompanyController
         ]);
 
         return redirect()->to(route('companies.show', $organization).'#opiniones')
-            ->with('success', 'Tu comentario ya se ve en la ficha de la empresa.');
+            ->with('success', 'Tu comentario quedó registrado.');
     }
 
     public function photoComments(Organization $organization, OrganizationPhoto $photo): JsonResponse
     {
         abort_unless((int) $photo->organization_id === (int) $organization->id && $photo->status === 'published', 404);
-        $comments = $photo->comments()->where('status', 'published')->with('user:id,name')->latest()->limit(40)->get()
-            ->map(fn (PhotoComment $comment) => [
-                'id' => $comment->id,
-                'author' => $comment->user?->name ?: 'Viajero',
-                'body' => $comment->body,
-                'at' => $comment->created_at?->format('d/m/Y H:i'),
-            ]);
+        $comments = $photo->comments()->where('status', 'published')->whereNull('parent_id')->with(['user:id,name,email', 'replies' => fn ($query) => $query->where('status', 'published')->with('user:id,name,email')->oldest()])->oldest()->limit(40)->get();
+        $traveled = $this->traveledUserIds($organization->id, $comments->pluck('user_id')->merge($comments->flatMap(fn (PhotoComment $comment) => $comment->replies->pluck('user_id'))));
+        $payload = $comments->map(fn (PhotoComment $comment) => $this->commentPayload($comment, $traveled));
 
-        return response()->json(['comments' => $comments]);
+        return response()->json([
+            'comments' => $payload,
+            'reactions' => $photo->likes()->count(),
+        ]);
     }
 
     public function storePhotoComment(Request $request, Organization $organization, OrganizationPhoto $photo): JsonResponse
@@ -149,6 +168,9 @@ class PublicCompanyController
         $this->guardParticipation($request->user());
         abort_unless((int) $photo->organization_id === (int) $organization->id && $photo->status === 'published', 404);
         $data = $request->validate(['body' => ['required', 'string', 'min:2', 'max:500'], 'parent_id' => ['nullable', 'integer']]);
+        if (! empty($data['parent_id'])) {
+            abort_unless($photo->comments()->whereKey($data['parent_id'])->exists(), 422);
+        }
         $comment = $photo->comments()->create([
             'user_id' => $request->user()->id,
             'parent_id' => $data['parent_id'] ?? null,
@@ -199,5 +221,55 @@ class PublicCompanyController
                 $query->whereHas('departure.transportRoute', fn (Builder $route) => $route->where('organization_id', $organizationId))
                     ->orWhereHas('airDeparture.airRoute', fn (Builder $route) => $route->where('organization_id', $organizationId));
             });
+    }
+
+    /**
+     * @param  Collection<int, mixed>  $userIds
+     * @return list<int>
+     */
+    private function traveledUserIds(int $organizationId, Collection $userIds): array
+    {
+        $ids = $userIds->filter()->map(fn ($id) => (int) $id)->unique()->values();
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        $emails = User::query()->whereIn('id', $ids)->pluck('email', 'id');
+        $reservations = Reservation::query()
+            ->where('status', 'confirmed')
+            ->where(function (Builder $query) use ($ids, $emails) {
+                $query->whereIn('user_id', $ids)->orWhereIn('contact_email', $emails->filter()->values());
+            })
+            ->where(function (Builder $query) use ($organizationId) {
+                $query->whereHas('departure', fn (Builder $departure) => $departure->where('status', 'completed')->whereHas('transportRoute', fn (Builder $route) => $route->where('organization_id', $organizationId)))
+                    ->orWhereHas('airDeparture', fn (Builder $departure) => $departure->where('status', 'completed')->whereHas('airRoute', fn (Builder $route) => $route->where('organization_id', $organizationId)));
+            })
+            ->get(['user_id', 'contact_email']);
+
+        return $emails->filter(function (?string $email, int $id) use ($reservations) {
+            return $reservations->contains(fn (Reservation $reservation) => (int) $reservation->user_id === $id || ($email && $reservation->contact_email === $email));
+        })->keys()->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * @param  list<int>  $traveled
+     * @return array{id: int, author: string, body: string, at: string, traveled: bool, replies: list<array{id: int, author: string, body: string, at: string, traveled: bool}>}
+     */
+    private function commentPayload(PhotoComment $comment, array $traveled): array
+    {
+        return [
+            'id' => $comment->id,
+            'author' => $comment->user?->name ?: 'Viajero',
+            'body' => $comment->body,
+            'at' => $comment->created_at?->format('d/m/Y H:i') ?? '',
+            'traveled' => in_array((int) $comment->user_id, $traveled, true),
+            'replies' => $comment->replies->map(fn (PhotoComment $reply) => [
+                'id' => $reply->id,
+                'author' => $reply->user?->name ?: 'Viajero',
+                'body' => $reply->body,
+                'at' => $reply->created_at?->format('d/m/Y H:i') ?? '',
+                'traveled' => in_array((int) $reply->user_id, $traveled, true),
+            ])->values()->all(),
+        ];
     }
 }

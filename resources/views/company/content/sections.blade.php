@@ -2,7 +2,7 @@
 @section('title', 'Secciones de la página')
 @section('content')
 <div class="p-4 sm:p-6">
-    <p class="text-sm text-slate-600">Salidas y tarifas e Información no se pueden apagar. El resto se puede renombrar, ordenar y ocultar.</p>
+    <p class="text-sm text-slate-600">Salidas y tarifas e Información no se pueden apagar. El resto se puede renombrar, ordenar y ocultar. Las políticas se abren en una ventana y ya no son una pestaña.</p>
     @if(session('success'))<p class="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{{ session('success') }}</p>@endif
     <form method="POST" action="{{ route('company.page-sections.update') }}" class="mt-5 space-y-3">
         @csrf @method('PATCH')

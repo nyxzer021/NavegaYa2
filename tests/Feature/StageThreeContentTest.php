@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Organization;
 use App\Models\OrganizationPhoto;
+use App\Models\PhotoComment;
 use App\Models\PolicyDocument;
 use App\Models\Port;
 use App\Models\PublicPage;
+use App\Models\Reservation;
 use App\Models\Role;
 use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
@@ -243,6 +245,104 @@ class StageThreeContentTest extends TestCase
         $this->getJson(route('companies.photos.comments', [$company, $photo]))
             ->assertOk()
             ->assertJsonCount(0, 'comments');
+    }
+
+    public function test_public_company_page_uses_the_gallery_and_opens_policies_in_a_modal(): void
+    {
+        $company = $this->company('Galería Pública', '20631000021');
+        OrganizationPhoto::create([
+            'organization_id' => $company->id,
+            'path' => '/storage/company-profiles/rio.jpg',
+            'status' => 'published',
+            'sort_order' => 1,
+        ]);
+
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('data-open="galeria"', false)
+            ->assertSee('data-open="agencias"', false)
+            ->assertSee('data-open="carga"', false)
+            ->assertSee('Terminales propios y agencias autorizadas')
+            ->assertSee('id="policy-modal"', false)
+            ->assertSee('object-fit:contain', false)
+            ->assertSee("testimonios: 'galeria'", false)
+            ->assertSee("'donde-comprar': 'agencias'", false)
+            ->assertDontSee('data-open="opiniones"', false)
+            ->assertDontSee('data-open="politicas"', false)
+            ->assertDontSee('Establecer como portada', false)
+            ->assertDontSee('Establecer como logo/perfil', false);
+    }
+
+    public function test_only_the_company_admin_can_set_a_photo_as_cover_or_logo(): void
+    {
+        [$admin, $company] = $this->companyAdmin('Portada Propia', '20631000022');
+        $photo = OrganizationPhoto::create([
+            'organization_id' => $company->id,
+            'path' => '/storage/company-profiles/portada.jpg',
+            'status' => 'published',
+            'sort_order' => 1,
+        ]);
+        $stranger = User::factory()->create();
+
+        $this->actingAs($stranger)->post(route('company.gallery.photos.cover', $photo))->assertForbidden();
+        $this->actingAs($admin)->post(route('company.gallery.photos.cover', $photo))->assertRedirect();
+        $this->assertDatabaseHas('organization_banners', ['organization_id' => $company->id, 'path' => $photo->path]);
+
+        $this->actingAs($stranger)->post(route('company.gallery.photos.logo', $photo))->assertForbidden();
+        $this->actingAs($admin)->postJson(route('company.gallery.photos.logo', $photo))
+            ->assertOk()
+            ->assertJsonPath('logo', $photo->path);
+        $this->assertSame($photo->path, $company->fresh()->logo_path);
+
+        $this->actingAs($admin)->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('data-set-cover="'.$photo->id.'"', false)
+            ->assertSee('Establecer como logo/perfil');
+    }
+
+    public function test_a_completed_trip_marks_the_photo_comment_as_traveled_with_the_company(): void
+    {
+        $company = $this->company('Viaje Hecho', '20631000023');
+        $origin = Port::create(['name' => 'Puerto Viaje', 'city' => 'Iquitos', 'region' => 'Loreto']);
+        $destination = Port::create(['name' => 'Puerto Llegada', 'city' => 'Nauta', 'region' => 'Loreto']);
+        $vessel = Vessel::create(['organization_id' => $company->id, 'name' => 'Lancha Viaje', 'registration_number' => 'VIA-1', 'vessel_type' => 'lancha', 'seat_capacity' => 10, 'status' => 'ready']);
+        $route = TransportRoute::create(['organization_id' => $company->id, 'origin_port_id' => $origin->id, 'destination_port_id' => $destination->id, 'status' => 'active']);
+        $departure = RouteDeparture::create(['transport_route_id' => $route->id, 'vessel_id' => $vessel->id, 'departure_at' => now()->subDay(), 'fare' => 40, 'status' => 'completed']);
+        $traveler = User::factory()->create();
+        Reservation::create([
+            'user_id' => $traveler->id,
+            'route_departure_id' => $departure->id,
+            'code' => 'VIA-1',
+            'contact_name' => 'Ana Viaje',
+            'contact_email' => $traveler->email,
+            'contact_phone' => '999111222',
+            'base_amount' => 40,
+            'discount_amount' => 0,
+            'service_fee_amount' => 0,
+            'total_amount' => 40,
+            'status' => 'confirmed',
+        ]);
+        $photo = OrganizationPhoto::create([
+            'organization_id' => $company->id,
+            'path' => '/storage/company-profiles/viaje.jpg',
+            'status' => 'published',
+            'sort_order' => 1,
+        ]);
+        PhotoComment::create([
+            'organization_photo_id' => $photo->id,
+            'user_id' => $traveler->id,
+            'body' => 'El embarque fue puntual.',
+            'status' => 'published',
+        ]);
+
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('Viajó con la empresa')
+            ->assertSee('1 comentario · 0 reacciones')
+            ->assertDontSee('★★★★★');
+        $this->getJson(route('companies.photos.comments', [$company, $photo]))
+            ->assertOk()
+            ->assertJsonPath('comments.0.traveled', true);
     }
 
     private function company(string $name, string $ruc = '20631000006'): Organization

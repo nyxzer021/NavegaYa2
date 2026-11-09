@@ -166,14 +166,16 @@ class CompanyContentController extends Controller
 
     private function ensureSections(Organization $organization): void
     {
+        $this->renameSection($organization, 'experiencias', 'galeria', 'Galería');
+        $this->renameSection($organization, 'donde-comprar', 'agencias', 'Agencias');
+        $organization->pageSections()->whereIn('key', ['politicas', 'opiniones', 'testimonios'])->delete();
         $defaults = [
             ['key' => 'salidas', 'label' => 'Salidas y tarifas'],
             ['key' => 'informacion', 'label' => 'Información'],
             ['key' => 'flota', 'label' => 'Flota'],
-            ['key' => 'experiencias', 'label' => 'Experiencias'],
-            ['key' => 'donde-comprar', 'label' => 'Dónde comprar'],
+            ['key' => 'galeria', 'label' => 'Galería'],
+            ['key' => 'agencias', 'label' => 'Agencias'],
             ['key' => 'carga', 'label' => 'Encomiendas y carga'],
-            ['key' => 'politicas', 'label' => 'Políticas de viaje'],
         ];
         foreach ($defaults as $position => $section) {
             OrganizationPageSection::query()->firstOrCreate(
@@ -181,5 +183,20 @@ class CompanyContentController extends Controller
                 ['label' => $section['label'], 'position' => $position, 'is_enabled' => true],
             );
         }
+    }
+
+    private function renameSection(Organization $organization, string $from, string $to, string $label): void
+    {
+        $legacy = $organization->pageSections()->where('key', $from)->first();
+        if (! $legacy) {
+            return;
+        }
+        $current = $organization->pageSections()->where('key', $to)->first();
+        if ($current) {
+            $legacy->delete();
+
+            return;
+        }
+        $legacy->update(['key' => $to, 'label' => $label]);
     }
 }

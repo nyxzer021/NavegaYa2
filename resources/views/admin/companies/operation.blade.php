@@ -43,7 +43,7 @@
                     @csrf @method('PATCH')
                     <input type="hidden" name="hidden" value="{{ $site->hidden_by_admin ? '0' : '1' }}">
                     <input name="reason" required placeholder="Motivo" class="rounded-lg border px-2 py-2">
-                    <button class="rounded-lg border px-3 py-2 font-semibold">{{ $site->hidden_by_admin ? 'Volver a permitir' : 'Ocultar en Dónde comprar' }}</button>
+                    <button class="rounded-lg border px-3 py-2 font-semibold">{{ $site->hidden_by_admin ? 'Volver a permitir' : 'Ocultar en Agencias' }}</button>
                 </form>
             </article>
         @empty

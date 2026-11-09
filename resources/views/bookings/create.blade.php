@@ -39,6 +39,7 @@
 </div></div>
 <div id="additionalHeading" class="mt-3 hidden items-center justify-between border-t border-slate-100 pt-3"><div><h3 class="text-sm font-black text-slate-950">Pasajeros adicionales</h3><p class="text-sm text-slate-500">Solo para los asientos extra seleccionados.</p></div></div>
 <div id="passengers" class="mt-2 space-y-2"></div><div class="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3 text-sm"><div class="flex justify-between text-slate-600"><span>Pasaje regular</span><span id="fareLine" class="font-bold text-slate-900">S/ 0.00</span></div><div class="flex justify-between text-slate-500"><span>Tasa portuaria / impuestos</span><strong class="text-emerald-700">Incluido</strong></div><div class="flex items-baseline justify-between border-t border-slate-100 pt-3"><strong class="text-sm text-slate-900">Total a pagar</strong><strong id="totalAmount" class="text-2xl text-slate-900">S/ 0.00</strong></div></div>
+<a class="mt-3 inline-flex text-sm font-bold text-emerald-800 underline" href="{{ route('companies.show', $departure->vessel->organization_id) }}?politica=1">Equipaje y condiciones</a>
 <button id="submitButton" disabled class="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-amber-400 text-sm font-black text-emerald-950 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400">Selecciona un asiento</button><p class="mt-3 border-t border-slate-100 pt-2 text-sm leading-relaxed text-slate-500">Tu reserva se registra en el manifiesto de zarpe.</p></section></aside>
 </div></form></main></div>
 <script>
