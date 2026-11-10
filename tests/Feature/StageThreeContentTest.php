@@ -174,6 +174,45 @@ class StageThreeContentTest extends TestCase
         $this->assertStringNotContainsString('**', $html);
     }
 
+    public function test_a_policy_with_placeholders_is_not_published_and_the_public_page_hides_them(): void
+    {
+        [$admin, $company] = $this->companyAdmin('Corchetes', '20631000031');
+        TravelPolicy::ensureCompany($company);
+        $document = PolicyDocument::query()->where('organization_id', $company->id)->where('kind', 'company_travel')->firstOrFail();
+        $stored = $document->current()->body_html;
+        $this->assertStringContainsString('[45]', $stored);
+        $this->assertStringContainsString('Aéreo / hidroavión', $stored);
+
+        $this->actingAs($admin)->get(route('company.policies.index'))
+            ->assertOk()
+            ->assertSee('Tu política tiene datos sin completar');
+
+        $this->actingAs($admin)->followingRedirects()->post(route('company.policies.update'), [
+            'body_html' => '<h1>3. Equipaje</h1><p>Llega [45] minutos antes. Aéreo / hidroavión</p>',
+        ])->assertOk()
+            ->assertSee('Completa los datos entre corchetes antes de publicar')
+            ->assertSee('<mark>');
+        $this->assertSame(1, $document->versions()->count());
+        $this->assertSame($stored, $document->current()->fresh()->body_html);
+
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertDontSee('[45]', false)
+            ->assertDontSee('Aéreo / hidroavión', false)
+            ->assertSee('RUC número', false)
+            ->assertSee('equipaje de mano hasta 10 kg')
+            ->assertDontSee('En avioneta');
+
+        $air = $this->company('Solo aire política', '20631000032');
+        $air->update(['modality' => 'aereo', 'baggage_air_kg' => 8]);
+        TravelPolicy::ensureCompany($air);
+        $this->get(route('companies.show', $air))
+            ->assertOk()
+            ->assertSee('En avioneta: hasta 8 kg por pasajero.')
+            ->assertDontSee('Aéreo / hidroavión', false)
+            ->assertDontSee('equipaje de mano');
+    }
+
     public function test_superadmin_policy_edit_is_audited_and_visible_to_the_company(): void
     {
         [$admin, $company] = $this->companyAdmin('Aviso', '20631000005');

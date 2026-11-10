@@ -9,6 +9,7 @@ use App\Models\PolicyVersion;
 use App\Support\AdminScope;
 use App\Support\AuditRecorder;
 use App\Support\BaggageAllowance;
+use App\Support\PolicyHtml;
 use App\Support\TravelPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -97,7 +98,11 @@ class CompanyContentController extends Controller
         $organization = $this->organization($request);
         $document = TravelPolicy::ensureCompany($organization);
         $data = $request->validate([
-            'body_html' => ['required', 'string', 'max:50000'],
+            'body_html' => ['required', 'string', 'max:50000', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (is_string($value) && PolicyHtml::hasPlaceholders($value)) {
+                    $fail(trans('company_portal.policy.brackets', [], 'es'));
+                }
+            }],
             'summary' => ['nullable', 'string', 'max:300'],
             'baggage_hand_kg' => ['nullable', 'integer', 'min:0', 'max:100'],
             'baggage_hold_kg' => ['nullable', 'integer', 'min:0', 'max:200'],

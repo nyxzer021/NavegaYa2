@@ -151,4 +151,8 @@ return [
         'save' => 'Save focal point',
     ],
     'baggage_preview' => 'This is how it reads on the public page',
+    'policy' => [
+        'brackets' => 'Fill in the bracketed details before publishing',
+        'incomplete' => 'Your policy still has details to complete',
+    ],
 ];

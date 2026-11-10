@@ -151,4 +151,8 @@ return [
         'save' => 'Guardar enfoque',
     ],
     'baggage_preview' => 'Así se lee en la página pública',
+    'policy' => [
+        'brackets' => 'Completa los datos entre corchetes antes de publicar',
+        'incomplete' => 'Tu política tiene datos sin completar',
+    ],
 ];

@@ -583,7 +583,7 @@
     </div>
     <div class="policy-body" data-policy-panel="completo" hidden>
         @if($travelPolicy)
-            <article class="text-sm leading-7">{!! \App\Support\PolicyHtml::clean($travelPolicy->body_html) !!}</article>
+            <article class="text-sm leading-7">{!! \App\Support\PolicyHtml::present($travelPolicy->body_html, $organization) !!}</article>
         @else
             <p>Esta empresa todavía no publicó el documento completo.</p>
         @endif

@@ -6,17 +6,38 @@
     trix-toolbar .trix-button-row { flex-wrap: wrap; }
     trix-toolbar .trix-button-group { margin-bottom: 4px; }
     trix-editor { max-width: 100%; overflow-wrap: anywhere; }
+    trix-editor mark { background: #FDE68A; border-radius: 3px; }
 </style>
 <div class="p-4 sm:p-6">
     @if(session('success'))<p class="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{{ session('success') }}</p>@endif
+    @error('body_html')<p class="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{{ $message }}</p>@enderror
+    @if($current && \App\Support\PolicyHtml::hasPlaceholders($current->body_html))
+        <p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950">{{ trans('company_portal.policy.incomplete', [], 'es') }}</p>
+    @endif
     @if($notice)
         <p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950">NavegaYA actualizó la política. Motivo: {{ $notice->changes['reason'] ?? 'sin motivo' }}. Lo hizo {{ $notice->changes['edited_by'] ?? 'un administrador' }}.</p>
     @endif
     <form method="POST" action="{{ route('company.policies.update') }}" class="mt-5 space-y-3">
         @csrf
         <link rel="stylesheet" href="https://unpkg.com/trix@2.1.15/dist/trix.css">
-        <input id="policy-body" type="hidden" name="body_html" value="{{ old('body_html', $current?->body_html) }}">
+        @php
+            $policyBody = old('body_html', $current?->body_html);
+            if ($errors->has('body_html') && is_string($policyBody)) {
+                $policyBody = \App\Support\PolicyHtml::highlightPlaceholders($policyBody);
+            }
+        @endphp
+        <input id="policy-body" type="hidden" name="body_html" value="{{ $policyBody }}">
         <trix-editor input="policy-body" class="min-h-64 rounded-xl border bg-white"></trix-editor>
+        <script>
+            document.addEventListener('trix-before-initialize', function () {
+                if (!window.Trix) return;
+                Trix.config.textAttributes.placeholderMark = {
+                    tagName: 'mark',
+                    inheritable: true,
+                    parser: function (element) { return element.tagName === 'MARK'; }
+                };
+            });
+        </script>
         <script src="https://unpkg.com/trix@2.1.15/dist/trix.umd.min.js"></script>
         <div class="grid gap-3 sm:grid-cols-4">
             <label class="text-xs font-bold">Mano (kg)<input type="number" name="baggage_hand_kg" min="0" value="{{ old('baggage_hand_kg', $organization->baggage_hand_kg) }}" class="mt-1 w-full rounded-lg border-slate-200" placeholder="{{ $baggage['hand'] }}"></label>
