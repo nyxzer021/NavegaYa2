@@ -188,7 +188,13 @@ class StageThreeContentTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['event' => 'company_travel_policy_updated']);
         $this->actingAs($admin)->get(route('company.policies.index'))
             ->assertOk()
-            ->assertSee('Alinear el texto con la plantilla vigente');
+            ->assertSee('Alinear el texto con la plantilla vigente')
+            ->assertSee('Así se lee en la página pública')
+            ->assertSee('equipaje de mano hasta 10 kg');
+        $this->actingAs($admin)->get(route('company.gallery.index'))
+            ->assertOk()
+            ->assertSee('Haz clic en la foto para marcar el punto de enfoque.')
+            ->assertDontSee('name="focal_x" type="number"', false);
     }
 
     public function test_public_baggage_summary_uses_company_values_or_the_platform_defaults(): void
@@ -203,10 +209,20 @@ class StageThreeContentTest extends TestCase
 
         $this->get(route('companies.show', $plain))
             ->assertOk()
-            ->assertSee('mano 10 kg, bodega 20 kg, aéreo 10 kg. Desde 50 kg');
+            ->assertSee('equipaje de mano hasta 10 kg y 1 maleta o bulto en bodega hasta 20 kg')
+            ->assertSee('Si llevas más de 50 kg, se registra como envío de carga.')
+            ->assertDontSee('En avioneta');
         $this->get(route('companies.show', $custom))
             ->assertOk()
-            ->assertSee('mano 8 kg, bodega 15 kg, aéreo 7 kg. Desde 40 kg');
+            ->assertSee('equipaje de mano hasta 8 kg y 1 maleta o bulto en bodega hasta 15 kg')
+            ->assertSee('Si llevas más de 40 kg, se registra como envío de carga.')
+            ->assertDontSee('En avioneta');
+        $air = $this->company('Solo aire', '20631000009');
+        $air->update(['modality' => 'aereo', 'baggage_air_kg' => 8]);
+        $this->get(route('companies.show', $air))
+            ->assertOk()
+            ->assertSee('En avioneta: hasta 8 kg por pasajero.')
+            ->assertDontSee('equipaje de mano');
     }
 
     public function test_departure_card_shows_the_web_price_with_the_company_fee(): void
@@ -383,6 +399,66 @@ class StageThreeContentTest extends TestCase
         $this->get(route('companies.show', $company))
             ->assertOk()
             ->assertSee('data-photo-title="Zarpe de la mañana"', false);
+    }
+
+    public function test_guests_can_read_photo_comments_but_cannot_write_them(): void
+    {
+        $company = $this->company('Comentarios visita');
+        $photo = OrganizationPhoto::create([
+            'organization_id' => $company->id,
+            'path' => '/storage/company-profiles/visita.jpg',
+            'status' => 'published',
+            'sort_order' => 1,
+        ]);
+        $author = User::factory()->create(['name' => 'Ana Visita']);
+        PhotoComment::create([
+            'organization_photo_id' => $photo->id,
+            'user_id' => $author->id,
+            'body' => 'El muelle estaba señalizado.',
+            'status' => 'published',
+        ]);
+
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('El muelle estaba señalizado.')
+            ->assertSee('Inicia sesión para comentar y reaccionar')
+            ->assertSee('Crear cuenta');
+        $this->getJson(route('companies.photos.comments', [$company, $photo]))
+            ->assertOk()
+            ->assertJsonPath('comments.0.body', 'El muelle estaba señalizado.');
+        $this->postJson(route('companies.photos.comments.store', [$company, $photo]), [
+            'body' => 'Quiero comentar',
+        ])->assertUnauthorized();
+        $this->postJson(route('companies.photos.likes', [$company, $photo]))->assertUnauthorized();
+        $this->assertDatabaseCount('photo_comments', 1);
+    }
+
+    public function test_login_returns_the_traveler_to_the_same_company_photo(): void
+    {
+        $company = $this->company('Regreso foto', '20631000025');
+        $photo = OrganizationPhoto::create([
+            'organization_id' => $company->id,
+            'path' => '/storage/company-profiles/regreso.jpg',
+            'status' => 'published',
+            'sort_order' => 1,
+        ]);
+        $traveler = User::factory()->create();
+        $traveler->roles()->attach(Role::firstOrCreate(['code' => 'customer'], ['name' => 'Cliente']));
+        $return = '/empresas/'.$company->id.'?foto='.$photo->id;
+
+        $this->get(route('login', ['redirect' => 'https://evil.test']))->assertOk();
+        $this->assertNull(session('url.intended'));
+
+        $this->get(route('login', ['redirect' => $return]))->assertOk();
+        $this->assertSame($return, session('url.intended'));
+        $this->post(route('login'), [
+            'email' => $traveler->email,
+            'password' => 'password',
+        ])->assertRedirect($return);
+
+        $this->post(route('logout'));
+        $this->get(route('register', ['redirect' => $return]))->assertOk();
+        $this->assertSame($return, session('url.intended'));
     }
 
     private function company(string $name, string $ruc = '20631000006'): Organization

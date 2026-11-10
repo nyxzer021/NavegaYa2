@@ -24,6 +24,49 @@
             <label class="text-xs font-bold">Aéreo (kg)<input type="number" name="baggage_air_kg" min="0" value="{{ old('baggage_air_kg', $organization->baggage_air_kg) }}" class="mt-1 w-full rounded-lg border-slate-200" placeholder="{{ $baggage['air'] }}"></label>
             <label class="text-xs font-bold">Carga desde (kg)<input type="number" name="cargo_threshold_kg" min="0" value="{{ old('cargo_threshold_kg', $organization->cargo_threshold_kg) }}" class="mt-1 w-full rounded-lg border-slate-200" placeholder="{{ $baggage['cargo'] }}"></label>
         </div>
+        @php
+            $offersRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
+            $offersAir = in_array($organization->modality, ['aereo', 'mixto'], true);
+        @endphp
+        <div id="baggage-preview" class="rounded-xl bg-slate-50 p-3 text-sm text-slate-800" data-river="{{ $offersRiver ? '1' : '0' }}" data-air="{{ $offersAir ? '1' : '0' }}" data-river-text="{{ trans('public.baggage_river', ['hand' => ':hand', 'hold' => ':hold', 'cargo' => ':cargo'], 'es') }}" data-air-text="{{ trans('public.baggage_air', ['air' => ':air'], 'es') }}">
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ trans('company_portal.baggage_preview', [], 'es') }}</p>
+            @foreach(\App\Support\BaggageAllowance::lines($organization) as $line)
+                <p class="mt-1" data-baggage-line>{{ $line }}</p>
+            @endforeach
+        </div>
+        <script>
+            (function () {
+                var box = document.getElementById('baggage-preview');
+                if (!box) return;
+                var fields = {
+                    hand: document.querySelector('[name=baggage_hand_kg]'),
+                    hold: document.querySelector('[name=baggage_hold_kg]'),
+                    air: document.querySelector('[name=baggage_air_kg]'),
+                    cargo: document.querySelector('[name=cargo_threshold_kg]')
+                };
+                function amount(field) {
+                    if (!field) return '';
+                    return field.value !== '' ? field.value : (field.placeholder || '');
+                }
+                function paint() {
+                    var values = { hand: amount(fields.hand), hold: amount(fields.hold), air: amount(fields.air), cargo: amount(fields.cargo) };
+                    var lines = [];
+                    if (box.getAttribute('data-river') === '1') lines.push(box.getAttribute('data-river-text').replace(':hand', values.hand).replace(':hold', values.hold).replace(':cargo', values.cargo));
+                    if (box.getAttribute('data-air') === '1') lines.push(box.getAttribute('data-air-text').replace(':air', values.air));
+                    box.querySelectorAll('[data-baggage-line]').forEach(function (node) { node.remove(); });
+                    lines.forEach(function (line) {
+                        var paragraph = document.createElement('p');
+                        paragraph.className = 'mt-1';
+                        paragraph.setAttribute('data-baggage-line', '');
+                        paragraph.textContent = line;
+                        box.appendChild(paragraph);
+                    });
+                }
+                Object.keys(fields).forEach(function (key) {
+                    if (fields[key]) fields[key].addEventListener('input', paint);
+                });
+            }());
+        </script>
         <button class="rounded-xl bg-[#064E3B] px-4 py-3 text-sm font-bold text-white">Publicar versión</button>
     </form>
     <h2 class="mt-8 text-lg font-black">Versiones</h2>

@@ -137,4 +137,18 @@ return [
         'appearance' => 'Aquí se van a ajustar los colores de la página pública de la empresa.',
         'whatsapp' => 'Aquí se va a configurar el WhatsApp de atención de la boletería.',
     ],
+    'ficha' => [
+        'whatsapp_elsewhere' => 'El WhatsApp se configura en WhatsApp de atención',
+        'gallery_elsewhere' => 'Cambiar portada y fotos en Galería',
+        'cargo_title' => 'Tarifas referenciales de encomienda',
+        'cargo_hint' => 'Se muestran en la pestaña Encomiendas y carga de tu página',
+    ],
+    'focus' => [
+        'hint' => 'Haz clic en la foto para marcar el punto de enfoque.',
+        'desktop' => 'Escritorio',
+        'mobile' => 'Celular',
+        'saved' => 'El punto de enfoque quedó guardado.',
+        'save' => 'Guardar enfoque',
+    ],
+    'baggage_preview' => 'Así se lee en la página pública',
 ];

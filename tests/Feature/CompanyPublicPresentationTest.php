@@ -17,35 +17,58 @@ class CompanyPublicPresentationTest extends TestCase
         [$admin, $organization] = $this->companyAdmin('Operador Color', '20611111111');
         [$otherAdmin, $other] = $this->companyAdmin('Operador Ajeno', '20622222222');
 
+        $organization->update([
+            'public_presentation' => [
+                'menu' => ['bar' => '#112233', 'stroke' => '#abcdef'],
+                'cargo' => ['mediano' => 10],
+            ],
+            'whatsapp' => '51987654321',
+            'whatsapp_message' => 'Hola, conservado.',
+            'show_public_whatsapp' => true,
+            'cover_image_path' => '/storage/covers/original.webp',
+        ]);
+
         $this->actingAs($admin)->get(route('company.profile.edit'))
             ->assertOk()
-            ->assertSee('Colores del menú')
-            ->assertSee('Volver a los colores de NavegaYA')
-            ->assertSee('Encomiendas')
+            ->assertDontSee('Colores del menú')
+            ->assertDontSee('name="menu_bar"', false)
+            ->assertDontSee('name="whatsapp"', false)
+            ->assertDontSee('name="cover"', false)
+            ->assertSee('Tarifas referenciales de encomienda')
+            ->assertSee('Se muestran en la pestaña Encomiendas y carga de tu página')
+            ->assertSee('Cambiar portada y fotos en Galería')
+            ->assertSee('El WhatsApp se configura en WhatsApp de atención')
             ->assertSee('Pequeño')
             ->assertSee('Mediano')
             ->assertSee('Grande');
 
         $this->actingAs($admin)->patch(route('company.profile.update'), [
-            'menu_bar' => '#112233',
+            'menu_bar' => '#000000',
+            'whatsapp' => '51900000000',
+            'whatsapp_message' => 'cambiado',
+            'show_public_whatsapp' => '0',
             'cargo_mediano' => '40',
             'cargo_port_note' => 'Desde 25 kg se cotiza en el muelle de la empresa.',
         ])->assertRedirect();
 
-        $saved = $organization->fresh()->public_presentation;
-        $this->assertSame('#112233', $saved['menu']['bar']);
-        $this->assertEquals(40, $saved['cargo']['mediano']);
-        $this->assertSame('published', $organization->fresh()->profile_content_status);
+        $saved = $organization->fresh();
+        $this->assertSame('#112233', $saved->public_presentation['menu']['bar']);
+        $this->assertSame('#abcdef', $saved->public_presentation['menu']['stroke']);
+        $this->assertEquals(40, $saved->public_presentation['cargo']['mediano']);
+        $this->assertSame('51987654321', $saved->whatsapp);
+        $this->assertSame('Hola, conservado.', $saved->whatsapp_message);
+        $this->assertTrue($saved->show_public_whatsapp);
+        $this->assertSame('/storage/covers/original.webp', $saved->cover_image_path);
+        $this->assertSame('published', $saved->profile_content_status);
 
         $this->actingAs($otherAdmin)->patch(route('company.profile.update'), [
             'organization_id' => $organization->id,
-            'menu_bar' => '#abcdef',
             'cargo_mediano' => '9',
         ])->assertRedirect();
 
-        $this->assertSame('#112233', $organization->fresh()->public_presentation['menu']['bar']);
         $this->assertEquals(40, $organization->fresh()->public_presentation['cargo']['mediano']);
-        $this->assertSame('#abcdef', $other->fresh()->public_presentation['menu']['bar']);
+        $this->assertEquals(9, $other->fresh()->public_presentation['cargo']['mediano']);
+        $this->assertArrayNotHasKey('menu', $other->fresh()->public_presentation);
 
         $this->get(route('companies.show', $organization))
             ->assertOk()
@@ -54,24 +77,25 @@ class CompanyPublicPresentationTest extends TestCase
             ->assertSee('data-port-note="Desde 25 kg se cotiza en el muelle de la empresa."', false);
     }
 
-    public function test_blank_or_invalid_menu_color_does_not_replace_the_brand_color(): void
+    public function test_menu_colors_posted_with_the_profile_are_ignored(): void
     {
         [$admin, $organization] = $this->companyAdmin('Operador Marca', '20633333333');
+        $organization->update([
+            'public_presentation' => ['menu' => ['bar' => '#112233', 'stroke' => '#123456']],
+        ]);
 
         $this->actingAs($admin)->patch(route('company.profile.update'), [
             'menu_bar' => 'verde',
+            'menu_stroke' => '',
             'cargo_mediano' => '10',
-        ])->assertSessionHasErrors('menu_bar');
-        $this->assertNull($organization->fresh()->public_presentation);
-
-        $this->actingAs($admin)->patch(route('company.profile.update'), [
-            'menu_bar' => '',
-            'menu_stroke' => '#123456',
         ])->assertRedirect();
 
+        $saved = $organization->fresh()->public_presentation;
+        $this->assertSame('#112233', $saved['menu']['bar']);
+        $this->assertSame('#123456', $saved['menu']['stroke']);
         $this->get(route('companies.show', $organization))
             ->assertOk()
-            ->assertSee('--menu-bar:#062c21', false)
+            ->assertSee('--menu-bar:#112233', false)
             ->assertSee('--menu-stroke:#123456', false);
     }
 

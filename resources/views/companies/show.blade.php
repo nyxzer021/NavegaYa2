@@ -305,7 +305,9 @@
         <div class="grid gap-4">
             <article class="company-card">
                 <h2>Equipaje</h2>
-                <p class="mt-2">Equipaje incluido: mano {{ $baggage['hand'] }} kg, bodega {{ $baggage['hold'] }} kg, aéreo {{ $baggage['air'] }} kg. Desde {{ $baggage['cargo'] }} kg se registra como carga.</p>
+                @foreach(\App\Support\BaggageAllowance::lines($organization) as $line)
+                    <p class="mt-2">{{ $line }}</p>
+                @endforeach
             </article>
             @if($description !== '')
                 <article class="company-card">
@@ -542,7 +544,9 @@
                         <button type="button" id="company-photo-like" class="company-react-btn"><span class="company-tone is-like"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-6.5-4.1-6.5-8.4A3.6 3.6 0 0 1 12 8.7a3.6 3.6 0 0 1 6.5 2.9C18.5 15.9 12 20 12 20Z"/></svg></span>Me gusta <span id="company-photo-reactions">0</span></button>
                         <button type="button" id="company-photo-comment" class="company-react-btn"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span>Comentar</button>
                     @else
-                        <p class="text-sm font-semibold text-[#607069]">Inicia sesión para comentar y reaccionar</p>
+                        <p class="text-sm font-semibold text-[#607069]">{{ trans('public.login_to_react', [], 'es') }}</p>
+                        <a id="company-photo-login" data-auth-base="{{ route('login') }}" href="{{ route('login') }}" class="company-go company-go-main">{{ trans('public.log_in', [], 'es') }}</a>
+                        <a id="company-photo-register" data-auth-base="{{ route('register') }}" href="{{ route('register') }}" class="company-go company-go-seat">{{ trans('public.create_account', [], 'es') }}</a>
                     @endauth
                 </div>
                 <div id="company-photo-thread" class="mt-2 text-sm"></div>
@@ -556,10 +560,6 @@
                     <div id="company-emoji-panel" class="company-emoji" hidden></div>
                     <button class="company-round is-send" aria-label="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 21 3l-6.8 18-2.4-7.2L3 11.2Z"/></svg></button>
                 </form>
-            @else
-                <div class="company-composer">
-                    <a href="{{ route('login') }}" class="company-go company-go-main">Iniciar sesión</a>
-                </div>
             @endauth
         </div>
     </div>
@@ -576,7 +576,7 @@
     <div class="policy-body" data-policy-panel="resumen">
         <div class="policy-point"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm6 1.5V8h4.2L13 3.5ZM8 12h8v2H8v-2Zm0 4h8v2H8v-2Z"/></svg></span><p><strong>Documentación</strong>Viaja con tu documento de identidad original.</p></div>
         <div class="policy-point"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 11.2-3.2 1.9-1-1.6 2.2-1.3V7h2v6.2Z"/></svg></span><p><strong>Presentación</strong>Llega entre 45 y 60 minutos antes del zarpe.</p></div>
-        <div class="policy-point"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.2 12 3l9 4.2v9.6L12 21l-9-4.2V7.2Z"/></svg></span><p><strong>Equipaje</strong>Mano {{ $baggage['hand'] }} kg, bodega {{ $baggage['hold'] }} kg y aéreo {{ $baggage['air'] }} kg. Desde {{ $baggage['cargo'] }} kg se registra como carga.</p></div>
+        <div class="policy-point"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.2 12 3l9 4.2v9.6L12 21l-9-4.2V7.2Z"/></svg></span><div><strong>Equipaje</strong>@foreach(\App\Support\BaggageAllowance::lines($organization) as $line)<p>{{ $line }}</p>@endforeach</div></div>
         <div class="policy-point"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6.5 12 11V8a5 5 0 1 1-4.6 7H5.2A7 7 0 1 0 12 5Z"/></svg></span><p><strong>Cancelaciones y reprogramaciones</strong>Si la empresa cancela o reprograma, el pasajero elige reembolso total o cambio sin costo.</p></div>
         <div class="policy-point"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5.2v6.3c0 5 3.4 7.7 8 9.3 4.6-1.6 8-4.3 8-9.3V5.2L12 2Z"/></svg></span><p><strong>Conducta y objetos prohibidos</strong>La empresa puede negar el embarque por ebriedad, riesgo a otros pasajeros u objetos prohibidos.</p></div>
         <button type="button" class="company-go company-go-main mt-4" data-policy-tab="completo">Ver documento completo</button>
@@ -865,6 +865,11 @@
                 if (parent) parent.value = '';
                 if (field) field.placeholder = 'Escribe un comentario…';
             }
+            var back = window.location.pathname + '?foto=' + encodeURIComponent(photo.getAttribute('data-photo-open') || '');
+            ['company-photo-login', 'company-photo-register'].forEach(function (id) {
+                var link = document.getElementById(id);
+                if (link) link.href = link.getAttribute('data-auth-base') + '?redirect=' + encodeURIComponent(back);
+            });
             paintThread(photo);
             document.body.style.overflow = 'hidden';
             if (viewer && typeof viewer.showModal === 'function' && !viewer.open) viewer.showModal();
@@ -1024,6 +1029,11 @@
             if (names.indexOf(next) !== -1) show(next);
         });
         if (openPolicies) openPolicy();
+        var requestedPhoto = new URLSearchParams(location.search).get('foto');
+        if (requestedPhoto) {
+            var requestedIndex = photos.findIndex(function (item) { return item.getAttribute('data-photo-open') === requestedPhoto; });
+            if (requestedIndex >= 0) openPhoto(requestedIndex);
+        }
         var morePhotos = document.getElementById('company-photos-more');
         if (morePhotos) morePhotos.addEventListener('click', function () {
             root.querySelectorAll('[data-photo-extra]').forEach(function (item) { item.hidden = false; });

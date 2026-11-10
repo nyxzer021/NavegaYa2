@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\CompanyReturnUrl;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,8 +20,10 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        CompanyReturnUrl::remember($request);
+
         return view('auth.register');
     }
 
@@ -52,6 +55,11 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        $photoReturn = CompanyReturnUrl::pull($request);
+        if ($photoReturn !== null) {
+            return redirect($photoReturn);
+        }
 
         return redirect(route('travels.index', absolute: false));
     }

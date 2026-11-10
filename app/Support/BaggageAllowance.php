@@ -8,6 +8,28 @@ use App\Models\SystemSetting;
 class BaggageAllowance
 {
     /**
+     * @return list<string>
+     */
+    public static function lines(Organization $organization): array
+    {
+        $amounts = self::for($organization);
+        $modality = $organization->modality ?: 'fluvial';
+        $lines = [];
+        if (in_array($modality, ['fluvial', 'mixto'], true)) {
+            $lines[] = trans('public.baggage_river', [
+                'hand' => $amounts['hand'],
+                'hold' => $amounts['hold'],
+                'cargo' => $amounts['cargo'],
+            ], 'es');
+        }
+        if (in_array($modality, ['aereo', 'mixto'], true)) {
+            $lines[] = trans('public.baggage_air', ['air' => $amounts['air']], 'es');
+        }
+
+        return $lines;
+    }
+
+    /**
      * @return array{hand: int, hold: int, air: int, cargo: int}
      */
     public static function for(Organization $organization): array

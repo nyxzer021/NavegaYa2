@@ -146,6 +146,7 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::delete('/ficha/fotos/{photo}', [CompanyPublicProfileController::class, 'destroyPhoto'])->name('profile.photos.destroy');
     Route::post('/ficha/portadas', [CompanyPublicProfileController::class, 'storeBanner'])->name('profile.banners.store');
     Route::delete('/ficha/portadas/{banner}', [CompanyPublicProfileController::class, 'destroyBanner'])->name('profile.banners.destroy');
+    Route::patch('/ficha/portadas/{banner}/enfoque', [CompanyPublicProfileController::class, 'updateBannerFocus'])->name('profile.banners.focus');
     Route::patch('/flota/operacion', [CompanyFleetController::class, 'updateTransport'])->name('fleet.transport.update');
     Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
     Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');

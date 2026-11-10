@@ -137,4 +137,18 @@ return [
         'appearance' => 'The public company page colors will be adjusted here.',
         'whatsapp' => 'The ticket-office WhatsApp number will be configured here.',
     ],
+    'ficha' => [
+        'whatsapp_elsewhere' => 'WhatsApp is configured in Ticket-office WhatsApp',
+        'gallery_elsewhere' => 'Change the cover and photos in Gallery',
+        'cargo_title' => 'Reference parcel rates',
+        'cargo_hint' => 'Shown on the Parcels and freight tab of your page',
+    ],
+    'focus' => [
+        'hint' => 'Click the photo to set the focal point.',
+        'desktop' => 'Desktop',
+        'mobile' => 'Phone',
+        'saved' => 'The focal point was saved.',
+        'save' => 'Save focal point',
+    ],
+    'baggage_preview' => 'This is how it reads on the public page',
 ];

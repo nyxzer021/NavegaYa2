@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\CompanyReturnUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,10 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        CompanyReturnUrl::remember($request);
+
         return view('auth.login');
     }
 
@@ -27,6 +30,11 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        $photoReturn = CompanyReturnUrl::pull($request);
+        if ($photoReturn !== null) {
+            return redirect($photoReturn);
+        }
 
         $user = $request->user();
         if ($user->isCustomer()) {
