@@ -1,12 +1,14 @@
 <x-public-layout current="companies" :title="($organization->commercial_name ?: $organization->legal_name).' · Horarios y pasajes oficiales'">
 <style>
-    .company-wrap{width:min(1200px,calc(100% - 2rem));margin-inline:auto;--tone-salidas:#0F6E56;--tone-informacion:#185FA5;--tone-flota:#534AB7;--tone-galeria:#D4537E;--tone-agencias:#D85A30;--tone-carga:#BA7517;--tone-comentarios:#D4537E}
+    .company-wrap{width:min(1200px,calc(100% - 2rem));margin-inline:auto}
+    #company-ficha{--tone-salidas:#0F6E56;--tone-informacion:#185FA5;--tone-flota:#534AB7;--tone-galeria:#D4537E;--tone-agencias:#D85A30;--tone-carga:#BA7517;--tone-comentarios:#185FA5;--tone-whatsapp:#25A35A;--tone-like:#D4537E;--tone-emoji:#EF9F27;--tone-send:#064E3B}
     .company-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
     .company-stat{display:flex;align-items:center;gap:.75rem;width:100%;border:1px solid #e4ebe7;border-radius:1rem;background:#fff;padding:.85rem 1rem;text-align:left;cursor:pointer}
-    .company-tone{display:grid;width:26px;height:26px;flex:none;place-items:center;border-radius:7px;color:#fff}
-    .company-tone svg{width:15px;height:15px}
-    .company-tone.is-salidas{background:var(--tone-salidas)}.company-tone.is-informacion{background:var(--tone-informacion)}.company-tone.is-flota{background:var(--tone-flota)}.company-tone.is-galeria,.company-tone.is-comentarios{background:var(--tone-galeria)}.company-tone.is-agencias{background:var(--tone-agencias)}.company-tone.is-carga{background:var(--tone-carga)}
-    .company-stat svg{width:1.35rem;height:1.35rem;flex:none;color:#087F5B}
+    .company-tone{display:grid;width:36px;height:36px;flex:none;place-items:center;border-radius:999px;color:#fff}
+    .company-tone svg{width:18px;height:18px;fill:currentColor}
+    .company-tab .company-tone{width:22px;height:22px}
+    .company-tab .company-tone svg{width:12px;height:12px}
+    .company-tone.is-salidas{background:var(--tone-salidas)}.company-tone.is-informacion{background:var(--tone-informacion)}.company-tone.is-flota{background:var(--tone-flota)}.company-tone.is-galeria{background:var(--tone-galeria)}.company-tone.is-comentarios{background:var(--tone-comentarios)}.company-tone.is-agencias{background:var(--tone-agencias)}.company-tone.is-carga{background:var(--tone-carga)}.company-tone.is-like{background:var(--tone-like)}.company-tone.is-emoji{background:var(--tone-emoji)}.company-tone.is-send{background:var(--tone-send)}.company-tone.is-whatsapp{background:var(--tone-whatsapp)}
     .company-stat strong{display:block;font-size:1.35rem;line-height:1.1;color:#10231D}
     .company-stat strong.is-empty{font-size:1rem}
     .company-stat strong.is-phrase{font-size:.95rem;line-height:1.3;font-weight:800}
@@ -28,7 +30,9 @@
     .company-cargo-note.is-port{color:#9a3412}
     .company-quote{display:inline-flex;min-height:44px;align-items:center;border:0;border-radius:.8rem;background:#F4B820;padding:0 1rem;font-size:1rem;font-weight:800;color:#10231D}
     .company-map{display:inline-flex;min-height:44px;align-items:center;border:1px solid #087F5B;border-radius:.8rem;background:#fff;padding:0 1rem;font-size:1rem;font-weight:700;color:#064E3B}
-    .company-go{display:inline-flex;min-height:44px;align-items:center;justify-content:center;border-radius:.8rem;padding:0 1rem;font-size:1rem;font-weight:800}
+    .company-go{display:inline-flex;min-height:44px;align-items:center;justify-content:center;gap:.45rem;border-radius:.8rem;padding:0 1rem;font-size:1rem;font-weight:800}
+    .company-mini{display:inline-grid;width:16px;height:16px;flex:none;place-items:center;border-radius:999px;background:var(--tone-whatsapp);color:#fff}
+    .company-mini svg{width:10px;height:10px;fill:currentColor}
     .company-go-main{background:#0F6E56;color:#fff}
     .company-go-gold{background:#F4B820;color:#10231D}
     .company-go-wa{background:#087F5B;color:#fff}
@@ -49,14 +53,17 @@
     .company-slide-photo{position:relative;z-index:1;width:100%;height:100%;object-fit:contain}
     .company-carousel-nav{position:absolute;right:.75rem;bottom:3.2rem;z-index:3;display:flex;gap:.35rem}
     .company-carousel-nav button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:rgba(6,44,33,.82);color:#fff;font-weight:800;cursor:pointer}
-    .company-logo{display:grid;place-items:center;position:absolute;z-index:2;left:1.5rem;bottom:-2.6rem;width:6.5rem;height:6.5rem;overflow:hidden;border:4px solid #fff;border-radius:999px;background:#fff;box-shadow:0 8px 18px rgba(16,35,29,.18)}
-    .company-logo img{width:100%;height:100%;object-fit:contain}
-    .company-identity{padding-top:3.4rem}
+    .company-top{display:flex;flex-direction:column;gap:1rem}
+    .company-head{display:flex;flex-direction:column;align-items:center;gap:.75rem;min-width:0}
+    figure[data-photo-extra][hidden]{display:none!important}
+    .company-logo{display:grid;place-items:center;position:relative;z-index:5;box-sizing:border-box;flex:none;width:88px;height:88px;margin-top:-44px;overflow:hidden;border:4px solid #fff;border-radius:999px;background:#F4B820;color:#412402;box-shadow:0 8px 18px rgba(16,35,29,.18);font-size:28px;font-weight:800}
+    .company-logo img{width:100%;height:100%;object-fit:cover}
+    .company-name{min-width:0}
     .company-buy{position:fixed;left:1rem;right:5.5rem;bottom:1rem;z-index:40;display:flex;height:48px;align-items:center;justify-content:center;border:0;border-radius:12px;background:#0F6E56;color:#fff;font-size:16px;font-weight:800;box-shadow:0 8px 20px rgba(16,35,29,.18)}
     #company-ficha{padding-bottom:calc(48px + 2rem)}
-    @media (max-width:639px){.company-logo{left:50%;transform:translateX(-50%)}}
-    @media (min-width:1024px){#company-ficha{padding-bottom:2rem}.company-buy{display:none}}
-    .company-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem}
+    @media (min-width:640px){.company-head{flex-direction:row;align-items:flex-start;text-align:left}.company-logo{width:120px;height:120px;margin-top:-60px;font-size:36px}.company-name{padding-top:68px}}
+    @media (min-width:1024px){#company-ficha{padding-bottom:2rem}.company-buy{display:none}.company-top{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+    .company-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
     .company-grid figure{position:relative;margin:0}
     .company-grid button.company-photo{width:100%}
     .company-more{position:absolute;top:.35rem;right:.35rem}
@@ -69,7 +76,28 @@
     .company-lightbox-grid{display:grid;height:100%;min-height:0}
     .company-lightbox-photo{display:grid;height:100%;min-height:0;place-items:center;background:#062C21}
     .company-lightbox-photo img{width:100%;height:100%;max-height:100%;object-fit:contain}
-    .company-lightbox-side{min-height:0;overflow:auto;padding:1rem}
+    .company-lightbox-side{display:flex;min-height:0;flex-direction:column;overflow:hidden}
+    .company-lightbox-scroll{min-height:0;flex:1;overflow:auto;padding:1rem}
+    .company-photo-title{font-size:1.05rem;font-weight:800;color:#10231D}
+    .company-photo-meta{margin-top:.2rem;font-size:.8rem;font-weight:600;color:#607069}
+    .company-react{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.85rem}
+    .company-react-btn{display:inline-flex;min-height:44px;align-items:center;gap:.45rem;border:0;background:transparent;padding:0;font-weight:800;color:#10231D;cursor:pointer}
+    .company-bubble{display:flex;gap:.55rem;margin-top:.7rem}
+    .company-bubble.is-reply{margin-left:2.4rem}
+    .company-avatar{display:grid;width:32px;height:32px;flex:none;place-items:center;border-radius:999px;background:#E7EEF8;color:#185FA5;font-size:12px;font-weight:800}
+    .company-bubble-body{border-radius:16px;background:#F1F3F4;padding:.55rem .75rem}
+    .company-bubble-body p{margin-top:.15rem}
+    .company-composer{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;border-top:1px solid #e4ebe7;padding:.75rem 1rem}
+    .company-emoji{flex-basis:100%}
+    .company-composer input{height:40px;min-width:0;flex:1;border:1px solid #e4ebe7;border-radius:999px;padding:0 .9rem;font-size:14px}
+    .company-round{display:grid;width:36px;height:36px;flex:none;place-items:center;border:0;border-radius:999px;color:#fff;cursor:pointer}
+    .company-round svg{width:16px;height:16px;fill:currentColor}
+    .company-round.is-emoji{background:var(--tone-emoji)}
+    .company-round.is-send{background:var(--tone-send)}
+    .company-count{position:absolute;right:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:rgba(6,44,33,.82);padding:2px 7px 2px 3px;color:#fff;font-size:12px;font-weight:800;pointer-events:none}
+    .company-count .company-tone{width:16px;height:16px}
+    .company-count .company-tone svg{width:9px;height:9px}
+    .company-more-photos{min-height:44px;margin-top:8px;border:1px solid #d5e0db;border-radius:10px;background:#fff;padding:0 1rem;font-weight:800;color:#064E3B;cursor:pointer}
     @media (max-width:767px){.company-lightbox{height:auto;max-height:92vh;overflow:auto}.company-lightbox-grid{height:auto}.company-lightbox-photo{height:42vh}}
     .company-seal{display:inline-flex;border-radius:999px;background:#E1F5EE;padding:.1rem .45rem;color:#04342C;font-size:.75rem;font-weight:800}
     .company-emoji{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.4rem}
@@ -84,8 +112,8 @@
     .policy-point{display:flex;gap:.7rem;margin-top:.8rem}
     .policy-point strong{display:block}
     @media (min-width:768px){.company-lightbox-grid{grid-template-columns:minmax(0,1.2fr) minmax(16rem,.8fr)}}
-    .company-photo{overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#f8fafc}
-    .company-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+    .company-photo{position:relative;overflow:hidden;border:0;border-radius:10px;background:#f8fafc;padding:0;cursor:pointer}
+    .company-photo img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
     .company-viewer img{display:block;max-height:78vh;width:100%;object-fit:contain;border-radius:.75rem;background:#f8fafc}
     .company-viewer-bar{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:flex-end;margin-bottom:.45rem}
     .company-viewer-bar button{min-height:2.75rem;border:0;border-radius:999px;background:#062c21;padding:0 .9rem;font-size:.85rem;font-weight:800;color:#fff;cursor:pointer}
@@ -99,8 +127,10 @@
     .company-cargo [data-cargo]{min-height:44px}
     .company-quiet{display:inline-flex;min-height:44px;align-items:center;border:1px solid #d5e0db;border-radius:.8rem;background:#fff;padding:0 .9rem;font-size:1rem;font-weight:700;color:#064E3B;cursor:pointer}
     .company-quiet:hover{background:#F7F9F8}
-    @media (max-width:639px){.company-stat:first-child{grid-column:1 / -1}.company-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.company-tools{flex-wrap:nowrap}.company-tools .company-quiet{flex:1;justify-content:center;padding:0 .4rem;white-space:nowrap;font-size:14px}.company-actions .company-go-main{display:none}}
+    @media (max-width:639px){.company-stat:first-child{grid-column:1 / -1}.company-head{text-align:center}.company-name{width:100%}.company-name .flex{justify-content:center}.company-actions{justify-content:center}.company-actions .company-go{padding:0 .65rem;font-size:14px}}
     @media (min-width:640px){.company-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    @media (min-width:768px){.company-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (min-width:1024px){.company-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 @php
     $name = $organization->commercial_name ?: $organization->legal_name;
@@ -195,7 +225,7 @@
     @if(session('success'))<div class="mb-4 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-semibold text-white">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="mb-4 rounded-2xl bg-rose-50 px-5 py-4 text-sm text-rose-800"><strong>No pudimos enviar la opinión:</strong><ul class="mt-1 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-    <section class="rounded-3xl bg-white shadow-sm">
+    <section class="company-sheet rounded-3xl bg-white shadow-sm">
         <div class="company-hero overflow-hidden rounded-t-3xl bg-[#064E3B]">
             <div class="company-carousel" id="company-carousel">
                 @foreach($slides as $banner)
@@ -211,45 +241,43 @@
                     <button type="button" data-banner="1" aria-label="Portada siguiente">›</button>
                 </div>
             @endif
-            <div class="company-logo" id="company-logo">
-                @if($profilePublished && $organization->logo_path)
-                    <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}">
-                @else
-                    <span class="text-2xl font-black text-emerald-800">{{ mb_strtoupper(mb_substr($name, 0, 1)) }}</span>
-                @endif
-            </div>
         </div>
         <div class="company-identity px-5 pb-6 sm:px-8">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div class="min-w-0 sm:pl-28">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h1 class="text-3xl font-black tracking-tight text-[#10231D] sm:text-4xl">{{ $name }}</h1>
-                        @if($organization->verified_at)
-                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">Empresa verificada</span>
+            <div class="company-top">
+                <div class="company-head">
+                    <div class="company-logo" id="company-logo">
+                        @if($profilePublished && $organization->logo_path)
+                            <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}">
+                        @else
+                            @php
+                                $initials = collect(preg_split('/\s+/u', trim($name)) ?: [])->filter()->take(2)->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('');
+                            @endphp
+                            <span>{{ $initials !== '' ? $initials : 'N' }}</span>
                         @endif
                     </div>
-                    <p class="mt-2 text-sm font-semibold text-emerald-800">{{ $commentCount }} {{ $commentCount === 1 ? 'comentario' : 'comentarios' }} · {{ $reactionCount }} {{ $reactionCount === 1 ? 'reacción' : 'reacciones' }}</p>
-                    <p class="mt-2 flex flex-wrap gap-2 text-sm font-semibold text-[#10231D]">
-                        <span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $modalityChip }}</span>
-                        @if($portChip)<span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $portChip }}</span>@endif
-                        @if($dicapiChip)<span class="rounded-full bg-[#E1F5EE] px-3 py-1 text-[#04342C]">DICAPI vigente</span>@endif
-                        @if($organization->service_hours)<span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $organization->service_hours }}</span>@endif
-                    </p>
-                    @if($brief)
-                        <p class="mt-2 max-w-3xl text-base leading-7 text-[#607069]">{{ $brief }}</p>
-                    @endif
-                    <div class="company-tools mt-3 flex flex-wrap items-center gap-2">
-                        @if($copyPhone)
-                            <button type="button" class="company-quiet" data-copy="{{ $copyPhone }}">Copiar teléfono</button>
+                    <div class="company-name">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h1 class="text-3xl font-black tracking-tight text-[#10231D] sm:text-4xl">{{ $name }}</h1>
+                            @if($organization->verified_at)
+                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">Empresa verificada</span>
+                            @endif
+                        </div>
+                        <p class="mt-2 text-sm font-semibold text-emerald-800">{{ $commentCount }} {{ $commentCount === 1 ? 'comentario' : 'comentarios' }} · {{ $reactionCount }} {{ $reactionCount === 1 ? 'reacción' : 'reacciones' }}</p>
+                        <p class="mt-2 flex flex-wrap gap-2 text-sm font-semibold text-[#10231D]">
+                            <span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $modalityChip }}</span>
+                            @if($portChip)<span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $portChip }}</span>@endif
+                            @if($dicapiChip)<span class="rounded-full bg-[#E1F5EE] px-3 py-1 text-[#04342C]">DICAPI vigente</span>@endif
+                            @if($organization->service_hours)<span class="rounded-full bg-[#F7F9F8] px-3 py-1">{{ $organization->service_hours }}</span>@endif
+                        </p>
+                        @if($brief)
+                            <p class="mt-2 max-w-3xl text-base leading-7 text-[#607069]">{{ $brief }}</p>
                         @endif
-                        <button type="button" class="company-quiet" data-share="{{ $shareUrl }}" data-share-title="{{ $name }}">Compartir perfil</button>
-                        <span id="company-toast" role="status" class="text-sm font-semibold text-emerald-800"></span>
                     </div>
                 </div>
-                <div class="company-actions flex flex-wrap gap-2 sm:mb-1 sm:shrink-0">
+                <div class="company-actions flex flex-wrap gap-2">
                     <button type="button" data-open="salidas" class="company-go company-go-main">Ver salidas y comprar</button>
                     @if($supportNumber)
-                        <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="company-go company-go-gold">WhatsApp</a>
+                        <a target="_blank" rel="noopener" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode($whatsappText) }}" class="company-go company-go-gold"><span class="company-mini" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a8.7 8.7 0 0 0-7.5 13L3.2 21l5-1.3A8.7 8.7 0 1 0 12 3zm4.8 11.7c-.2.6-1.1 1-1.6 1.1-.4 0-.9.2-2.9-.6-2.4-1-3.9-3.4-4-3.6-.1-.2-1-1.2-1-2.3s.6-1.6.8-1.8.4-.3.6-.3h.5c.2 0 .4 0 .5.4.2.5.7 1.8.7 1.9s.1.3 0 .5l-.3.4c-.1.1 0 .3.8 1.3.8.7 1.3.9 1.5 1 .2.1.3 0 .4-.1l.5-.6c.1-.2.3-.1.5 0l1.4.7c.2.1.3.2.4.3.1.4 0 .9-.2 1.1z"/></svg></span>WhatsApp</a>
                     @endif
                     <button type="button" data-open-policy class="company-go company-go-seat">Políticas de viaje</button>
                 </div>
@@ -258,19 +286,19 @@
     </section>
 
     <div class="company-stats my-4">
-        <button type="button" class="company-stat" data-jump="flota"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 16.5 12 20l9-3.5M4 13l8 3 8-3M12 4 3 8l9 4 9-4-9-4Z"/></svg></span><span><strong class="is-phrase">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></button>
-        <button type="button" class="company-stat" data-jump="salidas"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m0 14h16M8 19v-4m4 4V9m4 10v-6"/></svg></span><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></button>
-        <button type="button" class="company-stat" data-jump="galeria"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-4 4 3 3-2 6 4"/></svg></span><span><strong>{{ $organization->photos->count() }}</strong><em>Fotos</em></span></button>
-        <button type="button" class="company-stat" data-jump="galeria" data-comments="1"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 6h14v9H8l-3 3V6Z"/></svg></span><span><strong>{{ $commentCount }}</strong><em>Comentarios</em></span></button>
+        <button type="button" class="company-stat" data-jump="flota"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15.2 12 19l9-3.8v-2.2L12 16.2 3 13v2.2ZM12 3 4 8.2 12 12l8-3.8L12 3Z"/></svg></span><span><strong class="is-phrase">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></button>
+        <button type="button" class="company-stat" data-jump="salidas"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20a1 1 0 0 1-1-1V4h2v14h15v2H4Zm3-3V12h3v5H7Zm5 0V7h3v10h-3Zm5 0v-6h3v6h-3Z"/></svg></span><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></button>
+        <button type="button" class="company-stat" data-jump="galeria"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2.2 3.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM19 17l-4.2-5.2-2.6 3.1-1.7-2L6 17h13Z"/></svg></span><span><strong>{{ $organization->photos->count() }}</strong><em>Fotos</em></span></button>
+        <button type="button" class="company-stat" data-jump="galeria" data-comments="1"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span><span><strong>{{ $commentCount }}</strong><em>Comentarios</em></span></button>
     </div>
 
     <nav id="empresa-menu" class="company-tabs" aria-label="Secciones de la empresa">
-        <button type="button" data-open="salidas" class="company-tab is-on"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m0 14h16"/></svg></span>Salidas y tarifas</button>
-        <button type="button" data-open="informacion" class="company-tab"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/></svg></span>Información</button>
-        <button type="button" data-open="flota" class="company-tab"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 16.5 12 20l9-3.5"/></svg></span>Flota</button>
-        <button type="button" data-open="galeria" class="company-tab"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></span>Galería</button>
-        <button type="button" data-open="agencias" class="company-tab"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6"/></svg></span>Agencias</button>
-        <button type="button" data-open="carga" class="company-tab"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h13v10H3zM16 11h3l2 3v4h-5"/></svg></span>Encomiendas y carga</button>
+        <button type="button" data-open="salidas" class="company-tab is-on"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20a1 1 0 0 1-1-1V4h2v14h15v2H4Zm3-3V12h3v5H7Zm5 0V7h3v10h-3Zm5 0v-6h3v6h-3Z"/></svg></span>Salidas y tarifas</button>
+        <button type="button" data-open="informacion" class="company-tab"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg></span>Información</button>
+        <button type="button" data-open="flota" class="company-tab"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15.2 12 19l9-3.8v-2.2L12 16.2 3 13v2.2ZM12 3 4 8.2 12 12l8-3.8L12 3Z"/></svg></span>Flota</button>
+        <button type="button" data-open="galeria" class="company-tab"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2.2 3.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM19 17l-4.2-5.2-2.6 3.1-1.7-2L6 17h13Z"/></svg></span>Galería</button>
+        <button type="button" data-open="agencias" class="company-tab"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9.2L12 4l8 5.2V20h-5.2v-5.5H9.2V20H4Z"/></svg></span>Agencias</button>
+        <button type="button" data-open="carga" class="company-tab"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.2 12 3l9 4.2v9.6L12 21l-9-4.2V7.2Z"/></svg></span>Encomiendas y carga</button>
     </nav>
 
     <section id="informacion" data-panel="informacion" class="company-panel company-layout mt-5" hidden>
@@ -355,9 +383,10 @@
         @if($organization->photos->isNotEmpty())
             <div class="company-grid">
                 @foreach($organization->photos as $photo)
-                    <figure>
-                        <button type="button" class="company-photo text-left" data-photo-open="{{ $photo->id }}" data-photo-index="{{ $loop->index }}" data-photo-src="{{ $photo->path }}" data-photo-alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" data-photo-comments="{{ route('companies.photos.comments', [$organization, $photo]) }}" data-photo-like="{{ route('companies.photos.likes', [$organization, $photo]) }}" data-photo-store="{{ route('companies.photos.comments.store', [$organization, $photo]) }}">
+                    <figure @if($loop->index >= 8) data-photo-extra hidden @endif>
+                        <button type="button" class="company-photo text-left" data-photo-open="{{ $photo->id }}" data-photo-index="{{ $loop->index }}" data-photo-src="{{ $photo->path }}" data-photo-alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" data-photo-title="{{ $photo->caption ?: 'Foto de '.$name }}" data-photo-album="{{ $photo->album?->title }}" data-photo-date="{{ $photo->created_at?->format('d/m/Y') }}" data-photo-comments="{{ route('companies.photos.comments', [$organization, $photo]) }}" data-photo-like="{{ route('companies.photos.likes', [$organization, $photo]) }}" data-photo-store="{{ route('companies.photos.comments.store', [$organization, $photo]) }}">
                             <img src="{{ $photo->path }}" alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" loading="lazy">
+                            <span class="company-count"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span>{{ $photo->published_comments_count }}</span>
                         </button>
                         @if($canManageMedia)
                             <details class="company-more">
@@ -371,6 +400,9 @@
                     </figure>
                 @endforeach
             </div>
+            @if($organization->photos->count() > 8)
+                <button type="button" id="company-photos-more" class="company-more-photos">Ver todas las fotos ({{ $organization->photos->count() }})</button>
+            @endif
         @else
             <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
                 <h2 class="text-base font-black text-emerald-950">Galería</h2>
@@ -380,10 +412,13 @@
         @foreach($organization->photos as $photo)
             <div hidden data-thread="{{ $photo->id }}">
                 @foreach($threadsByPhoto->get($photo->id, collect()) as $thread)
-                    <article>
+                    <article class="company-bubble">
+                        <span class="company-avatar">{{ mb_strtoupper(mb_substr($thread->user?->name ?: 'V', 0, 1)) }}</span>
+                        <div class="company-bubble-body">
                         <strong>{{ $thread->user?->name ?: 'Viajero' }}</strong>
                         @if(isset($traveledLookup[$thread->user_id]))<span class="company-seal">Viajó con la empresa</span>@endif
                         <p>{{ $thread->body }}</p>
+                        </div>
                         @foreach($thread->replies as $reply)
                             <p><strong>{{ $reply->user?->name ?: 'Viajero' }}</strong> @if(isset($traveledLookup[$reply->user_id]))<span class="company-seal">Viajó con la empresa</span>@endif {{ $reply->body }}</p>
                         @endforeach
@@ -494,26 +529,37 @@
     <div class="company-lightbox-grid">
         <div class="company-lightbox-photo"><img id="company-photo-img" alt=""></div>
         <div class="company-lightbox-side">
-            <div class="company-viewer-bar">
-                <button type="button" data-photo-step="-1">Anterior</button>
-                <button type="button" data-photo-step="1">Siguiente</button>
-                <button type="button" data-photo-close>Cerrar</button>
+            <div class="company-lightbox-scroll">
+                <div class="company-viewer-bar">
+                    <button type="button" data-photo-step="-1">Anterior</button>
+                    <button type="button" data-photo-step="1">Siguiente</button>
+                    <button type="button" data-photo-close>Cerrar</button>
+                </div>
+                <h3 id="company-photo-title" class="company-photo-title">Foto de {{ $name }}</h3>
+                <p id="company-photo-meta" class="company-photo-meta"></p>
+                <div class="company-react">
+                    @auth
+                        <button type="button" id="company-photo-like" class="company-react-btn"><span class="company-tone is-like"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-6.5-4.1-6.5-8.4A3.6 3.6 0 0 1 12 8.7a3.6 3.6 0 0 1 6.5 2.9C18.5 15.9 12 20 12 20Z"/></svg></span>Me gusta <span id="company-photo-reactions">0</span></button>
+                        <button type="button" id="company-photo-comment" class="company-react-btn"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span>Comentar</button>
+                    @else
+                        <p class="text-sm font-semibold text-[#607069]">Inicia sesión para comentar y reaccionar</p>
+                    @endauth
+                </div>
+                <div id="company-photo-thread" class="mt-2 text-sm"></div>
             </div>
-            <p id="company-photo-count" class="company-viewer-count"></p>
-            <p class="mt-2 text-sm font-bold"><span id="company-photo-reactions">0</span> reacciones</p>
             @auth
-                <button type="button" id="company-photo-like" class="company-quiet mt-2">Me gusta</button>
-            @endauth
-            <div id="company-photo-thread" class="mt-3 space-y-2 text-sm"></div>
-            @auth
-                <form id="company-photo-form" class="mt-3 space-y-2" method="POST">
+                <form id="company-photo-form" class="company-composer" method="POST">
                     @csrf
                     <input type="hidden" name="parent_id" value="">
-                    <textarea name="body" required minlength="2" maxlength="500" class="min-h-16 w-full rounded-xl border border-slate-200 p-2 text-sm" placeholder="Escribe un comentario"></textarea>
-                    <button type="button" id="company-emoji-toggle" class="company-quiet">Emojis</button>
+                    <input type="text" name="body" required minlength="2" maxlength="500" placeholder="Escribe un comentario…" autocomplete="off">
+                    <button type="button" id="company-emoji-toggle" class="company-round is-emoji" aria-label="Emojis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM8.5 9.5a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8Zm7 0a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8ZM12 17.2a4.6 4.6 0 0 1-4-2.3l1.6-1a2.9 2.9 0 0 0 4.8 0l1.6 1a4.6 4.6 0 0 1-4 2.3Z"/></svg></button>
                     <div id="company-emoji-panel" class="company-emoji" hidden></div>
-                    <button class="company-go company-go-main">Comentar</button>
+                    <button class="company-round is-send" aria-label="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 21 3l-6.8 18-2.4-7.2L3 11.2Z"/></svg></button>
                 </form>
+            @else
+                <div class="company-composer">
+                    <a href="{{ route('login') }}" class="company-go company-go-main">Iniciar sesión</a>
+                </div>
             @endauth
         </div>
     </div>
@@ -528,11 +574,11 @@
         <button type="button" data-policy-tab="completo" role="tab" aria-selected="false">Completo</button>
     </div>
     <div class="policy-body" data-policy-panel="resumen">
-        <div class="policy-point"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="3" width="12" height="18" rx="2"/></svg></span><p><strong>Documentación</strong>Viaja con tu documento de identidad original.</p></div>
-        <div class="policy-point"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></span><p><strong>Presentación</strong>Llega entre 45 y 60 minutos antes del zarpe.</p></div>
-        <div class="policy-point"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16v11H4z"/></svg></span><p><strong>Equipaje</strong>Mano {{ $baggage['hand'] }} kg, bodega {{ $baggage['hold'] }} kg y aéreo {{ $baggage['air'] }} kg. Desde {{ $baggage['cargo'] }} kg se registra como carga.</p></div>
-        <div class="policy-point"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16M12 4v16"/></svg></span><p><strong>Cancelaciones y reprogramaciones</strong>Si la empresa cancela o reprograma, el pasajero elige reembolso total o cambio sin costo.</p></div>
-        <div class="policy-point"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 7v6c0 5 3.5 7.5 8 8 4.5-.5 8-3 8-8V7l-8-4Z"/></svg></span><p><strong>Conducta y objetos prohibidos</strong>La empresa puede negar el embarque por ebriedad, riesgo a otros pasajeros u objetos prohibidos.</p></div>
+        <div class="policy-point"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm6 1.5V8h4.2L13 3.5ZM8 12h8v2H8v-2Zm0 4h8v2H8v-2Z"/></svg></span><p><strong>Documentación</strong>Viaja con tu documento de identidad original.</p></div>
+        <div class="policy-point"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 11.2-3.2 1.9-1-1.6 2.2-1.3V7h2v6.2Z"/></svg></span><p><strong>Presentación</strong>Llega entre 45 y 60 minutos antes del zarpe.</p></div>
+        <div class="policy-point"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.2 12 3l9 4.2v9.6L12 21l-9-4.2V7.2Z"/></svg></span><p><strong>Equipaje</strong>Mano {{ $baggage['hand'] }} kg, bodega {{ $baggage['hold'] }} kg y aéreo {{ $baggage['air'] }} kg. Desde {{ $baggage['cargo'] }} kg se registra como carga.</p></div>
+        <div class="policy-point"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6.5 12 11V8a5 5 0 1 1-4.6 7H5.2A7 7 0 1 0 12 5Z"/></svg></span><p><strong>Cancelaciones y reprogramaciones</strong>Si la empresa cancela o reprograma, el pasajero elige reembolso total o cambio sin costo.</p></div>
+        <div class="policy-point"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5.2v6.3c0 5 3.4 7.7 8 9.3 4.6-1.6 8-4.3 8-9.3V5.2L12 2Z"/></svg></span><p><strong>Conducta y objetos prohibidos</strong>La empresa puede negar el embarque por ebriedad, riesgo a otros pasajeros u objetos prohibidos.</p></div>
         <button type="button" class="company-go company-go-main mt-4" data-policy-tab="completo">Ver documento completo</button>
     </div>
     <div class="policy-body" data-policy-panel="completo" hidden>
@@ -725,7 +771,7 @@
                 button.type = 'button';
                 button.textContent = emoji;
                 button.addEventListener('click', function () {
-                    var field = document.querySelector('#company-photo-form textarea');
+                    var field = document.querySelector('#company-photo-form [name=body]');
                     if (field) field.value += emoji;
                 });
                 emojiPanel.appendChild(button);
@@ -750,20 +796,34 @@
                     (data.comments || []).forEach(function (item) { box.appendChild(commentNode(item)); });
                 });
         }
+        function initials(name) {
+            var parts = String(name || 'V').trim().split(/\s+/).filter(Boolean);
+            return ((parts[0] || 'V').charAt(0) + (parts[1] ? parts[1].charAt(0) : '')).toUpperCase();
+        }
         function commentNode(item) {
             var article = document.createElement('article');
+            article.className = 'company-bubble' + (item.reply ? ' is-reply' : '');
+            var avatar = document.createElement('span');
+            avatar.className = 'company-avatar';
+            avatar.textContent = initials(item.author);
+            var bubble = document.createElement('div');
+            bubble.className = 'company-bubble-body';
             var author = document.createElement('strong');
             author.textContent = item.author;
-            article.appendChild(author);
+            bubble.appendChild(author);
             if (item.traveled) {
                 var seal = document.createElement('span');
                 seal.className = 'company-seal';
                 seal.textContent = 'Viajó con la empresa';
-                article.appendChild(seal);
+                bubble.appendChild(seal);
             }
             var body = document.createElement('p');
             body.textContent = item.body;
-            article.appendChild(body);
+            bubble.appendChild(body);
+            article.appendChild(avatar);
+            article.appendChild(bubble);
+            var wrap = document.createElement('div');
+            wrap.appendChild(article);
             if (document.getElementById('company-photo-form') && !item.reply) {
                 var answer = document.createElement('button');
                 answer.type = 'button';
@@ -771,20 +831,20 @@
                 answer.textContent = 'Responder';
                 answer.addEventListener('click', function () {
                     var parent = document.querySelector('#company-photo-form [name=parent_id]');
-                    var field = document.querySelector('#company-photo-form textarea');
+                    var field = document.querySelector('#company-photo-form [name=body]');
                     if (parent) parent.value = String(item.id);
                     if (field) {
                         field.placeholder = 'Respuesta para ' + item.author;
                         field.focus();
                     }
                 });
-                article.appendChild(answer);
+                bubble.appendChild(answer);
             }
             (item.replies || []).forEach(function (reply) {
                 reply.reply = true;
-                article.appendChild(commentNode(reply));
+                wrap.appendChild(commentNode(reply));
             });
-            return article;
+            return wrap;
         }
         function openPhoto(index) {
             if (!photos.length) return;
@@ -792,16 +852,18 @@
             var photo = photos[photoIndex];
             var viewer = document.getElementById('company-photo');
             var image = document.getElementById('company-photo-img');
-            var label = document.getElementById('company-photo-count');
+            var title = document.getElementById('company-photo-title');
+            var meta = document.getElementById('company-photo-meta');
             if (image) { image.src = photo.getAttribute('data-photo-src'); image.alt = photo.getAttribute('data-photo-alt') || ''; }
-            if (label) label.textContent = (photoIndex + 1) + ' de ' + photos.length;
+            if (title) title.textContent = photo.getAttribute('data-photo-title') || title.textContent;
+            if (meta) meta.textContent = [photo.getAttribute('data-photo-album'), photo.getAttribute('data-photo-date')].filter(Boolean).join(' · ');
             var form = document.getElementById('company-photo-form');
             if (form) {
                 form.action = photo.getAttribute('data-photo-store');
                 var parent = form.querySelector('[name=parent_id]');
-                var field = form.querySelector('textarea');
+                var field = form.querySelector('[name=body]');
                 if (parent) parent.value = '';
-                if (field) field.placeholder = 'Escribe un comentario';
+                if (field) field.placeholder = 'Escribe un comentario…';
             }
             paintThread(photo);
             document.body.style.overflow = 'hidden';
@@ -962,6 +1024,29 @@
             if (names.indexOf(next) !== -1) show(next);
         });
         if (openPolicies) openPolicy();
+        var morePhotos = document.getElementById('company-photos-more');
+        if (morePhotos) morePhotos.addEventListener('click', function () {
+            root.querySelectorAll('[data-photo-extra]').forEach(function (item) { item.hidden = false; });
+            morePhotos.hidden = true;
+        });
+        var commentButton = document.getElementById('company-photo-comment');
+        if (commentButton) commentButton.addEventListener('click', function () {
+            var field = document.querySelector('#company-photo-form [name=body]');
+            if (field) field.focus();
+        });
+        var photoForm = document.getElementById('company-photo-form');
+        if (photoForm) photoForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var token = document.querySelector('meta[name="csrf-token"]');
+            fetch(photoForm.action, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token ? token.content : '' }, body: new FormData(photoForm) })
+                .then(function (response) {
+                    if (!response.ok) return;
+                    var field = photoForm.querySelector('[name=body]');
+                    var parent = photoForm.querySelector('[name=parent_id]');
+                    if (field) { field.value = ''; field.placeholder = 'Escribe un comentario…'; }
+                    if (parent) parent.value = '';
+                });
+        });
         var like = document.getElementById('company-photo-like');
         if (like) like.addEventListener('click', function () {
             var photo = photos[photoIndex];

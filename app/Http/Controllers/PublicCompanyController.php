@@ -35,7 +35,7 @@ class PublicCompanyController
     {
         abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
         $organization->load([
-            'photos' => fn ($query) => $query->where('status', 'published')->orderBy('sort_order'),
+            'photos' => fn ($query) => $query->where('status', 'published')->with('album')->withCount(['comments as published_comments_count' => fn ($comments) => $comments->where('status', 'published')])->orderBy('sort_order'),
             'banners',
             'pageSections',
             'sites',

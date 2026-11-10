@@ -321,6 +321,20 @@ class CompanyPublicProfileController extends Controller
             : back()->with('success', 'La foto quedó como primera portada.');
     }
 
+    public function updatePhotoCaption(Request $request, OrganizationPhoto $photo): RedirectResponse
+    {
+        $organization = $this->organization($request);
+        abort_unless((int) $photo->organization_id === (int) $organization->id, 403);
+        $data = $request->validate(
+            ['caption' => ['nullable', 'string', 'max:120']],
+            ['caption.max' => 'El título no puede pasar de 120 caracteres.'],
+        );
+        $caption = trim((string) ($data['caption'] ?? ''));
+        $photo->update(['caption' => $caption === '' ? null : $caption]);
+
+        return back()->with('success', 'El título de la foto quedó guardado.');
+    }
+
     public function usePhotoAsLogo(Request $request, OrganizationPhoto $photo): JsonResponse|RedirectResponse
     {
         $organization = $this->ownedPhoto($request, $photo);

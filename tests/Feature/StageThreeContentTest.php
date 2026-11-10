@@ -270,7 +270,13 @@ class StageThreeContentTest extends TestCase
             ->assertDontSee('data-open="opiniones"', false)
             ->assertDontSee('data-open="politicas"', false)
             ->assertDontSee('Establecer como portada', false)
-            ->assertDontSee('Establecer como logo/perfil', false);
+            ->assertDontSee('Establecer como logo/perfil', false)
+            ->assertDontSee('Copiar teléfono')
+            ->assertDontSee('Compartir perfil')
+            ->assertSee('Inicia sesión para comentar y reaccionar')
+            ->assertSee('Iniciar sesión')
+            ->assertSee('object-fit:cover', false)
+            ->assertSee('Foto de Galería Pública', false);
     }
 
     public function test_only_the_company_admin_can_set_a_photo_as_cover_or_logo(): void
@@ -343,6 +349,40 @@ class StageThreeContentTest extends TestCase
         $this->getJson(route('companies.photos.comments', [$company, $photo]))
             ->assertOk()
             ->assertJsonPath('comments.0.traveled', true);
+    }
+
+    public function test_the_company_admin_can_edit_a_photo_title(): void
+    {
+        [$admin, $company] = $this->companyAdmin('Título Foto', '20631000024');
+        $photo = OrganizationPhoto::create([
+            'organization_id' => $company->id,
+            'path' => '/storage/company-profiles/titulo.jpg',
+            'caption' => 'Atardecer en el muelle',
+            'status' => 'published',
+            'sort_order' => 1,
+        ]);
+        $stranger = User::factory()->create();
+
+        $this->actingAs($stranger)->patch(route('company.gallery.photos.caption', $photo), [
+            'caption' => 'No permitido',
+        ])->assertForbidden();
+
+        $this->actingAs($admin)->get(route('company.gallery.index'))
+            ->assertOk()
+            ->assertSee('Editar título');
+
+        $this->actingAs($admin)->patch(route('company.gallery.photos.caption', $photo), [
+            'caption' => str_repeat('a', 121),
+        ])->assertSessionHasErrors('caption');
+
+        $this->actingAs($admin)->patch(route('company.gallery.photos.caption', $photo), [
+            'caption' => 'Zarpe de la mañana',
+        ])->assertRedirect();
+
+        $this->assertSame('Zarpe de la mañana', $photo->fresh()->caption);
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('data-photo-title="Zarpe de la mañana"', false);
     }
 
     private function company(string $name, string $ruc = '20631000006'): Organization

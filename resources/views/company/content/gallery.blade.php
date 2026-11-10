@@ -32,6 +32,17 @@
         @foreach($organization->photos as $photo)
             <li class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-3 text-sm">
                 <span>{{ $photo->caption ?: 'Foto '.$photo->id }} · {{ $photo->status === 'published' ? 'Publicada' : 'Pendiente' }}</span>
+                <details class="relative">
+                    <summary class="cursor-pointer list-none rounded-lg border px-2 py-1 font-bold" aria-label="Acciones de la foto">⋯</summary>
+                    <form method="POST" action="{{ route('company.gallery.photos.caption', $photo) }}" class="absolute right-0 z-10 mt-1 w-64 rounded-xl border bg-white p-3 shadow">
+                        @csrf
+                        @method('PATCH')
+                        <label class="block text-xs font-semibold">Editar título
+                            <input name="caption" maxlength="120" value="{{ $photo->caption }}" class="mt-1 w-full rounded-lg border-slate-200 text-sm">
+                        </label>
+                        <button class="mt-2 font-bold text-emerald-800">Guardar título</button>
+                    </form>
+                </details>
                 @if($photo->status === 'published')
                     <span class="flex flex-wrap gap-2">
                         <form method="POST" action="{{ route('company.gallery.photos.cover', $photo) }}">

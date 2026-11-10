@@ -177,6 +177,7 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::post('/galeria/albumes', [CompanyContentController::class, 'storeAlbum'])->name('gallery.albums.store');
     Route::post('/galeria/fotos/{photo}/portada', [CompanyPublicProfileController::class, 'usePhotoAsCover'])->name('gallery.photos.cover');
     Route::post('/galeria/fotos/{photo}/logo', [CompanyPublicProfileController::class, 'usePhotoAsLogo'])->name('gallery.photos.logo');
+    Route::patch('/galeria/fotos/{photo}/titulo', [CompanyPublicProfileController::class, 'updatePhotoCaption'])->name('gallery.photos.caption');
     Route::get('/politicas', [CompanyContentController::class, 'policies'])->name('policies.index');
     Route::post('/politicas', [CompanyContentController::class, 'updatePolicy'])->name('policies.update');
     Route::post('/politicas/{version}/restaurar', [CompanyContentController::class, 'restorePolicy'])->name('policies.restore');
