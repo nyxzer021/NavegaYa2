@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Aircraft;
 use App\Models\Organization;
 use App\Models\OrganizationPhoto;
 use App\Models\PhotoComment;
@@ -54,6 +55,53 @@ class StageThreeContentTest extends TestCase
             ->assertSee('id="flota"', false)
             ->assertSee('data-open="flota"', false)
             ->assertSee('names.indexOf(start)', false);
+    }
+
+    public function test_public_page_shows_only_units_enabled_for_sale(): void
+    {
+        [$admin, $company] = $this->companyAdmin('Flota venta', '20631000031');
+        Vessel::create(['organization_id' => $company->id, 'name' => 'Lancha Lista', 'registration_number' => 'VEN-1', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
+        Vessel::create(['organization_id' => $company->id, 'name' => 'Lancha Parada', 'registration_number' => 'VEN-2', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'inactive']);
+
+        $this->get(route('companies.show', $company))
+            ->assertOk()
+            ->assertSee('1 embarcación')
+            ->assertDontSee('embarcaciones')
+            ->assertSee('Lancha Lista')
+            ->assertDontSee('Lancha Parada')
+            ->assertDontSee('habilitada')
+            ->assertDontSee('inactiva')
+            ->assertDontSee('<em>Rutas</em>', false)
+            ->assertDontSee('<em>Fotos</em>', false)
+            ->assertDontSee('<em>Comentarios</em>', false)
+            ->assertSee('Precio referencial. La empresa confirma el precio final.')
+            ->assertDontSee('El importe es referencial')
+            ->assertDontSee('Referencia para cotizar')
+            ->assertSee('Peso aproximado: 5 kg')
+            ->assertSee('id="cargo-min">5 kg', false)
+            ->assertSee('id="cargo-max">15 kg', false)
+            ->assertSee('company-panel-title', false);
+
+        $this->actingAs($admin)->get(route('company.dashboard'))
+            ->assertOk()
+            ->assertSee('2 registradas · 1 habilitada');
+
+        $paused = $this->company('Mantenimiento hoy', '20631000032');
+        Vessel::create(['organization_id' => $paused->id, 'name' => 'Lancha Taller', 'registration_number' => 'VEN-3', 'vessel_type' => 'lancha', 'seat_capacity' => 12, 'status' => 'ready', 'maintenance_scheduled_on' => now()->toDateString()]);
+        $this->get(route('companies.show', $paused))
+            ->assertOk()
+            ->assertDontSee('Lancha Taller')
+            ->assertDontSee('data-jump="flota"', false);
+
+        $air = $this->company('Solo aire', '20631000033');
+        Aircraft::create(['organization_id' => $air->id, 'name' => 'Cessna Lista', 'registration_number' => 'OB-3101', 'seat_capacity' => 6, 'status' => 'ready']);
+        Aircraft::create(['organization_id' => $air->id, 'name' => 'Cessna Parada', 'registration_number' => 'OB-3102', 'seat_capacity' => 6, 'status' => 'inactive']);
+        $this->get(route('companies.show', $air))
+            ->assertOk()
+            ->assertSee('1 avioneta')
+            ->assertSee('Cessna Lista')
+            ->assertDontSee('Cessna Parada')
+            ->assertDontSee('avionetas');
     }
 
     public function test_appearance_colors_stay_on_one_company(): void

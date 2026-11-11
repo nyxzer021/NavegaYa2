@@ -10,4 +10,8 @@ return [
     'login_to_react' => 'Inicia sesión para comentar y reaccionar',
     'log_in' => 'Iniciar sesión',
     'create_account' => 'Crear cuenta',
+    'fleet_boats' => '{1} :count embarcación|[2,*] :count embarcaciones',
+    'fleet_planes' => '{1} :count avioneta|[2,*] :count avionetas',
+    'cargo_reference' => 'Precio referencial. La empresa confirma el precio final.',
+    'cargo_weight' => 'Peso aproximado: :weight kg',
 ];

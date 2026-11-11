@@ -115,7 +115,7 @@
 
         <section class="ny-panel">
             <h3>Flota</h3>
-            <p class="ny-lead">{{ $fleetPhrase }}. El mismo conteo que la ficha pública.</p>
+            <p class="ny-lead">{{ $fleetPhrase }}</p>
             <div class="ny-metrics cols-3">
                 <a href="{{ route('company.fleet.index') }}" class="ny-metric">
                     <span class="ny-k">Embarcaciones</span>

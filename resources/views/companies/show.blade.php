@@ -23,6 +23,10 @@
     .company-side{display:grid;gap:.75rem;align-content:start}
     .company-card{border:1px solid #e4ebe7;border-radius:1rem;background:#fff;padding:1rem 1.1rem}
     .company-card h2,.company-card h3{font-size:1.15rem;font-weight:800;color:#10231D}
+    .company-panel-title{display:flex;align-items:center;gap:.65rem;margin:0 0 12px}
+    .company-panel-title h2{margin:0;font-size:1.15rem;font-weight:800;color:#10231D}
+    .cargo-scale{display:flex;justify-content:space-between;margin-top:.35rem;font-size:12px;font-weight:700;color:#607069}
+    #cargo-weight-label{display:block;margin-top:12px;font-size:14px;font-weight:700;color:#10231D}
     .company-card p,.company-side p{font-size:1rem;line-height:1.55;color:#10231D}
     .company-kicker{display:block;font-size:.75rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#607069}
     .company-cargo{border:1px solid #e4ebe7;border-radius:1rem;background:#fff;padding:1rem 1.1rem}
@@ -159,8 +163,9 @@
     $hasRiver = $organization->transportRoutes->isNotEmpty() || $organization->vessels->isNotEmpty();
     $hasAir = $organization->airRoutes->isNotEmpty() || $organization->aircraft->isNotEmpty();
     $operatorMode = $hasRiver && $hasAir ? 'Operador fluvial y aéreo' : ($hasAir ? 'Operador aéreo regional' : 'Operador fluvial');
-    $fleet = $organization->vessels->map(fn ($unit) => ['mode' => 'river', 'unit' => $unit])
-        ->concat($organization->aircraft->map(fn ($unit) => ['mode' => 'air', 'unit' => $unit]))->values();
+    $fleet = $organization->vessels->filter(fn ($unit) => \App\Support\CompanyBase::sellable($unit))->map(fn ($unit) => ['mode' => 'river', 'unit' => $unit])
+        ->concat($organization->aircraft->filter(fn ($unit) => \App\Support\CompanyBase::sellable($unit))->map(fn ($unit) => ['mode' => 'air', 'unit' => $unit]))->values();
+    $publicFleet = \App\Support\CompanyBase::publicFleetLabel($organization);
     $fallbackImages = ['images/navegaya-hero-rio.png', 'images/navegaya-hero-amazonas.png', 'images/navegaya-hero-atardecer.png'];
     $profilePublished = ($organization->profile_content_status ?? 'published') === 'published';
     $gallery = collect();
@@ -191,7 +196,6 @@
     $description = trim((string) $organization->public_description);
     $brief = $description !== '' ? \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', $description), 180) : null;
     $baseLabel = \App\Support\CompanyBase::label($organization);
-    $fleetPhrase = \App\Support\CompanyBase::fleetPhrase($organization);
     $locationLabel = $baseLabel ?: ($organization->address ?: null);
     $metaParts = array_values(array_filter([$locationLabel, $operatorMode, $organization->service_hours]));
     $routeLines = $organization->transportRoutes->map(function ($route) {
@@ -286,10 +290,18 @@
     </section>
 
     <div class="company-stats my-4">
-        <button type="button" class="company-stat" data-jump="flota"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15.2 12 19l9-3.8v-2.2L12 16.2 3 13v2.2ZM12 3 4 8.2 12 12l8-3.8L12 3Z"/></svg></span><span><strong class="is-phrase">{{ $organization->vessels->count() }} {{ $organization->vessels->count() === 1 ? 'embarcación' : 'embarcaciones' }} · {{ $organization->vessels->where('status', 'ready')->count() }} {{ $organization->vessels->where('status', 'ready')->count() === 1 ? 'habilitada' : 'habilitadas' }}</strong><em>Flota</em></span></button>
-        <button type="button" class="company-stat" data-jump="salidas"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20a1 1 0 0 1-1-1V4h2v14h15v2H4Zm3-3V12h3v5H7Zm5 0V7h3v10h-3Zm5 0v-6h3v6h-3Z"/></svg></span><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></button>
-        <button type="button" class="company-stat" data-jump="galeria"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2.2 3.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM19 17l-4.2-5.2-2.6 3.1-1.7-2L6 17h13Z"/></svg></span><span><strong>{{ $organization->photos->count() }}</strong><em>Fotos</em></span></button>
-        <button type="button" class="company-stat" data-jump="galeria" data-comments="1"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span><span><strong>{{ $commentCount }}</strong><em>Comentarios</em></span></button>
+        @if($publicFleet)
+            <button type="button" class="company-stat" data-jump="flota"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15.2 12 19l9-3.8v-2.2L12 16.2 3 13v2.2ZM12 3 4 8.2 12 12l8-3.8L12 3Z"/></svg></span><span><strong class="is-phrase">{{ $publicFleet }}</strong><em>Flota</em></span></button>
+        @endif
+        @if($publishedRouteCount > 0)
+            <button type="button" class="company-stat" data-jump="salidas"><span class="company-tone is-salidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20a1 1 0 0 1-1-1V4h2v14h15v2H4Zm3-3V12h3v5H7Zm5 0V7h3v10h-3Zm5 0v-6h3v6h-3Z"/></svg></span><span><strong>{{ $publishedRouteCount }}</strong><em>Rutas</em></span></button>
+        @endif
+        @if($organization->photos->count() > 0)
+            <button type="button" class="company-stat" data-jump="galeria"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2.2 3.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM19 17l-4.2-5.2-2.6 3.1-1.7-2L6 17h13Z"/></svg></span><span><strong>{{ $organization->photos->count() }}</strong><em>Fotos</em></span></button>
+        @endif
+        @if($commentCount > 0)
+            <button type="button" class="company-stat" data-jump="galeria" data-comments="1"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span><span><strong>{{ $commentCount }}</strong><em>Comentarios</em></span></button>
+        @endif
     </div>
 
     <nav id="empresa-menu" class="company-tabs" aria-label="Secciones de la empresa">
@@ -302,6 +314,7 @@
     </nav>
 
     <section id="informacion" data-panel="informacion" class="company-panel company-layout mt-5" hidden>
+        @include('companies.partials.panel-heading', ['tone' => 'informacion', 'title' => 'Información'])
         <div class="grid gap-4">
             <article class="company-card">
                 <h2>Equipaje</h2>
@@ -382,6 +395,7 @@
     </section>
 
     <section id="galeria" data-panel="galeria" class="company-panel mt-5" hidden>
+        @include('companies.partials.panel-heading', ['tone' => 'galeria', 'title' => 'Galería'])
         @if($organization->photos->isNotEmpty())
             <div class="company-grid">
                 @foreach($organization->photos as $photo)
@@ -407,8 +421,7 @@
             @endif
         @else
             <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-                <h2 class="text-base font-black text-emerald-950">Galería</h2>
-                <p class="mt-2 text-sm text-slate-600">La empresa todavía no publicó fotografías propias.</p>
+                <p class="text-sm text-slate-600">La empresa todavía no publicó fotografías propias.</p>
             </div>
         @endif
         @foreach($organization->photos as $photo)
@@ -430,7 +443,9 @@
         @endforeach
     </section>
 
-    <section id="flota" data-panel="flota" class="company-panel mt-5 grid gap-4 sm:grid-cols-2" hidden>
+    <section id="flota" data-panel="flota" class="company-panel mt-5" hidden>
+        @include('companies.partials.panel-heading', ['tone' => 'flota', 'title' => 'Flota'])
+        <div class="grid gap-4 sm:grid-cols-2">
         @forelse($fleet as $index => $fleetItem)
             @php
                 $unit = $fleetItem['unit'];
@@ -454,13 +469,14 @@
                 </div>
             </article>
         @empty
-            <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center sm:col-span-2"><h2 class="text-base font-black text-emerald-950">Flota</h2><p class="mt-2 text-sm text-slate-600">No hay unidades publicadas en esta ficha.</p></div>
+            <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center sm:col-span-2"><p class="text-sm text-slate-600">No hay unidades publicadas en esta ficha.</p></div>
         @endforelse
+        </div>
     </section>
 
     <section id="salidas" data-panel="salidas" class="company-panel mt-5 space-y-3">
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-            <h2 class="text-base font-black text-emerald-950">Salidas</h2>
+            @include('companies.partials.panel-heading', ['tone' => 'salidas', 'title' => 'Salidas y tarifas'])
             <p class="mt-1 text-sm text-slate-600">Elige una salida para ver los asientos y reservar. El WhatsApp de cada salida incluye la ruta y la fecha.</p>
             @if($departures->isNotEmpty())
                 <div class="company-filters mt-3">
@@ -497,7 +513,7 @@
     </section>
 
     <section id="agencias" data-panel="agencias" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
-        <h2>Agencias</h2>
+        @include('companies.partials.panel-heading', ['tone' => 'agencias', 'title' => 'Agencias'])
         <p class="mt-1 text-sm text-[#607069]">Terminales propios y agencias autorizadas</p>
         <ul class="mt-3 space-y-2 text-sm">
             @forelse($organization->sites->where('is_active', true)->where('show_on_where_to_buy', true)->where('hidden_by_admin', false) as $site)
@@ -508,17 +524,18 @@
         </ul>
     </section>
     <section id="carga" data-panel="carga" class="company-panel mt-5" hidden>
-        <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}" data-price-pequeno="{{ number_format($presentation['cargo']['pequeno'], 2, '.', '') }}" data-price-mediano="{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}" data-price-grande="{{ number_format($presentation['cargo']['grande'], 2, '.', '') }}" data-port-note="{{ $presentation['cargo']['port_note'] }}">
-            <h2>Encomiendas y carga</h2>
-            <p class="mt-1 text-base text-[#607069]">El importe es referencial. La empresa confirma el precio final.</p>
+        <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}" data-price-pequeno="{{ number_format($presentation['cargo']['pequeno'], 2, '.', '') }}" data-price-mediano="{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}" data-price-grande="{{ number_format($presentation['cargo']['grande'], 2, '.', '') }}" data-port-note="{{ $presentation['cargo']['port_note'] }}" data-weight-label="{{ trans('public.cargo_weight', ['weight' => '__KG__'], 'es') }}" data-reference-note="{{ trans('public.cargo_reference', [], 'es') }}">
+            @include('companies.partials.panel-heading', ['tone' => 'carga', 'title' => 'Encomiendas y carga'])
             <div class="mt-3 flex flex-wrap items-center gap-2">
                 <button type="button" data-cargo="pequeno" class="h-11 rounded-lg bg-emerald-50 px-3 text-base font-bold text-emerald-900">Pequeño</button>
                 <button type="button" data-cargo="mediano" class="is-on h-11 rounded-lg bg-emerald-700 px-3 text-base font-bold text-white">Mediano</button>
                 <button type="button" data-cargo="grande" class="h-11 rounded-lg bg-emerald-50 px-3 text-base font-bold text-emerald-900">Grande</button>
             </div>
-            <p id="cargo-quote" class="mt-4 text-2xl font-black text-[#10231D]"><span id="cargo-weight">5 kg</span><span id="cargo-amount"> · S/ <span id="cargo-price">{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}</span></span></p>
-            <p id="cargo-note" class="company-cargo-note">Referencia para cotizar. La empresa confirma el precio final.</p>
-            <input id="cargo-range" type="range" min="1" max="50" value="5" class="mt-3 w-full accent-[#087F5B]" aria-label="Peso aproximado">
+            <p id="cargo-quote" class="mt-4 text-2xl font-black text-[#10231D]"><span id="cargo-amount">S/ <span id="cargo-price">{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}</span></span></p>
+            <p id="cargo-note" class="company-cargo-note">{{ trans('public.cargo_reference', [], 'es') }}</p>
+            <label id="cargo-weight-label" for="cargo-range">{{ trans('public.cargo_weight', ['weight' => 5], 'es') }}</label>
+            <div class="cargo-scale"><span id="cargo-min">5 kg</span><span id="cargo-max">15 kg</span></div>
+            <input id="cargo-range" type="range" min="5" max="15" value="5" class="mt-1 w-full accent-[#087F5B]" aria-label="{{ trans('public.cargo_weight', ['weight' => 5], 'es') }}">
             @if($cargoNumber)
                 <a id="cargo-whatsapp" target="_blank" rel="noopener" href="https://wa.me/{{ $cargoNumber }}?text={{ urlencode('Hola, deseo cotizar una carga mediana de aproximadamente 5 kg.') }}" class="company-quote mt-3">Consultar por WhatsApp</a>
             @endif
@@ -598,6 +615,7 @@
         var cargoType = 'mediano';
         var cargoWeight = 5;
         var cargoLabels = { pequeno: 'pequeña', mediano: 'mediana', grande: 'grande' };
+        var cargoRanges = { pequeno: { min: 1, max: 5 }, mediano: { min: 5, max: 15 }, grande: { min: 15, max: 50 } };
         var cargoBox = root.querySelector('.company-cargo');
         var cargoBases = {
             pequeno: cargoBox ? Number(cargoBox.getAttribute('data-price-pequeno')) : 15,
@@ -609,24 +627,36 @@
             return Number.isFinite(amount) ? amount : 20;
         }
         function paintCargo() {
-            var weight = document.getElementById('cargo-weight');
+            var band = cargoRanges[cargoType] || cargoRanges.mediano;
+            var range = document.getElementById('cargo-range');
+            var weightLabel = document.getElementById('cargo-weight-label');
+            var minLabel = document.getElementById('cargo-min');
+            var maxLabel = document.getElementById('cargo-max');
             var amount = document.getElementById('cargo-price');
             var amountWrap = document.getElementById('cargo-amount');
             var note = document.getElementById('cargo-note');
             var link = document.getElementById('cargo-whatsapp');
             var port = cargoBox ? cargoBox.getAttribute('data-port') : 'el puerto de embarque';
             var customPortNote = cargoBox ? (cargoBox.getAttribute('data-port-note') || '') : '';
+            var referenceNote = cargoBox ? cargoBox.getAttribute('data-reference-note') : 'Precio referencial. La empresa confirma el precio final.';
+            var weightTemplate = cargoBox ? cargoBox.getAttribute('data-weight-label') : 'Peso aproximado: __KG__ kg';
             var portSentence = customPortNote || ('Desde 25 kg se cotiza en ' + port + '.');
             var atPort = cargoWeight >= 25;
             var label = cargoLabels[cargoType] || cargoType;
-            if (weight) weight.textContent = cargoWeight + ' kg';
+            if (range) {
+                range.min = String(band.min);
+                range.max = String(band.max);
+                range.value = String(cargoWeight);
+                range.setAttribute('aria-label', (weightTemplate || '').replace('__KG__', String(cargoWeight)));
+            }
+            if (weightLabel) weightLabel.textContent = (weightTemplate || '').replace('__KG__', String(cargoWeight));
+            if (minLabel) minLabel.textContent = band.min + ' kg';
+            if (maxLabel) maxLabel.textContent = band.max + ' kg';
             if (amountWrap) amountWrap.hidden = atPort;
             if (amount && !atPort) amount.textContent = price().toFixed(2);
             if (note) {
                 note.classList.toggle('is-port', atPort);
-                note.textContent = atPort
-                    ? portSentence
-                    : 'Referencia para cotizar. La empresa confirma el precio final.';
+                note.textContent = atPort ? portSentence : referenceNote;
             }
             root.querySelectorAll('[data-cargo]').forEach(function (button) {
                 var on = button.getAttribute('data-cargo') === cargoType;
@@ -944,9 +974,10 @@
             var cargo = event.target.closest('[data-cargo]');
             if (cargo && root.contains(cargo)) {
                 cargoType = cargo.getAttribute('data-cargo');
+                var band = cargoRanges[cargoType] || cargoRanges.mediano;
                 cargoWeight = cargoType === 'pequeno' ? 2 : (cargoType === 'grande' ? 15 : 5);
-                var range = document.getElementById('cargo-range');
-                if (range) range.value = String(cargoWeight);
+                if (cargoWeight < band.min) cargoWeight = band.min;
+                if (cargoWeight > band.max) cargoWeight = band.max;
                 paintCargo();
                 return;
             }
