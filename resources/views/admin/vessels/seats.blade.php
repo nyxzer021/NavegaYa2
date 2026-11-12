@@ -27,6 +27,7 @@
 @else
 <h2>Plano configurado</h2><p>La {{$deck==='principal'?'cubierta principal':'cubierta superior'}} tiene <strong>{{$seats->count()}} asientos</strong>. Pulsa cada asiento para bloquearlo o habilitarlo.</p><div class="actions"><a class="button" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>$deck,'edit'=>1])}}">Editar distribución</a><form method="POST" action="{{route($seatRoutePrefix.'.vessels.seats.destroy-deck',$vessel)}}" onsubmit="return confirm('¿Eliminar el plano de esta cubierta?')">@csrf @method('DELETE')<input type="hidden" name="deck" value="{{$deck}}"><button class="button warn">Eliminar</button></form></div>
 @endif
+@include('company.fleet._places')
 </section>
 <section class="map"><div class="map-head"><div><h2>{{$deck==='principal'?'Cubierta principal':'Cubierta superior'}}</h2><p>Vista desde arriba · toca un asiento para cambiar su disponibilidad.</p></div><div class="legend"><span><i style="background:#ccece3"></i>Disponible</span><span><i style="background:#e5eaeb"></i>Bloqueado</span></div></div>
 @if($seats->isNotEmpty())

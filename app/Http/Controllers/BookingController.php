@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
+use App\Services\HammockSale;
+use DomainException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,13 +22,20 @@ class BookingController extends Controller
         $departure->load(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.organization', 'vessel.seats']);
         abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         $occupiedSeatIds = ReservationSeat::query()->where('route_departure_id', $departure->id)->pluck('vessel_seat_id')->all();
-        $seats = $departure->vessel->seats->sortBy(['deck', 'row_position', 'column_position']);
+        $cabins = $departure->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code')->values();
+        $freeHammocks = $departure->vessel->seats->where('space_type', 'hammock')->filter(
+            fn ($seat): bool => $seat->is_available && ! in_array($seat->id, $occupiedSeatIds, true)
+        )->count();
+        $seats = $departure->vessel->seats->where('space_type', 'seat')->sortBy(['deck', 'row_position', 'column_position']);
 
-        return view('bookings.create', compact('departure', 'seats', 'occupiedSeatIds'));
+        return view('bookings.create', compact('departure', 'seats', 'occupiedSeatIds', 'cabins', 'freeHammocks'));
     }
 
     public function store(Request $request, RouteDeparture $departure): RedirectResponse
     {
+        if ($request->input('place') === 'hammock') {
+            return $this->storeHammock($request, $departure);
+        }
         $data = $request->validate([
             'contact_name' => ['required', 'string', 'max:150'],
             'contact_email' => ['required', 'email', 'max:150'],
@@ -48,15 +57,16 @@ class BookingController extends Controller
 
         try {
             $reservation = DB::transaction(function () use ($data, $departure) {
+                RouteDeparture::query()->whereKey($departure->id)->lockForUpdate()->first();
                 $this->expireReservations($departure);
                 $seatIds = collect($data['seats'])->map(fn ($id) => (int) $id)->values();
                 $validSeatIds = $departure->vessel()->firstOrFail()->seats()->where('is_available', true)->whereIn('id', $seatIds)->lockForUpdate()->pluck('id');
                 if ($validSeatIds->count() !== $seatIds->count()) {
-                    throw new \DomainException('Uno o más asientos ya no están disponibles para esta salida.');
+                    throw new DomainException('Uno o más asientos ya no están disponibles para esta salida.');
                 }
                 $occupied = ReservationSeat::where('route_departure_id', $departure->id)->whereIn('vessel_seat_id', $seatIds)->exists();
                 if ($occupied) {
-                    throw new \DomainException('Uno de los asientos acaba de ser reservado por otra persona. Elige otro asiento.');
+                    throw new DomainException('Uno de los asientos acaba de ser reservado por otra persona. Elige otro asiento.');
                 }
                 $reservation = Reservation::create([
                     'user_id' => auth()->id(),
@@ -84,10 +94,40 @@ class BookingController extends Controller
 
                 return $reservation;
             });
-        } catch (\DomainException $exception) {
+        } catch (DomainException $exception) {
             return back()->withInput()->withErrors(['seats' => $exception->getMessage()]);
         } catch (QueryException $exception) {
             return back()->withInput()->withErrors(['seats' => 'Uno de los asientos acaba de ser reservado. Actualiza el plano y vuelve a elegir.']);
+        }
+
+        $request->session()->push('cart_reservation_ids', $reservation->id);
+        $request->session()->put('cart_reservation_ids', array_values(array_unique($request->session()->get('cart_reservation_ids', []))));
+
+        return redirect()->route('cart.index');
+    }
+
+    private function storeHammock(Request $request, RouteDeparture $departure): RedirectResponse
+    {
+        $data = $request->validate([
+            'contact_name' => ['required', 'string', 'max:150'],
+            'contact_email' => ['required', 'email', 'max:150'],
+            'contact_phone' => ['required', 'string', 'max:40'],
+            'contact_document' => ['nullable', 'string', 'max:40'],
+        ]);
+        $departure->loadMissing('transportRoute.organization');
+        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
+
+        try {
+            $reservation = app(HammockSale::class)->reserve($departure, [
+                'name' => $data['contact_name'],
+                'email' => $data['contact_email'],
+                'phone' => $data['contact_phone'],
+                'document' => $data['contact_document'] ?? null,
+            ]);
+        } catch (DomainException $exception) {
+            return back()->withInput()->withErrors(['place' => $exception->getMessage()]);
+        } catch (QueryException) {
+            return back()->withInput()->withErrors(['place' => 'Esa hamaca acaba de ser reservada. Actualiza la página e inténtalo de nuevo.']);
         }
 
         $request->session()->push('cart_reservation_ids', $reservation->id);

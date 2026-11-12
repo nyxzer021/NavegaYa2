@@ -10,6 +10,7 @@ use App\Models\RouteDeparture;
 use App\Models\Vessel;
 use App\Support\AdminScope;
 use App\Support\FleetMaintenance;
+use App\Support\FleetPlan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -104,15 +105,15 @@ class CompanyFleetController extends Controller
             'inspection_expires_at' => ['nullable', 'date'],
         ]);
 
-        $seatCount = $vessel->seats()->count();
-        if ($request->filled('life_vest_count') && (int) $data['life_vest_count'] < $seatCount) {
+        $people = FleetPlan::drawn($vessel);
+        if ($request->filled('life_vest_count') && (int) $data['life_vest_count'] < $people) {
             return back()->withInput()->withErrors([
                 'life_vest_count' => __('company_portal.fleet.vests_short', [], 'es'),
             ]);
         }
-        if ((int) $data['seat_capacity'] < $seatCount) {
+        if ((int) $data['seat_capacity'] < $people) {
             return back()->withInput()->withErrors([
-                'seat_capacity' => "La capacidad no puede ser menor que los {$seatCount} asientos configurados. Ajusta primero el plano.",
+                'seat_capacity' => __('company_portal.fleet.capacity_short', ['count' => $people], 'es'),
             ]);
         }
 
@@ -155,11 +156,11 @@ class CompanyFleetController extends Controller
         $organization = $this->organization();
         abort_unless($vessel->organization_id === $organization->id, 403);
 
-        $seatCount = $vessel->seats()->count();
-        if ($seatCount !== $vessel->seat_capacity) {
-            return back()->withErrors(['review' => "Completa el plano: hay {$seatCount} de {$vessel->seat_capacity} asientos configurados."]);
+        $people = FleetPlan::drawn($vessel);
+        if ($people !== (int) $vessel->seat_capacity) {
+            return back()->withErrors(['review' => __('company_portal.fleet.plan_incomplete', ['ready' => $people, 'capacity' => $vessel->seat_capacity], 'es')]);
         }
-        if ($vessel->life_vest_count === null || $vessel->life_vest_count < $seatCount) {
+        if ($vessel->life_vest_count === null || $vessel->life_vest_count < $people) {
             return back()->withErrors(['review' => __('company_portal.fleet.vests_short', [], 'es')]);
         }
 

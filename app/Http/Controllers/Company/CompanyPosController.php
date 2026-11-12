@@ -8,7 +8,9 @@ use App\Models\Reservation;
 use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
 use App\Services\BookingPaymentService;
+use App\Services\HammockSale;
 use App\Support\AdminScope;
+use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +51,8 @@ class CompanyPosController extends Controller
     {
         $data = $request->validate([
             'departure_id' => ['required', 'integer', 'exists:route_departures,id'],
-            'seat_id' => ['required', 'integer', 'exists:vessel_seats,id'],
+            'place' => ['nullable', 'in:hammock'],
+            'seat_id' => ['required_unless:place,hammock', 'nullable', 'integer', 'exists:vessel_seats,id'],
             'document_type' => ['required', 'in:DNI,CE,Pasaporte'],
             'document_number' => ['required', 'string', 'max:40'],
             'passenger_name' => ['required', 'string', 'max:150'],
@@ -63,36 +66,53 @@ class CompanyPosController extends Controller
         abort_unless((int) $departure->transportRoute->organization_id === (int) $organizationId && $departure->departure_at->isToday(), 403);
         abort_unless($departure->is_published && in_array($departure->status, ['scheduled', 'delayed', 'rescheduled'], true), 422, 'La salida no está habilitada para ventas.');
 
-        $reservation = DB::transaction(function () use ($data, $departure) {
-            $expired = Reservation::where('route_departure_id', $departure->id)->where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
-            ReservationSeat::whereIn('reservation_id', $expired)->delete();
-            Reservation::whereIn('id', $expired)->update(['status' => 'expired']);
-            $seat = $departure->vessel->seats()->whereKey($data['seat_id'])->where('is_available', true)->lockForUpdate()->firstOrFail();
-            abort_if(ReservationSeat::where('route_departure_id', $departure->id)->where('vessel_seat_id', $seat->id)->exists(), 422, 'El asiento ya no está disponible.');
-            $code = 'POS-'.now()->format('ymd').'-'.Str::upper(Str::random(6));
-            $reservation = Reservation::create([
-                'route_departure_id' => $departure->id,
-                'code' => $code,
-                'contact_name' => $data['passenger_name'],
-                'contact_email' => ($data['email'] ?? null) ?: strtolower($code).'@pos.navegaya.test',
-                'contact_phone' => $data['phone'],
-                'contact_document' => $data['document_number'],
-                'total_amount' => $departure->fare,
-                'status' => 'pending_payment',
-                'sales_channel' => 'counter',
-            ]);
-            ReservationSeat::create([
-                'reservation_id' => $reservation->id,
-                'route_departure_id' => $departure->id,
-                'vessel_seat_id' => $seat->id,
-                'passenger_name' => $data['passenger_name'],
-                'document_type' => $data['document_type'],
-                'document_number' => $data['document_number'],
-                'passenger_age' => $data['passenger_age'],
-            ]);
+        try {
+            $reservation = DB::transaction(function () use ($data, $departure, $request) {
+                if ($request->input('place') === 'hammock') {
+                    return app(HammockSale::class)->reserve($departure, [
+                        'name' => $data['passenger_name'],
+                        'email' => ($data['email'] ?? null) ?: 'venta-'.strtolower($data['document_number']).'@pos.navegaya.test',
+                        'phone' => $data['phone'],
+                        'document' => $data['document_number'],
+                        'document_type' => $data['document_type'],
+                        'age' => (int) $data['passenger_age'],
+                        'channel' => 'counter',
+                        'expires_at' => null,
+                    ]);
+                }
 
-            return $reservation;
-        });
+                $expired = Reservation::where('route_departure_id', $departure->id)->where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
+                ReservationSeat::whereIn('reservation_id', $expired)->delete();
+                Reservation::whereIn('id', $expired)->update(['status' => 'expired']);
+                $seat = $departure->vessel->seats()->whereKey($data['seat_id'])->where('is_available', true)->lockForUpdate()->firstOrFail();
+                abort_if(ReservationSeat::where('route_departure_id', $departure->id)->where('vessel_seat_id', $seat->id)->exists(), 422, 'El asiento ya no está disponible.');
+                $code = 'POS-'.now()->format('ymd').'-'.Str::upper(Str::random(6));
+                $reservation = Reservation::create([
+                    'route_departure_id' => $departure->id,
+                    'code' => $code,
+                    'contact_name' => $data['passenger_name'],
+                    'contact_email' => ($data['email'] ?? null) ?: strtolower($code).'@pos.navegaya.test',
+                    'contact_phone' => $data['phone'],
+                    'contact_document' => $data['document_number'],
+                    'total_amount' => $departure->fare,
+                    'status' => 'pending_payment',
+                    'sales_channel' => 'counter',
+                ]);
+                ReservationSeat::create([
+                    'reservation_id' => $reservation->id,
+                    'route_departure_id' => $departure->id,
+                    'vessel_seat_id' => $seat->id,
+                    'passenger_name' => $data['passenger_name'],
+                    'document_type' => $data['document_type'],
+                    'document_number' => $data['document_number'],
+                    'passenger_age' => $data['passenger_age'],
+                ]);
+
+                return $reservation;
+            });
+        } catch (DomainException $exception) {
+            return back()->withInput()->withErrors(['place' => $exception->getMessage()]);
+        }
 
         $payments->confirm($reservation, [
             'method' => 'cash_dock',

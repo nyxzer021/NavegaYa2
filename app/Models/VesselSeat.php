@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VesselSeat extends Model
 {
-    protected $fillable = ['vessel_id', 'code', 'deck', 'seat_class', 'row_position', 'column_position', 'is_available'];
+    protected $fillable = ['vessel_id', 'code', 'deck', 'seat_class', 'row_position', 'column_position', 'is_available', 'space_type', 'cabin_code', 'cabin_sold_as', 'bed_count'];
 
     protected function casts(): array
     {
-        return ['row_position' => 'integer', 'column_position' => 'integer', 'is_available' => 'boolean'];
+        return ['row_position' => 'integer', 'column_position' => 'integer', 'is_available' => 'boolean', 'bed_count' => 'integer'];
     }
 
     public function vessel(): BelongsTo

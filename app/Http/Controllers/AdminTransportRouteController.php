@@ -158,7 +158,7 @@ class AdminTransportRouteController extends Controller
         return [
             'organization' => $organization,
             'routes' => MasterRoute::with(['originPort', 'destinationPort'])->where('status', 'active')->where('modality', 'fluvial')->orderBy('origin_city')->orderBy('destination_city')->get(),
-            'vessels' => Vessel::with('organization')->withCount('seats')->where('status', 'ready')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->where('organization_id', $id))->orderBy('name')->get()->filter(fn (Vessel $vessel): bool => ($departureRecord && (int) $vessel->id === (int) $departureRecord->vessel_id) || FleetPlan::isComplete($vessel))->values(),
+            'vessels' => Vessel::with(['organization', 'seats'])->where('status', 'ready')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->where('organization_id', $id))->orderBy('name')->get()->filter(fn (Vessel $vessel): bool => ($departureRecord && (int) $vessel->id === (int) $departureRecord->vessel_id) || FleetPlan::isComplete($vessel))->values(),
             'selectedRouteId' => $selectedRouteId,
             'departureRecord' => $departureRecord,
             'companyContext' => true,

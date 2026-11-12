@@ -83,6 +83,7 @@
                         </form>
                     </div>
                 @endif
+                @include('company.fleet._places')
             </div>
             <div>
                 <div class="mb-3 flex flex-wrap gap-4 text-sm text-slate-700">

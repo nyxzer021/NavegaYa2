@@ -2,12 +2,18 @@
 
 namespace App\Support;
 
+use App\Models\Vessel;
+use App\Models\VesselSeat;
 use Illuminate\Database\Eloquent\Model;
 
 class FleetPlan
 {
     public static function drawn(Model $unit): int
     {
+        if ($unit instanceof Vessel) {
+            return self::people($unit);
+        }
+
         if (array_key_exists('seats_count', $unit->getAttributes())) {
             return (int) $unit->seats_count;
         }
@@ -17,6 +23,22 @@ class FleetPlan
         }
 
         return $unit->seats()->count();
+    }
+
+    public static function people(Vessel $vessel): int
+    {
+        $seats = $vessel->relationLoaded('seats') ? $vessel->seats : $vessel->seats()->get();
+
+        return (int) $seats->sum(fn (VesselSeat $seat): int => self::occupants($seat));
+    }
+
+    public static function occupants(VesselSeat $seat): int
+    {
+        if ($seat->space_type === 'cabin_bed' && $seat->cabin_sold_as !== 'per_bed') {
+            return (int) $seat->bed_count;
+        }
+
+        return 1;
     }
 
     public static function isComplete(Model $unit): bool

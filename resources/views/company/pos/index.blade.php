@@ -24,7 +24,12 @@
       <div><h3 class="font-black text-slate-950">Selecciona un asiento</h3><p class="text-sm text-slate-500">El plano es el de la embarcación. Los grises ya están ocupados o bloqueados.</p></div>
       <div class="flex gap-4 text-sm text-slate-600"><span class="inline-flex items-center gap-2"><i class="ny-seat ny-seat-sample"></i>Libre</span><span class="inline-flex items-center gap-2"><i class="ny-seat ny-seat-sample blocked"></i>Ocupado</span></div>
     </div>
-    @foreach($selectedDeparture->vessel->seats->sortBy(['deck','row_position','column_position'])->groupBy('deck') as $deck => $deckSeats)
+    @php
+        $gridSeats = $selectedDeparture->vessel->seats->where('space_type', 'seat')->sortBy(['deck', 'row_position', 'column_position']);
+        $cabins = $selectedDeparture->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code');
+        $freeHammocks = $selectedDeparture->vessel->seats->where('space_type', 'hammock')->filter(fn ($seat) => $seat->is_available && ! in_array($seat->id, $occupiedSeatIds, true));
+    @endphp
+    @foreach($gridSeats->groupBy('deck') as $deck => $deckSeats)
       @php($maxColumn = (int) $deckSeats->max('column_position'))
       <h4 class="mt-4 text-sm font-bold text-slate-700">{{ $deck === 'principal' ? 'Cubierta principal' : ($deck === 'superior' ? 'Cubierta superior' : 'Cubierta '.$deck) }}</h4>
       <x-vessel-hull :columns="$maxColumn">
@@ -33,7 +38,7 @@
             @for($column = 1; $column <= max(1, $maxColumn); $column++)
               @php($seat = $rowSeats->firstWhere('column_position', $column))
               @if($seat)
-                <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" class="peer sr-only" @disabled(in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available) required><span class="ny-seat peer-checked:border-amber-400 peer-checked:bg-[#062c21] peer-checked:text-amber-300 {{ in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available ? 'blocked' : '' }}">{{ $seat->code }}</span></label>
+                <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" class="peer sr-only" @disabled(in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available)><span class="ny-seat peer-checked:border-amber-400 peer-checked:bg-[#062c21] peer-checked:text-amber-300 {{ in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available ? 'blocked' : '' }}">{{ $seat->code }}</span></label>
               @else
                 <span class="ny-aisle"></span>
               @endif
@@ -42,6 +47,16 @@
         @endforeach
       </x-vessel-hull>
     @endforeach
+    @if($cabins->isNotEmpty() || $freeHammocks->isNotEmpty())
+      <div class="mt-4 flex flex-wrap gap-2 text-sm font-bold">
+        @foreach($cabins as $cabin)
+          <label class="rounded-xl border border-slate-200 px-3 py-2"><input type="radio" name="seat_id" value="{{ $cabin->id }}" @disabled(in_array($cabin->id, $occupiedSeatIds, true) || ! $cabin->is_available)> Camarote {{ $cabin->code }} · {{ $cabin->bed_count }} camas</label>
+        @endforeach
+        @if($freeHammocks->isNotEmpty())
+          <label class="rounded-xl border border-slate-200 px-3 py-2"><input type="radio" name="place" value="hammock"> Hamaca libre</label>
+        @endif
+      </div>
+    @endif
   </section>
   <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-black text-slate-900">Datos del pasajero</h3><div class="mt-4 space-y-3">@foreach([['passenger_name','Nombres y apellidos','text'],['document_number','DNI / documento','text'],['passenger_age','Edad','number'],['phone','Teléfono / WhatsApp','text'],['email','Correo (opcional)','email']] as [$name,$label,$type])<label class="block"><span class="text-sm font-semibold text-slate-600">{{ $label }}</span><input type="{{ $type }}" name="{{ $name }}" value="{{ old($name) }}" @required($name!=='email') class="mt-1 h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm font-semibold"></label>@endforeach<label class="block"><span class="text-sm font-semibold text-slate-600">Tipo de documento</span><select name="document_type" class="mt-1 h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm font-semibold"><option>DNI</option><option>CE</option><option>Pasaporte</option></select></label></div>@if($errors->any())<p class="mt-3 rounded-xl bg-rose-50 p-3 text-xs text-rose-700">{{ $errors->first() }}</p>@endif<div class="mt-4 rounded-xl bg-emerald-50 p-3 text-xs"><span class="text-slate-500">Cobro en efectivo</span><strong class="float-right text-lg text-slate-900">S/ {{ number_format((float)$selectedDeparture->fare,2) }}</strong></div><button class="mt-4 h-10 w-full rounded-xl bg-amber-400 text-sm font-black text-emerald-950">Cobrar y emitir boleto</button></aside>
  </form>

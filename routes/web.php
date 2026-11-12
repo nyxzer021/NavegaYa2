@@ -199,6 +199,8 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::post('/flota/aeronaves/{aircraft}/mantenimiento', [CompanyFleetController::class, 'storeAircraftMaintenance'])->name('fleet.aircraft.maintenance.store');
     Route::get('/flota/embarcaciones/{vessel}/asientos', [AdminVesselSeatController::class, 'edit'])->name('vessels.seats.edit');
     Route::post('/flota/embarcaciones/{vessel}/asientos/generar', [AdminVesselSeatController::class, 'generate'])->name('vessels.seats.generate');
+    Route::post('/flota/embarcaciones/{vessel}/hamacas', [AdminVesselSeatController::class, 'storeHammocks'])->name('vessels.hammocks.store');
+    Route::post('/flota/embarcaciones/{vessel}/camarotes', [AdminVesselSeatController::class, 'storeCabin'])->name('vessels.cabins.store');
     Route::patch('/flota/embarcaciones/{vessel}/asientos/{seat}/estado', [AdminVesselSeatController::class, 'toggle'])->name('vessels.seats.toggle');
     Route::delete('/flota/embarcaciones/{vessel}/asientos/cubierta', [AdminVesselSeatController::class, 'destroyDeck'])->name('vessels.seats.destroy-deck');
     Route::get('/flota/aeronaves/{aircraft}/asientos', [AdminAircraftController::class, 'seats'])->name('aircraft.seats');
@@ -431,6 +433,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/embarcaciones/{vessel}', [AdminVesselController::class, 'update'])->name('vessels.update');
     Route::get('/embarcaciones/{vessel}/asientos', [AdminVesselSeatController::class, 'edit'])->name('vessels.seats.edit');
     Route::post('/embarcaciones/{vessel}/asientos/generar', [AdminVesselSeatController::class, 'generate'])->name('vessels.seats.generate');
+    Route::post('/embarcaciones/{vessel}/hamacas', [AdminVesselSeatController::class, 'storeHammocks'])->name('vessels.hammocks.store');
+    Route::post('/embarcaciones/{vessel}/camarotes', [AdminVesselSeatController::class, 'storeCabin'])->name('vessels.cabins.store');
     Route::patch('/embarcaciones/{vessel}/asientos/{seat}/estado', [AdminVesselSeatController::class, 'toggle'])->name('vessels.seats.toggle');
     Route::delete('/embarcaciones/{vessel}/asientos/cubierta', [AdminVesselSeatController::class, 'destroyDeck'])->name('vessels.seats.destroy-deck');
     Route::get('/aeronaves', fn () => redirect()->route('admin.companies.index'))->name('aircraft.index');
