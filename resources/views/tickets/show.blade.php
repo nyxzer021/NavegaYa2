@@ -24,7 +24,7 @@
             <small>{{ $isAir ? '✈ VIAJE AÉREO' : '⛴ VIAJE FLUVIAL' }}</small>
             <h2>{{ $seat->passenger_name }}</h2>
             <div class="grid">
-                <div><span>Ruta</span><strong>{{ $isAir ? $route->origin_city : $route->originPort->city }} → {{ $isAir ? $route->destination_city : $route->destinationPort->city }}</strong></div>
+                <div><span>Ruta</span><strong>{{ $isAir ? $route->origin_city : $route->originPort->city }} → {{ $isAir ? $route->destination_city : $route->destinationPort->city }}</strong>@if($stopsLabel = \App\Support\RouteStops::label($route))<span>{{ $stopsLabel }}</span>@endif</div>
                 <div><span>Salida</span><strong>{{ $trip->departure_at->format('d/m/Y · H:i') }}</strong></div>
                 <div><span>Asiento</span><strong>{{ $isAir ? $seat->aircraftSeat->code : $seat->seat->code }}</strong></div>
             </div>

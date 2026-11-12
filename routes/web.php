@@ -63,6 +63,7 @@ use App\Http\Controllers\CompanyDashboardController;
 use App\Http\Controllers\CompanyPreparationController;
 use App\Http\Controllers\CompanyPublicProfileController;
 use App\Http\Controllers\CompanyRegistrationController;
+use App\Http\Controllers\CompanyRouteController;
 use App\Http\Controllers\CompanyStaffController;
 use App\Http\Controllers\CulqiPaymentController;
 use App\Http\Controllers\DashboardController;
@@ -166,7 +167,9 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::get('/comisiones-de-agencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'agency_commissions')->name('agency-commissions.index');
     Route::get('/comprobantes', [CompanyPreparationController::class, 'show'])->defaults('page', 'receipts')->name('receipts.index');
     Route::get('/reportes', [CompanyPreparationController::class, 'show'])->defaults('page', 'reports')->name('reports.index');
-    Route::get('/rutas', [CompanyPreparationController::class, 'show'])->defaults('page', 'routes')->name('routes.index');
+    Route::get('/rutas', [CompanyRouteController::class, 'index'])->name('routes.index');
+    Route::post('/rutas', [CompanyRouteController::class, 'store'])->name('routes.store');
+    Route::post('/rutas/solicitar', [CompanyRouteController::class, 'requestSegment'])->name('routes.request');
     Route::get('/tarifas', [CompanyPreparationController::class, 'show'])->defaults('page', 'fares')->name('fares.index');
     Route::get('/tripulacion', [CompanyPreparationController::class, 'show'])->defaults('page', 'crew')->name('crew.index');
     Route::get('/incidencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'incidents')->name('incidents.index');
@@ -426,6 +429,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::get('/rutas-salidas/ciudades/{city}/puertos', [AdminTransportRouteController::class, 'portsByCity'])->name('transport-routes.city-ports');
     Route::resource('/rutas-oficiales', AdminMasterRouteController::class)
         ->parameters(['rutas-oficiales' => 'master_route'])->names('master-routes');
+    Route::patch('/rutas-oficiales/{master_route}/aprobar', [AdminMasterRouteController::class, 'approve'])->name('master-routes.approve');
+    Route::patch('/rutas-oficiales/{master_route}/rechazar', [AdminMasterRouteController::class, 'reject'])->name('master-routes.reject');
     Route::get('/embarcaciones', [AdminVesselController::class, 'index'])->name('vessels.index');
     Route::get('/embarcaciones/crear', [AdminVesselController::class, 'create'])->name('vessels.create');
     Route::post('/embarcaciones', [AdminVesselController::class, 'store'])->name('vessels.store');

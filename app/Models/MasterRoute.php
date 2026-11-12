@@ -16,6 +16,7 @@ class MasterRoute extends Model
     protected $fillable = [
         'code', 'modality', 'origin_city', 'destination_city', 'origin_port_id',
         'destination_port_id', 'river_basin', 'corridor', 'estimated_duration_text', 'estimated_duration_minutes', 'duration_needs_review', 'path_geojson', 'status',
+        'requested_organization_id', 'rejection_reason',
     ];
 
     protected function casts(): array
@@ -61,5 +62,10 @@ class MasterRoute extends Model
     public function airRoutes(): HasMany
     {
         return $this->hasMany(AirRoute::class);
+    }
+
+    public function requestedOrganization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'requested_organization_id');
     }
 }

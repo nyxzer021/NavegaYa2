@@ -15,7 +15,7 @@ class PublicRouteCatalogController
     public function index(Request $request): View
     {
         if ($request->string('transport')->toString() === 'air') {
-            $airDepartures = AirDeparture::with(['airRoute.organization', 'aircraft.organization', 'reservations.seats'])
+            $airDepartures = AirDeparture::with(['airRoute.organization', 'airRoute.stops.port', 'aircraft.organization', 'reservations.seats'])
                 ->where('status', 'scheduled')->where('is_published', true)
                 ->whereHas('airRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
                 ->where('departure_at', '>=', now())
@@ -31,7 +31,7 @@ class PublicRouteCatalogController
 
             return view('routes.air', compact('airDepartures', 'cities', 'dateGroups'));
         }
-        $departures = RouteDeparture::with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.organization', 'reservations.seats'])
+        $departures = RouteDeparture::with(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.stops.port', 'vessel.organization', 'reservations.seats'])
             ->where('status', 'scheduled')->where('is_published', true)
             ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
             ->where('departure_at', '>=', now())

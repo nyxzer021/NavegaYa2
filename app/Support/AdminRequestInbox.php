@@ -6,6 +6,7 @@ use App\Models\Advertisement;
 use App\Models\CompanyReview;
 use App\Models\ContentReport;
 use App\Models\DestinationListing;
+use App\Models\MasterRoute;
 use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\OrganizationModality;
@@ -73,6 +74,13 @@ class AdminRequestInbox
                 'detail' => str_replace('_', ' ', $report->reason).($report->details ? ' · '.$report->details : ''),
                 'status' => $report->priority === 'high' ? 'Prioridad alta' : 'Reporte pendiente', 'created_at' => $report->created_at,
                 'url' => route('admin.moderation.index'), 'action' => 'Revisar reporte',
+            ]))
+            ->concat(MasterRoute::query()->where('status', 'pending')->with(['originPort', 'destinationPort', 'requestedOrganization'])->get()->map(fn (MasterRoute $segment) => [
+                'type' => 'master_route', 'icon' => 'Ruta', 'area' => 'Tramos por aprobar',
+                'title' => $segment->origin_city.' → '.$segment->destination_city,
+                'detail' => ($segment->requestedOrganization?->commercial_name ?: $segment->requestedOrganization?->legal_name ?: 'Empresa').' · '.($segment->modality === 'aereo' ? 'Aéreo' : 'Fluvial').' · '.$segment->formatted_duration,
+                'status' => 'Solicitud de tramo', 'created_at' => $segment->updated_at,
+                'url' => route('admin.master-routes.index'), 'action' => 'Revisar tramo',
             ]))
             ->concat(OrganizationModality::query()->where('status', 'requested')->with('organization')->get()->map(fn ($modality) => [
                 'type' => 'modality', 'icon' => 'company_details', 'area' => 'Modalidades por aprobar',

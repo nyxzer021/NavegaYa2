@@ -204,6 +204,47 @@ class StageFourFleetTest extends TestCase
             ->assertDontSee('disponible para programar salidas');
     }
 
+    public function test_the_plan_box_counts_cabin_beds_as_people(): void
+    {
+        [$admin, $company] = $this->companyAdmin();
+        $vessel = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'Lancha Camarote',
+            'registration_number' => 'FLE-CAM',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 20,
+            'life_vest_count' => 20,
+            'status' => 'ready',
+        ]);
+        foreach (range(1, 16) as $number) {
+            VesselSeat::create([
+                'vessel_id' => $vessel->id,
+                'code' => 'S'.$number,
+                'deck' => 'principal',
+                'row_position' => $number,
+                'column_position' => 1,
+            ]);
+        }
+        VesselSeat::create([
+            'vessel_id' => $vessel->id,
+            'code' => 'C-01',
+            'deck' => 'principal',
+            'space_type' => 'cabin_bed',
+            'cabin_code' => 'C-01',
+            'cabin_sold_as' => 'whole',
+            'bed_count' => 4,
+        ]);
+
+        $this->actingAs($admin)->get(route('company.fleet.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['Lancha Camarote', 'En el plano', '100%']);
+
+        $this->actingAs($this->superAdmin())->get(route('admin.fleet-compliance.index'))
+            ->assertOk()
+            ->assertSee('20/20')
+            ->assertDontSee('17/20');
+    }
+
     public function test_schedulable_capacity_skips_an_incomplete_plan_and_short_vests_sort_first(): void
     {
         [$admin, $company] = $this->companyAdmin();

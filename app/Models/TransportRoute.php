@@ -78,4 +78,9 @@ class TransportRoute extends Model
     {
         return $this->hasMany(RouteDeparture::class);
     }
+
+    public function stops(): HasMany
+    {
+        return $this->hasMany(RouteStop::class)->orderBy('position');
+    }
 }

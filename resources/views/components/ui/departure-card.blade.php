@@ -30,6 +30,7 @@
     $durationLabel = $duration > 0 ? trim(($hours ? $hours.' h' : '').($minutes ? ' '.$minutes.' min' : '')) : '';
     $dicapi = ! $isAir && filled($vehicle->dicapi_certificate_number ?? null) && $vehicle->inspection_expires_at && ! $vehicle->inspection_expires_at->isPast();
     $freeTone = $low ? 'is-few' : 'is-many';
+    $stopsLabel = \App\Support\RouteStops::label($route);
 @endphp
 <article class="ny-departure {{ $when->isToday() ? 'is-today' : 'is-later' }}">
     <div class="ny-departure-date">
@@ -63,6 +64,7 @@
             @endif
         </div>
     </div>
+    @if($stopsLabel)<p class="ny-departure-note">{{ $stopsLabel }}</p>@endif
     <p class="ny-departure-note">La salida puede demorar 1 o 2 horas respecto a la hora citada.</p>
 </article>
 <style>

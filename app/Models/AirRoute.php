@@ -39,4 +39,9 @@ class AirRoute extends Model
     {
         return $this->hasMany(AirDeparture::class);
     }
+
+    public function stops(): HasMany
+    {
+        return $this->hasMany(RouteStop::class)->orderBy('position');
+    }
 }

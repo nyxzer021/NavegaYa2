@@ -117,7 +117,7 @@
             </div>
             @if(\App\Support\FleetPlan::missingText($unit))
                 <p class="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-950">{{ \App\Support\FleetPlan::missingText($unit) }}</p>
-            @elseif($unit->seats->count() > $unit->seat_capacity)
+            @elseif(\App\Support\FleetPlan::drawn($unit) > $unit->seat_capacity)
                 <p class="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{{ __('company_portal.fleet.compliance_warning', [], 'es') }}</p>
             @endif
             <a href="{{ route('company.aircraft.seats',$unit) }}" class="mt-3 inline-flex text-sm font-bold text-sky-800">Configurar plano de asientos</a>

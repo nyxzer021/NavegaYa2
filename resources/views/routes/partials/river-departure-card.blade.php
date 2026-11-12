@@ -9,6 +9,7 @@
     $available = max(0, (int) $departure->vessel->seat_capacity - $reserved);
     $operator = $departure->vessel->organization->commercial_name ?: $departure->vessel->organization->legal_name;
     $vesselType = str($departure->vessel->vessel_type)->lower()->contains('ferry') ? '⛴️ Ferry' : '🚤 Rápida';
+    $stopsLabel = \App\Support\RouteStops::label($route);
 @endphp
 
 @once
@@ -37,7 +38,7 @@
         <div class="space-y-3">
             <div class="grid grid-cols-3 items-center gap-2 sm:gap-4">
                 <div><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{$route->originPort->city}}</span><time class="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{{$departure->departure_at->format('H:i')}}</time><span class="mt-0.5 block text-[10px] text-slate-500 sm:text-xs">📍 {{$route->originPort->name}}</span></div>
-                <div class="flex min-w-0 flex-col items-center px-1 sm:px-4"><span class="mb-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-0.5 text-[10px] font-extrabold text-emerald-900 sm:text-[11px]">{{$durationLabel}}</span><div class="flex w-full items-center"><span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600"></span><span class="flex-1 border-t-2 border-dashed border-emerald-300"></span><span class="px-1 text-xs font-bold text-emerald-600">➔</span><span class="flex-1 border-t-2 border-dashed border-emerald-300"></span><span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600"></span></div><span class="mt-1 text-[9px] font-medium text-slate-400 sm:text-[10px]">Directo fluvial</span></div>
+                <div class="flex min-w-0 flex-col items-center px-1 sm:px-4"><span class="mb-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-0.5 text-[10px] font-extrabold text-emerald-900 sm:text-[11px]">{{$durationLabel}}</span><div class="flex w-full items-center"><span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600"></span><span class="flex-1 border-t-2 border-dashed border-emerald-300"></span><span class="px-1 text-xs font-bold text-emerald-600">➔</span><span class="flex-1 border-t-2 border-dashed border-emerald-300"></span><span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600"></span></div><span class="mt-1 text-center text-[9px] font-medium text-slate-400 sm:text-[10px]">{{ $stopsLabel ?: 'Directo fluvial' }}</span></div>
                 <div class="text-right"><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{$route->destinationPort->city}}</span><time class="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{{$arrival?->format('H:i') ?: '—'}}</time><span class="mt-0.5 block text-[10px] text-slate-500 sm:text-xs">{{$route->destinationPort->name}}</span></div>
             </div>
             <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-[11px]"><span class="rounded-xl bg-slate-100 px-2.5 py-1 font-medium text-slate-700">💺 <strong>{{$available}}</strong> asientos libres</span><span class="rounded-xl bg-slate-100 px-2.5 py-1 font-medium text-slate-700">🧳 <strong>{{$departure->included_baggage_kg ?: 15}} kg</strong> incluidos</span><span class="rounded-xl bg-slate-100 px-2.5 py-1 font-medium text-slate-700">🪪 Abordaje con DNI</span></div>
