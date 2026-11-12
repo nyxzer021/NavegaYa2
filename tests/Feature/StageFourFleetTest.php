@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Aircraft;
+use App\Models\AircraftSeat;
 use App\Models\MasterRoute;
 use App\Models\Organization;
 use App\Models\Port;
@@ -104,14 +105,18 @@ class StageFourFleetTest extends TestCase
     {
         $reviewer = $this->superAdmin();
         $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Flota Admin', 'commercial_name' => 'Flota Admin', 'ruc' => '20641000001', 'email' => 'flota-admin@test.pe', 'status' => 'active']);
-        Vessel::create(['organization_id' => $company->id, 'name' => 'Habilitada', 'registration_number' => 'FLE-3', 'vessel_type' => 'lancha', 'seat_capacity' => 10, 'status' => 'ready']);
+        $ready = Vessel::create(['organization_id' => $company->id, 'name' => 'Habilitada', 'registration_number' => 'FLE-3', 'vessel_type' => 'lancha', 'seat_capacity' => 10, 'life_vest_count' => 10, 'status' => 'ready']);
+        $this->fillVessel($ready);
         Vessel::create(['organization_id' => $company->id, 'name' => 'Apagada', 'registration_number' => 'FLE-4', 'vessel_type' => 'lancha', 'seat_capacity' => 40, 'status' => 'inactive']);
+        Vessel::create(['organization_id' => $company->id, 'name' => 'Sin plano', 'registration_number' => 'FLE-5', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'life_vest_count' => 20, 'status' => 'ready']);
         $aircraft = Aircraft::create(['organization_id' => $company->id, 'name' => 'Cessna', 'registration_number' => 'OB-FLE', 'aircraft_kind' => 'light_aircraft', 'seat_capacity' => 6, 'status' => 'ready']);
+        $this->fillAircraft($aircraft);
 
         $this->actingAs($reviewer)->get(route('admin.fleet-compliance.index'))
             ->assertOk()
             ->assertSee('Flota por validar')
-            ->assertSee('Capacidad de las unidades habilitadas: 16 plazas');
+            ->assertSee('Capacidad de las unidades habilitadas: 16 plazas')
+            ->assertDontSee('Capacidad de las unidades habilitadas: 36 plazas');
 
         $this->actingAs($reviewer)->patch(route('admin.fleet-compliance.aircraft.suspend', $aircraft), [
             'reason' => 'Certificado de aeronavegabilidad vencido',
@@ -151,6 +156,7 @@ class StageFourFleetTest extends TestCase
             'registration_number' => 'FLE-OK',
             'vessel_type' => 'lancha',
             'seat_capacity' => 4,
+            'life_vest_count' => 4,
             'status' => 'ready',
             'inspection_expires_at' => now()->addMonths(6)->toDateString(),
         ]);
@@ -188,10 +194,65 @@ class StageFourFleetTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder(['Lancha Día', 'Lancha Al Día'])
             ->assertSee('Vencido')
+            ->assertSee('Faltan 6 chalecos')
             ->assertSee('4 chalecos · 10 plazas')
             ->assertSee('DIC-1')
+            ->assertSee('POL-1')
+            ->assertSee('Sin datos')
+            ->assertDontSee('Sin número · Sin fecha')
             ->assertSee('Falta configurar el plano (0 de 10)')
             ->assertDontSee('disponible para programar salidas');
+    }
+
+    public function test_schedulable_capacity_skips_an_incomplete_plan_and_short_vests_sort_first(): void
+    {
+        [$admin, $company] = $this->companyAdmin();
+        $complete = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'Lista',
+            'registration_number' => 'FLE-LISTA',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 4,
+            'life_vest_count' => 4,
+            'status' => 'ready',
+            'insurance_policy' => 'POL-OK',
+            'insurance_expires_at' => now()->addYear()->toDateString(),
+        ]);
+        $this->fillVessel($complete);
+        $short = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'Corta de chalecos',
+            'registration_number' => 'FLE-CORTA',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 4,
+            'life_vest_count' => 1,
+            'status' => 'ready',
+            'insurance_policy' => 'POL-CORTA',
+            'insurance_expires_at' => now()->addYear()->toDateString(),
+        ]);
+        $this->fillVessel($short);
+        $workshop = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'En taller',
+            'registration_number' => 'FLE-TALLER',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 4,
+            'life_vest_count' => 4,
+            'status' => 'ready',
+            'maintenance_scheduled_on' => now()->toDateString(),
+        ]);
+        $this->fillVessel($workshop);
+
+        $this->actingAs($admin)->get(route('company.dashboard'))
+            ->assertOk()
+            ->assertSeeInOrder(['Asientos de la flota', '8', 'Las que se pueden programar']);
+
+        $reviewer = $this->superAdmin();
+        $this->actingAs($reviewer)->get(route('admin.fleet-compliance.index'))
+            ->assertOk()
+            ->assertSee('Capacidad de las unidades habilitadas: 8 plazas')
+            ->assertSee('Faltan 3 chalecos')
+            ->assertSeeInOrder(['Corta de chalecos', 'Lista']);
     }
 
     /**
@@ -222,6 +283,31 @@ class StageFourFleetTest extends TestCase
         $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Superadmin']));
 
         return $admin;
+    }
+
+    private function fillVessel(Vessel $vessel): void
+    {
+        foreach (range(1, $vessel->seat_capacity) as $number) {
+            VesselSeat::create([
+                'vessel_id' => $vessel->id,
+                'code' => 'S'.$number,
+                'deck' => 'principal',
+                'row_position' => $number,
+                'column_position' => 1,
+            ]);
+        }
+    }
+
+    private function fillAircraft(Aircraft $aircraft): void
+    {
+        foreach (range(1, $aircraft->seat_capacity) as $number) {
+            AircraftSeat::create([
+                'aircraft_id' => $aircraft->id,
+                'code' => 'A'.$number,
+                'row_position' => $number,
+                'column_position' => 1,
+            ]);
+        }
     }
 
     private function departure(Organization $organization, Vessel $vessel, $at): RouteDeparture

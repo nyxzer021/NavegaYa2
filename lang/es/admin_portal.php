@@ -63,6 +63,8 @@ return [
         'policy' => 'Póliza',
         'no_date' => 'Sin fecha',
         'no_number' => 'Sin número',
+        'no_data' => 'Sin datos',
+        'vests_missing' => '{1} Falta 1 chaleco|[2,*] Faltan :count chalecos',
     ],
     'preparation' => [
         'agencies' => 'Aquí se va a ver, por empresa, las agencias que cada transportista autorice. NavegaYA no crea ni aprueba esas agencias.',

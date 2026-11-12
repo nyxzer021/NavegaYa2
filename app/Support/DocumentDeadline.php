@@ -40,4 +40,17 @@ class DocumentDeadline
     {
         return $date !== null && $date->copy()->startOfDay()->lt(today());
     }
+
+    public static function pair(?string $number, ?CarbonInterface $date): string
+    {
+        $hasNumber = filled($number);
+        $hasDate = $date !== null;
+        if (! $hasNumber && ! $hasDate) {
+            return __('admin_portal.fleet.no_data', [], 'es');
+        }
+
+        return ($hasNumber ? $number : __('admin_portal.fleet.no_number', [], 'es'))
+            .' · '
+            .($hasDate ? $date->format('d/m/Y') : __('admin_portal.fleet.no_date', [], 'es'));
+    }
 }

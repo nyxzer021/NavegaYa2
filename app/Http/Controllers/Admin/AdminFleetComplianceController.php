@@ -27,7 +27,7 @@ class AdminFleetComplianceController extends Controller
             'enabledSeatCapacity' => FleetMaintenance::enabledSeatCapacity(),
             'vessels' => Vessel::with(['organization', 'seats'])
                 ->when($request->filled('organization_id'), fn ($query) => $query->where('organization_id', $request->integer('organization_id')))
-                ->orderByRaw('case when (insurance_expires_at is not null and date(insurance_expires_at) < ?) or (inspection_expires_at is not null and date(inspection_expires_at) < ?) then 0 else 1 end', [$today, $today])
+                ->orderByRaw('case when (insurance_expires_at is not null and date(insurance_expires_at) < ?) or (inspection_expires_at is not null and date(inspection_expires_at) < ?) or life_vest_count is null or life_vest_count < seat_capacity then 0 else 1 end', [$today, $today])
                 ->orderByRaw("case when status = 'pending_review' then 0 else 1 end")
                 ->orderByDesc('submitted_for_review_at')->orderBy('name')->paginate(15)->withQueryString(),
             'aircraft' => $aircraft,

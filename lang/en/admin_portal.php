@@ -63,6 +63,8 @@ return [
         'policy' => 'Policy',
         'no_date' => 'No date',
         'no_number' => 'No number',
+        'no_data' => 'No data',
+        'vests_missing' => '{1} Missing 1 life vest|[2,*] Missing :count life vests',
     ],
     'preparation' => [
         'agencies' => 'Agencies authorized by each carrier will be listed here. NavegaYA does not create or approve them.',

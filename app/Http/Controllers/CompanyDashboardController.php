@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use App\Models\RouteDeparture;
 use App\Models\SupportTicket;
 use App\Support\CompanyBase;
+use App\Support\FleetMaintenance;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -148,7 +149,7 @@ class CompanyDashboardController extends Controller
             'ticket_count' => (clone $payments)->count(),
             'ticket_amount' => (float) (clone $payments)->sum('amount'),
             'vessel_count' => $organization->vessels->count(),
-            'seat_capacity' => (int) $organization->vessels->sum('seat_capacity'),
+            'seat_capacity' => FleetMaintenance::enabledSeatCapacity($organization->id),
             'active_vessels' => (int) ($statuses['ready'] ?? 0),
             'maintenance_vessels' => (int) ($statuses['maintenance'] ?? 0),
             'rescheduled' => RouteDeparture::query()

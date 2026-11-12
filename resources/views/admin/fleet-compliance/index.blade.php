@@ -15,6 +15,8 @@
     $insuranceBadge = \App\Support\DocumentDeadline::badge($vessel->insurance_expires_at);
     $inspectionBadge = \App\Support\DocumentDeadline::badge($vessel->inspection_expires_at);
     $planMissing = \App\Support\FleetPlan::missingText($vessel);
+    $vestShortfall = \App\Support\FleetPlan::vestShortfallLabel($vessel);
+    $insuranceText = \App\Support\DocumentDeadline::pair($vessel->insurance_policy, $vessel->insurance_expires_at);
    @endphp
    <article class="grid gap-4 p-5 lg:grid-cols-[1fr_1.3fr] {{ $vessel->status==='pending_review'?'bg-amber-50/30':'' }}">
     <div>
@@ -22,9 +24,9 @@
      <p class="mt-1 text-xs text-slate-600">{{ $vessel->organization->commercial_name ?? $vessel->organization->legal_name ?? '—' }} · Matrícula {{ $vessel->registration_number }}</p>
      <div class="mt-3 grid grid-cols-3 gap-2 text-[11px]"><span class="rounded-lg bg-slate-50 p-2"><b class="block">Capacidad</b>{{ $vessel->seat_capacity }}</span><span class="rounded-lg bg-slate-50 p-2"><b class="block">Plano</b>{{ $vessel->seats->count() }}/{{ $vessel->seat_capacity }}</span><span class="rounded-lg bg-slate-50 p-2"><b class="block">Solicitud</b>{{ $vessel->submitted_for_review_at?->format('d/m/Y H:i')??'No enviada' }}</span></div>
      <ul class="mt-3 space-y-1 text-xs text-slate-700">
-      <li><b>{{ __('admin_portal.fleet.vests', [], 'es') }}</b> · {{ $vessel->life_vest_count ?? 0 }} chalecos · {{ $vessel->seat_capacity }} {{ __('admin_portal.fleet.seats', [], 'es') }}</li>
+      <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.vests', [], 'es') }}</b> · {{ $vessel->life_vest_count ?? 0 }} chalecos · {{ $vessel->seat_capacity }} {{ __('admin_portal.fleet.seats', [], 'es') }} @if($vestShortfall)<span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">{{ $vestShortfall }}</span>@endif</li>
       <li><b>{{ __('admin_portal.fleet.dicapi', [], 'es') }}</b> · {{ $vessel->dicapi_certificate_number ?: __('admin_portal.fleet.no_number', [], 'es') }}</li>
-      <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.insurance', [], 'es') }}</b> · {{ $vessel->insurance_policy ?: __('admin_portal.fleet.no_number', [], 'es') }} · {{ $vessel->insurance_expires_at?->format('d/m/Y') ?? __('admin_portal.fleet.no_date', [], 'es') }} @if($insuranceBadge)<span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $insuranceBadge['tone'] === 'rose' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">{{ $insuranceBadge['text'] }}</span>@endif</li>
+      <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.insurance', [], 'es') }}</b> · {{ $insuranceText }} @if($insuranceBadge)<span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $insuranceBadge['tone'] === 'rose' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">{{ $insuranceBadge['text'] }}</span>@endif</li>
       <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.inspection', [], 'es') }}</b> · {{ $vessel->inspection_expires_at?->format('d/m/Y') ?? __('admin_portal.fleet.no_date', [], 'es') }} @if($inspectionBadge)<span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $inspectionBadge['tone'] === 'rose' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">{{ $inspectionBadge['text'] }}</span>@endif</li>
      </ul>
      @if($planMissing)<p class="mt-3 rounded-lg bg-amber-50 p-2 text-xs font-bold text-amber-950">{{ $planMissing }}</p>@endif
@@ -38,12 +40,13 @@
    $airBadge = \App\Support\DocumentDeadline::badge($unit->airworthiness_expires_at);
    $policyBadge = \App\Support\DocumentDeadline::badge($unit->aviation_policy_expires_at);
    $planMissing = \App\Support\FleetPlan::missingText($unit);
+   $policyText = \App\Support\DocumentDeadline::pair($unit->aviation_policy, $unit->aviation_policy_expires_at);
   @endphp
   <article class="rounded-xl border p-4 text-sm"><b>{{ $unit->name }}</b><p class="text-xs text-slate-500">{{ $unit->organization->commercial_name ?? $unit->organization->legal_name }} · {{ $unit->registration_number }} · {{ $unit->seat_capacity }} asientos · {{ __('company_portal.fleet.'.($unit->aircraft_kind ?: 'light_aircraft'), [], 'es') }}</p>
    <ul class="mt-2 space-y-1 text-xs text-slate-700">
     <li><b>{{ __('admin_portal.fleet.dgac', [], 'es') }}</b> · {{ $unit->dgac_certificate_number ?: __('admin_portal.fleet.no_number', [], 'es') }}</li>
     <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.airworthiness', [], 'es') }}</b> · {{ $unit->airworthiness_expires_at?->format('d/m/Y') ?? __('admin_portal.fleet.no_date', [], 'es') }} @if($airBadge)<span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $airBadge['tone'] === 'rose' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">{{ $airBadge['text'] }}</span>@endif</li>
-    <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.policy', [], 'es') }}</b> · {{ $unit->aviation_policy ?: __('admin_portal.fleet.no_number', [], 'es') }} · {{ $unit->aviation_policy_expires_at?->format('d/m/Y') ?? __('admin_portal.fleet.no_date', [], 'es') }} @if($policyBadge)<span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $policyBadge['tone'] === 'rose' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">{{ $policyBadge['text'] }}</span>@endif</li>
+    <li class="flex flex-wrap items-center gap-2"><b>{{ __('admin_portal.fleet.policy', [], 'es') }}</b> · {{ $policyText }} @if($policyBadge)<span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $policyBadge['tone'] === 'rose' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">{{ $policyBadge['text'] }}</span>@endif</li>
    </ul>
    @if($planMissing)<p class="mt-2 rounded-lg bg-amber-50 p-2 text-xs font-bold text-amber-950">{{ $planMissing }}</p>@endif
    @if($unit->status==='pending_review')<form method="POST" action="{{ route('admin.fleet-compliance.aircraft.verify',$unit) }}" class="mt-3 space-y-2">@csrf @method('PATCH')<select name="decision" required class="w-full rounded-xl border-slate-200 text-sm"><option value="approve">Aprobar y habilitar</option><option value="observe">Observar</option><option value="reject">Rechazar</option></select><textarea name="review_notes" required rows="2" class="w-full rounded-xl border-slate-200 text-sm" placeholder="{{ __('admin_portal.fleet.reason', [], 'es') }}"></textarea><button class="w-full rounded-xl bg-amber-500 px-3 py-2 text-xs font-black">Registrar revisión</button></form>@elseif($unit->status==='ready')<form method="POST" action="{{ route('admin.fleet-compliance.aircraft.suspend',$unit) }}" class="mt-3 space-y-2">@csrf @method('PATCH')<textarea name="reason" required rows="2" class="w-full rounded-xl border-slate-200 text-sm" placeholder="{{ __('admin_portal.fleet.reason', [], 'es') }}"></textarea><button class="w-full rounded-xl border border-rose-200 px-3 py-2 text-xs font-black text-rose-700">{{ __('admin_portal.fleet.suspend', [], 'es') }}</button></form>@endif</article>

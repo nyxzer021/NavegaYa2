@@ -129,7 +129,7 @@
                 <article class="ny-metric">
                     <span class="ny-k">Asientos de la flota</span>
                     <strong>{{ $month['seat_capacity'] }}</strong>
-                    <span class="ny-h">Capacidad total</span>
+                    <span class="ny-h">Las que se pueden programar</span>
                 </article>
             </div>
         </section>

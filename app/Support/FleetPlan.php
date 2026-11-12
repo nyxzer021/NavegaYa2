@@ -46,6 +46,21 @@ class FleetPlan
         return self::drawn($unit) >= (int) $unit->seat_capacity;
     }
 
+    public static function vestShortfall(Vessel $vessel): int
+    {
+        return max(0, (int) $vessel->seat_capacity - (int) ($vessel->life_vest_count ?? 0));
+    }
+
+    public static function vestShortfallLabel(Vessel $vessel): ?string
+    {
+        $short = self::vestShortfall($vessel);
+        if ($short < 1) {
+            return null;
+        }
+
+        return trans_choice('admin_portal.fleet.vests_missing', $short, ['count' => $short], 'es');
+    }
+
     public static function missingText(Model $unit): ?string
     {
         if (self::isComplete($unit)) {
