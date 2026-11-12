@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Models\Organization;
-use Carbon\CarbonInterface;
 
 class CompanyBase
 {
@@ -37,9 +36,7 @@ class CompanyBase
             return false;
         }
 
-        $maintenance = $unit->maintenance_scheduled_on ?? null;
-
-        return ! ($maintenance instanceof CarbonInterface && $maintenance->isSameDay(now()));
+        return ! FleetMaintenance::blockedToday($unit);
     }
 
     public static function publicFleetLabel(Organization $organization): ?string

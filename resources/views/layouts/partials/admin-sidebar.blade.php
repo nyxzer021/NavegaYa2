@@ -2,7 +2,7 @@
 @php($isCompanyAdmin=auth()->user()->roles()->where('code','company_admin')->exists())
 @php($isCounter=auth()->user()->roles()->where('code','company_counter')->exists())
 @php($can=fn(string $permission)=>$isSuper || auth()->user()->hasPermission($permission))
-@php($pendingFleetRequests=$isSuper ? \App\Models\Vessel::where('status','pending_review')->count() : 0)
+@php($pendingFleetRequests=$isSuper ? \App\Models\Vessel::where('status','pending_review')->count() + \App\Models\Aircraft::where('status','pending_review')->count() : 0)
 @php($adminInboxService=$isSuper ? app(\App\Support\AdminRequestInbox::class) : null)
 @php($pendingAdminRequests=$adminInboxService?->summary()['total'] ?? 0)
 @php($unreadAdminRequests=$isSuper && $pendingAdminRequests > 0 && session('admin_inbox_seen_signature') !== $adminInboxService->signature())

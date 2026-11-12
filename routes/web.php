@@ -192,7 +192,11 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::post('/flota/embarcaciones', [CompanyFleetController::class, 'storeVessel'])->name('fleet.vessels.store');
     Route::patch('/flota/embarcaciones/{vessel}', [CompanyFleetController::class, 'updateVessel'])->name('fleet.vessels.update');
     Route::post('/flota/embarcaciones/{vessel}/enviar-revision', [CompanyFleetController::class, 'submitVesselForReview'])->name('fleet.vessels.submit-review');
+    Route::post('/flota/embarcaciones/{vessel}/mantenimiento', [CompanyFleetController::class, 'storeVesselMaintenance'])->name('fleet.vessels.maintenance.store');
     Route::post('/flota/aeronaves', [CompanyFleetController::class, 'storeAircraft'])->name('fleet.aircraft.store');
+    Route::patch('/flota/aeronaves/{aircraft}', [CompanyFleetController::class, 'updateAircraft'])->name('fleet.aircraft.update');
+    Route::post('/flota/aeronaves/{aircraft}/enviar-revision', [CompanyFleetController::class, 'submitAircraftForReview'])->name('fleet.aircraft.submit-review');
+    Route::post('/flota/aeronaves/{aircraft}/mantenimiento', [CompanyFleetController::class, 'storeAircraftMaintenance'])->name('fleet.aircraft.maintenance.store');
     Route::get('/flota/embarcaciones/{vessel}/asientos', [AdminVesselSeatController::class, 'edit'])->name('vessels.seats.edit');
     Route::post('/flota/embarcaciones/{vessel}/asientos/generar', [AdminVesselSeatController::class, 'generate'])->name('vessels.seats.generate');
     Route::patch('/flota/embarcaciones/{vessel}/asientos/{seat}/estado', [AdminVesselSeatController::class, 'toggle'])->name('vessels.seats.toggle');
@@ -315,6 +319,9 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::put('/supervision-salidas/{departure}', [AdminSupervisionController::class, 'update'])->name('supervision.update');
     Route::get('/flota-permisos', [AdminFleetComplianceController::class, 'index'])->name('fleet-compliance.index');
     Route::patch('/flota-permisos/{vessel}/verify', [AdminFleetComplianceController::class, 'verifyVessel'])->name('fleet-compliance.verify');
+    Route::patch('/flota-permisos/aeronaves/{aircraft}/verificar', [AdminFleetComplianceController::class, 'verifyAircraft'])->name('fleet-compliance.aircraft.verify');
+    Route::patch('/flota-permisos/embarcaciones/{vessel}/suspender', [AdminFleetComplianceController::class, 'suspendVessel'])->name('fleet-compliance.vessels.suspend');
+    Route::patch('/flota-permisos/aeronaves/{aircraft}/suspender', [AdminFleetComplianceController::class, 'suspendAircraft'])->name('fleet-compliance.aircraft.suspend');
     Route::get('/comisiones-facturacion', [AdminSettlementController::class, 'index'])->name('commissions.index');
     Route::post('/comisiones-facturacion/{organization}/cobros', [AdminSettlementController::class, 'recordCollection'])->name('commissions.store');
     Route::post('/comisiones-facturacion/{organization}/anulaciones', [AdminSettlementController::class, 'voidLegacy'])->name('commissions.void');

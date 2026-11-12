@@ -15,7 +15,7 @@ class AdminPageTitle
             'admin.companies.show' => 'Empresa de transporte',
             'admin.itineraries.index' => 'Itinerarios',
             'admin.itineraries.edit' => 'Editar salida',
-            'admin.fleet-compliance.index' => 'Permisos de flota',
+            'admin.fleet-compliance.index' => 'Flota por validar',
             'admin.commissions.index' => 'Comisiones y facturación',
             'admin.sales.index' => 'Ventas globales',
             'admin.tours.index' => 'Tours y experiencias',

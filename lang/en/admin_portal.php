@@ -42,6 +42,15 @@ return [
         'system' => 'System',
         'help' => 'Help',
     ],
+    'fleet' => [
+        'enabled_capacity' => 'Capacity of enabled units',
+        'seats' => 'seats',
+        'reason' => 'Reason',
+        'suspend' => 'Suspend',
+        'aircraft_reviewed' => 'Aircraft review saved.',
+        'suspended' => 'Unit suspended. It cannot be scheduled or sold.',
+        'certificate_expired' => 'Certificate expired',
+    ],
     'preparation' => [
         'agencies' => 'Agencies authorized by each carrier will be listed here. NavegaYA does not create or approve them.',
         'payment_connections' => 'Each company Mercado Pago connection will be shown here. There is no connection to review yet.',

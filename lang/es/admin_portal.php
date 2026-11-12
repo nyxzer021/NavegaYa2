@@ -42,6 +42,15 @@ return [
         'system' => 'Sistema',
         'help' => 'Ayuda',
     ],
+    'fleet' => [
+        'enabled_capacity' => 'Capacidad de las unidades habilitadas',
+        'seats' => 'plazas',
+        'reason' => 'Motivo',
+        'suspend' => 'Suspender',
+        'aircraft_reviewed' => 'Revisión de la aeronave registrada.',
+        'suspended' => 'Unidad suspendida. No se puede programar ni vender.',
+        'certificate_expired' => 'Certificado vencido',
+    ],
     'preparation' => [
         'agencies' => 'Aquí se va a ver, por empresa, las agencias que cada transportista autorice. NavegaYA no crea ni aprueba esas agencias.',
         'payment_connections' => 'Aquí se va a ver la conexión de Mercado Pago de cada empresa. Todavía no hay una conexión que consultar.',
