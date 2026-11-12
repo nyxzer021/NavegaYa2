@@ -14,6 +14,7 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\FleetPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -157,7 +158,7 @@ class AdminTransportRouteController extends Controller
         return [
             'organization' => $organization,
             'routes' => MasterRoute::with(['originPort', 'destinationPort'])->where('status', 'active')->where('modality', 'fluvial')->orderBy('origin_city')->orderBy('destination_city')->get(),
-            'vessels' => Vessel::with('organization')->where('status', 'ready')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->where('organization_id', $id))->orderBy('name')->get(),
+            'vessels' => Vessel::with('organization')->withCount('seats')->where('status', 'ready')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->where('organization_id', $id))->orderBy('name')->get()->filter(fn (Vessel $vessel): bool => ($departureRecord && (int) $vessel->id === (int) $departureRecord->vessel_id) || FleetPlan::isComplete($vessel))->values(),
             'selectedRouteId' => $selectedRouteId,
             'departureRecord' => $departureRecord,
             'companyContext' => true,
@@ -220,6 +221,9 @@ class AdminTransportRouteController extends Controller
             $changes['status'] = $data['action'] === 'delay' ? 'delayed' : 'rescheduled';
         } elseif ($data['action'] === 'change_vessel') {
             $vessel = Vessel::query()->where('organization_id', $organizationId)->where('status', 'ready')->findOrFail($data['vessel_id']);
+            if (! FleetPlan::isComplete($vessel)) {
+                throw ValidationException::withMessages(['vessel_id' => FleetPlan::missingText($vessel)]);
+            }
             $reservedSeats = $departure->reservations()->whereNotIn('status', ['cancelled', 'expired'])->withCount('seats')->get()->sum('seats_count');
             abort_if($vessel->seat_capacity < $reservedSeats, 422, "La unidad solo tiene {$vessel->seat_capacity} asientos y existen {$reservedSeats} pasajeros reservados.");
             $changes['vessel_id'] = $vessel->id;
@@ -245,6 +249,10 @@ class AdminTransportRouteController extends Controller
         $masterRoute = MasterRoute::query()->where('status', 'active')->where('modality', 'fluvial')->findOrFail($data['master_route_id']);
         $vessel = Vessel::findOrFail($data['vessel_id']);
         abort_unless($vessel->status === 'ready', 422, 'La embarcación debe estar aprobada y habilitada antes de programar una salida.');
+        $assigning = $departure === null || (int) $departure->vessel_id !== (int) $vessel->id;
+        if ($assigning && ! FleetPlan::isComplete($vessel)) {
+            throw ValidationException::withMessages(['vessel_id' => FleetPlan::missingText($vessel)]);
+        }
         $organizationId = AdminScope::organizationId(auth()->user());
         if ($organizationId) {
             abort_unless($vessel->organization_id === $organizationId, 403);

@@ -27,12 +27,28 @@ class AuditCoverageTest extends TestCase
         $this->assertSame('lead_pending', $logs[1]->changes['old']['status']);
         $this->assertSame('active', $logs[1]->changes['new']['status']);
         $this->assertArrayNotHasKey('password', $logs[0]->changes['new']);
-
-        $this->get(route('admin.audit.index'))
+        $this->actingAs($admin)->get(route('admin.audit.index'))
             ->assertOk()
             ->assertSee('Historial completo de operaciones')
             ->assertSee('Campaña auditable')
             ->assertSee('Anuncio')
             ->assertDontSee('>Advertisement');
+
+        $person = User::factory()->create(['name' => 'Operador Borrado']);
+        $person->delete();
+
+        $this->assertNull(User::find($person->id));
+        $removed = AuditLog::query()->where('event', 'deleted')->where('subject_type', User::class)->where('subject_id', $person->id)->first();
+        $this->assertNotNull($removed);
+        $this->assertSame($admin->id, $removed->user_id);
+        $this->assertSame('Operador Borrado', $removed->changes['old']['name']);
+
+        $own = User::factory()->create(['name' => 'Cuenta Propia']);
+        $this->actingAs($own);
+        $own->delete();
+        $ownLog = AuditLog::query()->where('event', 'deleted')->where('subject_type', User::class)->where('subject_id', $own->id)->first();
+        $this->assertNotNull($ownLog);
+        $this->assertNull($ownLog->user_id);
+        $this->assertSame('Cuenta Propia', $ownLog->changes['actor_name']);
     }
 }

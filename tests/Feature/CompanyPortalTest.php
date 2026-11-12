@@ -284,6 +284,9 @@ class CompanyPortalTest extends TestCase
     {
         [$admin, $organization] = $this->companyAdmin('Operador Fecha', '20999999997');
         $departure = $this->departure($organization, 'Nave Fecha', 'Iquitos', 'Lagunas');
+        foreach (range(1, $departure->vessel->seat_capacity) as $seat) {
+            $departure->vessel->seats()->create(['code' => (string) $seat, 'deck' => 'principal', 'row_position' => $seat, 'column_position' => 1, 'is_available' => true]);
+        }
 
         $this->actingAs($admin)->post(route('company.departures.store'), [
             'master_route_id' => $departure->transportRoute->master_route_id,

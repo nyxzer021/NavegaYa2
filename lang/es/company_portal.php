@@ -165,6 +165,8 @@ return [
         'vests_short' => 'Los chalecos no cubren las plazas de la unidad.',
         'capacity_short' => 'La capacidad no puede ser menor que las :count plazas configuradas.',
         'plan_incomplete' => 'Completa el plano: hay :ready de :capacity plazas configuradas.',
+        'plan_missing' => 'Falta configurar el plano (:drawn de :capacity)',
+        'one_day' => 'un día',
         'compliance_warning' => 'Esta unidad no cumple la capacidad o los chalecos. Corrígela antes de enviarla a revisión. Sigue visible.',
         'maintenance_kind_required' => 'Indica si es mantenimiento o reparación.',
         'maintenance_dates' => 'El fin del mantenimiento no puede ser anterior al inicio.',

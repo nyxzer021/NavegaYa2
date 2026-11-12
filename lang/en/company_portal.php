@@ -165,6 +165,8 @@ return [
         'vests_short' => 'Life vests do not cover the unit seats.',
         'capacity_short' => 'Capacity cannot be lower than the :count configured seats.',
         'plan_incomplete' => 'Finish the plan: :ready of :capacity seats are configured.',
+        'plan_missing' => 'The seat plan is incomplete (:drawn of :capacity)',
+        'one_day' => 'one day',
         'compliance_warning' => 'This unit does not meet capacity or life-vest rules. Fix it before review. It stays visible.',
         'maintenance_kind_required' => 'Say whether this is maintenance or a repair.',
         'maintenance_dates' => 'Maintenance cannot end before it starts.',

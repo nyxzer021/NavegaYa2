@@ -115,7 +115,9 @@
                 </div>
                 <span class="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800">{{ ['ready'=>'Lista','pending_review'=>'En revisión','changes_requested'=>'Con observaciones','rejected'=>'Rechazada','draft'=>'Borrador','suspended'=>'Suspendida'][$unit->status] ?? 'En registro' }}</span>
             </div>
-            @if($unit->seats->count() > $unit->seat_capacity)
+            @if(\App\Support\FleetPlan::missingText($unit))
+                <p class="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-950">{{ \App\Support\FleetPlan::missingText($unit) }}</p>
+            @elseif($unit->seats->count() > $unit->seat_capacity)
                 <p class="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{{ __('company_portal.fleet.compliance_warning', [], 'es') }}</p>
             @endif
             <a href="{{ route('company.aircraft.seats',$unit) }}" class="mt-3 inline-flex text-sm font-bold text-sky-800">Configurar plano de asientos</a>

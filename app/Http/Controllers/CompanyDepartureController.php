@@ -18,7 +18,7 @@ class CompanyDepartureController extends Controller
     {
         $organization = $this->organization();
         $organizationId = $organization->id;
-        $organization->loadMissing('vessels.basePort');
+        $organization->load(['vessels' => fn ($query) => $query->with('basePort')->withCount('seats')]);
         $filter = $request->string('filter')->toString();
         $river = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query

@@ -72,6 +72,9 @@ class MasterRouteTest extends TestCase
         $company = Organization::create(['type' => 'transport_company', 'legal_name' => 'Amazonas SAC', 'ruc' => '20111111111', 'email' => 'amazonas@test.pe', 'status' => 'active']);
         $otherCompany = Organization::create(['type' => 'transport_company', 'legal_name' => 'Otra SAC', 'ruc' => '20222222222', 'email' => 'otra@test.pe', 'status' => 'active']);
         $vessel = Vessel::create(['organization_id' => $company->id, 'name' => 'Río Azul', 'registration_number' => 'PA-7001', 'vessel_type' => 'lancha', 'seat_capacity' => 25, 'status' => 'ready']);
+        foreach (range(1, 25) as $seat) {
+            $vessel->seats()->create(['code' => (string) $seat, 'deck' => 'principal', 'row_position' => $seat, 'column_position' => 1, 'is_available' => true]);
+        }
         $otherVessel = Vessel::create(['organization_id' => $otherCompany->id, 'name' => 'Ajena', 'registration_number' => 'PA-7002', 'vessel_type' => 'lancha', 'seat_capacity' => 20, 'status' => 'ready']);
         $companyAdmin = $this->userWithRole('company_admin', $company);
 

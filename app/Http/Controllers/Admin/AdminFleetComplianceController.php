@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aircraft;
 use App\Models\Vessel;
 use App\Support\AuditRecorder;
+use App\Support\DocumentDeadline;
 use App\Support\FleetMaintenance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,13 +16,21 @@ class AdminFleetComplianceController extends Controller
 {
     public function index(Request $request): View
     {
+        $today = now()->toDateString();
+        $aircraft = Aircraft::with(['organization', 'seats'])->get()->sortBy(function (Aircraft $unit): string {
+            $expired = DocumentDeadline::isExpired($unit->airworthiness_expires_at) || DocumentDeadline::isExpired($unit->aviation_policy_expires_at);
+
+            return ($expired ? '0' : '1').($unit->status === 'pending_review' ? '0' : '1').$unit->name;
+        })->values();
+
         return view('admin.fleet-compliance.index', [
             'enabledSeatCapacity' => FleetMaintenance::enabledSeatCapacity(),
             'vessels' => Vessel::with(['organization', 'seats'])
                 ->when($request->filled('organization_id'), fn ($query) => $query->where('organization_id', $request->integer('organization_id')))
+                ->orderByRaw('case when (insurance_expires_at is not null and date(insurance_expires_at) < ?) or (inspection_expires_at is not null and date(inspection_expires_at) < ?) then 0 else 1 end', [$today, $today])
                 ->orderByRaw("case when status = 'pending_review' then 0 else 1 end")
                 ->orderByDesc('submitted_for_review_at')->orderBy('name')->paginate(15)->withQueryString(),
-            'aircraft' => Aircraft::with('organization')->orderBy('name')->get(),
+            'aircraft' => $aircraft,
         ]);
     }
 

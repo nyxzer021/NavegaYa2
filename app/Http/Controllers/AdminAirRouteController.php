@@ -7,6 +7,7 @@ use App\Models\AirDeparture;
 use App\Models\AirRoute;
 use App\Models\Organization;
 use App\Support\AdminScope;
+use App\Support\FleetPlan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -32,7 +33,7 @@ class AdminAirRouteController extends Controller
             abort_unless($airRoute->organization_id === $s, 403);
         }
 
-return view('admin.air-routes.form', ['organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->when($s, fn ($q) => $q->whereKey($s))->get(), 'routes' => AirRoute::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'active')->get(), 'aircraft' => Aircraft::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'ready')->get(), 'airRoute' => $airRoute]);
+        return view('admin.air-routes.form', ['organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->when($s, fn ($q) => $q->whereKey($s))->get(), 'routes' => AirRoute::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'active')->get(), 'aircraft' => Aircraft::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'ready')->get(), 'airRoute' => $airRoute]);
     }
 
     public function update(Request $r, AirRoute $airRoute): RedirectResponse
@@ -73,9 +74,13 @@ return view('admin.air-routes.form', ['organizations' => Organization::where('ty
         $aircraft = Aircraft::findOrFail($d['aircraft_id']);
         if ($s = $this->scope()) {
             abort_unless($route->organization_id === $s && $aircraft->organization_id === $s, 403);
-        }if ($route->organization_id !== $aircraft->organization_id) {
+        }        if ($route->organization_id !== $aircraft->organization_id) {
             return back()->withErrors(['aircraft_id' => 'La aeronave debe pertenecer a la misma empresa.']);
-        }AirDeparture::create($d + ['cargo_enabled' => $r->boolean('cargo_enabled'), 'status' => 'scheduled']);
+        }
+        if (! FleetPlan::isComplete($aircraft)) {
+            return back()->withErrors(['aircraft_id' => FleetPlan::missingText($aircraft)]);
+        }
+        AirDeparture::create($d + ['cargo_enabled' => $r->boolean('cargo_enabled'), 'status' => 'scheduled']);
 
         return back()->with('success', 'Salida aérea programada.');
     }
@@ -84,13 +89,13 @@ return view('admin.air-routes.form', ['organizations' => Organization::where('ty
     {
         $s = $this->scope();
 
-        return view('admin.air-routes.departure-form', ['routes' => AirRoute::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'active')->get(), 'aircraft' => Aircraft::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'ready')->get()]);
+        return view('admin.air-routes.departure-form', ['routes' => AirRoute::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'active')->get(), 'aircraft' => Aircraft::withCount('seats')->when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'ready')->get()->filter(fn (Aircraft $aircraft): bool => FleetPlan::isComplete($aircraft))->values()]);
     }
 
     public function form(): View
     {
         $s = $this->scope();
 
-        return view('admin.air-routes.form', ['organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->when($s, fn ($q) => $q->whereKey($s))->get(), 'routes' => AirRoute::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'active')->get(), 'aircraft' => Aircraft::when($s,fn ($q) => $q->where('organization_id',$s))->where('status','ready')->get()]);
+        return view('admin.air-routes.form', ['organizations' => Organization::where('type', 'transport_company')->where('status', 'active')->when($s, fn ($q) => $q->whereKey($s))->get(), 'routes' => AirRoute::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'active')->get(), 'aircraft' => Aircraft::when($s, fn ($q) => $q->where('organization_id', $s))->where('status', 'ready')->get()]);
     }
 }

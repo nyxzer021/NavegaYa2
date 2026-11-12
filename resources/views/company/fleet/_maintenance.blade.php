@@ -1,6 +1,16 @@
 <form method="POST" action="{{ $action }}" class="grid gap-3 border-t border-slate-100 p-5 sm:grid-cols-2">
     @csrf
     <p class="text-sm font-black text-slate-900 sm:col-span-2">{{ __('company_portal.fleet.maintenance', [], 'es') }}</p>
+    @if(($unit->maintenance_scheduled_on ?? null) || $unit->maintenancePeriods->isNotEmpty())
+        <ul class="space-y-1 text-sm text-slate-700 sm:col-span-2">
+            @if($unit->maintenance_scheduled_on ?? null)
+                <li>{{ $unit->maintenance_scheduled_on->format('d/m/Y') }} · {{ in_array($unit->maintenance_kind, ['reparacion', 'repair'], true) ? __('company_portal.fleet.repair', [], 'es') : __('company_portal.fleet.maintenance', [], 'es') }} · {{ __('company_portal.fleet.one_day', [], 'es') }}</li>
+            @endif
+            @foreach($unit->maintenancePeriods as $period)
+                <li>{{ $period->starts_on->format('d/m/Y') }} – {{ $period->ends_on->format('d/m/Y') }} · {{ __('company_portal.fleet.'.$period->kind, [], 'es') }}</li>
+            @endforeach
+        </ul>
+    @endif
     <label class="text-xs font-bold text-slate-700">Desde<input type="date" name="starts_on" required value="{{ old('starts_on') }}" class="mt-1 h-10 w-full rounded-xl border-slate-200 text-sm"></label>
     <label class="text-xs font-bold text-slate-700">Hasta<input type="date" name="ends_on" required value="{{ old('ends_on') }}" class="mt-1 h-10 w-full rounded-xl border-slate-200 text-sm"></label>
     <label class="text-xs font-bold text-slate-700">Tipo

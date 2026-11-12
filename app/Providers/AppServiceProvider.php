@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen('eloquent.created: *', fn (string $event, array $models) => $this->capture('created', $models[0] ?? null));
         Event::listen('eloquent.updated: *', fn (string $event, array $models) => $this->capture('updated', $models[0] ?? null));
-        Event::listen('eloquent.deleted: *', fn (string $event, array $models) => $this->capture('deleted', $models[0] ?? null));
+        Event::listen('eloquent.deleting: *', fn (string $event, array $models) => $this->capture('deleted', $models[0] ?? null));
     }
 
     private function capture(string $event, mixed $subject): void
@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
         $changes = match ($event) {
             'created' => ['new' => $this->safe($subject->getAttributes())],
             'updated' => ['old' => $this->safe(array_intersect_key($subject->getOriginal(), $subject->getChanges())), 'new' => $this->safe($subject->getChanges())],
-            'deleted' => ['old' => $this->safe($subject->getOriginal())],
+            'deleted' => ['old' => $this->safe($subject->getOriginal()), 'actor_name' => Auth::user()?->name],
         };
 
         AuditLog::create([

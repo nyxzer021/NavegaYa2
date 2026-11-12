@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Vessel;
 use App\Models\VesselMaintenancePeriod;
 use App\Models\VesselSeat;
+use App\Support\FleetMaintenance;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,73 @@ class StageFourFleetTest extends TestCase
         $this->assertNotNull(Aircraft::find($aircraft->id));
         $this->assertNull(Aircraft::find($aircraft->id)->suspended_by);
         $this->assertDatabaseHas('audit_logs', ['event' => 'fleet_unit_suspended', 'subject_id' => $aircraft->id, 'user_id' => null]);
+    }
+
+    public function test_legacy_maintenance_day_stays_visible_and_an_incomplete_plan_cannot_be_scheduled(): void
+    {
+        [$admin, $company] = $this->companyAdmin();
+        $vessel = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'Lancha Día',
+            'registration_number' => 'FLE-DIA',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 10,
+            'status' => 'ready',
+            'maintenance_scheduled_on' => '2026-12-01',
+            'maintenance_kind' => 'reparacion',
+            'life_vest_count' => 4,
+            'dicapi_certificate_number' => 'DIC-1',
+            'insurance_policy' => 'POL-1',
+            'insurance_expires_at' => now()->addDays(10)->toDateString(),
+            'inspection_expires_at' => now()->subDay()->toDateString(),
+        ]);
+        $later = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'Lancha Al Día',
+            'registration_number' => 'FLE-OK',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 4,
+            'status' => 'ready',
+            'inspection_expires_at' => now()->addMonths(6)->toDateString(),
+        ]);
+        $departure = $this->departure($company, $vessel, now()->addDays(6));
+
+        $this->actingAs($admin)->get(route('company.fleet.index'))
+            ->assertOk()
+            ->assertSee('Falta configurar el plano (0 de 10)')
+            ->assertSee('01/12/2026')
+            ->assertSee('un día')
+            ->assertDontSee('disponible para programar salidas')
+            ->assertDontSee('name="maintenance_scheduled_on"', false);
+
+        $this->actingAs($admin)->patch(route('company.fleet.vessels.update', $vessel), [
+            'name' => 'Lancha Día',
+            'registration_number' => 'FLE-DIA',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 10,
+        ])->assertRedirect();
+        $this->assertSame('2026-12-01', $vessel->fresh()->maintenance_scheduled_on->toDateString());
+        $vessel->update(['maintenance_scheduled_on' => now()->toDateString()]);
+        $this->assertTrue(FleetMaintenance::blockedToday($vessel->fresh()));
+
+        $this->actingAs($admin)->post(route('company.departures.store'), [
+            'master_route_id' => $departure->transportRoute->master_route_id,
+            'vessel_id' => $vessel->id,
+            'departure_date' => now()->addDays(9)->toDateString(),
+            'departure_time' => '08:00',
+            'fare' => '40',
+        ])->assertSessionHasErrors('vessel_id');
+        $this->assertDatabaseCount('route_departures', 1);
+
+        $reviewer = $this->superAdmin();
+        $this->actingAs($reviewer)->get(route('admin.fleet-compliance.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['Lancha Día', 'Lancha Al Día'])
+            ->assertSee('Vencido')
+            ->assertSee('4 chalecos · 10 plazas')
+            ->assertSee('DIC-1')
+            ->assertSee('Falta configurar el plano (0 de 10)')
+            ->assertDontSee('disponible para programar salidas');
     }
 
     /**

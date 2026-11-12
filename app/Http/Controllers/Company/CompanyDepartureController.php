@@ -10,6 +10,7 @@ use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\FleetPlan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -26,6 +27,9 @@ class CompanyDepartureController extends BaseCompanyDepartureController
             ->findOrFail($data['master_route_id']);
         $vessel = Vessel::query()->findOrFail($data['vessel_id']);
         abort_unless($vessel->organization_id === $organization->id, 403);
+        if (! FleetPlan::isComplete($vessel)) {
+            return back()->withInput()->withErrors(['vessel_id' => FleetPlan::missingText($vessel)]);
+        }
 
         $route = TransportRoute::firstOrCreate(
             ['organization_id' => $organization->id, 'master_route_id' => $masterRoute->id],
