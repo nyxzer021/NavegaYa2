@@ -5,7 +5,7 @@
 <div class="mx-auto max-w-7xl space-y-6">
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 class="text-2xl font-black text-slate-950">Rutas</h2>
-        <p class="mt-1 max-w-3xl text-sm text-slate-500">Elige un tramo oficial, indica la duración y, si hace falta, las escalas. El pasaje se vende siempre de origen a destino. El precio y las plazas por tramo intermedio quedan para una etapa posterior.</p>
+        <p class="mt-1 max-w-3xl text-sm text-slate-500">Elige un tramo oficial, indica la duración y, si hace falta, las escalas. El pasaje se vende de origen a destino.</p>
     </section>
 
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
@@ -51,10 +51,53 @@
 
     <section class="space-y-4">
         @forelse($riverRoutes->concat($airRoutes) as $route)
+            @php
+                $isAir = $route instanceof \App\Models\AirRoute;
+                $minutesTotal = (int) $route->estimated_duration_minutes;
+                $savedStops = $route->stops->values();
+                $active = $route->status === 'active';
+            @endphp
             <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 class="text-lg font-black text-slate-950">{{ $route instanceof \App\Models\AirRoute ? $route->origin_city : $route->originPort->city }} → {{ $route instanceof \App\Models\AirRoute ? $route->destination_city : $route->destinationPort->city }}</h3>
-                <p class="mt-1 text-sm text-slate-500">{{ $route->code }} · {{ \App\Models\MasterRoute::formatDuration((int) $route->estimated_duration_minutes) }} · {{ $route instanceof \App\Models\AirRoute ? 'Aéreo' : 'Fluvial' }}</p>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-black text-slate-950">{{ $isAir ? $route->origin_city : $route->originPort->city }} → {{ $isAir ? $route->destination_city : $route->destinationPort->city }}</h3>
+                        <p class="mt-1 text-sm text-slate-500">{{ $route->code }} · {{ \App\Models\MasterRoute::formatDuration($minutesTotal) }} · {{ $isAir ? 'Aéreo' : 'Fluvial' }}</p>
+                    </div>
+                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600' }}">{{ $active ? 'Activa' : 'Inactiva' }}</span>
+                </div>
                 <p class="mt-3 text-sm font-semibold text-slate-800">{{ \App\Support\RouteStops::label($route) ?: 'Sin escalas' }}</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <details class="w-full">
+                        <summary class="inline-flex h-9 cursor-pointer list-none items-center rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">Editar</summary>
+                        <form method="POST" action="{{ route($isAir ? 'company.routes.air.update' : 'company.routes.river.update', $route) }}" class="mt-3 space-y-3">
+                            @csrf
+                            @method('PATCH')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <label class="text-sm font-semibold text-slate-700">Horas<input required type="number" min="0" max="720" name="duration_hours" value="{{ intdiv($minutesTotal, 60) }}" class="mt-1 h-10 w-full rounded-lg border-slate-200 px-3 text-sm"></label>
+                                <label class="text-sm font-semibold text-slate-700">Minutos<input required type="number" min="0" max="59" name="duration_minutes" value="{{ $minutesTotal % 60 }}" class="mt-1 h-10 w-full rounded-lg border-slate-200 px-3 text-sm"></label>
+                            </div>
+                            @foreach(range(0, 2) as $index)
+                                @php($stop = $savedStops->get($index))
+                                <div class="grid gap-3 sm:grid-cols-[1fr_8rem_8rem]">
+                                    <select name="stops[{{ $index }}][port_id]" class="h-10 rounded-lg border-slate-200 px-3 text-sm">
+                                        <option value="">Sin escala</option>
+                                        @foreach($ports as $port)
+                                            <option value="{{ $port->id }}" @selected($stop && (int) $stop->port_id === (int) $port->id)>{{ $port->name }} · {{ $port->city }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="number" min="0" max="720" name="stops[{{ $index }}][hours]" value="{{ $stop ? intdiv((int) $stop->minutes_from_origin, 60) : '' }}" placeholder="Horas" class="h-10 rounded-lg border-slate-200 px-3 text-sm">
+                                    <input type="number" min="0" max="59" name="stops[{{ $index }}][minutes]" value="{{ $stop ? ((int) $stop->minutes_from_origin % 60) : '' }}" placeholder="Minutos" class="h-10 rounded-lg border-slate-200 px-3 text-sm">
+                                </div>
+                            @endforeach
+                            <button class="inline-flex h-9 items-center rounded-lg bg-[#062c21] px-4 text-sm font-bold text-white">Guardar</button>
+                        </form>
+                    </details>
+                    <form method="POST" action="{{ route($isAir ? 'company.routes.air.toggle' : 'company.routes.river.toggle', $route) }}">
+                        @csrf
+                        @method('PATCH')
+                        <button class="inline-flex h-9 items-center rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">{{ $active ? 'Desactivar' : 'Activar' }}</button>
+                    </form>
+                </div>
             </article>
         @empty
             <p class="text-sm text-slate-500">Todavía no hay rutas registradas.</p>

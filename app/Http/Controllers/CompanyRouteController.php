@@ -109,6 +109,41 @@ class CompanyRouteController extends Controller
         return back()->with('success', 'Ruta registrada. El pasaje se vende de origen a destino.');
     }
 
+    public function updateRiver(Request $request, TransportRoute $transportRoute): RedirectResponse
+    {
+        $route = $this->owned($transportRoute);
+
+        $this->saveSchedule($request, $route, (int) $route->origin_port_id, (int) $route->destination_port_id, 'fluvial');
+
+        return back()->with('success', 'Ruta actualizada.');
+    }
+
+    public function updateAir(Request $request, AirRoute $airRoute): RedirectResponse
+    {
+        $route = $this->owned($airRoute);
+        $master = $route->masterRoute;
+
+        $this->saveSchedule(
+            $request,
+            $route,
+            (int) ($master->origin_port_id ?? 0),
+            (int) ($master->destination_port_id ?? 0),
+            'aereo',
+        );
+
+        return back()->with('success', 'Ruta actualizada.');
+    }
+
+    public function toggleRiver(TransportRoute $transportRoute): RedirectResponse
+    {
+        return $this->toggle($this->owned($transportRoute));
+    }
+
+    public function toggleAir(AirRoute $airRoute): RedirectResponse
+    {
+        return $this->toggle($this->owned($airRoute));
+    }
+
     public function requestSegment(Request $request): RedirectResponse
     {
         $organization = $this->organization();
@@ -174,6 +209,60 @@ class CompanyRouteController extends Controller
         }
 
         return back()->with('success', 'Solicitud enviada. El tramo queda pendiente de aprobación.');
+    }
+
+    private function saveSchedule(Request $request, TransportRoute|AirRoute $route, int $originPortId, int $destinationPortId, string $side): void
+    {
+        $data = $request->validate([
+            'duration_hours' => ['required', 'integer', 'min:0', 'max:720'],
+            'duration_minutes' => ['required', 'integer', 'min:0', 'max:59'],
+            'stops' => ['nullable', 'array', 'max:12'],
+            'stops.*.port_id' => ['nullable', 'integer'],
+            'stops.*.hours' => ['nullable', 'integer', 'min:0', 'max:720'],
+            'stops.*.minutes' => ['nullable', 'integer', 'min:0', 'max:59'],
+        ]);
+        $duration = $this->duration($data['duration_hours'], $data['duration_minutes']);
+
+        DB::transaction(function () use ($route, $data, $duration, $originPortId, $destinationPortId, $side): void {
+            $route->update(['estimated_duration_minutes' => $duration]);
+            RouteStops::replace($route, $data['stops'] ?? [], $duration, $originPortId, $destinationPortId, $side);
+        });
+    }
+
+    private function toggle(TransportRoute|AirRoute $route): RedirectResponse
+    {
+        if ($route->status === 'active') {
+            $sold = $route->departures()
+                ->where('departure_at', '>=', now())
+                ->whereHas('reservations', fn ($query) => $query->whereIn('status', ['pending', 'confirmed']))
+                ->orderBy('departure_at')
+                ->get();
+            if ($sold->isNotEmpty()) {
+                $list = $sold->map(fn ($departure) => ($departure->code ?: 'Salida '.$departure->id).' · '.$departure->departure_at->format('d/m/Y H:i'))->join(', ');
+
+                throw ValidationException::withMessages([
+                    'status' => 'No se puede desactivar. Estas salidas futuras tienen ventas: '.$list.'.',
+                ]);
+            }
+            $route->departures()
+                ->where('departure_at', '>=', now())
+                ->whereDoesntHave('reservations', fn ($query) => $query->whereIn('status', ['pending', 'confirmed']))
+                ->update(['is_published' => false]);
+            $route->update(['status' => 'inactive']);
+
+            return back()->with('success', 'Ruta desactivada. Las salidas futuras sin ventas ya no están a la venta.');
+        }
+
+        $route->update(['status' => 'active']);
+
+        return back()->with('success', 'Ruta activada.');
+    }
+
+    private function owned(TransportRoute|AirRoute $route): TransportRoute|AirRoute
+    {
+        abort_unless($route->organization_id === $this->organization()->id, 404);
+
+        return $route;
     }
 
     private function duration(int $hours, int $minutes): int

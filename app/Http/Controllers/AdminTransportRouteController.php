@@ -14,11 +14,11 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\DepartureSchedule;
 use App\Support\FleetPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -212,7 +212,14 @@ class AdminTransportRouteController extends Controller
         ];
 
         if (in_array($data['action'], ['delay', 'reschedule'], true)) {
-            $newDepartureAt = Carbon::parse($data['departure_at']);
+            $newDepartureAt = DepartureSchedule::parse($data['departure_at']);
+            $departure->loadMissing('transportRoute', 'vessel');
+            if ($departure->vessel && DepartureSchedule::conflicts($departure->vessel, $newDepartureAt, (int) $departure->transportRoute->estimated_duration_minutes, $departure->id)->isNotEmpty()) {
+                throw ValidationException::withMessages(['departure_at' => 'Esa unidad ya tiene una salida que se cruza con este horario.']);
+            }
+            if ($departure->vessel && DepartureSchedule::blockedOn($departure->vessel, $newDepartureAt)) {
+                throw ValidationException::withMessages(['departure_at' => 'La unidad está en mantenimiento ese día.']);
+            }
             $offsetMinutes = $departure->departure_at->diffInMinutes($newDepartureAt, false);
             $changes['previous_departure_at'] = $departure->departure_at;
             $changes['departure_at'] = $newDepartureAt;
@@ -223,6 +230,10 @@ class AdminTransportRouteController extends Controller
             $vessel = Vessel::query()->where('organization_id', $organizationId)->where('status', 'ready')->findOrFail($data['vessel_id']);
             if (! FleetPlan::isComplete($vessel)) {
                 throw ValidationException::withMessages(['vessel_id' => FleetPlan::missingText($vessel)]);
+            }
+            $departure->loadMissing('transportRoute');
+            if (DepartureSchedule::conflicts($vessel, $departure->departure_at, (int) $departure->transportRoute->estimated_duration_minutes)->isNotEmpty()) {
+                throw ValidationException::withMessages(['vessel_id' => 'Esa unidad ya tiene una salida que se cruza con este horario.']);
             }
             $reservedSeats = $departure->reservations()->whereNotIn('status', ['cancelled', 'expired'])->withCount('seats')->get()->sum('seats_count');
             abort_if($vessel->seat_capacity < $reservedSeats, 422, "La unidad solo tiene {$vessel->seat_capacity} asientos y existen {$reservedSeats} pasajeros reservados.");
@@ -239,8 +250,16 @@ class AdminTransportRouteController extends Controller
         }
 
         $departure->update($changes);
+        $links = [];
+        if (in_array($data['action'], ['delay', 'reschedule', 'cancel'], true)) {
+            $fresh = $departure->fresh();
+            $change = $data['action'] === 'cancel'
+                ? 'La salida fue cancelada'
+                : 'La salida quedó para '.DepartureSchedule::label($fresh->departure_at);
+            $links = DepartureSchedule::notify($fresh, $data['reason'], $change);
+        }
 
-        return back()->with('success', 'La contingencia fue registrada y la salida se actualizó con trazabilidad.');
+        return back()->with('success', 'La contingencia fue registrada y la salida se actualizó con trazabilidad.')->with('whatsapp_links', $links);
     }
 
     private function validatedDepartureData(StoreRouteDepartureRequest $request, ?RouteDeparture $departure = null): array

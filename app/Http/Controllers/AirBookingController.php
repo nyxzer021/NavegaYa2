@@ -17,7 +17,7 @@ class AirBookingController extends Controller
     {
         $this->expire($departure);
         $departure->load(['airRoute.organization', 'aircraft.seats']);
-        abort_unless(! $departure->airRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
+        abort_unless(! $departure->airRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         $occupiedSeatIds = ReservationSeat::where('air_departure_id', $departure->id)->pluck('aircraft_seat_id')->all();
         $seats = $departure->aircraft->seats->where('is_available', true)->sortBy(['cabin', 'row_position', 'column_position']);
 
@@ -28,7 +28,7 @@ class AirBookingController extends Controller
     {
         $data = $request->validated();
         $departure->loadMissing('airRoute.organization');
-        abort_unless(! $departure->airRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
+        abort_unless(! $departure->airRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         if (count($data['seats']) !== count($data['passengers'])) {
             return back()->withInput()->withErrors(['seats' => 'Cada asiento debe tener un pasajero.']);
         }

@@ -22,7 +22,7 @@ class Organization extends Model
         'representative_document_number', 'representative_email', 'representative_phone',
         'ruc', 'email', 'phone', 'whatsapp', 'whatsapp_message', 'whatsapp_cargo', 'whatsapp_hours_from', 'whatsapp_hours_until', 'whatsapp_show_outside_hours',
         'service_hours', 'show_public_whatsapp', 'whatsapp_hidden_by_admin', 'whatsapp_hidden_reason', 'whatsapp_hidden_by', 'whatsapp_hidden_at',
-        'address', 'website', 'status', 'is_marketplace_paused', 'commission_rate', 'commercial_plan', 'agreement_number',
+        'address', 'website', 'status', 'is_marketplace_paused', 'marketplace_pause_reason', 'commission_rate', 'commercial_plan', 'agreement_number',
         'bank_name', 'bank_account', 'bank_cci',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
         'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path', 'profile_content_status', 'public_presentation',

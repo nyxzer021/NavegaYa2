@@ -22,7 +22,7 @@
     $policyUrl = route('companies.show', $organization).'?politica=1';
     $weekdays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     $months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    $when = $departure->departure_at;
+    $when = $departure->departure_at->copy()->timezone('America/Lima');
     $weekday = $weekdays[$when->dayOfWeek].' '.$when->format('j').' '.$months[$when->month - 1];
     $dateLabel = $when->isToday() ? 'Hoy, '.$weekday : ($when->isTomorrow() ? 'Mañana, '.$weekday : ucfirst($weekday));
     $hours = intdiv($duration, 60);
@@ -42,7 +42,7 @@
             <div class="ny-departure-times">
                 <time>{{ $when->format('H:i') }}</time>
                 <span class="ny-departure-line" aria-hidden="true"><i></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 15h18M5 15l2-6h10l2 6M8 9V6h8v3"/></svg><i></i></span>
-                <time>{{ $arrival ? $arrival->format('H:i') : '—' }}</time>
+                <time>{{ $arrival ? $arrival->copy()->timezone('America/Lima')->format('H:i') : '—' }}</time>
             </div>
             <div class="ny-departure-cities">
                 <span>{{ $origin }}</span>

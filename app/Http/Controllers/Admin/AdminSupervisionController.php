@@ -11,12 +11,14 @@ use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
+use App\Support\AuditRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AdminSupervisionController extends Controller
@@ -89,12 +91,31 @@ class AdminSupervisionController extends Controller
 
     public function togglePublication(Request $request, int $departure): RedirectResponse
     {
-        $data = $request->validate(['type' => ['required', Rule::in(['fluvial', 'aereo'])]]);
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['fluvial', 'aereo'])],
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
         $record = $data['type'] === 'aereo'
             ? AirDeparture::findOrFail($departure)
             : RouteDeparture::findOrFail($departure);
-
-        $record->update(['is_published' => ! $record->is_published]);
+        $pausing = (bool) $record->is_published;
+        if ($pausing && ! filled($data['reason'] ?? null)) {
+            throw ValidationException::withMessages(['reason' => 'Indica el motivo para pausar las ventas.']);
+        }
+        $record->update($pausing ? [
+            'is_published' => false,
+            'sales_paused_at' => now(),
+            'sales_pause_reason' => $data['reason'],
+            'sales_paused_by_user_id' => $request->user()?->id,
+        ] : [
+            'is_published' => true,
+            'sales_paused_at' => null,
+            'sales_pause_reason' => null,
+            'sales_paused_by_user_id' => null,
+        ]);
+        AuditRecorder::record($request, $pausing ? 'departure_sales_paused' : 'departure_sales_resumed', $record, [
+            'reason' => $data['reason'] ?? null,
+        ]);
 
         return back()->with('success', $record->is_published
             ? 'La salida volvió a publicarse en el marketplace.'

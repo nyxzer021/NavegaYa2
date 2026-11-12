@@ -179,6 +179,98 @@ class StageFourRoutesTest extends TestCase
         ]);
     }
 
+    public function test_a_company_can_edit_stops_and_cannot_deactivate_a_route_with_future_sales(): void
+    {
+        [$admin, $company] = $this->company('Edita Ruta', '20641000035', 'fluvial');
+        [$otherAdmin] = $this->company('Ajena Ruta', '20641000036', 'fluvial');
+        [$origin, $destination, $stop] = $this->ports('fluvial');
+        $master = $this->segment($origin, $destination, 'active');
+
+        $this->actingAs($admin)->post(route('company.routes.store'), [
+            'master_route_id' => $master->id,
+            'duration_hours' => 3,
+            'duration_minutes' => 0,
+        ])->assertRedirect();
+        $route = $company->transportRoutes()->first();
+
+        $this->actingAs($admin)->get(route('company.routes.index'))
+            ->assertOk()
+            ->assertSee('El pasaje se vende de origen a destino.')
+            ->assertDontSee('etapa posterior')
+            ->assertSee('Editar')
+            ->assertSee('Desactivar');
+
+        $this->actingAs($admin)->patch(route('company.routes.river.update', $route), [
+            'duration_hours' => 4,
+            'duration_minutes' => 0,
+            'stops' => [
+                ['port_id' => $stop->id, 'hours' => 2, 'minutes' => 0],
+            ],
+        ])->assertRedirect();
+        $this->assertSame(240, $route->fresh()->estimated_duration_minutes);
+        $this->assertDatabaseHas('route_stops', [
+            'transport_route_id' => $route->id,
+            'port_id' => $stop->id,
+            'minutes_from_origin' => 120,
+        ]);
+
+        $this->actingAs($otherAdmin)->patch(route('company.routes.river.update', $route), [
+            'duration_hours' => 1,
+            'duration_minutes' => 0,
+        ])->assertNotFound();
+
+        $vessel = Vessel::create([
+            'organization_id' => $company->id,
+            'name' => 'Lancha Edición',
+            'registration_number' => 'EDI-1',
+            'vessel_type' => 'lancha',
+            'seat_capacity' => 4,
+            'status' => 'ready',
+        ]);
+        $future = RouteDeparture::create([
+            'transport_route_id' => $route->id,
+            'vessel_id' => $vessel->id,
+            'departure_at' => now()->addDays(2)->setTime(8, 0),
+            'fare' => 40,
+            'status' => 'scheduled',
+        ]);
+        Reservation::create([
+            'route_departure_id' => $future->id,
+            'code' => 'NY-FUTURA',
+            'contact_name' => 'Ana',
+            'contact_email' => 'ana@edita.test',
+            'contact_phone' => '999000222',
+            'total_amount' => 40,
+            'status' => 'confirmed',
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->followingRedirects()->from(route('company.routes.index'))
+            ->patch(route('company.routes.river.toggle', $route))
+            ->assertOk()
+            ->assertSee('No se puede desactivar')
+            ->assertSee($future->fresh()->code);
+        $this->followRedirects = false;
+        $this->assertSame('active', $route->fresh()->status);
+
+        $unsold = RouteDeparture::create([
+            'transport_route_id' => $route->id,
+            'vessel_id' => $vessel->id,
+            'departure_at' => now()->addDays(4),
+            'fare' => 40,
+            'status' => 'scheduled',
+            'is_published' => true,
+        ]);
+        $future->update(['departure_at' => now()->subDay()]);
+        $this->actingAs($admin)->patch(route('company.routes.river.toggle', $route))->assertRedirect();
+        $this->assertSame('inactive', $route->fresh()->status);
+        $this->assertFalse($unsold->fresh()->is_published);
+
+        $this->actingAs($admin)->patch(route('company.routes.river.toggle', $route))->assertRedirect();
+        $this->assertSame('active', $route->fresh()->status);
+        $this->assertFalse($unsold->fresh()->is_published);
+    }
+
     public function test_an_air_stop_uses_an_aerodrome_from_the_ports_table(): void
     {
         [$admin, $company] = $this->company('Ruta Aérea', '20641000034', 'aereo');

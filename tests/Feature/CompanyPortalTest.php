@@ -183,7 +183,7 @@ class CompanyPortalTest extends TestCase
         [$admin, $organization] = $this->companyAdmin('Operador Contingencia', '20888888888');
         $departure = $this->departure($organization, 'Nave Operativa', 'Iquitos', 'Nauta');
         $originalDepartureAt = $departure->departure_at;
-        $newDepartureAt = now()->addDays(2)->setTime(10, 30);
+        $newDepartureAt = now()->addDays(2)->timezone('America/Lima')->setTime(10, 30);
 
         $response = $this->actingAs($admin)->patch(route('company.departures.contingency', $departure), [
             'action' => 'reschedule',
@@ -195,7 +195,7 @@ class CompanyPortalTest extends TestCase
         $departure->refresh();
         $this->assertSame('rescheduled', $departure->status);
         $this->assertSame($originalDepartureAt->format('Y-m-d H:i:s'), $departure->previous_departure_at->format('Y-m-d H:i:s'));
-        $this->assertSame($newDepartureAt->format('Y-m-d H:i:s'), $departure->departure_at->format('Y-m-d H:i:s'));
+        $this->assertTrue($departure->departure_at->equalTo($newDepartureAt));
         $this->assertSame($admin->id, $departure->status_changed_by_user_id);
         $this->assertSame('Cierre preventivo del puerto por seguridad.', $departure->disruption_reason);
     }
@@ -298,9 +298,9 @@ class CompanyPortalTest extends TestCase
 
         $created = RouteDeparture::query()->where('fare', 180)->first();
         $this->assertNotNull($created);
-        $this->assertSame('2026-11-05 17:12:00', $created->departure_at->format('Y-m-d H:i:s'));
-        $this->assertSame('2026-11-05 16:27:00', $created->boarding_starts_at->format('Y-m-d H:i:s'));
-        $this->assertSame('2026-11-05 20:12:00', $created->estimated_arrival_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-05 17:12:00', $created->departure_at->timezone('America/Lima')->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-05 16:27:00', $created->boarding_starts_at->timezone('America/Lima')->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-05 20:12:00', $created->estimated_arrival_at->timezone('America/Lima')->format('Y-m-d H:i:s'));
     }
 
     public function test_future_departure_shows_manifest_without_boarding_button(): void

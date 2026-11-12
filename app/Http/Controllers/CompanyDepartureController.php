@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Aircraft;
 use App\Models\AirDeparture;
+use App\Models\DepartureSeries;
 use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Models\Vessel;
@@ -69,6 +70,7 @@ class CompanyDepartureController extends Controller
             'todayOccupancyLabel' => $todaySeatCapacity > 0
                 ? (string) (int) round(($todayConfirmedSeats / $todaySeatCapacity) * 100)
                 : '0',
+            'series' => DepartureSeries::query()->where('organization_id', $organizationId)->latest()->get(),
         ]);
     }
 

@@ -91,6 +91,6 @@ class StoreRouteDepartureRequest extends FormRequest
             return null;
         }
 
-        return $this->input($date).' '.$this->input($time);
+        return Carbon::parse($this->input($date).' '.$this->input($time), 'America/Lima')->utc()->format('Y-m-d H:i:s');
     }
 }

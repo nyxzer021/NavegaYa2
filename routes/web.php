@@ -170,6 +170,10 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::get('/rutas', [CompanyRouteController::class, 'index'])->name('routes.index');
     Route::post('/rutas', [CompanyRouteController::class, 'store'])->name('routes.store');
     Route::post('/rutas/solicitar', [CompanyRouteController::class, 'requestSegment'])->name('routes.request');
+    Route::patch('/rutas/fluviales/{transportRoute}', [CompanyRouteController::class, 'updateRiver'])->name('routes.river.update');
+    Route::patch('/rutas/fluviales/{transportRoute}/estado', [CompanyRouteController::class, 'toggleRiver'])->name('routes.river.toggle');
+    Route::patch('/rutas/aereas/{airRoute}', [CompanyRouteController::class, 'updateAir'])->name('routes.air.update');
+    Route::patch('/rutas/aereas/{airRoute}/estado', [CompanyRouteController::class, 'toggleAir'])->name('routes.air.toggle');
     Route::get('/tarifas', [CompanyPreparationController::class, 'show'])->defaults('page', 'fares')->name('fares.index');
     Route::get('/tripulacion', [CompanyPreparationController::class, 'show'])->defaults('page', 'crew')->name('crew.index');
     Route::get('/incidencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'incidents')->name('incidents.index');
@@ -214,6 +218,8 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
 });
 Route::middleware(['auth', 'role:company_admin', 'company.profile'])->prefix('empresa/salidas')->name('company.departures.')->group(function () {
     Route::get('/programar', [AdminTransportRouteController::class, 'createDeparture'])->name('create');
+    Route::patch('/series/{series}', [CompanyDepartureController::class, 'updateSeries'])->name('series.update');
+    Route::delete('/series/{series}', [CompanyDepartureController::class, 'destroySeries'])->name('series.destroy');
     Route::get('/{departure}/editar', [AdminTransportRouteController::class, 'editDeparture'])->name('edit');
     Route::patch('/{departure}', [AdminTransportRouteController::class, 'updateDeparture'])->name('update');
     Route::patch('/{departure}/estado', [AdminTransportRouteController::class, 'updateDepartureStatus'])->name('status');

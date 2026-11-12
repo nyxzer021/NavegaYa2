@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\RouteDeparture;
+use App\Support\AuditRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -195,11 +196,19 @@ class AdminItineraryController extends AdminSupervisionController
         ]);
     }
 
-    public function toggleOperatorSales(Organization $organization): RedirectResponse
+    public function toggleOperatorSales(Request $request, Organization $organization): RedirectResponse
     {
         abort_unless($organization->type === 'transport_company' && $organization->status === 'active', 404);
 
-        $organization->update(['is_marketplace_paused' => ! $organization->is_marketplace_paused]);
+        $pausing = ! $organization->is_marketplace_paused;
+        if ($pausing) {
+            $data = $request->validate(['reason' => ['required', 'string', 'max:2000']]);
+            $organization->update(['is_marketplace_paused' => true, 'marketplace_pause_reason' => $data['reason']]);
+            AuditRecorder::record($request, 'marketplace_sales_paused', $organization, ['reason' => $data['reason']]);
+        } else {
+            $organization->update(['is_marketplace_paused' => false, 'marketplace_pause_reason' => null]);
+            AuditRecorder::record($request, 'marketplace_sales_resumed', $organization, ['decision' => 'resume']);
+        }
 
         return back()->with('success', $organization->is_marketplace_paused
             ? 'Las ventas web del operador fueron pausadas. Sus salidas ya no aparecen en el marketplace.'

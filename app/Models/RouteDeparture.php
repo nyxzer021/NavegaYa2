@@ -23,6 +23,7 @@ class RouteDeparture extends Model
         'cargo_reception_starts_at', 'estimated_arrival_at', 'fare', 'cargo_enabled',
         'included_baggage_kg', 'cargo_payment_location', 'status', 'is_published', 'notes', 'cargo_notes',
         'previous_departure_at', 'disruption_type', 'disruption_reason', 'status_changed_by_user_id', 'status_changed_at',
+        'departure_series_id', 'sales_paused_at', 'sales_pause_reason', 'sales_paused_by_user_id',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ class RouteDeparture extends Model
             'included_baggage_kg' => 'integer',
             'is_published' => 'boolean',
             'status_changed_at' => 'datetime',
+            'sales_paused_at' => 'datetime',
         ];
     }
 

@@ -20,7 +20,7 @@ class BookingController extends Controller
     {
         $this->expireReservations($departure);
         $departure->load(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.organization', 'vessel.seats']);
-        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
+        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         $occupiedSeatIds = ReservationSeat::query()->where('route_departure_id', $departure->id)->pluck('vessel_seat_id')->all();
         $cabins = $departure->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code')->values();
         $freeHammocks = $departure->vessel->seats->where('space_type', 'hammock')->filter(
@@ -50,7 +50,7 @@ class BookingController extends Controller
             'passengers.*.age' => ['nullable', 'integer', 'min:0', 'max:120'],
         ]);
         $departure->loadMissing('transportRoute.organization');
-        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
+        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         if (count($data['seats']) !== count($data['passengers'])) {
             return back()->withInput()->withErrors(['seats' => 'Cada asiento seleccionado debe tener los datos de un pasajero.']);
         }
@@ -115,7 +115,7 @@ class BookingController extends Controller
             'contact_document' => ['nullable', 'string', 'max:40'],
         ]);
         $departure->loadMissing('transportRoute.organization');
-        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
+        abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
 
         try {
             $reservation = app(HammockSale::class)->reserve($departure, [

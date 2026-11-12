@@ -15,6 +15,52 @@
             <a href="{{ route('company.departures.create') }}" class="inline-flex h-10 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Programar salida</a>
         @endunless
     </section>
+    @if(session('whatsapp_links'))
+        <section class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            <strong>WhatsApp listo para abrir.</strong> No se marcó como enviado.
+            <span class="mt-2 flex flex-col gap-1">
+                @foreach(session('whatsapp_links') as $link)
+                    <a class="font-bold text-emerald-800" href="{{ $link }}" target="_blank" rel="noopener">Abrir WhatsApp</a>
+                @endforeach
+            </span>
+        </section>
+    @endif
+    @if(($series ?? collect())->isNotEmpty())
+        <section class="rounded-2xl border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-black text-slate-950">Series</h3>
+            <div class="mt-3 space-y-3">
+                @foreach($series as $item)
+                    <article class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
+                        <p class="text-sm text-slate-700">{{ $item->departure_time }} · {{ $item->starts_on->format('d/m/Y') }} a {{ $item->ends_on->format('d/m/Y') }} · {{ $item->status === 'active' ? 'Activa' : 'Retirada' }}</p>
+                        @if($item->status === 'active')
+                            <span class="flex flex-wrap items-center gap-2">
+                                <details>
+                                    <summary class="inline-flex h-9 cursor-pointer items-center rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">Editar</summary>
+                                    <form class="mt-3 grid gap-2 text-sm" method="POST" action="{{ route('company.departures.series.update', $item) }}">
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="master_route_id" value="{{ $item->transportRoute?->master_route_id }}">
+                                        <input type="hidden" name="vessel_id" value="{{ $item->vessel_id }}">
+                                        <input type="hidden" name="departure_date" value="{{ $item->starts_on->format('Y-m-d') }}">
+                                        <label>Hora de Lima<input type="time" name="departure_time" value="{{ $item->departure_time }}" required></label>
+                                        <span class="flex flex-wrap gap-2">
+                                            @foreach([1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom'] as $day => $label)
+                                                <label><input type="checkbox" name="weekdays[]" value="{{ $day }}" @checked(in_array($day, array_map('intval', $item->weekdays ?? []), true))>{{ $label }}</label>
+                                            @endforeach
+                                        </span>
+                                        <label>Desde<input type="date" name="starts_on" value="{{ $item->starts_on->format('Y-m-d') }}" required></label>
+                                        <label>Hasta<input type="date" name="ends_on" value="{{ $item->ends_on->format('Y-m-d') }}" required></label>
+                                        <label>Precio<input type="number" name="fare" min="0.01" step="0.01" value="{{ $item->fare }}" required></label>
+                                        <button class="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-800 px-3 text-sm font-bold text-white">Guardar serie</button>
+                                    </form>
+                                </details>
+                                <form method="POST" action="{{ route('company.departures.series.destroy', $item) }}">@csrf @method('DELETE')<button class="inline-flex h-9 items-center rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">Eliminar serie</button></form>
+                            </span>
+                        @endif
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
     <section class="grid gap-3 sm:grid-cols-3">
         <article class="rounded-2xl border border-[#6ee7b7] bg-[#ecfdf5] p-5"><span class="text-sm font-semibold text-emerald-800">Salidas de hoy</span><strong class="mt-2 block text-3xl font-black text-[#064e3b]">{{ $todayDeparturesCount }}</strong></article>
         <article class="rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-5"><span class="text-sm font-semibold text-amber-800">Ocupación</span><strong class="mt-2 block text-3xl font-black text-[#78350f]">{{ $todayOccupancyLabel }}%</strong><span class="mt-1 block text-sm text-amber-900">{{ $todayConfirmedSeats }} de {{ $todaySeatCapacity }} {{ $todaySeatCapacity === 1 ? 'asiento' : 'asientos' }}</span></article>
@@ -33,7 +79,7 @@
                 <article class="space-y-3 px-5 py-4">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <strong class="text-lg font-black text-slate-950">{{ $row['departure_at']->format('H:i') }}</strong>
+                            <strong class="text-lg font-black text-slate-950">{{ $row['departure_at']->copy()->timezone('America/Lima')->format('H:i') }}</strong>
                             <span class="mt-0.5 block text-sm text-slate-800">{{ $row['origin'] }} → {{ $row['destination'] }}</span>
                             <span class="block text-sm text-slate-500">{{ $row['unit'] }} · {{ $row['booked'] }}/{{ $row['capacity'] }} · S/ {{ number_format($row['fare'], 2) }}</span>
                         </div>
@@ -61,7 +107,7 @@
                 <tbody>
                 @forelse($departures as $row)
                     <tr class="border-t border-slate-100">
-                        <td class="px-5 py-4"><strong class="text-slate-900">{{ $row['departure_at']->format('d/m/Y') }}</strong><span class="block text-base font-black">{{ $row['departure_at']->format('H:i') }}</span></td>
+                        <td class="px-5 py-4"><strong class="text-slate-900">{{ $row['departure_at']->copy()->timezone('America/Lima')->format('d/m/Y') }}</strong><span class="block text-base font-black">{{ $row['departure_at']->copy()->timezone('America/Lima')->format('H:i') }}</span></td>
                         <td class="px-4 py-4"><strong class="text-slate-900">{{ $row['origin'] }} → {{ $row['destination'] }}</strong><span class="block text-xs text-slate-500">{{ $row['is_air'] ? 'Aéreo' : 'Fluvial' }} · {{ $row['master_code'] ?? 'Tramo legado' }}</span></td>
                         <td class="px-4 py-4">{{ $row['unit'] }}<span class="block text-xs text-slate-500">{{ $row['registration'] ?? 'Sin matrícula' }}</span></td>
                         <td class="px-4 py-4"><div class="flex justify-between text-xs"><strong>{{ $row['booked'] }}/{{ $row['capacity'] }}</strong><span>{{ $row['occupancy'] }}%</span></div><div class="mt-1 h-2 w-32 overflow-hidden rounded-full bg-slate-100"><i class="block h-full rounded-full bg-emerald-600" style="width:{{ min(100, $row['occupancy']) }}%"></i></div></td>
@@ -84,7 +130,7 @@
                             <header class="flex items-start justify-between bg-[#062c21] px-6 py-5 text-white">
                                 <div>
                                     <h3 class="text-xl font-black">{{ $row['origin'] }} → {{ $row['destination'] }}</h3>
-                                    <p class="mt-1 text-sm text-emerald-100/80">{{ $row['departure_at']->format('d/m/Y · H:i') }} · {{ $row['unit'] }}</p>
+                                    <p class="mt-1 text-sm text-emerald-100/80">{{ $row['departure_at']->copy()->timezone('America/Lima')->format('d/m/Y · H:i') }} · {{ $row['unit'] }}</p>
                                 </div>
                                 <button type="button" onclick="this.closest('dialog').close()" class="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-lg">×</button>
                             </header>

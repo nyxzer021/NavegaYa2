@@ -8,8 +8,9 @@
         $date = old($dateName);
         $time = old($timeName);
         if (! $date && ! $time && $editing && $departureRecord->{$column}) {
-            $date = $departureRecord->{$column}->format('Y-m-d');
-            $time = $departureRecord->{$column}->format('H:i');
+            $local = $departureRecord->{$column}->copy()->timezone('America/Lima');
+            $date = $local->format('Y-m-d');
+            $time = $local->format('H:i');
         }
 
         return [$date, $time];
@@ -21,7 +22,7 @@
 @endphp
 <div class="ny-schedule mx-auto max-w-3xl">
     <a class="text-sm font-bold text-emerald-800" href="{{ route('company.departures.index') }}">← Volver a salidas</a>
-    <form class="mt-3 overflow-hidden rounded-2xl border border-[#d5e6df] bg-white shadow-sm" method="POST" action="{{ $editing ? route('company.departures.update', $departureRecord) : route('company.departures.store') }}">
+    <form class="mt-3 overflow-hidden rounded-2xl border border-[#d5e6df] bg-white shadow-sm" method="POST" action="{{ $editing ? route('company.departures.update', $departureRecord) : route('company.departures.store') }}" data-fee="{{ $organization->commission_rate ?? 0 }}">
         @csrf
         @if($editing) @method('PATCH') @endif
         <div class="border-t-4 border-[#fbbf24] px-5 py-5 sm:px-6">
@@ -69,9 +70,30 @@
                     <span class="mt-1 block text-xs font-medium text-slate-500">Se completa 3 horas después. Fecha y hora.</span>
                     @error('estimated_arrival_at')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
                 </label>
+                @unless($editing)
+                    <label class="text-sm font-semibold text-slate-800">Programación
+                        <select name="schedule_kind">
+                            <option value="single" @selected(old('schedule_kind', 'single') === 'single')>Salida única</option>
+                            <option value="series" @selected(old('schedule_kind') === 'series')>Recurrente</option>
+                        </select>
+                    </label>
+                    <div class="grid gap-3 sm:col-span-2 sm:grid-cols-2" data-series-fields>
+                        <div class="sm:col-span-2 text-sm font-semibold text-slate-800">Días
+                            <span class="mt-1 flex flex-wrap gap-2 font-medium">
+                                @foreach([1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom'] as $day => $label)
+                                    <label class="inline-flex items-center gap-1"><input type="checkbox" name="weekdays[]" value="{{ $day }}" @checked(in_array($day, array_map('intval', (array) old('weekdays', [])), true))>{{ $label }}</label>
+                                @endforeach
+                            </span>
+                        </div>
+                        <label class="text-sm font-semibold text-slate-800">Desde<input type="date" name="starts_on" value="{{ old('starts_on') }}"></label>
+                        <label class="text-sm font-semibold text-slate-800">Hasta<input type="date" name="ends_on" value="{{ old('ends_on') }}"></label>
+                        <p class="sm:col-span-2 text-xs text-slate-500">Máximo 90 días. La hora es la de Lima. Si una fecha se cruza con otra salida de la misma unidad, no se crea.</p>
+                    </div>
+                @endunless
                 <label class="text-sm font-semibold text-slate-800">Precio del pasaje
                     <span class="ny-money"><span>S/</span><input type="number" name="fare" required min="0.01" step="0.01" value="{{ old('fare', $departureRecord->fare ?? null) }}" placeholder="0.00"></span>
                     @error('fare')<span class="mt-1 block text-xs font-semibold text-rose-700">{{ $message }}</span>@enderror
+                    <span class="mt-1 block text-xs font-semibold text-emerald-800">El viajero web pagará S/ <span data-web-total>—</span>.</span>
                 </label>
                 <label class="text-sm font-semibold text-slate-800">Nota para pasajeros
                     <input name="notes" value="{{ old('notes', $departureRecord->notes ?? null) }}" placeholder="Presentarse 30 minutos antes">
@@ -147,6 +169,25 @@
         }
         departureDate.addEventListener('change', fill);
         departureTime.addEventListener('change', fill);
+        var fare = form.querySelector('[name="fare"]');
+        var total = form.querySelector('[data-web-total]');
+        var percent = Number((form.querySelector('form') || {}).dataset?.fee || 0);
+        function preview() {
+            if (!fare || !total) return;
+            var base = Math.round(Number(fare.value || 0) * 100) / 100;
+            var fee = Math.round(base * percent) / 100;
+            total.textContent = (Math.round((base + fee) * 100) / 100).toFixed(2);
+        }
+        fare?.addEventListener('input', preview);
+        preview();
+        var kind = form.querySelector('[name="schedule_kind"]');
+        var series = form.querySelector('[data-series-fields]');
+        function toggleSeries() {
+            if (!kind || !series) return;
+            series.hidden = kind.value !== 'series';
+        }
+        kind?.addEventListener('change', toggleSeries);
+        toggleSeries();
     }());
 </script>
 @endsection

@@ -7,6 +7,7 @@ use App\Models\AirDeparture;
 use App\Models\AirRoute;
 use App\Models\Organization;
 use App\Support\AdminScope;
+use App\Support\DepartureSchedule;
 use App\Support\FleetPlan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,9 +78,14 @@ class AdminAirRouteController extends Controller
         }        if ($route->organization_id !== $aircraft->organization_id) {
             return back()->withErrors(['aircraft_id' => 'La aeronave debe pertenecer a la misma empresa.']);
         }
-        if (! FleetPlan::isComplete($aircraft)) {
-            return back()->withErrors(['aircraft_id' => FleetPlan::missingText($aircraft)]);
+        if (! FleetPlan::isComplete($aircraft) || $route->status !== 'active') {
+            return back()->withErrors(['aircraft_id' => $route->status === 'active' ? FleetPlan::missingText($aircraft) : 'La ruta está desactivada.']);
         }
+        $when = DepartureSchedule::parse($d['departure_at']);
+        if (DepartureSchedule::blockedOn($aircraft, $when) || DepartureSchedule::conflicts($aircraft, $when, (int) $route->estimated_duration_minutes)->isNotEmpty()) {
+            return back()->withErrors(['departure_at' => 'Esa unidad ya tiene una salida que se cruza con este horario o está en mantenimiento.']);
+        }
+        $d['departure_at'] = $when;
         AirDeparture::create($d + ['cargo_enabled' => $r->boolean('cargo_enabled'), 'status' => 'scheduled']);
 
         return back()->with('success', 'Salida aérea programada.');

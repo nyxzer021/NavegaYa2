@@ -40,7 +40,7 @@ class AdminGovernanceTest extends TestCase
             ->assertSee('Auditoría')
             ->assertSee('Menú y páginas del sitio');
         $this->actingAs($admin)->get(route('admin.companies.index'))->assertOk()->assertSee('Red de empresas transportistas');
-        $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Supervisión de itinerarios');
+        $this->get(route('admin.itineraries.index'))->assertOk()->assertSee('Supervisión de salidas');
         $this->get(route('admin.fleet.index'))->assertRedirect(route('admin.companies.index'));
         $this->get(route('admin.settlements.index'))->assertRedirect(route('admin.commissions.index'));
         $this->get(route('admin.commissions.index'))->assertOk()->assertSee('Ingresos por cargo de servicio');
@@ -212,7 +212,7 @@ class AdminGovernanceTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.itineraries.index'))
             ->assertOk()
-            ->assertSee('Supervisión de itinerarios')
+            ->assertSee('Supervisión de salidas')
             ->assertSee('Expreso Fluvial Marañón')
             ->assertSee('Selva Air Taxi')
             ->assertSee('Pausar ventas')
@@ -316,7 +316,7 @@ class AdminGovernanceTest extends TestCase
         $this->actingAs($admin)->patch(route('admin.itineraries.publication', [
             'departure' => $departure->id,
             'type' => 'fluvial',
-        ]))->assertRedirect();
+        ]), ['reason' => 'Nivel del río'])->assertRedirect();
 
         $this->assertDatabaseHas('route_departures', [
             'id' => $departure->id,
@@ -333,8 +333,9 @@ class AdminGovernanceTest extends TestCase
         $admin = $this->userWithRole('super_admin');
         $organization = Organization::where('ruc', '20556677889')->firstOrFail();
 
-        $this->actingAs($admin)->patch(route('admin.itineraries.operator-sales', $organization))
-            ->assertRedirect();
+        $this->actingAs($admin)->patch(route('admin.itineraries.operator-sales', $organization), [
+            'reason' => 'Río alto',
+        ])->assertRedirect();
 
         $this->assertDatabaseHas('organizations', [
             'id' => $organization->id,

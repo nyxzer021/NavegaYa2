@@ -1,13 +1,13 @@
 @extends('layouts.admin')
 
-@section('title', 'Inventario e Itinerarios · NavegaYA')
+@section('title', 'Supervisión de salidas · NavegaYA')
 @section('content')
 @php
     $activeTab = in_array(request('tab'), ['resumen', 'fluvial', 'aereo'], true) ? request('tab') : 'resumen';
 @endphp
 <x-admin.module-workspace
     eyebrow="Supervisión operativa"
-    title="Supervisión de itinerarios"
+    title="Supervisión de salidas"
     description="Controla salidas, capacidad publicada, ocupación y disponibilidad del marketplace."
     header-tone="green"
 >
