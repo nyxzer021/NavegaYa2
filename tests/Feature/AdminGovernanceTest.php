@@ -184,6 +184,8 @@ class AdminGovernanceTest extends TestCase
         $this->get(route('admin.users.index', ['tab' => 'create']))
             ->assertOk()
             ->assertSee('Rutas y corredores')
+            ->assertSee('Supervisión de salidas')
+            ->assertDontSee('Supervisión de itinerarios')
             ->assertSee('Revisión de flota')
             ->assertSee('Integraciones y ajustes');
     }

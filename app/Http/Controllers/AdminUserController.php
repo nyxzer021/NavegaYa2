@@ -18,7 +18,7 @@ class AdminUserController extends Controller
     private const PERMISSION_PAGES = [
         'companies' => ['Bandeja de solicitudes', 'Empresas y afiliaciones'],
         'ports' => ['Puertos y aeródromos'],
-        'routes' => ['Rutas y corredores', 'Supervisión de itinerarios'],
+        'routes' => ['Rutas y corredores', 'Supervisión de salidas'],
         'fleet' => ['Revisión de flota', 'Embarcaciones y aeronaves'],
         'cargo' => ['Carga y encomiendas'],
         'boarding' => ['Control de embarque'],
