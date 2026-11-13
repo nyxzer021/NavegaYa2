@@ -29,4 +29,9 @@ class AirDeparture extends Model
     {
         return $this->hasMany(Reservation::class);
     }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(DepartureAssignment::class);
+    }
 }

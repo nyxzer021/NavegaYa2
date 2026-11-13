@@ -98,6 +98,23 @@
                 <label class="text-sm font-semibold text-slate-800">Nota para pasajeros
                     <input name="notes" value="{{ old('notes', $departureRecord->notes ?? null) }}" placeholder="Presentarse 30 minutos antes">
                 </label>
+                <label class="text-sm font-semibold text-slate-800">Capitán
+                    <select name="captain_id">
+                        <option value="">Sin capitán</option>
+                        @foreach(($crew ?? collect())->where('role', 'captain') as $member)
+                            <option value="{{ $member->id }}" @selected((string) old('captain_id', $departureRecord?->assignments?->firstWhere('duty', 'command')?->crew_member_id) === (string) $member->id)>{{ $member->name }} · Capitán</option>
+                        @endforeach
+                    </select>
+                    <span class="mt-1 block text-xs text-slate-500">Opcional para publicar y vender. Obligatorio para abrir el embarque.</span>
+                </label>
+                <label class="text-sm font-semibold text-slate-800">Tripulación
+                    @php($selectedCrew = array_map('strval', (array) old('crew_ids', $departureRecord?->assignments?->where('duty', 'member')->pluck('crew_member_id')->all() ?? [])))
+                    <select name="crew_ids[]" multiple>
+                        @foreach(($crew ?? collect())->whereIn('role', ['engineer', 'sailor']) as $member)
+                            <option value="{{ $member->id }}" @selected(in_array((string) $member->id, $selectedCrew, true))>{{ $member->name }} · {{ \App\Support\CrewRoster::ROLE_LABELS[$member->role] ?? $member->role }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
             <details class="mt-4 rounded-xl border border-emerald-100 bg-[#ecfdf5]" {{ old('cargo_enabled', $departureRecord->cargo_enabled ?? false) ? 'open' : '' }}>
                 <summary class="cursor-pointer list-none px-4 py-3 text-sm font-bold text-emerald-950">Encomienda en esta salida <span class="float-right text-xs font-semibold text-emerald-700">Opcional</span></summary>

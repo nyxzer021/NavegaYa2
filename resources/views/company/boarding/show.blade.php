@@ -10,15 +10,16 @@
 @endphp
 <div class="mx-auto max-w-5xl space-y-5">
     @if(session('success'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{{ session('success') }}</div>@endif
+    @unless($canBoard)<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">Asigna un capitán con licencia vigente</div>@endunless
     <section class="overflow-hidden rounded-2xl bg-[#062c21] px-6 py-5 text-white shadow-sm">
         <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
                 <p class="text-sm font-semibold text-emerald-200">{{ $masterCode }} · Despacho fluvial</p>
                 <h2 class="mt-1 text-2xl font-black">{{ $origin }} → {{ $destination }}</h2>
-                <p class="mt-1 text-sm text-emerald-100">{{ $departure->vessel?->name ?? 'Embarcación por asignar' }} · {{ $departure->departure_at?->format('d/m/Y') }}</p>
+                <p class="mt-1 text-sm text-emerald-100">{{ $departure->vessel?->name ?? 'Embarcación por asignar' }} · {{ $departure->departure_at?->copy()->timezone('America/Lima')->format('d/m/Y') }}</p>
             </div>
             <div class="text-left sm:text-right">
-                <strong class="block text-3xl font-black text-[#fbbf24]">{{ $departure->departure_at?->format('H:i') }}</strong>
+                <strong class="block text-3xl font-black text-[#fbbf24]">{{ $departure->departure_at?->copy()->timezone('America/Lima')->format('H:i') }}</strong>
                 <span class="text-sm text-emerald-100">{{ $boardingStats['boarded'] }} de {{ $boardingStats['total'] }} a bordo · {{ $boardingStats['pending'] }} pendientes</span>
             </div>
         </div>
@@ -51,10 +52,12 @@
                         </div>
                         <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $ticket->status === 'boarded' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700' }}">{{ $ticket->status === 'boarded' ? 'Abordó' : 'Pendiente' }}</span>
                     </div>
+                    @if($canBoard)
                     <form method="POST" action="{{ route('company.boarding.toggle', [$departure, $ticket]) }}">
                         @csrf @method('PATCH')
                         <button class="h-10 rounded-xl px-4 text-sm font-bold {{ $ticket->status === 'boarded' ? 'border border-rose-200 bg-white text-rose-700' : 'bg-amber-400 text-emerald-950' }}">{{ $ticket->status === 'boarded' ? 'Anular abordaje' : 'Marcar a bordo' }}</button>
                     </form>
+                    @endif
                 </article>
             @empty
                 <p class="px-5 py-12 text-center text-sm text-slate-500">{{ $term !== '' ? 'No se encontró un pasajero de esta salida con ese dato.' : 'No hay boletos emitidos para esta salida.' }}</p>
@@ -74,10 +77,12 @@
                         <td class="px-4 py-4"><span class="font-bold text-slate-800">{{ strtoupper($seat->document_type ?? 'DNI') }}</span><span class="ml-2 text-slate-500">{{ $seat->document_number ?? '—' }}</span></td>
                         <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $ticket->status === 'boarded' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700' }}">{{ $ticket->status === 'boarded' ? 'Abordó' : 'Pendiente' }}</span></td>
                         <td class="px-5 py-4 text-right">
+                            @if($canBoard)
                             <form method="POST" action="{{ route('company.boarding.toggle', [$departure, $ticket]) }}">
                                 @csrf @method('PATCH')
                                 <button class="h-10 rounded-xl px-4 text-sm font-bold {{ $ticket->status === 'boarded' ? 'border border-rose-200 bg-white text-rose-700' : 'bg-amber-400 text-emerald-950' }}">{{ $ticket->status === 'boarded' ? 'Anular abordaje' : 'Marcar a bordo' }}</button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                 @empty

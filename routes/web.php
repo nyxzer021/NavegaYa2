@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminContentPolicyController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFleetComplianceController;
 use App\Http\Controllers\Admin\AdminFleetController;
+use App\Http\Controllers\Admin\AdminIncidentController;
 use App\Http\Controllers\Admin\AdminItineraryController;
 use App\Http\Controllers\Admin\AdminModerationController;
 use App\Http\Controllers\Admin\AdminPreparationController;
@@ -59,8 +60,10 @@ use App\Http\Controllers\Company\CompanyWhatsappController;
 use App\Http\Controllers\CompanyActivationController;
 use App\Http\Controllers\CompanyContentController;
 use App\Http\Controllers\CompanyCounterController;
+use App\Http\Controllers\CompanyCrewController;
 use App\Http\Controllers\CompanyDashboardController;
 use App\Http\Controllers\CompanyFareController;
+use App\Http\Controllers\CompanyIncidentController;
 use App\Http\Controllers\CompanyPreparationController;
 use App\Http\Controllers\CompanyPublicProfileController;
 use App\Http\Controllers\CompanyRegistrationController;
@@ -180,8 +183,6 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::delete('/tarifas/{routeFare}', [CompanyFareController::class, 'destroyFare'])->name('fares.destroy');
     Route::post('/descuentos', [CompanyFareController::class, 'storeDiscount'])->name('discounts.store');
     Route::delete('/descuentos/{discount}', [CompanyFareController::class, 'destroyDiscount'])->name('discounts.destroy');
-    Route::get('/tripulacion', [CompanyPreparationController::class, 'show'])->defaults('page', 'crew')->name('crew.index');
-    Route::get('/incidencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'incidents')->name('incidents.index');
     Route::get('/perfiles', [CompanyPreparationController::class, 'show'])->defaults('page', 'roles')->name('roles.index');
     Route::get('/auditoria', [CompanyPreparationController::class, 'show'])->defaults('page', 'audit')->name('audit.index');
     Route::get('/secciones', [CompanyContentController::class, 'sections'])->name('page-sections.index');
@@ -220,6 +221,15 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::get('/equipo', fn () => redirect()->route('company.staff.index'))->name('personnel.index');
     Route::get('/finanzas', fn () => redirect()->route('company.commissions.index'))->name('finance.index');
     Route::patch('/finanzas/cuenta', [CompanyDashboardController::class, 'updateBank'])->name('finance.bank');
+});
+Route::middleware(['auth', 'role:company_admin|company_operator', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {
+    Route::get('/tripulacion', [CompanyCrewController::class, 'index'])->name('crew.index');
+    Route::post('/tripulacion', [CompanyCrewController::class, 'store'])->name('crew.store');
+    Route::post('/tripulacion/asignar', [CompanyCrewController::class, 'assign'])->name('crew.assign');
+    Route::delete('/tripulacion/{crewMember}', [CompanyCrewController::class, 'destroy'])->name('crew.destroy');
+    Route::get('/incidencias', [CompanyIncidentController::class, 'index'])->name('incidents.index');
+    Route::post('/incidencias', [CompanyIncidentController::class, 'store'])->name('incidents.store');
+    Route::get('/incidencias/fotos/{photo}', [CompanyIncidentController::class, 'photo'])->name('incidents.photos.show');
 });
 Route::middleware(['auth', 'role:company_admin', 'company.profile'])->prefix('empresa/salidas')->name('company.departures.')->group(function () {
     Route::get('/programar', [AdminTransportRouteController::class, 'createDeparture'])->name('create');
@@ -322,6 +332,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/flota-unidades/embarcaciones/{vessel}/estado', [AdminFleetController::class, 'updateVesselStatus'])->name('fleet.vessels.status');
     Route::patch('/flota-unidades/aeronaves/{aircraft}/estado', [AdminFleetController::class, 'updateAircraftStatus'])->name('fleet.aircraft.status');
     Route::get('/itinerarios', [AdminItineraryController::class, 'index'])->name('itineraries.index');
+    Route::get('/incidencias', [AdminIncidentController::class, 'index'])->name('incidents.index');
+    Route::get('/incidencias/fotos/{photo}', [AdminIncidentController::class, 'photo'])->name('incidents.photos.show');
     Route::get('/moderacion', [AdminModerationController::class, 'index'])->name('moderation.index');
     Route::patch('/moderacion/opiniones/{review}', [AdminModerationController::class, 'moderateReview'])->name('moderation.reviews');
     Route::patch('/moderacion/perfiles/{organization}', [AdminModerationController::class, 'moderateProfile'])->name('moderation.profiles');

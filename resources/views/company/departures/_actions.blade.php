@@ -2,8 +2,10 @@
     $canBoard = $row['departure_at']?->isToday() && in_array($row['status'], ['scheduled', 'boarding', 'delayed', 'rescheduled'], true);
 @endphp
 <div class="flex flex-wrap justify-end gap-2">
-    @if($canBoard)
+    @if($canBoard && ($row['is_air'] || ($row['can_board'] ?? false)))
         <a href="{{ $row['is_air'] ? route('company.counter.index', ['air_departure' => $row['model']->id]) : route('company.boarding.show', $row['model']) }}" class="inline-flex h-10 items-center rounded-xl bg-[#062c21] px-3 text-sm font-bold text-white">Embarque</a>
+    @elseif($canBoard && ! $row['is_air'])
+        <span class="inline-flex h-10 items-center text-sm font-bold text-amber-800">Asigna un capitán con licencia vigente</span>
     @elseif(! $row['is_air'])
         <a href="{{ route('company.departures.manifest', $row['model']) }}" class="inline-flex h-10 items-center rounded-xl border border-[#d5e6df] bg-white px-3 text-sm font-bold text-slate-700">Manifiesto</a>
     @endif

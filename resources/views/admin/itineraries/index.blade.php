@@ -12,6 +12,7 @@
     header-tone="green"
 >
     <x-slot:actions>
+        <a href="{{ route('admin.incidents.index') }}" class="inline-flex h-10 items-center rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-black text-emerald-50">Incidencias</a>
         <span class="inline-flex h-10 items-center rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-black text-emerald-50">{{ \App\Support\SpanishCount::phrase($operators->where('published_departures_count', '>', 0)->count(), 'operador con salidas', 'operadores con salidas') }}</span>
     </x-slot:actions>
     <x-slot:navigation>

@@ -15,8 +15,7 @@
 @endphp
 <div class="mx-auto max-w-7xl space-y-6">
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 class="text-2xl font-black text-slate-950">Tarifas y descuentos</h2>
-        <p class="mt-1 max-w-3xl text-sm text-slate-500">El precio se define por ruta, clase y tipo de pasajero. Si una hamaca o un camarote no tienen tarifa, esa clase no se vende. El asiento de adulto, si no tiene tarifa propia, usa el precio de la salida.</p>
+        <p class="max-w-3xl text-sm text-slate-500">El precio se define por ruta, clase y tipo de pasajero. Si una hamaca o un camarote no tienen tarifa, esa clase no se vende. El asiento de adulto, si no tiene tarifa propia, usa el precio de la salida.</p>
     </section>
 
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{{ $errors->first() }}</div>@endif

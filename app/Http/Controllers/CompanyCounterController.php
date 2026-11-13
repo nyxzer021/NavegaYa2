@@ -8,6 +8,7 @@ use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
 use App\Support\AdminScope;
 use App\Support\CompanyBase;
+use App\Support\CrewRoster;
 use Illuminate\View\View;
 
 class CompanyCounterController extends Controller
@@ -19,10 +20,10 @@ class CompanyCounterController extends Controller
             ->where('status', 'active')
             ->firstOrFail();
         $river = in_array($company->modality ?: 'fluvial', ['fluvial', 'mixto'], true) ? RouteDeparture::whereHas('transportRoute', fn ($query) => $query->where('organization_id', $company->id))
-            ->whereDate('departure_at', today())->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])->orderBy('departure_at')->get()
+            ->whereDate('departure_at', today())->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats', 'assignments.member'])->orderBy('departure_at')->get()
             ->map(fn ($item) => $this->row($item, false)) : collect();
         $air = in_array($company->modality, ['aereo', 'mixto'], true) ? AirDeparture::whereHas('airRoute', fn ($query) => $query->where('organization_id', $company->id))
-            ->whereDate('departure_at', today())->with(['airRoute', 'aircraft', 'reservations.seats'])->orderBy('departure_at')->get()
+            ->whereDate('departure_at', today())->with(['airRoute', 'aircraft', 'reservations.seats', 'assignments.member'])->orderBy('departure_at')->get()
             ->map(fn ($item) => $this->row($item, true)) : collect();
         $departures = $river->concat($air)->sortBy('departure_at')->values();
         $from = now()->endOfDay();
@@ -66,6 +67,7 @@ class CompanyCounterController extends Controller
             'origin' => $air ? ($route?->origin_city ?? 'Origen') : ($route?->originPort?->city ?? 'Origen'),
             'destination' => $air ? ($route?->destination_city ?? 'Destino') : ($route?->destinationPort?->city ?? 'Destino'),
             'unit' => $unit?->name ?? 'Unidad por asignar', 'capacity' => (int) ($unit?->seat_capacity ?? 0),
-            'confirmed_seats' => (int) $confirmedSeats, 'status' => $departure->status];
+            'confirmed_seats' => (int) $confirmedSeats, 'status' => $departure->status,
+            'can_board' => CrewRoster::commandReady($departure)];
     }
 }

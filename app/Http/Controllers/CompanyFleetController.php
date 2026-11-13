@@ -9,6 +9,7 @@ use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\CrewRoster;
 use App\Support\FleetMaintenance;
 use App\Support\FleetPlan;
 use Illuminate\Database\Eloquent\Model;
@@ -352,6 +353,7 @@ class CompanyFleetController extends Controller
                         'maintenance' => __('company_portal.fleet.maintenance_still_inside', [], 'es'),
                     ]);
                 }
+                CrewRoster::guardMove($departure, $departureAt);
                 $changes = ['departure_at' => $departureAt];
                 if ($departure instanceof RouteDeparture) {
                     $changes += [

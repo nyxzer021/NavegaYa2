@@ -11,10 +11,12 @@ use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\CrewRoster;
 use App\Support\DepartureSchedule;
 use App\Support\FleetPlan;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -56,13 +58,16 @@ class CompanyDepartureController extends BaseCompanyDepartureController
         $this->guardUnit($vessel, $route, $when);
 
         unset($data['master_route_id']);
-        RouteDeparture::create($data + [
-            'transport_route_id' => $route->id,
-            'vessel_id' => $vessel->id,
-            'cargo_enabled' => $request->boolean('cargo_enabled'),
-            'cargo_payment_location' => 'terminal',
-            'status' => 'scheduled',
-        ]);
+        DB::transaction(function () use ($data, $request, $route, $vessel): void {
+            $departure = RouteDeparture::create($data + [
+                'transport_route_id' => $route->id,
+                'vessel_id' => $vessel->id,
+                'cargo_enabled' => $request->boolean('cargo_enabled'),
+                'cargo_payment_location' => 'terminal',
+                'status' => 'scheduled',
+            ]);
+            $this->assignCrew($request, $departure);
+        });
         $total = number_format(DepartureSchedule::webTotal((float) $request->input('fare'), $organization), 2);
 
         return redirect()->route('company.departures.index')->with('success', 'Salida programada. El viajero web pagará S/ '.$total.'.');
@@ -136,11 +141,14 @@ class CompanyDepartureController extends BaseCompanyDepartureController
             'notes' => $data['notes'] ?? null,
             'status' => 'active',
         ]);
-        $created = $this->fillSeries($series, $route, $vessel, $skipped);
+        $created = $this->fillSeries($series, $route, $vessel, $skipped, $this->captainId($request), $this->crewIds($request), $skippedCrew);
         $total = number_format(DepartureSchedule::webTotal((float) $data['fare'], $organization), 2);
         $message = 'Se crearon '.$created.' salidas. El viajero web pagará S/ '.$total.'.';
         if ($skipped !== []) {
             $message .= ' '.count($skipped).' fechas no se crearon: '.implode(', ', $skipped).'.';
+        }
+        if ($skippedCrew !== []) {
+            $message .= ' La tripulación no se asignó en: '.implode(', ', $skippedCrew).'.';
         }
 
         return redirect()->route('company.departures.index')->with('success', $message);
@@ -181,10 +189,13 @@ class CompanyDepartureController extends BaseCompanyDepartureController
                     $departure->delete();
                 }
             });
-        $created = $this->fillSeries($series->fresh(), $route, $vessel, $skipped);
+        $created = $this->fillSeries($series->fresh(), $route, $vessel, $skipped, $this->captainId($request), $this->crewIds($request), $skippedCrew);
         $message = 'Serie actualizada. Se agregaron '.$created.' salidas.';
         if ($skipped !== []) {
             $message .= ' '.count($skipped).' fechas no se crearon: '.implode(', ', $skipped).'.';
+        }
+        if ($skippedCrew !== []) {
+            $message .= ' La tripulación no se asignó en: '.implode(', ', $skippedCrew).'.';
         }
 
         return back()->with('success', $message);
@@ -222,9 +233,10 @@ class CompanyDepartureController extends BaseCompanyDepartureController
     /**
      * @param  list<string>  $skipped
      */
-    private function fillSeries(DepartureSeries $series, TransportRoute $route, Vessel $vessel, ?array &$skipped = null): int
+    private function fillSeries(DepartureSeries $series, TransportRoute $route, Vessel $vessel, ?array &$skipped = null, ?int $captainId = null, array $crewIds = [], ?array &$skippedCrew = null): int
     {
         $skipped = [];
+        $skippedCrew = [];
         $created = 0;
         $moments = DepartureSchedule::dates($series->starts_on->toDateString(), $series->ends_on->toDateString(), $series->weekdays, $series->departure_time);
         foreach ($moments as $moment) {
@@ -236,7 +248,7 @@ class CompanyDepartureController extends BaseCompanyDepartureController
 
                 continue;
             }
-            RouteDeparture::create([
+            $departure = RouteDeparture::create([
                 'transport_route_id' => $route->id,
                 'vessel_id' => $vessel->id,
                 'departure_series_id' => $series->id,
@@ -249,6 +261,13 @@ class CompanyDepartureController extends BaseCompanyDepartureController
                 'notes' => $series->notes,
                 'status' => 'scheduled',
             ]);
+            if ($captainId || $crewIds !== []) {
+                try {
+                    CrewRoster::sync($departure, $captainId, $crewIds);
+                } catch (ValidationException) {
+                    $skippedCrew[] = DepartureSchedule::label($moment);
+                }
+            }
             $created++;
         }
 
@@ -271,6 +290,27 @@ class CompanyDepartureController extends BaseCompanyDepartureController
         if (DepartureSchedule::conflicts($vessel, $when, (int) $route->estimated_duration_minutes, $ignoreId)->isNotEmpty()) {
             throw ValidationException::withMessages(['departure_at' => 'Esa unidad ya tiene una salida que se cruza con este horario.']);
         }
+    }
+
+    private function assignCrew(StoreRouteDepartureRequest $request, RouteDeparture $departure): void
+    {
+        if (! $request->exists('captain_id') && ! $request->exists('crew_ids')) {
+            return;
+        }
+        CrewRoster::sync($departure, $this->captainId($request), $this->crewIds($request));
+    }
+
+    private function captainId(StoreRouteDepartureRequest $request): ?int
+    {
+        return $request->filled('captain_id') ? $request->integer('captain_id') : null;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function crewIds(StoreRouteDepartureRequest $request): array
+    {
+        return array_values(array_filter(array_map('intval', (array) $request->input('crew_ids', []))));
     }
 
     private function organization(): Organization

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CrewMember;
+use App\Models\DepartureIncident;
 use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\Payment;
@@ -211,6 +213,8 @@ class AdminCompanyController extends Controller
             'organization' => $organization,
             'ports' => Port::query()->where('is_active', true)->orderBy('name')->orderBy('city')->get(),
             'travelVersions' => $travelDocument?->versions()->orderByDesc('version')->limit(5)->get() ?? collect(),
+            'crewMembers' => CrewMember::query()->where('organization_id', $organization->id)->orderBy('name')->get(),
+            'companyIncidents' => DepartureIncident::query()->where('organization_id', $organization->id)->latest()->limit(8)->get(),
         ]);
     }
 

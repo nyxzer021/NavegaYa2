@@ -9,6 +9,7 @@ use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\CrewRoster;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -29,7 +30,7 @@ class CompanyDepartureController extends Controller
                 ->whereHas('originPort')
                 ->whereHas('destinationPort'))
             ->when($filter === 'today', fn ($query) => $query->whereDate('departure_at', today()))
-            ->with(['transportRoute.masterRoute', 'transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])
+            ->with(['transportRoute.masterRoute', 'transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats', 'assignments.member'])
             ->orderBy('departure_at')->get()->map(fn (RouteDeparture $departure) => $this->riverRow($departure)) : collect();
         $air = in_array($organization->modality, ['aereo', 'mixto'], true) ? AirDeparture::query()
             ->whereHas('airRoute', fn ($query) => $query
@@ -37,7 +38,7 @@ class CompanyDepartureController extends Controller
                 ->whereNotNull('master_route_id')
                 ->whereColumn('origin_city', '<>', 'destination_city'))
             ->when($filter === 'today', fn ($query) => $query->whereDate('departure_at', today()))
-            ->with(['airRoute.masterRoute', 'aircraft', 'reservations.seats'])
+            ->with(['airRoute.masterRoute', 'aircraft', 'reservations.seats', 'assignments.member'])
             ->orderBy('departure_at')->get()->map(fn (AirDeparture $departure) => $this->airRow($departure)) : collect();
         $rows = $river->concat($air)->sortBy('departure_at')->values();
         $page = max(1, $request->integer('page', 1));
@@ -102,6 +103,7 @@ class CompanyDepartureController extends Controller
             'unit' => $unit?->name ?? 'Unidad por asignar', 'registration' => $unit?->registration_number,
             'capacity' => $capacity, 'booked' => $booked, 'occupancy' => $capacity > 0 ? (int) round($booked / $capacity * 100) : 0,
             'fare' => (float) ($departure->fare ?? 0), 'status' => $departure->status ?? 'scheduled',
+            'can_board' => CrewRoster::commandReady($departure),
         ];
     }
 }

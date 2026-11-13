@@ -20,7 +20,7 @@ class EnsureUserHasPermission
         'admin.agencies.' => 'companies', 'admin.payment-connections.' => 'settings', 'admin.base-policies.' => 'settings', 'admin.company-policies.' => 'settings',
         'admin.reconciliation.' => 'reports',
         'admin.organizations.' => 'companies', 'admin.organization-directory.' => 'companies', 'admin.fleet-compliance.' => 'fleet',
-        'admin.operation.' => 'routes', 'admin.itineraries.' => 'routes', 'admin.supervision.' => 'routes',
+        'admin.operation.' => 'routes', 'admin.itineraries.' => 'routes', 'admin.supervision.' => 'routes', 'admin.incidents.' => 'routes',
         'admin.ports.' => 'ports', 'admin.master-routes.' => 'routes', 'admin.transport-routes.' => 'routes',
         'admin.air-routes.' => 'routes', 'admin.vessels.' => 'fleet', 'admin.aircraft.' => 'fleet', 'admin.fleet.' => 'fleet',
         'admin.manifests.' => 'boarding',

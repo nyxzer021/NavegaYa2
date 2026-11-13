@@ -353,6 +353,21 @@
                 </section>
             @endif
         </div>
+        <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="text-lg font-black text-slate-950">Tripulación</h2>
+            <p class="text-sm text-slate-500">Solo lectura.</p>
+            @forelse($crewMembers as $member)
+                <p class="mt-2 text-sm text-slate-800">{{ $member->name }} · {{ \App\Support\CrewRoster::ROLE_LABELS[$member->role] ?? $member->role }} · {{ $member->document_number }} · {{ $member->phone ?: 'sin teléfono' }} · {{ $member->license_number ?: 'sin licencia' }} · {{ $member->license_expires_on?->format('d/m/Y') ?: 'sin vencimiento' }}</p>
+            @empty
+                <p class="mt-2 text-sm text-slate-500">Sin tripulación registrada.</p>
+            @endforelse
+            <h3 class="mt-4 font-black text-slate-950">Incidencias</h3>
+            @forelse($companyIncidents as $incident)
+                <p class="mt-2 text-sm text-slate-800">{{ $incident->kind }} · {{ $incident->description }}</p>
+            @empty
+                <p class="mt-2 text-sm text-slate-500">Sin incidencias.</p>
+            @endforelse
+        </section>
         @include('admin.companies.operation')
 </div>
 @endsection

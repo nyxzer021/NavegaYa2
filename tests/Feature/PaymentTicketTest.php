@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CrewMember;
 use App\Models\Organization;
 use App\Models\Port;
 use App\Models\Reservation;
@@ -13,6 +14,7 @@ use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Models\VesselSeat;
+use App\Support\CrewRoster;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -35,6 +37,21 @@ class PaymentTicketTest extends TestCase
         return $reservation;
     }
 
+    private function openBoarding(Reservation $reservation): void
+    {
+        $organization = $reservation->departure->transportRoute->organization;
+        $captain = CrewMember::create([
+            'organization_id' => $organization->id,
+            'name' => 'Capitán de prueba',
+            'document_number' => '70000011',
+            'role' => 'captain',
+            'license_number' => 'LIC-PAGO',
+            'license_expires_on' => now()->addYear()->toDateString(),
+            'status' => 'active',
+        ]);
+        CrewRoster::sync($reservation->departure, $captain->id, []);
+    }
+
     public function test_sandbox_payment_confirms_reservation_and_issues_ticket(): void
     {
         config()->set('payments.sandbox_enabled', true);
@@ -52,6 +69,7 @@ class PaymentTicketTest extends TestCase
         $organization = $reservation->departure->transportRoute->organization;
         $admin->roles()->attach(Role::create(['code' => 'company_admin', 'name' => 'Administrador empresa']), ['organization_id' => $organization->id]);
         $admin->organizations()->attach($organization->id, ['status' => 'active']);
+        $this->openBoarding($reservation);
         $this->actingAs($admin)->patch(route('company.boarding.toggle', [$reservation->departure, $ticket]))->assertRedirect();
         $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'boarded']);
         $this->get(route('tickets.verify', $ticket->boarding_token))->assertOk()->assertSee('Boleto ya utilizado');
@@ -89,6 +107,7 @@ class PaymentTicketTest extends TestCase
         $organization = $reservation->departure->transportRoute->organization;
         $admin->roles()->attach(Role::create(['code' => 'company_admin', 'name' => 'Administrador empresa']), ['organization_id' => $organization->id]);
         $admin->organizations()->attach($organization->id, ['status' => 'active']);
+        $this->openBoarding($reservation);
 
         $this->actingAs($admin)
             ->get(route('company.boarding.show', $reservation->departure))
@@ -121,6 +140,7 @@ class PaymentTicketTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['code' => 'company_admin', 'name' => 'Administrador empresa']), ['organization_id' => $organization->id]);
         $admin->organizations()->attach($organization->id, ['status' => 'active']);
+        $this->openBoarding($reservation);
 
         $this->actingAs($admin)
             ->get(route('company.boarding.show', $reservation->departure))

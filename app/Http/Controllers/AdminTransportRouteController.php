@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Admin\StoreRouteDepartureRequest;
 use App\Http\Requests\Admin\StoreTransportRouteRequest;
 use App\Models\CheckoutOrder;
+use App\Models\CrewMember;
 use App\Models\DestinationCity;
 use App\Models\MasterRoute;
 use App\Models\Organization;
@@ -14,11 +15,13 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\CrewRoster;
 use App\Support\DepartureSchedule;
 use App\Support\FleetPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -146,7 +149,17 @@ class AdminTransportRouteController extends Controller
     {
         $this->authorizeCompanyAdmin();
         $data = $this->validatedDepartureData($request, $departure);
+        if (isset($data['departure_at']) && ! $departure->departure_at->equalTo(Carbon::parse($data['departure_at']))) {
+            CrewRoster::guardMove($departure, Carbon::parse($data['departure_at']));
+        }
         $departure->update($data + ['cargo_enabled' => $request->boolean('cargo_enabled')]);
+        if ($request->exists('captain_id') || $request->exists('crew_ids')) {
+            CrewRoster::sync(
+                $departure->fresh(),
+                $request->filled('captain_id') ? $request->integer('captain_id') : null,
+                array_values(array_filter(array_map('intval', (array) $request->input('crew_ids', [])))),
+            );
+        }
 
         return redirect()->route('company.departures.index')->with('success', 'Salida reprogramada correctamente.');
     }
@@ -154,6 +167,7 @@ class AdminTransportRouteController extends Controller
     private function departureFormData(?RouteDeparture $departureRecord, ?int $selectedRouteId): array
     {
         $organization = Organization::query()->whereKey(AdminScope::organizationId(auth()->user()))->with('vessels.basePort')->firstOrFail();
+        $departureRecord?->loadMissing('assignments');
 
         return [
             'organization' => $organization,
@@ -162,6 +176,7 @@ class AdminTransportRouteController extends Controller
             'selectedRouteId' => $selectedRouteId,
             'departureRecord' => $departureRecord,
             'companyContext' => true,
+            'crew' => CrewMember::query()->where('organization_id', $organization->id)->where('status', 'active')->orderBy('name')->get(),
         ];
     }
 
@@ -184,6 +199,9 @@ class AdminTransportRouteController extends Controller
         $organizationId = AdminScope::organizationId(auth()->user());
         abort_unless($organizationId && $departure->transportRoute()->where('organization_id', $organizationId)->exists(), 403);
         $data = $request->validate(['status' => ['required', 'in:scheduled,boarding,in_transit,completed,cancelled']]);
+        if ($data['status'] === 'boarding' && ! CrewRoster::commandReady($departure)) {
+            throw ValidationException::withMessages(['status' => CrewRoster::BOARDING_BLOCK]);
+        }
         $departure->update($data + ['status_changed_by_user_id' => $request->user()->id, 'status_changed_at' => now()]);
 
         return back()->with('success', 'Estado de la salida actualizado.');
@@ -219,6 +237,7 @@ class AdminTransportRouteController extends Controller
             if ($departure->vessel && DepartureSchedule::blockedOn($departure->vessel, $newDepartureAt)) {
                 throw ValidationException::withMessages(['departure_at' => 'La unidad está en mantenimiento ese día.']);
             }
+            CrewRoster::guardMove($departure, $newDepartureAt);
             $offsetMinutes = $departure->departure_at->diffInMinutes($newDepartureAt, false);
             $changes['previous_departure_at'] = $departure->departure_at;
             $changes['departure_at'] = $newDepartureAt;

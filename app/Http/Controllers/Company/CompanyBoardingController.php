@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Models\Ticket;
 use App\Support\AdminScope;
+use App\Support\CrewRoster;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -45,13 +46,15 @@ class CompanyBoardingController extends Controller
             ->values();
 
         $organization = Organization::with('vessels.basePort')->findOrFail($organizationId);
+        $canBoard = CrewRoster::commandReady($departure);
 
-        return view('company.boarding.show', compact('organization', 'departure', 'tickets', 'term', 'boardingStats'));
+        return view('company.boarding.show', compact('organization', 'departure', 'tickets', 'term', 'boardingStats', 'canBoard'));
     }
 
     public function toggle(Request $request, RouteDeparture $departure, Ticket $ticket): RedirectResponse
     {
         $this->authorizeDeparture($request, $departure);
+        abort_unless(CrewRoster::commandReady($departure), 422, CrewRoster::BOARDING_BLOCK);
         abort_unless(in_array($departure->status, ['scheduled', 'boarding', 'delayed', 'rescheduled'], true), 422, 'El estado de la salida no permite embarcar pasajeros.');
         $ticket->load('reservationSeat.reservation');
         abort_unless($ticket->reservationSeat?->reservation?->route_departure_id === $departure->id, 404);
