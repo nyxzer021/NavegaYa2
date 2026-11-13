@@ -155,7 +155,7 @@
             <h3>{{ __('company_portal.home.upcoming') }}</h3>
             @forelse($upcomingDepartures as $row)
                 <div class="mt-3 flex flex-col gap-2 border-t border-[#e1e8e4] pt-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p class="text-sm text-slate-800"><strong>{{ $row['departure_at']->translatedFormat('D d M · H:i') }}</strong> · {{ $row['origin'] }} → {{ $row['destination'] }} · {{ $row['unit'] }}</p>
+                    <p class="text-sm text-slate-800"><strong>{{ \App\Support\DepartureSchedule::show($row['departure_at'], 'D d M · H:i') }}</strong> · {{ $row['origin'] }} → {{ $row['destination'] }} · {{ $row['unit'] }}</p>
                     <a href="{{ route('company.departures.index') }}" class="text-sm font-bold text-emerald-800">{{ __('company_portal.home.see_departure') }}</a>
                 </div>
             @empty

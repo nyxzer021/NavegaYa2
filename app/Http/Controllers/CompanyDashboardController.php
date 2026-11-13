@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use App\Models\RouteDeparture;
 use App\Models\SupportTicket;
 use App\Support\CompanyBase;
+use App\Support\DepartureSchedule;
 use App\Support\FleetMaintenance;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -54,14 +55,14 @@ class CompanyDashboardController extends Controller
         $riverDepartures = in_array($modality, ['fluvial', 'mixto'], true)
             ? RouteDeparture::query()
                 ->whereHas('transportRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
-                ->whereDate('departure_at', today())
+                ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))
                 ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats'])
                 ->orderBy('departure_at')->get()
             : collect();
         $airDepartures = in_array($modality, ['aereo', 'mixto'], true)
             ? AirDeparture::query()
                 ->whereHas('airRoute', fn (Builder $query) => $query->where('organization_id', $organization->id))
-                ->whereDate('departure_at', today())
+                ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))
                 ->with(['airRoute', 'aircraft', 'reservations.seats'])
                 ->orderBy('departure_at')->get()
             : collect();
@@ -76,8 +77,8 @@ class CompanyDashboardController extends Controller
      */
     private function upcomingDepartures($organization): Collection
     {
-        $from = now()->endOfDay();
-        $until = now()->addDays(14);
+        $from = DepartureSchedule::dayBounds()[1];
+        $until = $from->copy()->addDays(14);
         $modality = $organization->modality ?: 'fluvial';
         $riverDepartures = in_array($modality, ['fluvial', 'mixto'], true)
             ? RouteDeparture::query()
@@ -193,7 +194,7 @@ class CompanyDashboardController extends Controller
         foreach ($todayDepartures->whereIn('status', ['delayed', 'rescheduled', 'suspended', 'cancelled']) as $row) {
             $items->push([
                 'title' => $row['origin'].' → '.$row['destination'],
-                'detail' => $row['departure_at']->format('H:i'),
+                'detail' => DepartureSchedule::show($row['departure_at'], 'H:i'),
                 'href' => route('company.departures.index'),
             ]);
         }

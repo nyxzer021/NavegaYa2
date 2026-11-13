@@ -10,6 +10,7 @@ use App\Models\RouteDeparture;
 use App\Services\BookingPaymentService;
 use App\Services\HammockSale;
 use App\Support\AdminScope;
+use App\Support\DepartureSchedule;
 use App\Support\FareTable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +30,7 @@ class CompanyPosController extends Controller
         Reservation::expirePending($expired);
         $departures = RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
-            ->whereDate('departure_at', today())->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])->where('is_published', true)
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])->where('is_published', true)
             ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.seats'])
             ->orderBy('departure_at')->get();
         $selectedDeparture = $departures->firstWhere('id', $request->integer('departure')) ?? $departures->first();

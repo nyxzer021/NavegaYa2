@@ -10,6 +10,7 @@ use App\Models\RouteDeparture;
 use App\Models\Vessel;
 use App\Support\AdminScope;
 use App\Support\CrewRoster;
+use App\Support\DepartureSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -29,7 +30,7 @@ class CompanyDepartureController extends Controller
                 ->whereColumn('origin_port_id', '<>', 'destination_port_id')
                 ->whereHas('originPort')
                 ->whereHas('destinationPort'))
-            ->when($filter === 'today', fn ($query) => $query->whereDate('departure_at', today()))
+            ->when($filter === 'today', fn ($query) => DepartureSchedule::onThisLimaDay($query))
             ->with(['transportRoute.masterRoute', 'transportRoute.originPort', 'transportRoute.destinationPort', 'vessel', 'reservations.seats', 'assignments.member'])
             ->orderBy('departure_at')->get()->map(fn (RouteDeparture $departure) => $this->riverRow($departure)) : collect();
         $air = in_array($organization->modality, ['aereo', 'mixto'], true) ? AirDeparture::query()
@@ -37,7 +38,7 @@ class CompanyDepartureController extends Controller
                 ->where('organization_id', $organizationId)
                 ->whereNotNull('master_route_id')
                 ->whereColumn('origin_city', '<>', 'destination_city'))
-            ->when($filter === 'today', fn ($query) => $query->whereDate('departure_at', today()))
+            ->when($filter === 'today', fn ($query) => DepartureSchedule::onThisLimaDay($query))
             ->with(['airRoute.masterRoute', 'aircraft', 'reservations.seats', 'assignments.member'])
             ->orderBy('departure_at')->get()->map(fn (AirDeparture $departure) => $this->airRow($departure)) : collect();
         $rows = $river->concat($air)->sortBy('departure_at')->values();
@@ -49,11 +50,11 @@ class CompanyDepartureController extends Controller
         $todayRiver = RouteDeparture::query()->whereHas('transportRoute', fn ($query) => $query
             ->where('organization_id', $organizationId)
             ->whereNotNull('master_route_id')
-            ->whereColumn('origin_port_id', '<>', 'destination_port_id'))->whereDate('departure_at', today());
+            ->whereColumn('origin_port_id', '<>', 'destination_port_id'))->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query));
         $todayAir = AirDeparture::query()->whereHas('airRoute', fn ($query) => $query
             ->where('organization_id', $organizationId)
             ->whereNotNull('master_route_id')
-            ->whereColumn('origin_city', '<>', 'destination_city'))->whereDate('departure_at', today());
+            ->whereColumn('origin_city', '<>', 'destination_city'))->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query));
         $todayDepartures = (clone $todayRiver)->with(['vessel', 'reservations.seats'])->get()
             ->concat((clone $todayAir)->with(['aircraft', 'reservations.seats'])->get());
         $todaySeatCapacity = (int) $todayDepartures->sum(fn (RouteDeparture|AirDeparture $departure): int => (int) (($departure instanceof AirDeparture ? $departure->aircraft : $departure->vessel)?->seat_capacity ?? 0));

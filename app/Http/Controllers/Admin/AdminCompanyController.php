@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Vessel;
 use App\Services\CompanyProvisioningService;
 use App\Support\AuditRecorder;
+use App\Support\DepartureSchedule;
 use App\Support\PhoneNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -94,9 +95,9 @@ class AdminCompanyController extends Controller
         $activeOperatorsToday = Organization::query()
             ->where('type', 'transport_company')
             ->where('status', 'active')
-            ->where(function ($query) use ($today) {
-                $query->whereHas('routeDepartures', fn ($departures) => $departures->whereDate('departure_at', $today))
-                    ->orWhereHas('airDepartures', fn ($departures) => $departures->whereDate('departure_at', $today));
+            ->where(function ($query) {
+                $query->whereHas('routeDepartures', fn ($departures) => DepartureSchedule::onThisLimaDay($departures))
+                    ->orWhereHas('airDepartures', fn ($departures) => DepartureSchedule::onThisLimaDay($departures));
             })
             ->count();
 
@@ -104,8 +105,8 @@ class AdminCompanyController extends Controller
             ->whereIn('status', ['active', 'suspended'])
             ->with([
                 'users.roles',
-                'routeDepartures' => fn ($query) => $query->whereDate('departure_at', $today)->with(['vessel', 'reservations.seats']),
-                'airDepartures' => fn ($query) => $query->whereDate('departure_at', $today)->with(['aircraft', 'reservations.seats']),
+                'routeDepartures' => fn ($query) => DepartureSchedule::onThisLimaDay($query)->with(['vessel', 'reservations.seats']),
+                'airDepartures' => fn ($query) => DepartureSchedule::onThisLimaDay($query)->with(['aircraft', 'reservations.seats']),
             ])
             ->withCount([
                 'vessels as registered_vessels_count',

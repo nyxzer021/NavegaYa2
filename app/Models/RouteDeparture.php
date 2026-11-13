@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AsLimaDateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -29,11 +30,11 @@ class RouteDeparture extends Model
     protected function casts(): array
     {
         return [
-            'departure_at' => 'datetime',
-            'previous_departure_at' => 'datetime',
-            'boarding_starts_at' => 'datetime',
-            'cargo_reception_starts_at' => 'datetime',
-            'estimated_arrival_at' => 'datetime',
+            'departure_at' => AsLimaDateTime::class,
+            'previous_departure_at' => AsLimaDateTime::class,
+            'boarding_starts_at' => AsLimaDateTime::class,
+            'cargo_reception_starts_at' => AsLimaDateTime::class,
+            'estimated_arrival_at' => AsLimaDateTime::class,
             'fare' => 'decimal:2',
             'cargo_enabled' => 'boolean',
             'included_baggage_kg' => 'integer',

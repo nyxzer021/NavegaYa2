@@ -185,7 +185,7 @@ class CompanyDepartureController extends BaseCompanyDepartureController
             ->whereDoesntHave('reservations', fn ($query) => $query->whereIn('status', ['pending', 'confirmed']))
             ->get()
             ->each(function (RouteDeparture $departure) use ($wanted): void {
-                if (! $wanted->contains($departure->departure_at->format('Y-m-d H:i:s'))) {
+                if (! $wanted->contains($departure->departure_at->utc()->format('Y-m-d H:i:s'))) {
                     $departure->delete();
                 }
             });

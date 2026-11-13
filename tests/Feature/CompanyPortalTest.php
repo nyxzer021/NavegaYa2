@@ -194,7 +194,7 @@ class CompanyPortalTest extends TestCase
         $response->assertRedirect()->assertSessionHas('success');
         $departure->refresh();
         $this->assertSame('rescheduled', $departure->status);
-        $this->assertSame($originalDepartureAt->format('Y-m-d H:i:s'), $departure->previous_departure_at->format('Y-m-d H:i:s'));
+        $this->assertSame($originalDepartureAt->utc()->getTimestamp(), $departure->previous_departure_at->utc()->getTimestamp());
         $this->assertTrue($departure->departure_at->equalTo($newDepartureAt));
         $this->assertSame($admin->id, $departure->status_changed_by_user_id);
         $this->assertSame('Cierre preventivo del puerto por seguridad.', $departure->disruption_reason);
@@ -435,7 +435,7 @@ class CompanyPortalTest extends TestCase
     {
         [$admin, $organization] = $this->companyAdmin('Operador Embarque', '20999999993');
         $departure = $this->departure($organization, 'Nave de Hoy', 'Iquitos', 'Lagunas');
-        $departure->update(['departure_at' => now()->setTime(15, 30)]);
+        $departure->update(['departure_at' => now()->timezone('America/Lima')->setTime(15, 30)]);
 
         $this->actingAs($admin)->get(route('company.counter.index'))
             ->assertOk()

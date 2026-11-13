@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\RouteDeparture;
 use App\Support\AdminScope;
 use App\Support\CrewRoster;
+use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,12 +27,18 @@ class CompanyCrewController extends Controller
             'members' => CrewMember::query()->where('organization_id', $organization->id)->orderBy('name')->get(),
             'departures' => RouteDeparture::query()
                 ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organization->id))
-                ->where('departure_at', '>=', now()->subHour())
+                ->where('departure_at', '>=', DepartureSchedule::dayBounds()[0])
                 ->whereNotIn('status', ['cancelled', 'completed'])
                 ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'assignments.member'])
                 ->orderBy('departure_at')
-                ->limit(30)
-                ->get(),
+                ->limit(40)
+                ->get()
+                ->filter(function (RouteDeparture $departure): bool {
+                    $minutes = max(1, (int) ($departure->transportRoute->estimated_duration_minutes ?? 1));
+
+                    return $departure->departure_at->copy()->addMinutes($minutes)->greaterThan(now());
+                })
+                ->values(),
         ]);
     }
 

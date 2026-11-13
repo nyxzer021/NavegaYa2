@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AsLimaDateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +13,7 @@ class AirDeparture extends Model
 
     protected function casts(): array
     {
-        return ['departure_at' => 'datetime', 'boarding_starts_at' => 'datetime', 'estimated_arrival_at' => 'datetime', 'previous_departure_at' => 'datetime', 'status_changed_at' => 'datetime', 'sales_paused_at' => 'datetime', 'fare' => 'decimal:2', 'cargo_enabled' => 'boolean', 'is_published' => 'boolean'];
+        return ['departure_at' => AsLimaDateTime::class, 'boarding_starts_at' => AsLimaDateTime::class, 'estimated_arrival_at' => AsLimaDateTime::class, 'previous_departure_at' => AsLimaDateTime::class, 'status_changed_at' => 'datetime', 'sales_paused_at' => 'datetime', 'fare' => 'decimal:2', 'cargo_enabled' => 'boolean', 'is_published' => 'boolean'];
     }
 
     public function airRoute(): BelongsTo

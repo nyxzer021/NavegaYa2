@@ -32,7 +32,33 @@ class DepartureSchedule
 
     public static function label(CarbonInterface $moment): string
     {
-        return $moment->copy()->timezone(self::ZONE)->format('d/m/Y H:i');
+        return self::show($moment, 'd/m/Y H:i');
+    }
+
+    public static function show(?CarbonInterface $moment, string $format = 'd/m/Y · H:i'): string
+    {
+        if ($moment === null) {
+            return '';
+        }
+
+        return $moment->copy()->timezone(self::ZONE)->locale('es')->translatedFormat($format);
+    }
+
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    public static function dayBounds(?CarbonInterface $moment = null): array
+    {
+        $day = ($moment ?? now())->copy()->timezone(self::ZONE);
+
+        return [$day->copy()->startOfDay()->utc(), $day->copy()->endOfDay()->utc()];
+    }
+
+    public static function onThisLimaDay(object $query, string $column = 'departure_at'): object
+    {
+        [$start, $end] = self::dayBounds();
+
+        return $query->whereBetween($column, [$start, $end]);
     }
 
     public static function webTotal(float $fare, ?Organization $organization): float

@@ -12,6 +12,7 @@ use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AuditRecorder;
+use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -125,9 +126,9 @@ class AdminSupervisionController extends Controller
     private function marketplaceMetrics(): array
     {
         $river = RouteDeparture::with(['vessel', 'reservations.seats', 'transportRoute'])
-            ->whereDate('departure_at', today())->get();
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))->get();
         $air = AirDeparture::with(['aircraft', 'reservations.seats', 'airRoute'])
-            ->whereDate('departure_at', today())->get();
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))->get();
         $all = $river->map(fn ($departure) => [
             'capacity' => (int) ($departure->vessel?->seat_capacity ?? 0),
             'sold' => $departure->reservations->where('status', 'confirmed')->sum(fn ($reservation) => $reservation->seats->count()),

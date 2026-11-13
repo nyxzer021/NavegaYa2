@@ -21,6 +21,7 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Services\MarketplaceSales;
+use App\Support\DepartureSchedule;
 use App\Support\PhoneNumber;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -184,12 +185,12 @@ class AdminDashboardController extends Controller
         $pendingFleetReviewsCount = Vessel::query()->where('status', 'pending_review')->count();
 
         $todayFluvialDepartures = RouteDeparture::query()
-            ->whereDate('departure_at', $today)
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))
             ->with('vessel')
             ->get();
 
         $todayAirDepartures = AirDeparture::query()
-            ->whereDate('departure_at', $today)
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))
             ->with('aircraft')
             ->get();
 
@@ -215,8 +216,8 @@ class AdminDashboardController extends Controller
         $pendingDeparturesToday = $todayFluvialDepartures->whereIn('status', ['scheduled', 'boarding'])->count()
             + $todayAirDepartures->whereIn('status', ['scheduled', 'boarding'])->count();
 
-        $cancelledDeparturesToday = RouteDeparture::query()->whereDate('departure_at', $today)->where('status', 'cancelled')->count()
-            + AirDeparture::query()->whereDate('departure_at', $today)->where('status', 'cancelled')->count();
+        $cancelledDeparturesToday = RouteDeparture::query()->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))->where('status', 'cancelled')->count()
+            + AirDeparture::query()->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))->where('status', 'cancelled')->count();
         $rescheduledDeparturesToday = $todayFluvialDepartures
             ->filter(fn (RouteDeparture $departure) => $departure->status === 'rescheduled' || str_contains(mb_strtolower((string) $departure->notes), 'reprogram'))->count()
             + $todayAirDepartures

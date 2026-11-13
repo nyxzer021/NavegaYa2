@@ -108,11 +108,11 @@ class CompanyPortalMenu
         $organizationId = $this->organization->id;
         $river = RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
-            ->whereDate('departure_at', today())
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))
             ->count();
         $air = AirDeparture::query()
             ->whereHas('airRoute', fn ($query) => $query->where('organization_id', $organizationId))
-            ->whereDate('departure_at', today())
+            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))
             ->count();
 
         return $river + $air;
