@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RouteDeparture;
 use App\Support\AdminScope;
+use App\Support\ManifestReport;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -12,6 +13,23 @@ class AdminManifestController extends Controller
     public function show(RouteDeparture $departure): View
     {
         return view('manifests.show', $this->data($departure));
+    }
+
+    public function passengerPdf(RouteDeparture $departure): Response
+    {
+        $this->data($departure);
+
+        return app('dompdf.wrapper')->loadView('company.manifests.passengers-pdf', ManifestReport::river($departure))->setPaper('a4')->download('manifiesto-pasajeros-'.$departure->code.'.pdf');
+    }
+
+    public function cargoPdf(RouteDeparture $departure): Response
+    {
+        $this->data($departure);
+
+        return app('dompdf.wrapper')->loadView('company.manifests.cargo-pdf', [
+            'departure' => $departure,
+            'shipments' => ManifestReport::cargo($departure),
+        ])->setPaper('a4')->download('manifiesto-carga-'.$departure->code.'.pdf');
     }
 
     public function csv(RouteDeparture $departure): Response

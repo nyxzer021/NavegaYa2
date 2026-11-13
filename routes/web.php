@@ -135,6 +135,9 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::post('/salidas', [CompanyDepartureController::class, 'store'])->name('departures.store');
     Route::get('/salidas/{departure}/embarque', [CompanyBoardingController::class, 'show'])->name('boarding.show');
     Route::patch('/salidas/{departure}/embarque/{ticket}', [CompanyBoardingController::class, 'toggle'])->name('boarding.toggle');
+    Route::post('/salidas/{departure}/pasajeros/{reservationSeat}', [CompanyBoardingController::class, 'seat'])->name('boarding.seat');
+    Route::get('/salidas/{departure}/manifiesto-pasajeros.pdf', [CompanyBoardingController::class, 'passengerPdf'])->name('boarding.passengers');
+    Route::get('/salidas/{departure}/manifiesto-carga.pdf', [CompanyBoardingController::class, 'cargoPdf'])->name('boarding.cargo');
     Route::get('/salidas/{departure}/manifiesto', [CompanyDepartureController::class, 'manifest'])->name('departures.manifest');
     Route::get('/pos', [CompanyPosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
@@ -426,6 +429,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::get('/reportes/exportar', [AdminReportController::class, 'export'])->name('reports.export');
     Route::get('/salidas/{departure}/manifiesto', [AdminManifestController::class, 'show'])->name('manifests.show');
     Route::get('/salidas/{departure}/manifiesto/csv', [AdminManifestController::class, 'csv'])->name('manifests.csv');
+    Route::get('/salidas/{departure}/manifiesto-pasajeros.pdf', [AdminManifestController::class, 'passengerPdf'])->name('manifests.passengers');
+    Route::get('/salidas/{departure}/manifiesto-carga.pdf', [AdminManifestController::class, 'cargoPdf'])->name('manifests.cargo');
     Route::resource('/usuarios', AdminUserController::class)->parameters(['usuarios' => 'user'])->names('users');
     Route::get('/solicitudes-empresa', [AdminOrganizationReviewController::class, 'index'])->name('organizations.index');
     Route::get('/empresas-agencias', [AdminOrganizationDirectoryController::class, 'index'])->name('organization-directory.index');
