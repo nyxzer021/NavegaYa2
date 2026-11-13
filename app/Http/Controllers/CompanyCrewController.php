@@ -32,13 +32,7 @@ class CompanyCrewController extends Controller
                 ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'assignments.member'])
                 ->orderBy('departure_at')
                 ->limit(40)
-                ->get()
-                ->filter(function (RouteDeparture $departure): bool {
-                    $minutes = max(1, (int) ($departure->transportRoute->estimated_duration_minutes ?? 1));
-
-                    return $departure->departure_at->copy()->addMinutes($minutes)->greaterThan(now());
-                })
-                ->values(),
+                ->get(),
         ]);
     }
 

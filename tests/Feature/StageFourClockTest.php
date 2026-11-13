@@ -77,8 +77,7 @@ class StageFourClockTest extends TestCase
         $open->transportRoute->update(['estimated_duration_minutes' => 180]);
         $open->update(['departure_at' => now()->timezone('America/Lima')->subHours(2)]);
         $closed = $this->river($organization, 'Lancha Cerrada', 'Iquitos', 'Requena');
-        $closed->transportRoute->update(['estimated_duration_minutes' => 30]);
-        $closed->update(['departure_at' => now()->timezone('America/Lima')->subHours(6)]);
+        $closed->update(['departure_at' => now()->timezone('America/Lima')->subHours(6), 'status' => 'completed']);
 
         $this->actingAs($admin)->get(route('company.crew.index'))
             ->assertOk()
