@@ -11,9 +11,20 @@
     $destination = $isAir ? ($route->destination_city ?: '—') : ($route->destinationPort?->city ?: '—');
     $duration = (int) ($route->estimated_duration_minutes ?: 0);
     $arrival = $duration ? $departure->departure_at->copy()->addMinutes($duration) : $departure->estimated_arrival_at;
-    $fare = round((float) $departure->fare, 2);
-    $percent = round((float) ($organization->commission_rate ?? 0), 2);
-    $webPrice = round($fare + round($fare * $percent / 100, 2), 2);
+    $adultFare = \App\Support\FareTable::price($route, 'seat', 'adult', $departure->departure_at, (float) $departure->fare);
+    $webPrice = \App\Support\DepartureSchedule::webTotal((float) $adultFare, $organization);
+    $classNotes = [];
+    if (! $isAir) {
+        $kinds = $vehicle->relationLoaded('seats') ? $vehicle->seats->pluck('space_type') : $vehicle->seats()->distinct()->pluck('space_type');
+        if ($kinds->contains('hammock')) {
+            $hammockFare = \App\Support\FareTable::price($route, 'hammock', 'adult', $departure->departure_at, null);
+            $classNotes[] = $hammockFare === null ? 'Hamaca: No disponible' : 'Hamaca: S/ '.number_format(\App\Support\DepartureSchedule::webTotal($hammockFare, $organization), 2);
+        }
+        if ($kinds->contains('cabin_bed')) {
+            $cabinFare = \App\Support\FareTable::price($route, 'cabin_bed', 'adult', $departure->departure_at, null);
+            $classNotes[] = $cabinFare === null ? 'Camarote: No disponible' : 'Camarote: S/ '.number_format(\App\Support\DepartureSchedule::webTotal($cabinFare, $organization), 2);
+        }
+    }
     $reserved = $departure->reservations->whereIn('status', ['pending', 'confirmed'])->sum(fn ($reservation) => $reservation->seats->count());
     $available = max(0, (int) $vehicle->seat_capacity - $reserved);
     $capacity = max(1, (int) $vehicle->seat_capacity);
@@ -64,6 +75,7 @@
             @endif
         </div>
     </div>
+    @if($classNotes !== [])<p class="ny-departure-note">{{ implode(' · ', $classNotes) }}</p>@endif
     @if($stopsLabel)<p class="ny-departure-note">{{ $stopsLabel }}</p>@endif
     <p class="ny-departure-note">La salida puede demorar 1 o 2 horas respecto a la hora citada.</p>
 </article>

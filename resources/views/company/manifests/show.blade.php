@@ -61,7 +61,7 @@
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $seat->seat?->code ?? '—' }}</td>
                         <td>{{ $seat->document_type }} · {{ $seat->document_number }}</td>
-                        <td class="font-semibold uppercase">{{ $seat->passenger_name }}</td>
+                        <td class="font-semibold uppercase">{{ $seat->passenger_name }}@if($seat->passenger_type === 'infant') · Infante @endif</td>
                         <td>{{ $seat->passenger_age ?? '—' }}</td>
                         <td>{{ $destination }}</td>
                         <td>{{ $seat->ticket?->code ?? 'Pendiente' }}</td>

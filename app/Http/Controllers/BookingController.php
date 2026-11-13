@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Discount;
 use App\Models\Reservation;
 use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
+use App\Models\VesselSeat;
 use App\Services\HammockSale;
+use App\Support\DiscountLedger;
+use App\Support\FareTable;
 use DomainException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -27,8 +31,35 @@ class BookingController extends Controller
             fn ($seat): bool => $seat->is_available && ! in_array($seat->id, $occupiedSeatIds, true)
         )->count();
         $seats = $departure->vessel->seats->where('space_type', 'seat')->sortBy(['deck', 'row_position', 'column_position']);
+        $route = $departure->transportRoute;
+        $when = $departure->departure_at;
+        $prices = [
+            'seat' => FareTable::price($route, 'seat', 'adult', $when, (float) $departure->fare),
+            'hammock' => FareTable::price($route, 'hammock', 'adult', $when, null),
+            'cabin_bed' => FareTable::price($route, 'cabin_bed', 'adult', $when, null),
+        ];
+        $day = $when->copy()->timezone('America/Lima')->toDateString();
+        $discounts = Discount::query()
+            ->where('organization_id', $route->organization_id)
+            ->where('status', 'active')
+            ->get()
+            ->filter(function (Discount $discount) use ($day, $route): bool {
+                if (! in_array('web', $discount->channels ?? [], true)) {
+                    return false;
+                }
+                $starts = $discount->starts_on?->toDateString();
+                $ends = $discount->ends_on?->toDateString();
+                if (($starts !== null && $starts > $day) || ($ends !== null && $ends < $day)) {
+                    return false;
+                }
+                $discount->loadMissing('assignments');
 
-        return view('bookings.create', compact('departure', 'seats', 'occupiedSeatIds', 'cabins', 'freeHammocks'));
+                return $discount->assignments->isEmpty()
+                    || $discount->assignments->contains(fn ($row): bool => (int) $row->transport_route_id === (int) $route->id);
+            })
+            ->values();
+
+        return view('bookings.create', compact('departure', 'seats', 'occupiedSeatIds', 'cabins', 'freeHammocks', 'prices', 'discounts'));
     }
 
     public function store(Request $request, RouteDeparture $departure): RedirectResponse
@@ -36,6 +67,12 @@ class BookingController extends Controller
         if ($request->input('place') === 'hammock') {
             return $this->storeHammock($request, $departure);
         }
+        $request->merge([
+            'infants' => collect($request->input('infants', []))
+                ->filter(fn ($row): bool => is_array($row) && (filled($row['name'] ?? null) || filled($row['document'] ?? null)))
+                ->values()
+                ->all(),
+        ]);
         $data = $request->validate([
             'contact_name' => ['required', 'string', 'max:150'],
             'contact_email' => ['required', 'email', 'max:150'],
@@ -48,6 +85,10 @@ class BookingController extends Controller
             'passengers.*.document_type' => ['nullable', 'in:DNI,CE,Pasaporte'],
             'passengers.*.document' => ['required', 'string', 'max:40'],
             'passengers.*.age' => ['nullable', 'integer', 'min:0', 'max:120'],
+            'infants' => ['nullable', 'array', 'max:4'],
+            'infants.*.name' => ['required', 'string', 'max:150'],
+            'infants.*.document' => ['required', 'string', 'max:40'],
+            'discount_id' => ['nullable', 'integer', 'exists:discounts,id'],
         ]);
         $departure->loadMissing('transportRoute.organization');
         abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
@@ -68,6 +109,48 @@ class BookingController extends Controller
                 if ($occupied) {
                     throw new DomainException('Uno de los asientos acaba de ser reservado por otra persona. Elige otro asiento.');
                 }
+                $chosen = VesselSeat::query()->whereIn('id', $seatIds)->get()->keyBy('id');
+                $departure->loadMissing('transportRoute');
+                $base = 0.0;
+                $vests = 0;
+                foreach ($seatIds as $seatId) {
+                    $seat = $chosen->get($seatId);
+                    $space = $seat?->space_type ?: 'seat';
+                    $amount = FareTable::price($departure->transportRoute, $space, 'adult', $departure->departure_at, $space === 'seat' ? (float) $departure->fare : null);
+                    if ($amount === null) {
+                        throw new DomainException($space === 'cabin_bed' ? 'El camarote no está disponible en esta ruta.' : 'Esa clase no está disponible en esta ruta.');
+                    }
+                    $base += $amount;
+                    $vests += $seat ? FareTable::occupants($seat) : 1;
+                }
+                $infants = array_values($data['infants'] ?? []);
+                if (count($infants) > $seatIds->count()) {
+                    throw new DomainException('Solo puede viajar un infante por adulto.');
+                }
+                foreach ($infants as $index => $infant) {
+                    $adultSeat = $chosen->get($seatIds[$index] ?? $seatIds->first());
+                    $space = $adultSeat?->space_type ?: 'seat';
+                    $infantPrice = FareTable::price($departure->transportRoute, $space, 'infant', $departure->departure_at, null);
+                    if ($infantPrice === null) {
+                        throw new DomainException('El infante no tiene tarifa en esta ruta.');
+                    }
+                    $base += $infantPrice;
+                    $vests++;
+                }
+                FareTable::assertVests($departure, $vests);
+                $base = round($base, 2);
+                $discountAmount = 0.0;
+                $discount = null;
+                if (! empty($data['discount_id'])) {
+                    $discount = Discount::query()->whereKey($data['discount_id'])->lockForUpdate()->first();
+                    FareTable::assertDiscount($discount, $departure, 'web', $data['contact_document'] ?? null);
+                    $priced = FareTable::net($base, $discount);
+                    $discountAmount = $priced['discount'];
+                    $base = $priced['base'];
+                    $net = $priced['net'];
+                } else {
+                    $net = $base;
+                }
                 $reservation = Reservation::create([
                     'user_id' => auth()->id(),
                     'route_departure_id' => $departure->id,
@@ -76,10 +159,17 @@ class BookingController extends Controller
                     'contact_email' => $data['contact_email'],
                     'contact_phone' => $data['contact_phone'],
                     'contact_document' => ($data['contact_document'] ?? null),
-                    'total_amount' => $departure->fare * count($seatIds),
+                    'base_amount' => $base,
+                    'discount_amount' => $discountAmount,
+                    'total_amount' => $net,
+                    'discount_id' => $discount?->id,
+                    'discount_held' => $discount !== null,
                     'status' => 'pending_payment',
                     'expires_at' => now()->addMinutes(10),
                 ]);
+                if ($discount !== null) {
+                    DiscountLedger::redeem($discount);
+                }
                 foreach ($seatIds as $index => $seatId) {
                     ReservationSeat::create([
                         'reservation_id' => $reservation->id,
@@ -89,6 +179,17 @@ class BookingController extends Controller
                         'document_type' => $data['passengers'][$index]['document_type'] ?? 'DNI',
                         'document_number' => $data['passengers'][$index]['document'],
                         'passenger_age' => $data['passengers'][$index]['age'] ?? null,
+                        'passenger_type' => 'adult',
+                    ]);
+                }
+                foreach ($infants as $infant) {
+                    ReservationSeat::create([
+                        'reservation_id' => $reservation->id,
+                        'route_departure_id' => $departure->id,
+                        'passenger_name' => $infant['name'],
+                        'document_type' => 'DNI',
+                        'document_number' => $infant['document'],
+                        'passenger_type' => 'infant',
                     ]);
                 }
 
@@ -149,10 +250,7 @@ class BookingController extends Controller
     private function expireReservations(RouteDeparture $departure): void
     {
         $expiredIds = Reservation::where('route_departure_id', $departure->id)->where('status', 'pending_payment')->whereNotNull('expires_at')->where('expires_at', '<=', now())->pluck('id');
-        if ($expiredIds->isNotEmpty()) {
-            ReservationSeat::whereIn('reservation_id', $expiredIds)->delete();
-            Reservation::whereIn('id', $expiredIds)->update(['status' => 'expired']);
-        }
+        Reservation::expirePending($expiredIds);
     }
 
     private function ensureReservationAccess(Reservation $reservation): void

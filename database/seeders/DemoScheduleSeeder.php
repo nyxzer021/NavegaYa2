@@ -74,7 +74,7 @@ class DemoScheduleSeeder extends Seeder
                 $departureAt = now()->startOfDay()->addDays($days)->setTimeFromTimeString($time);
                 RouteDeparture::firstOrCreate(
                     ['transport_route_id' => $route->id, 'departure_at' => $departureAt],
-                    ['vessel_id' => $vessel->id, 'boarding_starts_at' => $departureAt->copy()->subMinutes(45), 'estimated_arrival_at' => $departureAt->copy()->addMinutes($minutes), 'fare' => $fare, 'cargo_enabled' => true, 'included_baggage_kg' => 25, 'status' => 'scheduled', 'notes' => 'Salida de prueba. Presentarse 45 minutos antes.']
+                    ['vessel_id' => $vessel->id, 'boarding_starts_at' => $departureAt->copy()->subMinutes(45), 'estimated_arrival_at' => $departureAt->copy()->addMinutes($minutes), 'fare' => $fare, 'cargo_enabled' => true, 'status' => 'scheduled', 'notes' => 'Salida de prueba. Presentarse 45 minutos antes.']
                 );
             }
         }

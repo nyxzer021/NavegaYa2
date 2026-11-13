@@ -6,6 +6,7 @@ use App\Http\Requests\StoreAirBookingRequest;
 use App\Models\AirDeparture;
 use App\Models\Reservation;
 use App\Models\ReservationSeat;
+use App\Support\FareTable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -40,7 +41,9 @@ class AirBookingController extends Controller
                 if ($valid->count() !== $ids->count() || ReservationSeat::where('air_departure_id', $departure->id)->whereIn('aircraft_seat_id', $ids)->exists()) {
                     throw new \DomainException('Uno de los asientos ya no está disponible.');
                 }
-                $reservation = Reservation::create(['user_id' => auth()->id(), 'air_departure_id' => $departure->id, 'code' => 'NY-'.now()->format('ymd').'-'.Str::upper(Str::random(6)), 'contact_name' => $data['contact_name'], 'contact_email' => $data['contact_email'], 'contact_phone' => $data['contact_phone'], 'contact_document' => $data['contact_document'] ?? null, 'total_amount' => $departure->fare * $ids->count(), 'status' => 'pending_payment', 'expires_at' => now()->addMinutes(10)]);
+                $unit = FareTable::price($departure->airRoute, 'seat', 'adult', $departure->departure_at, (float) $departure->fare);
+                $amount = round((float) $unit * $ids->count(), 2);
+                $reservation = Reservation::create(['user_id' => auth()->id(), 'air_departure_id' => $departure->id, 'code' => 'NY-'.now()->format('ymd').'-'.Str::upper(Str::random(6)), 'contact_name' => $data['contact_name'], 'contact_email' => $data['contact_email'], 'contact_phone' => $data['contact_phone'], 'contact_document' => $data['contact_document'] ?? null, 'base_amount' => $amount, 'discount_amount' => 0, 'total_amount' => $amount, 'status' => 'pending_payment', 'expires_at' => now()->addMinutes(10)]);
                 foreach ($ids->values() as $i => $seatId) {
                     ReservationSeat::create(['reservation_id' => $reservation->id, 'air_departure_id' => $departure->id, 'aircraft_seat_id' => $seatId, 'passenger_name' => $data['passengers'][$i]['name'], 'document_number' => $data['passengers'][$i]['document']]);
                 }
@@ -58,9 +61,6 @@ class AirBookingController extends Controller
     private function expire(AirDeparture $departure): void
     {
         $ids = Reservation::where('air_departure_id', $departure->id)->where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
-        if ($ids->isNotEmpty()) {
-            ReservationSeat::whereIn('reservation_id', $ids)->delete();
-            Reservation::whereIn('id', $ids)->update(['status' => 'expired']);
-        }
+        Reservation::expirePending($ids);
     }
 }

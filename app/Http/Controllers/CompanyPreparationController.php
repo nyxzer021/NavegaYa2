@@ -13,7 +13,7 @@ class CompanyPreparationController extends Controller
     private const PAGES = [
         'collections', 'refunds', 'payments', 'company_details', 'branches', 'agencies',
         'parcels', 'freight', 'cash_close', 'agency_commissions', 'receipts', 'reports',
-        'fares', 'crew', 'incidents', 'roles', 'audit', 'page_sections',
+        'crew', 'incidents', 'roles', 'audit', 'page_sections',
         'gallery', 'policies', 'appearance', 'whatsapp',
     ];
 

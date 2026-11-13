@@ -19,7 +19,7 @@ class AdminManifestController extends Controller
         $data = $this->data($departure);
         $rows = [['N°', 'Asiento', 'Tipo documento', 'Documento', 'Nombres y apellidos', 'Edad', 'Destino', 'Código boleto', 'Estado abordaje']];
         foreach ($data['passengers'] as $index => $seat) {
-            $rows[] = [$index + 1, $seat->seat?->code, $seat->document_type, $seat->document_number, $seat->passenger_name, $seat->passenger_age, $data['destination'], $seat->ticket?->code, $seat->ticket?->status];
+            $rows[] = [$index + 1, $seat->passenger_type === 'infant' ? 'Infante' : $seat->seat?->code, $seat->document_type, $seat->document_number, $seat->passenger_name, $seat->passenger_age, $data['destination'], $seat->ticket?->code, $seat->ticket?->status];
         }
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, "\xEF\xBB\xBF");

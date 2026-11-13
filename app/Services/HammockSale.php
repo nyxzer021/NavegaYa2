@@ -6,6 +6,7 @@ use App\Models\Reservation;
 use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
 use App\Models\VesselSeat;
+use App\Support\FareTable;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -35,6 +36,12 @@ class HammockSale
             if ($hammock === null) {
                 throw new DomainException('No quedan hamacas libres en esta salida.');
             }
+            $locked->loadMissing('transportRoute');
+            $amount = FareTable::price($locked->transportRoute, 'hammock', 'adult', $locked->departure_at, null);
+            if ($amount === null) {
+                throw new DomainException('La hamaca no está disponible en esta ruta.');
+            }
+            FareTable::assertVests($locked, 1);
 
             $code = 'NY-'.now()->format('ymd').'-'.Str::upper(Str::random(6));
             $reservation = Reservation::create([
@@ -45,7 +52,9 @@ class HammockSale
                 'contact_email' => $contact['email'],
                 'contact_phone' => $contact['phone'],
                 'contact_document' => $contact['document'] ?? null,
-                'total_amount' => $locked->fare,
+                'base_amount' => $amount,
+                'discount_amount' => 0,
+                'total_amount' => $amount,
                 'status' => 'pending_payment',
                 'expires_at' => array_key_exists('expires_at', $contact) ? $contact['expires_at'] : now()->addMinutes(10),
             ] + (isset($contact['channel']) ? ['sales_channel' => $contact['channel']] : []));
@@ -57,6 +66,7 @@ class HammockSale
                 'document_type' => $contact['document_type'] ?? 'DNI',
                 'document_number' => $contact['document'] ?? 'Sin documento',
                 'passenger_age' => $contact['age'] ?? null,
+                'passenger_type' => 'adult',
             ]);
 
             return $reservation;
@@ -76,7 +86,6 @@ class HammockSale
             return;
         }
 
-        ReservationSeat::query()->whereIn('reservation_id', $expiredIds)->delete();
-        Reservation::query()->whereIn('id', $expiredIds)->update(['status' => 'expired']);
+        Reservation::expirePending($expiredIds);
     }
 }

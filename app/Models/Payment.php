@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DiscountLedger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,6 +32,18 @@ class Payment extends Model
     public function checkoutOrder(): BelongsTo
     {
         return $this->belongsTo(CheckoutOrder::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $payment): void {
+            if ($payment->wasChanged('status') && $payment->status === 'refunded' && $payment->reservation_id) {
+                $reservation = $payment->reservation;
+                if ($reservation !== null) {
+                    DiscountLedger::release($reservation);
+                }
+            }
+        });
     }
 
     public function reservation(): BelongsTo

@@ -7,6 +7,7 @@ use App\Models\Port;
 use App\Models\ReservationSeat;
 use App\Models\Role;
 use App\Models\RouteDeparture;
+use App\Models\RouteFare;
 use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
@@ -71,6 +72,13 @@ class StageFourPlacesTest extends TestCase
         $this->assertDatabaseHas('vessel_seats', ['vessel_id' => $vessel->id, 'code' => 'H-02', 'space_type' => 'hammock']);
 
         $departure = $this->departure($company, $vessel);
+        RouteFare::create([
+            'organization_id' => $company->id,
+            'transport_route_id' => $departure->transport_route_id,
+            'space_type' => 'hammock',
+            'passenger_type' => 'adult',
+            'amount' => $departure->fare,
+        ]);
         $payload = [
             'place' => 'hammock',
             'contact_name' => 'Ana Río',
@@ -112,6 +120,13 @@ class StageFourPlacesTest extends TestCase
         ])->fresh()->space_type);
 
         $departure = $this->departure($company, $vessel);
+        RouteFare::create([
+            'organization_id' => $company->id,
+            'transport_route_id' => $departure->transport_route_id,
+            'space_type' => 'cabin_bed',
+            'passenger_type' => 'adult',
+            'amount' => $departure->fare,
+        ]);
         $payload = [
             'contact_name' => 'Ana Río',
             'contact_email' => 'ana@test.pe',

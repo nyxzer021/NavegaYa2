@@ -111,7 +111,6 @@ class LocalReviewDemoSeeder extends Seeder
                     'estimated_arrival_at' => $moment->copy()->addMinutes(150),
                     'fare' => 80,
                     'cargo_enabled' => false,
-                    'included_baggage_kg' => 25,
                     'cargo_payment_location' => 'terminal',
                     'status' => 'scheduled',
                     'is_published' => true,

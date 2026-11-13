@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ReservationSeat extends Model
 {
-    protected $fillable = ['reservation_id', 'route_departure_id', 'air_departure_id', 'vessel_seat_id', 'aircraft_seat_id', 'passenger_name', 'document_type', 'document_number', 'passenger_age'];
+    protected $fillable = ['reservation_id', 'route_departure_id', 'air_departure_id', 'vessel_seat_id', 'aircraft_seat_id', 'passenger_name', 'document_type', 'document_number', 'passenger_age', 'passenger_type'];
 
     public function reservation(): BelongsTo
     {

@@ -171,7 +171,6 @@ class AdminTransportRouteController extends Controller
         $data = $this->validatedDepartureData($request);
         RouteDeparture::create($data + [
             'cargo_enabled' => $request->boolean('cargo_enabled'),
-            'included_baggage_kg' => 25,
             'cargo_payment_location' => 'terminal',
             'status' => 'scheduled',
         ]);

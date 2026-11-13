@@ -18,7 +18,8 @@
     $durationLabel = $duration ? ($hours ? $hours.'h ' : '').($minutes ? $minutes.'m' : '') : 'Por confirmar';
     $reserved = $departure->reservations->whereIn('status', ['pending','confirmed'])->sum(fn ($reservation) => $reservation->seats->count());
     $available = max(0, (int) $vehicle->seat_capacity - $reserved);
-    $luggage = $isAir ? '10 kg máx.' : (($departure->included_baggage_kg ?: 15).' kg incluidos');
+    $bags = \App\Support\BaggageAllowance::for($organization);
+    $luggage = $isAir ? $bags['air'].' kg máx.' : ($bags['hand'].' kg de mano y '.$bags['hold'].' kg en bodega');
     $bookingUrl = $isAir ? route('air-bookings.create', $departure) : route('bookings.create', $departure);
     $stopsLabel = \App\Support\RouteStops::label($route);
 @endphp

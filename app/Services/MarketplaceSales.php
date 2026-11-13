@@ -32,7 +32,7 @@ class MarketplaceSales
         $base = round((float) ($reservation->base_amount ?? $reservation->total_amount), 2);
         $discount = round((float) ($reservation->discount_amount ?? 0), 2);
         $net = round(max(0, $base - $discount), 2);
-        $percent = $reservation->sales_channel === 'counter'
+        $percent = in_array($reservation->sales_channel, ['counter', 'agency'], true)
             ? 0.0
             : $this->passengerFeePercent($reservation);
         $fee = round($net * $percent / 100, 2);

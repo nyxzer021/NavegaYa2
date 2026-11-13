@@ -60,7 +60,6 @@ class CompanyDepartureController extends BaseCompanyDepartureController
             'transport_route_id' => $route->id,
             'vessel_id' => $vessel->id,
             'cargo_enabled' => $request->boolean('cargo_enabled'),
-            'included_baggage_kg' => 25,
             'cargo_payment_location' => 'terminal',
             'status' => 'scheduled',
         ]);
@@ -246,7 +245,6 @@ class CompanyDepartureController extends BaseCompanyDepartureController
                 'estimated_arrival_at' => $moment->copy()->addMinutes(max(1, (int) $route->estimated_duration_minutes)),
                 'fare' => $series->fare,
                 'cargo_enabled' => $series->cargo_enabled,
-                'included_baggage_kg' => 25,
                 'cargo_payment_location' => 'terminal',
                 'notes' => $series->notes,
                 'status' => 'scheduled',

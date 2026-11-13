@@ -10,6 +10,7 @@ use App\Models\RouteDeparture;
 use App\Services\BookingPaymentService;
 use App\Services\HammockSale;
 use App\Support\AdminScope;
+use App\Support\FareTable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,8 +26,7 @@ class CompanyPosController extends Controller
         abort_unless($organizationId, 403);
         $organization = Organization::with('vessels.basePort')->where('status', 'active')->findOrFail($organizationId);
         $expired = Reservation::where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
-        ReservationSeat::whereIn('reservation_id', $expired)->delete();
-        Reservation::whereIn('id', $expired)->update(['status' => 'expired']);
+        Reservation::expirePending($expired);
         $departures = RouteDeparture::query()
             ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
             ->whereDate('departure_at', today())->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])->where('is_published', true)
@@ -82,10 +82,16 @@ class CompanyPosController extends Controller
                 }
 
                 $expired = Reservation::where('route_departure_id', $departure->id)->where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
-                ReservationSeat::whereIn('reservation_id', $expired)->delete();
-                Reservation::whereIn('id', $expired)->update(['status' => 'expired']);
+                Reservation::expirePending($expired);
                 $seat = $departure->vessel->seats()->whereKey($data['seat_id'])->where('is_available', true)->lockForUpdate()->firstOrFail();
                 abort_if(ReservationSeat::where('route_departure_id', $departure->id)->where('vessel_seat_id', $seat->id)->exists(), 422, 'El asiento ya no está disponible.');
+                $space = $seat->space_type ?: 'seat';
+                $departure->loadMissing('transportRoute');
+                $amount = FareTable::price($departure->transportRoute, $space, 'adult', $departure->departure_at, $space === 'seat' ? (float) $departure->fare : null);
+                if ($amount === null) {
+                    throw new DomainException('Esa clase no está disponible en esta ruta.');
+                }
+                FareTable::assertVests($departure, FareTable::occupants($seat));
                 $code = 'POS-'.now()->format('ymd').'-'.Str::upper(Str::random(6));
                 $reservation = Reservation::create([
                     'route_departure_id' => $departure->id,
@@ -94,7 +100,9 @@ class CompanyPosController extends Controller
                     'contact_email' => ($data['email'] ?? null) ?: strtolower($code).'@pos.navegaya.test',
                     'contact_phone' => $data['phone'],
                     'contact_document' => $data['document_number'],
-                    'total_amount' => $departure->fare,
+                    'base_amount' => $amount,
+                    'discount_amount' => 0,
+                    'total_amount' => $amount,
                     'status' => 'pending_payment',
                     'sales_channel' => 'counter',
                 ]);
