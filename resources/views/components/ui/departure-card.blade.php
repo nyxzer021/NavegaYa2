@@ -57,6 +57,7 @@
         $duration > 0 ? \App\Models\MasterRoute::formatDuration($duration) : null,
         $stopCount > 0 ? trans_choice('public.card_stops', $stopCount, ['count' => $stopCount]) : null,
     ])->filter()->implode(' · ');
+    $stopsLabel = $stopCount > 0 ? \App\Support\RouteStops::label($route) : null;
     $bags = \App\Support\BaggageAllowance::for($organization);
     $baggageTip = $isAir
         ? __('public.card_baggage_air', ['air' => $bags['air']])
@@ -92,7 +93,7 @@
             <time>{{ $when->format('H:i') }}</time>
             @if($arrival)<span aria-hidden="true"></span><time>{{ $arrival->copy()->timezone('America/Lima')->format('H:i') }}</time>@endif
         </div>
-        <p>{{ $meta }}</p>
+        <p @if($stopsLabel) title="{{ $stopsLabel }}" @endif>{{ $meta }}</p>
     </div>
     </div>
     <div class="ny-trip-buy">
