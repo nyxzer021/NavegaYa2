@@ -77,6 +77,37 @@
   @endif
  </section>
 
+ @if($departurePorts->isNotEmpty())
+ <section class="mx-auto mt-10 w-full max-w-5xl" aria-labelledby="puertos-salida">
+  <h2 id="puertos-salida" class="text-2xl font-bold tracking-tight text-slate-900">{{ __('public.ports_title') }}</h2>
+  <div class="ny-ports">
+   @foreach($departurePorts as $portCard)
+    <a href="{{ route('home', ['transport' => 'river', 'origin' => $portCard->city]) }}#resultados" class="ny-port {{ $portCard->photo ? '' : 'is-plain' }}">
+     @if($portCard->photo)<img src="{{ $portCard->photo }}" alt="{{ $portCard->name }}">@endif
+     <span>
+      <strong>{{ $portCard->name }}</strong>
+      <small>
+       @if($portCard->companies > 0){{ trans_choice('public.ports_companies', $portCard->companies, ['count' => $portCard->companies]) }}@endif
+       @if($portCard->companies > 0 && $portCard->departures > 0) · @endif
+       @if($portCard->departures > 0){{ trans_choice('public.ports_departures', $portCard->departures, ['count' => $portCard->departures]) }}@endif
+      </small>
+     </span>
+    </a>
+   @endforeach
+  </div>
+ </section>
+ @endif
+
+ <section class="mx-auto mt-10 w-full max-w-5xl" aria-labelledby="antes-de-embarcar">
+  <h2 id="antes-de-embarcar" class="text-2xl font-bold tracking-tight text-slate-900">{{ __('public.tips_title') }}</h2>
+  <div class="ny-tips">
+   <article class="ny-tip"><span class="ny-mark ny-trust-seat"><x-ui.icon name="hammock" /></span><p>{{ __('public.tip_hammock') }}</p></article>
+   <article class="ny-tip"><span class="ny-mark ny-trust-ok"><x-ui.icon name="profile" /></span><p>{{ __('public.tip_arrive') }}</p></article>
+   @if($embarkBaggage)<article class="ny-tip"><span class="ny-mark ny-trust-qr"><x-ui.icon name="luggage" /></span><p>{{ $embarkBaggage }}</p></article>@endif
+   <article class="ny-tip"><span class="ny-mark ny-trust-pay"><x-ui.icon name="droplet" /></span><p>{{ __('public.tip_water') }}</p></article>
+  </div>
+ </section>
+
  <section id="publicidad" class="mx-auto mt-10 max-w-6xl" aria-label="Publicidad destacada">
   <div class="mb-2 flex items-center justify-between"><span class="text-[9px] font-black uppercase tracking-[.2em] text-slate-400">Publicidad</span><a href="{{route('advertising.create')}}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-900">Anuncia aquí →</a></div>
   <div class="ny-ad-layout">

@@ -46,6 +46,32 @@ class HomeController
         $airWeekCount = $hasSearch ? 0 : $this->openAirDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->count();
         $riverWindow = $hasSearch ? collect() : $this->openRiverDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->orderBy('departure_at')->limit(24)->get();
         $airWindow = $hasSearch ? collect() : $this->openAirDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->orderBy('departure_at')->limit(24)->get();
+        $departurePorts = $this->openRiverDepartures(null, null, null)
+            ->whereBetween('departure_at', [$todayStart, $weekEnd])
+            ->get()
+            ->filter(fn (RouteDeparture $departure) => $departure->transportRoute?->originPort)
+            ->groupBy(fn (RouteDeparture $departure) => $departure->transportRoute->origin_port_id)
+            ->map(function ($rows) {
+                $port = $rows->first()->transportRoute->originPort;
+
+                return (object) [
+                    'name' => $port->name,
+                    'city' => $port->city,
+                    'companies' => $rows->map(fn (RouteDeparture $row) => $row->transportRoute->organization_id)->unique()->filter()->count(),
+                    'departures' => $rows->count(),
+                    'photo' => $this->portPhoto($port->city),
+                ];
+            })
+            ->filter(fn (object $card) => $card->departures > 0)
+            ->sortBy('city')
+            ->values();
+        $handKg = (int) SystemSetting::value('baggage_hand_kg', '10');
+        $holdKg = (int) SystemSetting::value('baggage_hold_kg', '20');
+        $baggageDetail = collect([
+            $handKg > 0 ? __('public.tip_hand', ['kg' => $handKg]) : null,
+            $holdKg > 0 ? __('public.tip_hold', ['kg' => $holdKg]) : null,
+        ])->filter()->implode(' '.__('public.tip_and').' ');
+        $embarkBaggage = $baggageDetail !== '' ? __('public.tip_baggage', ['detail' => $baggageDetail]) : null;
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
         $carouselAds = $this->advertising->select('home_carousel', 6);
         if ($carouselAds->isEmpty()) {
@@ -87,7 +113,24 @@ class HomeController
             ['date' => 'FEB', 'name' => 'Carnaval Amazónico', 'place' => 'Amazonía peruana', 'description' => 'Comparsas, danzas y expresiones culturales de la selva.'],
         ]);
 
-        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport', 'riverTodayCount', 'riverWeekCount', 'airTodayCount', 'airWeekCount', 'riverWindow', 'airWindow') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport', 'riverTodayCount', 'riverWeekCount', 'airTodayCount', 'airWeekCount', 'riverWindow', 'airWindow', 'departurePorts', 'embarkBaggage') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+    }
+
+    private function portPhoto(?string $city): ?string
+    {
+        if (! filled($city)) {
+            return null;
+        }
+
+        $fromCity = DestinationCity::query()->where('name', $city)->value('image_url');
+        if (filled($fromCity)) {
+            return $fromCity;
+        }
+
+        $known = ['Nauta' => 'images/branding/banner-puertos-nauta.webp'];
+        $relative = $known[$city] ?? null;
+
+        return $relative && is_file(public_path($relative)) ? asset($relative) : null;
     }
 
     private function openRiverDepartures(?string $origin, ?string $destination, ?string $date): Builder
