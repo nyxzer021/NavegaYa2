@@ -84,8 +84,8 @@ class StageFourFaresTest extends TestCase
         $card = view('components.ui.departure-card', [
             'departure' => $departure->fresh()->load(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.organization', 'vessel.seats', 'reservations.seats']),
         ])->render();
-        $this->assertStringContainsString('Hamaca: No disponible', $card);
-        $this->assertStringContainsString('S/ 108.00', $card);
+        $this->assertStringNotContainsString('Hamaca: No disponible', $card);
+        $this->assertStringContainsString('Asiento S/ 108.00', $card);
 
         RouteFare::create(['organization_id' => $company->id, 'transport_route_id' => $route->id, 'space_type' => 'hammock', 'passenger_type' => 'adult', 'amount' => 80]);
         $this->assertSame(80.0, FareTable::price($route, 'hammock', 'child', $departure->departure_at, (float) $departure->fare));

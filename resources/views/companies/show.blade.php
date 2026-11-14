@@ -501,6 +501,7 @@
                 <p id="salida-embarcacion" class="mt-2 text-sm font-semibold text-emerald-800" hidden></p>
             @endif
         </div>
+        @if($departures->isNotEmpty())<p class="ny-delay">{{ __('public.delay_notice') }}</p>@endif
         @foreach($departures as $item)
             <div data-departure data-origin="{{ $item['origin'] }}" data-destination="{{ $item['destination'] }}" data-date="{{ $item['departure']->departure_at->toDateString() }}" data-vehicle="{{ $item['mode'] }}-{{ $item['vehicle']->id }}">
                 <x-ui.departure-card :departure="$item['departure']" />

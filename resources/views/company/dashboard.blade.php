@@ -153,11 +153,9 @@
 
         <section class="ny-panel">
             <h3>{{ __('company_portal.home.upcoming') }}</h3>
+            @if($upcomingDepartures->isNotEmpty())<p class="ny-delay">{{ __('public.delay_notice') }}</p>@endif
             @forelse($upcomingDepartures as $row)
-                <div class="mt-3 flex flex-col gap-2 border-t border-[#e1e8e4] pt-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p class="text-sm text-slate-800"><strong>{{ \App\Support\DepartureSchedule::show($row['departure_at'], 'D d M · H:i') }}</strong> · {{ $row['origin'] }} → {{ $row['destination'] }} · {{ $row['unit'] }}</p>
-                    <a href="{{ route('company.departures.index') }}" class="text-sm font-bold text-emerald-800">{{ __('company_portal.home.see_departure') }}</a>
-                </div>
+                <x-ui.departure-card :departure="$row['model']" />
             @empty
                 <p class="ny-lead">{{ __('company_portal.home.upcoming_empty') }}</p>
             @endforelse

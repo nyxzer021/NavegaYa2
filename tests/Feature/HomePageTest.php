@@ -24,7 +24,7 @@ class HomePageTest extends TestCase
         $departure = RouteDeparture::create(['transport_route_id' => $route->id, 'vessel_id' => $vessel->id, 'departure_at' => now()->addDay(), 'boarding_starts_at' => now()->addDay()->subHour(), 'fare' => 65, 'status' => 'scheduled']);
         $this->get(route('home'))->assertOk()->assertSee('Tu viaje empieza en el río.')->assertSee('Iquitos')->assertSee('Nauta')
             ->assertSee('action="'.route('home').'#resultados"', false)
-            ->assertSee('Elegir asiento')
+            ->assertSee('Elegir lugar')
             ->assertSee('La salida puede demorar 1 o 2 horas')
             ->assertDontSee('Ida y vuelta')
             ->assertSee('https://wa.me/51953540705', false)
