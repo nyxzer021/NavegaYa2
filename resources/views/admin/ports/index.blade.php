@@ -5,7 +5,7 @@
 
     <div class="mx-auto max-w-6xl py-3">
         @if (session('success'))
-            <div class="mb-5 rounded-xl bg-emerald-50 px-5 py-4 font-semibold text-emerald-800">✓ {{ session('success') }}</div>
+            <div class="mb-5 rounded-xl bg-emerald-50 px-5 py-4 font-semibold text-emerald-800"> {{ session('success') }}</div>
         @endif
 
         @if (session('warning'))
@@ -39,7 +39,7 @@
                     <label class="text-xs font-bold text-slate-700">Provincia<select id="newProvince" name="province_id" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="">Selecciona provincia</option>@foreach($initialProvinces as $province)<option value="{{$province->id}}" @selected(old('province_id')==$province->id)>{{$province->name}}</option>@endforeach</select></label>
                     <label class="text-xs font-bold text-slate-700">Distrito<select id="newDistrict" name="district_id" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="">Selecciona primero la provincia</option></select></label>
                     <label class="text-xs font-bold text-slate-700">Nombre del terminal<input name="name" value="{{old('name')}}" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs" placeholder="Ej. Puerto La Boca"></label>
-                    <label class="text-xs font-bold text-slate-700">Modalidad<select name="modality" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="fluvial" @selected(old('modality','fluvial')==='fluvial')>🚤 Fluvial</option><option value="aereo" @selected(old('modality')==='aereo')>✈️ Aéreo</option></select></label>
+                    <label class="text-xs font-bold text-slate-700">Modalidad<select name="modality" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs"><option value="fluvial" @selected(old('modality','fluvial')==='fluvial')> Fluvial</option><option value="aereo" @selected(old('modality')==='aereo')> Aéreo</option></select></label>
                     <label class="text-xs font-bold text-slate-700">Tipo de instalación<select name="port_type" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs">@foreach(['terminal'=>'Terminal fluvial','embarcadero'=>'Embarcadero','muelle'=>'Muelle','muelle_flotante'=>'Muelle flotante','privado'=>'Puerto privado','aerodromo'=>'Aeródromo / pista','otro'=>'Otro'] as $value=>$label)<option value="{{$value}}" @selected(old('port_type','embarcadero')===$value)>{{$label}}</option>@endforeach</select></label>
                     <label class="text-xs font-bold text-slate-700">Río, pista o referencia<input name="river" value="{{old('river')}}" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs" placeholder="Ej. Amazonas"></label>
                     <label class="text-xs font-bold text-slate-700">Teléfono<input name="contact_phone" value="{{old('contact_phone')}}" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-xs" placeholder="999 999 999"></label>
@@ -63,10 +63,10 @@
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($ports as $port)
                             @php($portInUse = ($port->origin_master_routes_count + $port->destination_master_routes_count + $port->origin_routes_count + $port->destination_routes_count + $port->base_vessels_count + $port->base_organizations_count + $port->organization_sites_count) > 0)
-                            @if($loop->first || $ports[$loop->index - 1]->modality !== $port->modality)<tr class="bg-slate-100/80"><td colspan="7" class="px-6 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-700">{{ $port->modality === 'aereo' ? '✈ Aeródromos y terminales aéreas' : '🚤 Puertos, muelles y embarcaderos fluviales' }}</td></tr>@endif
+                            @if($loop->first || $ports[$loop->index - 1]->modality !== $port->modality)<tr class="bg-slate-100/80"><td colspan="7" class="px-6 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-700">{{ $port->modality === 'aereo' ? ' Aeródromos y terminales aéreas' : ' Puertos, muelles y embarcaderos fluviales' }}</td></tr>@endif
                             <tr class="hover:bg-slate-50">
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $port->name }}</td>
-                                <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $port->modality==='aereo'?'bg-violet-50 text-violet-700':'bg-sky-50 text-sky-700' }}">{{ $port->modality==='aereo'?'✈ Aéreo':'⚓ Fluvial' }}</span></td>
+                                <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $port->modality==='aereo'?'bg-violet-50 text-violet-700':'bg-sky-50 text-sky-700' }}">{{ $port->modality==='aereo'?' Aéreo':' Fluvial' }}</span></td>
                                 <td class="px-4 py-4 text-slate-700">{{ $port->placeName() }}<br><span class="text-[10px] text-slate-400">{{ $port->province->name ?? 'Loreto' }} · {{ $port->region }}</span></td>
                                 <td class="px-4 py-4 text-slate-700">{{ $port->river ?: 'No registrado' }}</td>
                                 <td class="px-4 py-4 font-bold text-slate-800">{{ $port->base_organizations_count }}</td>

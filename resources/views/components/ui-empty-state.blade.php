@@ -1,6 +1,6 @@
-@props(['icon' => '🌿', 'title' => 'Aún no hay información', 'description' => null])
+@props(['icon' => 'leaf', 'title' => 'Aún no hay información', 'description' => null])
 <section {{ $attributes->merge(['class' => 'ny-empty']) }}>
-    <span class="ny-empty__icon" aria-hidden="true">{{ $icon }}</span>
+    <span class="ny-empty__icon" aria-hidden="true"><x-ui.icon :name="$icon" class="h-5 w-5" /></span>
     <strong class="ny-empty__title">{{ $title }}</strong>
     @if($description)<p class="ny-empty__description">{{ $description }}</p>@endif
     @if(isset($action))<div class="ny-empty__action">{{ $action }}</div>@endif

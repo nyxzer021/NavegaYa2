@@ -574,8 +574,6 @@
                     @csrf
                     <input type="hidden" name="parent_id" value="">
                     <input type="text" name="body" required minlength="2" maxlength="500" placeholder="Escribe un comentario…" autocomplete="off">
-                    <button type="button" id="company-emoji-toggle" class="company-round is-emoji" aria-label="Emojis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM8.5 9.5a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8Zm7 0a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8ZM12 17.2a4.6 4.6 0 0 1-4-2.3l1.6-1a2.9 2.9 0 0 0 4.8 0l1.6 1a4.6 4.6 0 0 1-4 2.3Z"/></svg></button>
-                    <div id="company-emoji-panel" class="company-emoji" hidden></div>
                     <button class="company-round is-send" aria-label="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 21 3l-6.8 18-2.4-7.2L3 11.2Z"/></svg></button>
                 </form>
             @endauth
@@ -794,22 +792,6 @@
         if (photoDialog) photoDialog.addEventListener('close', function () { document.body.style.overflow = ''; });
         var photos = Array.prototype.slice.call(root.querySelectorAll('[data-photo-open]'));
         var photoIndex = 0;
-        var emojis = ['😊', '👍', '❤️', '😮', '😢', '🙏', '🔥', '👏'];
-        var emojiPanel = document.getElementById('company-emoji-panel');
-        if (emojiPanel) {
-            emojis.forEach(function (emoji) {
-                var button = document.createElement('button');
-                button.type = 'button';
-                button.textContent = emoji;
-                button.addEventListener('click', function () {
-                    var field = document.querySelector('#company-photo-form [name=body]');
-                    if (field) field.value += emoji;
-                });
-                emojiPanel.appendChild(button);
-            });
-        }
-        var emojiToggle = document.getElementById('company-emoji-toggle');
-        if (emojiToggle && emojiPanel) emojiToggle.addEventListener('click', function () { emojiPanel.hidden = !emojiPanel.hidden; });
         function paintThread(photo) {
             var box = document.getElementById('company-photo-thread');
             var seed = root.querySelector('[data-thread="' + photo.getAttribute('data-photo-open') + '"]');

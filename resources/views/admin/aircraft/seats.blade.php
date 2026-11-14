@@ -7,7 +7,7 @@
 </style>
 <div class="ap"><a class="back" href="{{ $seatRoutePrefix === 'company' ? route('company.fleet.index') : route('admin.aircraft.index') }}">← Volver a aeronaves</a>
 <section class="hero"><div><small>CONFIGURACIÓN DE AERONAVE</small><h1>{{$aircraft->name}}</h1><p>{{$aircraft->model}} · Matrícula {{$aircraft->registration_number}}</p></div><b>{{$aircraft->seats->count()}} / {{$aircraft->seat_capacity}} asientos</b></section>
-<div class="body"><section class="card"><h2>Distribución de pasajeros</h2><p>Define filas y asientos por fila. El sistema dibujará automáticamente el pasillo central.</p>@if(session('success'))<p class="ok">✓ {{session('success')}}</p>@endif
+<div class="body"><section class="card"><h2>Distribución de pasajeros</h2><p>Define filas y asientos por fila. El sistema dibujará automáticamente el pasillo central.</p>@if(session('success'))<p class="ok"> {{session('success')}}</p>@endif
 <form class="form" method="POST" action="{{route($seatRoutePrefix.'.aircraft.seats.generate',$aircraft)}}">@csrf<label>Filas<input type="number" name="rows" min="1" max="60" required value="{{max(1,$aircraft->seats->max('row_position')?:8)}}"></label><label>Asientos por fila<input type="number" name="columns" min="1" max="8" required value="{{max(1,$aircraft->seats->where('row_position',1)->count()?:4)}}"></label><label>Clase o cabina<input name="cabin" value="{{$aircraft->seats->first()?->cabin?:'Económica'}}"></label><button>Generar plano del avión</button></form></section>
 <section class="card"><h2>Vista de cabina</h2><p>Solo se muestran los asientos destinados a pasajeros.</p>
 @php($allSeats=$aircraft->seats()->orderBy('row_position')->orderBy('column_position')->get())
@@ -17,6 +17,6 @@
 @for($col=1;$col<=$cols;$col++) @php($seat=$rowSeats->firstWhere('column_position',$col)) @if($seat)<span class="seat">{{$seat->code}}</span>@endif @if($col===$middle)<span class="aisle"></span>@endif @endfor
 </div>@endforeach</div><span class="tail">COLA</span></div></div>
 <div class="legend"><span>Azul: asiento de viajero</span><span>El pasillo no es seleccionable</span></div>
-@else<div class="empty"><i>✈</i><strong>Aún no hay asientos</strong><br>Define la distribución desde el panel izquierdo.</div>@endif
+@else<div class="empty"><i></i><strong>Aún no hay asientos</strong><br>Define la distribución desde el panel izquierdo.</div>@endif
 </section></div></div>
 </x-app-layout>

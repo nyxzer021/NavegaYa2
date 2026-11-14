@@ -9,7 +9,7 @@
 </style>
 <div class="ny-form-wrap">
     <a href="{{ route('admin.vessels.index') }}" style="color:#176d60;font-size:13px;font-weight:800;text-decoration:none">← Volver a embarcaciones</a>
-    @if(session('success'))<p style="margin-top:18px;padding:14px 18px;border-radius:12px;background:#e8fbf2;color:#087057;font-weight:700">✓ {{ session('success') }}</p>@endif
+    @if(session('success'))<p style="margin-top:18px;padding:14px 18px;border-radius:12px;background:#e8fbf2;color:#087057;font-weight:700"> {{ session('success') }}</p>@endif
     <form method="POST" action="{{ $isEdit ? route('admin.vessels.update', $vessel) : route('admin.vessels.store') }}" class="ny-form-card">
         @csrf
         @if($isEdit) @method('PATCH') @endif

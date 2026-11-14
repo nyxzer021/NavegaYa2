@@ -35,9 +35,9 @@
     };
 
     $modalityLabel = match($organization->modality) {
-        'aereo' => '✈ Aéreo',
-        'mixto' => '🚤 + ✈ Mixto',
-        default => '🚤 Fluvial',
+        'aereo' => ' Aéreo',
+        'mixto' => ' +  Mixto',
+        default => ' Fluvial',
     };
 
     $operationalLabel = fn ($value) => match($value) {
@@ -163,7 +163,7 @@
                 <section class="overflow-hidden rounded-2xl border border-emerald-200/70 bg-white shadow-sm">
                     <header class="flex flex-wrap items-center justify-between gap-3 border-b p-4">
                         <div>
-                            <h2 class="font-black text-slate-900">🚤 Supervisión de embarcaciones fluviales</h2>
+                            <h2 class="font-black text-slate-900"> Supervisión de embarcaciones fluviales</h2>
                             <p class="text-[10px] text-slate-400">Homologación de capacidad, inspección y certificados DICAPI</p>
                         </div>
                         <div class="flex flex-wrap items-center justify-end gap-2">
@@ -171,16 +171,16 @@
                                 {{ $organization->vessels->count() }} unidades registradas
                             </span>
                             @if($vesselsCompliant)
-                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">✓ Cumplimiento DICAPI al día</span>
+                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"> Cumplimiento DICAPI al día</span>
                             @else
-                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">⚠ Revisión DICAPI pendiente</span>
+                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800"> Revisión DICAPI pendiente</span>
                             @endif
                         </div>
                     </header>
 
                     @if($organization->vessels->isEmpty())
                         <div class="m-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-                            <div class="text-2xl">🚤</div>
+                            <div class="text-2xl"></div>
                             <h3 class="mt-2 text-sm font-black text-slate-800">Sin unidades para auditar</h3>
                             <p class="mx-auto mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
                                 El operador aún no ha registrado unidades desde su portal de administración. Cuando cargue sus naves, aparecerán aquí para su homologación y verificación técnica.
@@ -230,7 +230,7 @@
                                                 <div class="flex items-start justify-end gap-2">
                                                     <details class="relative">
                                                         <summary class="cursor-pointer list-none rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50">
-                                                            📄 Ver documento DICAPI
+                                                             Ver documento DICAPI
                                                         </summary>
                                                         <div class="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
                                                             <span class="text-[9px] font-bold uppercase text-slate-400">Certificado DICAPI</span>
@@ -260,7 +260,7 @@
                 <section class="overflow-hidden rounded-2xl border border-cyan-200/70 bg-white shadow-sm">
                     <header class="flex flex-wrap items-center justify-between gap-3 border-b p-4">
                         <div>
-                            <h2 class="font-black text-slate-900">✈️ Supervisión de aeronaves regionales</h2>
+                            <h2 class="font-black text-slate-900"> Supervisión de aeronaves regionales</h2>
                             <p class="text-[10px] text-slate-400">Homologación de capacidad, aeronavegabilidad y certificados DGAC</p>
                         </div>
                         <div class="flex flex-wrap items-center justify-end gap-2">
@@ -268,16 +268,16 @@
                                 {{ $organization->aircraft->count() }} aeronaves registradas
                             </span>
                             @if($aircraftCompliant)
-                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">✓ Cumplimiento DGAC al día</span>
+                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"> Cumplimiento DGAC al día</span>
                             @else
-                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">⚠ Revisión DGAC pendiente</span>
+                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800"> Revisión DGAC pendiente</span>
                             @endif
                         </div>
                     </header>
 
                     @if($organization->aircraft->isEmpty())
                         <div class="m-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-                            <div class="text-2xl">✈️</div>
+                            <div class="text-2xl"></div>
                             <h3 class="mt-2 text-sm font-black text-slate-800">Sin unidades para auditar</h3>
                             <p class="mx-auto mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
                                 El operador aún no ha registrado unidades desde su portal de administración. Cuando cargue sus aeronaves, aparecerán aquí para su homologación y verificación técnica.
@@ -324,7 +324,7 @@
                                                 <div class="flex items-start justify-end gap-2">
                                                     <details class="relative">
                                                         <summary class="cursor-pointer list-none rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50">
-                                                            📄 Ver documento DGAC
+                                                             Ver documento DGAC
                                                         </summary>
                                                         <div class="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
                                                             <span class="text-[9px] font-bold uppercase text-slate-400">Certificación DGAC</span>

@@ -14,13 +14,13 @@
 
         <section class="grid gap-4 md:grid-cols-3">
             <a href="{{ route('admin.destination-listings.index', 'attraction') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md">
-                <span class="text-2xl">🌿</span><h3 class="mt-3 font-black text-slate-900">Tours y atractivos</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Publica experiencias, excursiones y lugares turísticos.</p>
+                <span class="text-2xl"></span><h3 class="mt-3 font-black text-slate-900">Tours y atractivos</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Publica experiencias, excursiones y lugares turísticos.</p>
             </a>
             <a href="{{ route('admin.destination-listings.index', 'lodging') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md">
-                <span class="text-2xl">🏨</span><h3 class="mt-3 font-black text-slate-900">Hospedajes aliados</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Gestiona hoteles, lodges y alojamientos comerciales.</p>
+                <span class="text-2xl"></span><h3 class="mt-3 font-black text-slate-900">Hospedajes aliados</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Gestiona hoteles, lodges y alojamientos comerciales.</p>
             </a>
             <a href="{{ route('admin.ads.index') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md">
-                <span class="text-2xl">📣</span><h3 class="mt-3 font-black text-slate-900">Promoción B2B</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Destaca aliados mediante campañas y espacios patrocinados.</p>
+                <span class="text-2xl"></span><h3 class="mt-3 font-black text-slate-900">Promoción B2B</h3><p class="mt-1 text-xs leading-relaxed text-slate-500">Destaca aliados mediante campañas y espacios patrocinados.</p>
             </a>
         </section>
     </div>

@@ -6,7 +6,7 @@
         <p class="mt-1 text-xs text-emerald-100/70">Aquí aparecen únicamente las cuentas que administran la plataforma. Viajeros y anunciantes se gestionan en sus propios módulos.</p>
     </section>
 
-    @if(session('success'))<div class="rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-800">✓ {{ session('success') }}</div>@endif
+    @if(session('success'))<div class="rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-800"> {{ session('success') }}</div>@endif
     @if($errors->any())<div class="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-800">{{ $errors->first() }}</div>@endif
 
     <nav class="flex gap-1 overflow-x-auto rounded-2xl border bg-white p-1.5" aria-label="Secciones de usuarios y permisos">
@@ -50,7 +50,7 @@
             </aside>
             <article class="rounded-2xl border bg-white p-5">
                 @if(!$selectedUser)
-                    <div class="py-14 text-center text-slate-400"><span class="text-3xl">👤</span><p class="mt-2 text-xs">Selecciona un administrador para revisar sus accesos.</p></div>
+                    <div class="py-14 text-center text-slate-400"><span class="text-3xl"></span><p class="mt-2 text-xs">Selecciona un administrador para revisar sus accesos.</p></div>
                 @elseif($selectedUser->roles->contains('code','super_admin'))
                     <h2 class="text-lg font-black">{{ $selectedUser->name }}</h2><p class="mt-1 text-xs text-slate-500">{{ $selectedUser->email }}</p><div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-900">Cuenta principal protegida. Tiene acceso total y no puede eliminarse desde este panel.</div>
                 @else

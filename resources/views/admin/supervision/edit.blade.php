@@ -14,7 +14,7 @@
                 <div>
                     <p class="mb-2 text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Editar salida {{ $type === 'aereo' ? 'aérea' : 'fluvial' }}</p>
                     <span class="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-200">
-                        {{ $type === 'aereo' ? '✈️ Operación aérea' : '🚤 Operación fluvial' }}
+                        {{ $type === 'aereo' ? ' Operación aérea' : ' Operación fluvial' }}
                     </span>
                     <h2 class="mt-3 text-2xl font-black">{{ $organization->commercial_name ?? $organization->legal_name ?? 'Empresa transportista' }}</h2>
                     <p class="mt-1 text-sm text-emerald-100/70">RUC: {{ $organization->ruc ?? 'No registrado' }}</p>
@@ -45,7 +45,7 @@
                         <option value="">Selecciona un tramo oficial</option>
                         @foreach ($masterRoutes as $masterRoute)
                             <option value="{{ $masterRoute->id }}" @selected(old('master_route_id', $selectedMasterRouteId) == $masterRoute->id)>
-                                {{ $masterRoute->code }} · {{ $masterRoute->origin_city }} ➔ {{ $masterRoute->destination_city }}
+                                {{ $masterRoute->code }} · {{ $masterRoute->origin_city }}  {{ $masterRoute->destination_city }}
                             </option>
                         @endforeach
                     </select>

@@ -24,7 +24,7 @@
 
 <header class="sticky top-0 z-50 w-full border-b border-emerald-900/60 bg-[#062c21] px-4 py-3 text-white shadow-md sm:px-6 lg:px-8" data-public-header>
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10" aria-hidden="true">🚤</span><span class="text-lg font-extrabold tracking-tight">Navega<span class="text-amber-400">YA</span></span></a>
+        <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-amber-300" aria-hidden="true"><x-ui.icon name="fleet" class="h-4 w-4" /></span><span class="text-lg font-extrabold tracking-tight">Navega<span class="text-amber-400">YA</span></span></a>
 
         <nav class="hidden min-w-0 flex-1 items-center justify-center gap-1 text-xs md:flex" aria-label="{{app()->getLocale()==='en'?'Main navigation':'Navegación principal'}}">
             @foreach($desktopNavigation as $item)
@@ -34,22 +34,22 @@
             @if($overflowNavigation->isNotEmpty())
                 <details class="group relative"><summary class="cursor-pointer list-none rounded-lg px-2.5 py-2 font-semibold text-emerald-100 transition hover:bg-white/10 hover:text-white">Más ▾</summary><div class="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl">@foreach($overflowNavigation as $item)@php($current = $isCurrentNavigation($item))<a href="{{ $item->url() }}" @if($item->opens_new_tab) target="_blank" rel="noopener noreferrer" @endif @if($current) aria-current="page" @endif class="block rounded-lg px-3 py-2 text-sm font-semibold {{ $current ? 'bg-amber-100 text-emerald-950' : 'hover:bg-emerald-50' }}">{{ $navigationLabel($item) }}</a>@endforeach</div></details>
             @endif
-            <a href="{{ route('company.registration') }}#formulario-transportista" @if($companyRegistrationActive) aria-current="page" @endif class="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 font-semibold transition {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950 shadow-sm' : 'border border-white/20 text-emerald-100 hover:bg-white/10 hover:text-white' }}">🏢 <span>Afiliar tu empresa</span></a>
+            <a href="{{ route('company.registration') }}#formulario-transportista" @if($companyRegistrationActive) aria-current="page" @endif class="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 font-semibold transition {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950 shadow-sm' : 'border border-white/20 text-emerald-100 hover:bg-white/10 hover:text-white' }}"><x-ui.icon name="company_details" class="h-4 w-4" /> <span>Afiliar tu empresa</span></a>
         </nav>
 
         <div class="flex shrink-0 items-center gap-2">
             @if($whatsAppNumber)<a href="https://wa.me/{{ $whatsAppNumber }}" target="_blank" rel="noopener" class="hidden min-h-10 items-center rounded-xl bg-amber-400 px-3 py-2 text-sm font-semibold text-emerald-950 sm:inline-flex" title="WhatsApp de NavegaYA">WhatsApp</a>@endif
-            @auth<a href="{{ route('dashboard') }}" class="hidden min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/15 sm:inline-flex">👤 {{ auth()->user()->isCustomer() ? (app()->getLocale()==='en'?'My trips':'Mis viajes') : (app()->getLocale()==='en'?'My account':'Mi cuenta') }}</a>@else<a href="{{ route('login') }}" class="hidden min-h-10 items-center gap-2 rounded-xl border border-white/25 px-3 py-2 text-sm font-semibold text-white sm:inline-flex">👤 {{app()->getLocale()==='en'?'Sign in':'Iniciar sesión'}}</a>@endauth
-            <button type="button" class="grid h-10 w-10 place-items-center rounded-xl border border-white/20 md:hidden" data-mobile-menu-button aria-expanded="false" aria-controls="public-mobile-menu" aria-label="Abrir menú"><span data-mobile-menu-icon aria-hidden="true">☰</span></button>
+            @auth<a href="{{ route('dashboard') }}" class="hidden min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/15 sm:inline-flex"><x-ui.icon name="user" class="h-4 w-4" /> {{ auth()->user()->isCustomer() ? (app()->getLocale()==='en'?'My trips':'Mis viajes') : (app()->getLocale()==='en'?'My account':'Mi cuenta') }}</a>@else<a href="{{ route('login') }}" class="hidden min-h-10 items-center gap-2 rounded-xl border border-white/25 px-3 py-2 text-sm font-semibold text-white sm:inline-flex"><x-ui.icon name="user" class="h-4 w-4" /> {{app()->getLocale()==='en'?'Sign in':'Iniciar sesión'}}</a>@endauth
+            <button type="button" class="grid h-10 w-10 place-items-center rounded-xl border border-white/20 md:hidden" data-mobile-menu-button aria-expanded="false" aria-controls="public-mobile-menu" aria-label="Abrir menú"><span data-mobile-menu-icon aria-hidden="true"><x-ui.icon name="menu" class="h-5 w-5" data-menu-bars /><x-ui.icon name="close" class="h-5 w-5" data-menu-close hidden /></span></button>
         </div>
     </div>
 
     <nav id="public-mobile-menu" hidden class="mx-auto mt-3 max-h-[calc(100vh-5.5rem)] max-w-7xl overflow-y-auto border-t border-white/10 pt-3 md:hidden" aria-label="Navegación móvil">
         <div class="grid gap-1">
             @foreach($publicNavigation as $item)@php($current = $isCurrentNavigation($item))<a href="{{ $item->url() }}" data-mobile-menu-link @if($item->opens_new_tab) target="_blank" rel="noopener noreferrer" @endif @if($current) aria-current="page" @endif class="rounded-lg px-3 py-2.5 text-sm font-semibold {{ $current ? 'bg-amber-400 text-emerald-950' : 'text-emerald-50 hover:bg-white/10' }}">{{ $navigationLabel($item) }}</a>@endforeach
-            <a href="{{ route('company.registration') }}#formulario-transportista" data-mobile-menu-link class="mt-1 rounded-xl px-3 py-2.5 text-sm font-semibold {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950' : 'border border-white/20 text-emerald-50' }}">🏢 Afiliar tu empresa</a>
+            <a href="{{ route('company.registration') }}#formulario-transportista" data-mobile-menu-link class="mt-1 inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold {{ $companyRegistrationActive ? 'bg-amber-400 text-emerald-950' : 'border border-white/20 text-emerald-50' }}"><x-ui.icon name="company_details" class="h-4 w-4" /> Afiliar tu empresa</a>
             @if($whatsAppNumber)<a href="https://wa.me/{{ $whatsAppNumber }}" target="_blank" rel="noopener" data-mobile-menu-link class="rounded-xl bg-amber-400 px-3 py-2.5 text-sm font-semibold text-emerald-950">WhatsApp {{ $whatsAppLabel }}</a>@endif
-            @auth<a href="{{ route('dashboard') }}" data-mobile-menu-link class="rounded-xl border border-white/20 px-3 py-2.5 text-sm font-semibold text-white">👤 {{ auth()->user()->isCustomer() ? (app()->getLocale()==='en'?'My trips':'Mis viajes') : (app()->getLocale()==='en'?'My account':'Mi cuenta') }}</a>@else<a href="{{ route('login') }}" data-mobile-menu-link class="rounded-xl border border-white/20 px-3 py-2.5 text-sm font-semibold text-white">👤 {{app()->getLocale()==='en'?'Sign in':'Iniciar sesión'}}</a>@endauth
+            @auth<a href="{{ route('dashboard') }}" data-mobile-menu-link class="inline-flex items-center gap-2 rounded-xl border border-white/20 px-3 py-2.5 text-sm font-semibold text-white"><x-ui.icon name="user" class="h-4 w-4" /> {{ auth()->user()->isCustomer() ? (app()->getLocale()==='en'?'My trips':'Mis viajes') : (app()->getLocale()==='en'?'My account':'Mi cuenta') }}</a>@else<a href="{{ route('login') }}" data-mobile-menu-link class="inline-flex items-center gap-2 rounded-xl border border-white/20 px-3 py-2.5 text-sm font-semibold text-white"><x-ui.icon name="user" class="h-4 w-4" /> {{app()->getLocale()==='en'?'Sign in':'Iniciar sesión'}}</a>@endauth
             <div class="mt-2 flex flex-wrap items-center justify-end gap-2 border-t border-white/10 px-3 pt-3 text-xs"><div class="flex gap-2"><a href="{{ route('public.locale', ['locale' => 'es']) }}" class="rounded-md px-2 py-1 {{ app()->getLocale() === 'es' ? 'bg-white/15 text-white' : 'text-emerald-100' }}">ES</a><a href="{{ route('public.locale', ['locale' => 'en']) }}" class="rounded-md px-2 py-1 {{ app()->getLocale() === 'en' ? 'bg-white/15 text-white' : 'text-emerald-100' }}">EN</a></div></div>
         </div>
     </nav>
@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
         menu.hidden = !open;
         button.setAttribute('aria-expanded', String(open));
         button.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
-        icon.textContent = open ? '✕' : '☰';
+        icon.querySelector('[data-menu-bars]').hidden = open;
+        icon.querySelector('[data-menu-close]').hidden = !open;
     };
     button.addEventListener('click', () => setOpen(button.getAttribute('aria-expanded') !== 'true'));
     menu.querySelectorAll('[data-mobile-menu-link]').forEach(link => link.addEventListener('click', () => setOpen(false)));

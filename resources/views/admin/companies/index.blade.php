@@ -13,16 +13,16 @@
 >
     <x-slot:actions>
         <a href="{{ route('admin.companies.create') }}" class="inline-flex h-10 items-center rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950 transition hover:bg-amber-300">＋ Registrar empresa</a>
-        <a href="{{ route('admin.master-routes.index') }}" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800">🧭 Catálogo de rutas</a>
+        <a href="{{ route('admin.master-routes.index') }}" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800"> Catálogo de rutas</a>
     </x-slot:actions>
 
     <x-slot:metrics>
         @php
             $kpis = [
-                ['Solicitudes de afiliación', $pendingAffiliations->count(), 'Empresas pendientes de validación', '📥', 'text-amber-600'],
-                ['Empresas registradas', $companies->total(), 'Directorio administrativo', '🏢', 'text-slate-950'],
-                ['Flota por validar', $pendingVesselReviews->count(), 'Unidades pendientes de habilitación', '🛡️', 'text-emerald-700'],
-                ['Acuerdos configurados', (int) $commissionSummary->sum('operators_count'), 'Operadores con comisión vigente', '🤝', 'text-violet-700'],
+                ['Solicitudes de afiliación', $pendingAffiliations->count(), 'Empresas pendientes de validación', '', 'text-amber-600'],
+                ['Empresas registradas', $companies->total(), 'Directorio administrativo', '', 'text-slate-950'],
+                ['Flota por validar', $pendingVesselReviews->count(), 'Unidades pendientes de habilitación', '', 'text-emerald-700'],
+                ['Acuerdos configurados', (int) $commissionSummary->sum('operators_count'), 'Operadores con comisión vigente', '', 'text-violet-700'],
             ];
         @endphp
         @foreach($kpis as $kpi)
@@ -37,7 +37,7 @@
         <a href="{{ route('admin.companies.index', ['tab' => 'comisiones']) }}" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-xs font-black transition {{ $activeTab === 'comisiones' ? 'bg-white text-[#062c21] shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">Acuerdos y comisiones</a>
     </x-slot:navigation>
 
-    @if(session('success'))<div class="m-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">✓ {{ session('success') }}</div>@endif
+    @if(session('success'))<div class="m-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800"> {{ session('success') }}</div>@endif
 
     @if($activeTab === 'solicitudes')
     <section class="min-h-[360px]">
@@ -48,13 +48,13 @@
             <tr class="hover:bg-amber-50/30">
                 <td class="p-4"><strong class="block text-sm text-slate-900">{{ $company->commercial_name ?: $company->legal_name }}</strong><span class="text-[10px] text-slate-400">{{ $company->legal_name }} · RUC {{ $company->ruc }}</span></td>
                 <td class="p-4"><strong class="block text-slate-700">{{ $company->contact_name ?: ($admin->name ?? 'Sin representante') }}</strong><span class="text-[10px] text-slate-400">{{ $admin->email ?? $company->email ?? 'Correo pendiente' }} · {{ $company->phone ?? 'Sin teléfono' }}</span></td>
-                <td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold">{{ match($company->modality){'aereo'=>'✈️ Aéreo','mixto'=>'🚤✈️ Mixto',default=>'🚤 Fluvial'} }}</span></td>
+                <td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold">{{ match($company->modality){'aereo'=>' Aéreo','mixto'=>' Mixto',default=>' Fluvial'} }}</span></td>
                 <td class="p-4"><span class="inline-flex rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">● RUC por validar</span></td>
                 <td class="p-4 text-slate-500">{{ $company->created_at?->format('d/m/Y') ?? '—' }}</td>
                 <td class="p-4 text-right"><a href="{{ route('admin.companies.edit', $company) }}" class="inline-flex rounded-lg bg-[#062c21] px-3 py-2 text-[10px] font-black text-white">Revisar expediente →</a></td>
             </tr>
         @empty
-            <tr><td colspan="6" class="p-12 text-center"><span class="text-2xl">✓</span><strong class="mt-2 block text-slate-700">Bandeja al día</strong><span class="text-xs text-slate-400">No hay solicitudes pendientes de validación.</span></td></tr>
+            <tr><td colspan="6" class="p-12 text-center"><span class="text-2xl"></span><strong class="mt-2 block text-slate-700">Bandeja al día</strong><span class="text-xs text-slate-400">No hay solicitudes pendientes de validación.</span></td></tr>
         @endforelse
         </tbody></table></div>
     </section>
@@ -63,7 +63,7 @@
 @if($activeTab === 'flota')
     <section class="min-h-[360px] p-5">
         <header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p class="text-[10px] font-black uppercase tracking-wider text-emerald-700">Control documental y operativo</p><h3 class="text-lg font-black text-slate-950">Unidades pendientes de habilitación</h3><p class="text-xs text-slate-500">Valida matrícula, capacidad, plano y documentos antes de habilitar una unidad.</p></div><a href="{{ route('admin.fleet-compliance.index') }}" class="rounded-xl bg-[#062c21] px-4 py-2.5 text-xs font-black text-white">Abrir revisión completa →</a></header>
-        <div class="mt-5 grid gap-3 lg:grid-cols-2">@forelse($pendingVesselReviews as $vessel)<a href="{{ route('admin.fleet-compliance.index') }}" class="rounded-xl border border-amber-200 bg-white p-4 transition hover:bg-amber-50"><div class="flex justify-between gap-3"><div><strong class="text-sm text-slate-900">{{ $vessel->name }}</strong><p class="text-[10px] text-slate-500">{{ $vessel->organization->commercial_name ?: $vessel->organization->legal_name }} · Matrícula {{ $vessel->registration_number }}</p></div><span class="h-fit rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-800">EN REVISIÓN</span></div><p class="mt-2 text-[10px] text-slate-500">{{ \App\Support\FleetPlan::drawn($vessel) }}/{{ $vessel->seat_capacity }} plazas · enviada {{ $vessel->submitted_for_review_at?->format('d/m/Y H:i') }}</p></a>@empty<div class="rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-400 lg:col-span-2"><span class="text-2xl">✓</span><strong class="mt-2 block text-slate-700">Flota al día</strong><span class="text-xs">No hay unidades pendientes de validación.</span></div>@endforelse</div>
+        <div class="mt-5 grid gap-3 lg:grid-cols-2">@forelse($pendingVesselReviews as $vessel)<a href="{{ route('admin.fleet-compliance.index') }}" class="rounded-xl border border-amber-200 bg-white p-4 transition hover:bg-amber-50"><div class="flex justify-between gap-3"><div><strong class="text-sm text-slate-900">{{ $vessel->name }}</strong><p class="text-[10px] text-slate-500">{{ $vessel->organization->commercial_name ?: $vessel->organization->legal_name }} · Matrícula {{ $vessel->registration_number }}</p></div><span class="h-fit rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-800">EN REVISIÓN</span></div><p class="mt-2 text-[10px] text-slate-500">{{ \App\Support\FleetPlan::drawn($vessel) }}/{{ $vessel->seat_capacity }} plazas · enviada {{ $vessel->submitted_for_review_at?->format('d/m/Y H:i') }}</p></a>@empty<div class="rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-400 lg:col-span-2"><span class="text-2xl"></span><strong class="mt-2 block text-slate-700">Flota al día</strong><span class="text-xs">No hay unidades pendientes de validación.</span></div>@endforelse</div>
     </section>
 @endif
 
@@ -82,11 +82,11 @@
                 @php($enabledFleet = (int) $company->active_vessels_count + (int) $company->active_aircraft_count)
                 @php($departures = (int) $company->route_departures_count + (int) $company->air_departures_count)
                 <tr class="hover:bg-slate-50/70">
-                    <td class="p-4"><a href="{{ route('admin.companies.show', $company) }}" class="block font-black text-slate-900 hover:text-emerald-700 hover:underline">{{ $company->commercial_name ?: $company->legal_name }}</a><span class="text-[10px] text-slate-400">RUC {{ $company->ruc }} · {{ match($company->modality){'aereo'=>'✈ Aéreo','mixto'=>'🚤 + ✈ Mixto',default=>'🚤 Fluvial'} }}</span></td>
+                    <td class="p-4"><a href="{{ route('admin.companies.show', $company) }}" class="block font-black text-slate-900 hover:text-emerald-700 hover:underline">{{ $company->commercial_name ?: $company->legal_name }}</a><span class="text-[10px] text-slate-400">RUC {{ $company->ruc }} · {{ match($company->modality){'aereo'=>' Aéreo','mixto'=>' +  Mixto',default=>' Fluvial'} }}</span></td>
                     <td class="p-4"><strong class="block text-slate-700">{{ $admin->name ?? 'Sin administrador' }}</strong><span class="text-[10px] text-slate-400">{{ $admin->email ?? 'Credencial pendiente' }}</span></td><td class="p-4 text-center text-base font-black">{{ $company->today_departures_count }}</td><td class="p-4 text-center text-base font-black">{{ $company->today_tickets_count }}</td>
                     <td class="p-4"><div class="flex items-center gap-2"><div class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width: {{ $company->today_occupancy }}%"></div></div><strong>{{ $company->today_occupancy }}%</strong></div></td>
                     <td class="p-4 text-right font-black">S/ {{ number_format((float) $company->today_gmv, 2) }}</td><td class="p-4 text-right"><strong class="text-emerald-700">S/ {{ number_format((float) $company->today_commission, 2) }}</strong><span class="block text-[9px] text-slate-400">{{ number_format((float) $company->commission_rate, 2) }}%</span></td>
-                    <td class="p-4"><a href="{{ route('admin.companies.show', $company) }}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold hover:border-emerald-300 hover:bg-emerald-50"><span>{{ match($company->modality){'aereo'=>'✈️','mixto'=>'🚤✈️',default=>'🚤'} }}</span><span>{{ \App\Support\SpanishCount::phrase($fleet, 'registrada', 'registradas') }}</span><span class="text-emerald-600">→</span></a><span class="mt-1 block text-[10px] {{ $company->pending_vessels_count?'font-bold text-amber-600':'text-slate-400' }}">{{ \App\Support\SpanishCount::phrase($enabledFleet, 'habilitada', 'habilitadas') }} · {{ $company->pending_vessels_count }} en revisión</span></td>
+                    <td class="p-4"><a href="{{ route('admin.companies.show', $company) }}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold hover:border-emerald-300 hover:bg-emerald-50"><span>{{ match($company->modality){'aereo'=>'','mixto'=>'',default=>''} }}</span><span>{{ \App\Support\SpanishCount::phrase($fleet, 'registrada', 'registradas') }}</span><span class="text-emerald-600">→</span></a><span class="mt-1 block text-[10px] {{ $company->pending_vessels_count?'font-bold text-amber-600':'text-slate-400' }}">{{ \App\Support\SpanishCount::phrase($enabledFleet, 'habilitada', 'habilitadas') }} · {{ $company->pending_vessels_count }} en revisión</span></td>
                     <td class="p-4"><div class="flex justify-end gap-2"><a href="{{ route('admin.companies.edit', $company) }}" class="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold">Permisos / Editar</a><form method="POST" action="{{ route('admin.companies.toggle-status', $company) }}">@csrf @method('PATCH')<button class="rounded-lg px-3 py-2 text-[10px] font-bold {{ $company->status==='active'?'bg-rose-50 text-rose-700':'bg-emerald-50 text-emerald-700' }}">{{ $company->status==='active'?'Suspender':'Activar' }}</button></form></div></td>
                 </tr>
             @empty

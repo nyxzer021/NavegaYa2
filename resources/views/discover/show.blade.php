@@ -26,9 +26,9 @@
 </section>
 <section class="mt-4 rounded-3xl border border-slate-200 bg-white p-5">
 <h2 class="text-lg font-black text-slate-950">Valoraciones de viajeros</h2>
-<p class="mt-2 text-amber-500">{{ str_repeat('★', (int) round($average)) }}{{ str_repeat('☆', 5 - (int) round($average)) }} <strong class="text-slate-800">{{ $average ?: 'Sin valoraciones' }}</strong></p>
+<p class="mt-2 text-amber-500">{{ str_repeat('', (int) round($average)) }}{{ str_repeat('', 5 - (int) round($average)) }} <strong class="text-slate-800">{{ $average ?: 'Sin valoraciones' }}</strong></p>
 @forelse($reviews as $review)
-<article class="mt-3 border-t border-slate-100 pt-3"><strong class="text-sm text-slate-900">{{ $review->user->name }}</strong><span class="text-amber-500"> {{ str_repeat('★', $review->rating) }}</span><p class="mt-1 text-sm text-slate-600">{{ $review->comment }}</p></article>
+<article class="mt-3 border-t border-slate-100 pt-3"><strong class="text-sm text-slate-900">{{ $review->user->name }}</strong><span class="text-amber-500"> {{ str_repeat('', $review->rating) }}</span><p class="mt-1 text-sm text-slate-600">{{ $review->comment }}</p></article>
 @empty
 <p class="mt-3 text-sm text-slate-500">Aún no hay valoraciones verificadas.</p>
 @endforelse

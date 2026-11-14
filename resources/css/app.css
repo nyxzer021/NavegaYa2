@@ -61,7 +61,7 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 .ny-sheet label{display:grid;gap:.35rem;color:#3e5c54;font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
 .ny-sheet :where(input,select){height:48px;margin-top:0;border-radius:14px;border-color:#d5e6df}
 @media(max-width:640px){.ny-file{align-items:flex-start;flex-direction:column}.ny-form-page{padding-inline:.75rem}}
-.ny-empty__icon{display:grid;width:42px;height:42px;margin:0 auto 10px;place-items:center;border-radius:999px;background:#e1f3eb;font-size:20px}.ny-empty__title{display:block;color:var(--ny-text);font-size:15px}.ny-empty__description{max-width:48ch;margin:5px auto 0}.ny-empty__action{margin-top:16px}.ny-public-footer a{color:var(--ny-text-on-dark-muted)}.ny-public-footer a:hover{color:#fff}.ny-public-footer-copy{color:var(--ny-text-on-dark-muted)}
+.ny-empty__icon{display:grid;width:42px;height:42px;margin:0 auto 10px;place-items:center;border-radius:999px;background:var(--ny-success-bg);color:var(--ny-success)}.ny-empty__title{display:block;color:var(--ny-text);font-size:15px}.ny-empty__description{max-width:48ch;margin:5px auto 0}.ny-empty__action{margin-top:16px}.ny-public-footer a{color:var(--ny-text-on-dark-muted)}.ny-public-footer a:hover{color:#fff}.ny-public-footer-copy{color:var(--ny-text-on-dark-muted)}
 
 .ny-company-portal{--ny-brand:#064E3B;--ny-interaction:#087F5B;--ny-deep:#0F6E56;--ny-menu:#062C21;--ny-canvas:#F6F8F7;--ny-card:#FFFFFF;--ny-line:#E6ECE9;--ny-ink:#10231D;--ny-muted:#607069;--ny-action:#F4B820;--ny-danger:#9F1239;--ny-warning:#92400E;--ny-control-height:40px;background:var(--ny-canvas);color:var(--ny-ink);font-family:'Plus Jakarta Sans',sans-serif}
 @media(min-width:1024px){.ny-company-portal{--ny-control-height:40px}}
@@ -167,6 +167,8 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 .ny-departures-nav button:disabled{color:var(--ny-text-muted);opacity:.45}
 .ny-departures-nav svg{width:18px;height:18px}
 .ny-departures-empty{margin:0;color:var(--ny-text-muted);font-size:14px}
+.ny-mark{display:grid;width:32px;height:32px;flex:none;place-items:center;border-radius:8px}
+.ny-mark svg{width:18px;height:18px}
 @media(max-width:700px){.ny-window button,.ny-departures-nav button{min-height:44px;min-width:44px}}
 @media(max-width:700px){
     .ny-trip{grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:2px;min-height:0;max-height:130px;padding-bottom:0}

@@ -17,11 +17,11 @@
             <section class="mx-auto mt-8 grid max-w-6xl gap-5 md:grid-cols-3">
                 @foreach((app()->getLocale()==='en' ? [
                     ['◎','Our purpose','Make reliable information readily available to search, compare and book river and air travel.'],
-                    ['✓','For travelers','Provide schedules, verified operators, digital tickets and useful guidance in one platform.'],
+                    ['','For travelers','Provide schedules, verified operators, digital tickets and useful guidance in one platform.'],
                     ['↗','For companies','Offer tools to publish services, manage operations and connect with new passengers.'],
                 ] : [
                     ['◎','Nuestro propósito','Facilitar el acceso a información confiable para buscar, comparar y reservar viajes por río y aire.'],
-                    ['✓','Para los viajeros','Ofrecer horarios, empresas verificadas, pasajes digitales y orientación útil en una sola plataforma.'],
+                    ['','Para los viajeros','Ofrecer horarios, empresas verificadas, pasajes digitales y orientación útil en una sola plataforma.'],
                     ['↗','Para las empresas','Brindar herramientas para publicar su oferta, administrar operaciones y conectar con nuevos pasajeros.'],
                 ]) as [$icon,$title,$description])
                     <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 font-black text-emerald-700">{{$icon}}</span><h3 class="mt-4 font-extrabold text-slate-950">{{$title}}</h3><p class="mt-2 text-sm leading-6 text-slate-500">{{$description}}</p></article>

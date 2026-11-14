@@ -78,7 +78,7 @@
                     @endphp
                     <tr class="hover:bg-slate-50/70">
                         <td class="whitespace-nowrap px-4 py-3"><strong class="block text-sm text-slate-900">{{ $departure['departure_at']?->format('d/m/Y') }}</strong><span class="text-[10px] font-semibold text-slate-500">{{ $departure['departure_at']?->format('H:i') }} h</span></td>
-                        <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-1 text-[10px] font-bold {{ $departure['type'] === 'aereo' ? 'bg-violet-50 text-violet-700 ring-1 ring-violet-200' : 'bg-sky-50 text-sky-700 ring-1 ring-sky-200' }}">{{ $departure['type'] === 'aereo' ? '✈️ Aéreo' : '🚤 Fluvial' }}</span></td>
+                        <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-1 text-[10px] font-bold {{ $departure['type'] === 'aereo' ? 'bg-violet-50 text-violet-700 ring-1 ring-violet-200' : 'bg-sky-50 text-sky-700 ring-1 ring-sky-200' }}">{{ $departure['type'] === 'aereo' ? ' Aéreo' : ' Fluvial' }}</span></td>
                         <td class="px-4 py-3"><strong class="block max-w-44 truncate text-slate-900">{{ $company->commercial_name ?? $company->legal_name ?? 'Sin operador' }}</strong><span class="text-[10px] text-slate-400">{{ $company->base_city ?? 'Loreto' }}</span></td>
                         <td class="px-4 py-3"><strong class="block text-slate-800">{{ $departure['route'] }}</strong><span class="text-[10px] text-slate-400">{{ $departure['route_code'] ?? 'Sin código' }}</span></td>
                         <td class="px-4 py-3"><strong class="block text-slate-800">{{ $sold }} vendidos / {{ $available }} disponibles</strong><span class="text-[10px] text-slate-400">Capacidad total: {{ $capacity }}</span></td>

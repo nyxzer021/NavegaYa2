@@ -78,9 +78,9 @@
                     <label for="status" class="mb-1 block text-xs font-bold text-slate-700">Estado operativo</label>
                     <select id="status" name="status"
                             class="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-emerald-600 focus:bg-white">
-                        <option value="ready" @selected(old('status', $aircraft->status ?: 'ready') === 'ready')>🟢 Lista para operar</option>
-                        <option value="maintenance" @selected(old('status', $aircraft->status) === 'maintenance')>🟡 En mantenimiento</option>
-                        <option value="inactive" @selected(old('status', $aircraft->status) === 'inactive')>🔴 Fuera de servicio</option>
+                        <option value="ready" @selected(old('status', $aircraft->status ?: 'ready') === 'ready')> Lista para operar</option>
+                        <option value="maintenance" @selected(old('status', $aircraft->status) === 'maintenance')> En mantenimiento</option>
+                        <option value="inactive" @selected(old('status', $aircraft->status) === 'inactive')> Fuera de servicio</option>
                     </select>
                 </div>
 

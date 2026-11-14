@@ -21,7 +21,7 @@
     @endphp
     @foreach($reservation->seats as $seat)
         <article class="ticket">
-            <small>{{ $isAir ? '✈ VIAJE AÉREO' : '⛴ VIAJE FLUVIAL' }}</small>
+            <small>{{ $isAir ? 'VIAJE AÉREO' : 'VIAJE FLUVIAL' }}</small>
             <h2>{{ $seat->passenger_name }}</h2>
             <div class="grid">
                 <div><span>Ruta</span><strong>{{ $isAir ? $route->origin_city : $route->originPort->city }} → {{ $isAir ? $route->destination_city : $route->destinationPort->city }}</strong>@if($stopsLabel = \App\Support\RouteStops::label($route))<span>{{ $stopsLabel }}</span>@endif</div>

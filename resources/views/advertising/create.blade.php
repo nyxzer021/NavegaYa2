@@ -6,7 +6,7 @@
             <h1 class="mt-5 text-3xl font-black leading-tight sm:text-4xl">Conecta tu negocio con viajeros que ya están comprando su pasaje.</h1>
             <p class="mt-4 text-sm leading-relaxed text-emerald-100/80">Promociona tu lodge, restaurante, tour o servicio chárter en los momentos clave de planificación del viaje.</p>
             <div class="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                @foreach(['🏠 Portada de NavegaYA','🧭 Catálogo de rutas','🚤 Perfiles de operadores','🎫 Boleto digital'] as $benefit)
+                @foreach([' Portada de NavegaYA',' Catálogo de rutas',' Perfiles de operadores',' Boleto digital'] as $benefit)
                     <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-bold">{{ $benefit }}</div>
                 @endforeach
             </div>
@@ -16,7 +16,7 @@
         <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <p class="text-[10px] font-black uppercase tracking-wider text-emerald-700">Solicitud comercial</p>
             <h2 class="mt-1 text-2xl font-black text-slate-900">Cuéntanos sobre tu negocio</h2>
-            @if(session('success'))<div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">✓ {{ session('success') }}</div>@endif
+            @if(session('success'))<div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800"> {{ session('success') }}</div>@endif
             @if($errors->any())<div class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800"><strong>Revisa los datos ingresados.</strong><ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
             <form method="POST" action="{{ route('advertising.store') }}" enctype="multipart/form-data" class="mt-6 grid gap-4 sm:grid-cols-2">@csrf
                 <label class="text-xs font-bold text-slate-700 sm:col-span-2">Nombre comercial<input name="business_name" value="{{ old('business_name') }}" required class="mt-1.5 w-full rounded-xl border-slate-200 text-sm" placeholder="Ej. Lodge Río Amazonas"></label>

@@ -13,7 +13,7 @@
 <a class="back" href="{{ $seatRoutePrefix === 'company' ? route('company.fleet.index') : route('admin.vessels.index') }}">← Volver a embarcaciones</a>
 <section class="hero"><div><p class="eyebrow">CONFIGURACIÓN DE EMBARCACIÓN</p><h1>{{$vessel->name}}</h1><p>Matrícula {{$vessel->registration_number}} · Diseña cada cubierta y controla los asientos habilitados.</p></div><div class="stats"><div class="stat"><b>{{$vessel->seat_capacity}}</b><span>Capacidad máxima</span></div><div class="stat"><b>{{($deckCounts['principal']??0)+($deckCounts['superior']??0)}}</b><span>Asientos creados</span></div></div></section>
 <nav class="tabs"><a class="tab {{$deck==='principal'?'active':''}}" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>'principal'])}}"><span>▰ Cubierta principal</span><small>{{$deckCounts['principal']??0}}</small></a><a class="tab {{$deck==='superior'?'active':''}}" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>'superior'])}}"><span>▱ Cubierta superior</span><small>{{$deckCounts['superior']??0}}</small></a></nav>
-@if(session('success'))<p class="ok">✓ {{session('success')}}</p>@endif
+@if(session('success'))<p class="ok"> {{session('success')}}</p>@endif
 <div class="layout">
 <section class="panel">
 @if($seats->isEmpty()||$isEditing)
@@ -40,7 +40,7 @@
 @endfor</div>
 @endforeach
 </div><div class="exit">SALIDA</div><p class="stern">POPA · PARTE POSTERIOR</p></div></div>
-@else<div class="empty"><i>⛴</i><b>Esta cubierta todavía no tiene distribución</b>Configura las filas y asientos para visualizar la lancha.</div>@endif
+@else<div class="empty"><i></i><b>Esta cubierta todavía no tiene distribución</b>Configura las filas y asientos para visualizar la lancha.</div>@endif
 </section></div></div>
 <script>
 const updateCount=()=>{const rows=Number(document.getElementById('rows')?.value)||0,left=Number(document.getElementById('leftSeats')?.value)||0,right=Number(document.getElementById('rightSeats')?.value)||0,preview=document.getElementById('seatPreview');if(!preview)return;const current=rows*(left+right),total=current+Number(preview.dataset.other),limit=Number(preview.dataset.limit),button=document.getElementById('generateButton'),exceeds=total>limit;document.getElementById('seatCount').textContent=current;document.getElementById('totalSeatCount').textContent=total;preview.style.background=exceeds?'#fff1f2':'#edf7f4';preview.style.color=exceeds?'#be123c':'#31544c';button.disabled=exceeds;button.style.opacity=exceeds?'.5':'1';button.title=exceeds?'La suma de ambas cubiertas supera la capacidad máxima.':''};['rows','leftSeats','rightSeats'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCount));updateCount();

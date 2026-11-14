@@ -16,7 +16,7 @@
   @endif
  </div>
  @else
- <form method="GET" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><label class="text-sm font-semibold text-slate-600">Salida de hoy</label><div class="mt-1 flex gap-2"><select name="departure" class="h-11 flex-1 rounded-xl border-slate-200 bg-slate-50 text-xs font-bold" onchange="this.form.submit()">@foreach($departures as $departure)<option value="{{ $departure->id }}" @selected($selectedDeparture?->id === $departure->id)>{{ $departure->departure_at->format('H:i') }} · {{ $departure->transportRoute->originPort->city }} ➔ {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</option>@endforeach</select></div></form>
+ <form method="GET" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><label class="text-sm font-semibold text-slate-600">Salida de hoy</label><div class="mt-1 flex gap-2"><select name="departure" class="h-11 flex-1 rounded-xl border-slate-200 bg-slate-50 text-xs font-bold" onchange="this.form.submit()">@foreach($departures as $departure)<option value="{{ $departure->id }}" @selected($selectedDeparture?->id === $departure->id)>{{ $departure->departure_at->format('H:i') }} · {{ $departure->transportRoute->originPort->city }}  {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</option>@endforeach</select></div></form>
  <form method="POST" action="{{ route('company.pos.store') }}" class="grid gap-5 lg:grid-cols-[1fr_380px]">@csrf<input type="hidden" name="departure_id" value="{{ $selectedDeparture->id }}">
   @include('components.vessel-deck-styles')
   <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
