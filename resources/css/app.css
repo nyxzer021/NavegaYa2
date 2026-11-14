@@ -149,6 +149,25 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 .ny-trip-go{background:var(--ny-primary-deep);color:var(--ny-text-on-dark)}
 .ny-trip-gone{background:var(--ny-surface-muted);color:var(--ny-text-muted)}
 .ny-delay{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--ny-warning)}
+.ny-display{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;font-weight:560;letter-spacing:-.03em}
+.ny-trust{display:flex;flex-wrap:wrap;gap:8px 20px;margin:16px 0 0;padding:0;list-style:none}
+.ny-trust li{display:flex;align-items:center;gap:8px;color:var(--ny-text);font-size:14px;font-weight:700}
+.ny-trust span{display:grid;width:32px;height:32px;flex:none;place-items:center;border-radius:8px}
+.ny-trust svg{width:18px;height:18px}
+.ny-trust-pay{background:var(--ny-success-bg);color:var(--ny-success)}
+.ny-trust-qr{background:var(--ny-surface-muted);color:var(--ny-primary)}
+.ny-trust-ok{background:var(--ny-warning-bg);color:var(--ny-warning)}
+.ny-trust-seat{background:var(--ny-accent);color:var(--ny-primary-deep)}
+.ny-window{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.ny-window button{display:inline-flex;align-items:center;height:36px;border:1px solid var(--ny-border);border-radius:999px;background:var(--ny-surface);padding:0 14px;color:var(--ny-text);font-size:14px;font-weight:700}
+.ny-window button.is-on{border-color:transparent;background:var(--ny-primary-deep);color:var(--ny-text-on-dark)}
+.ny-window b{margin-left:6px;font-weight:800}
+.ny-departures-nav{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.ny-departures-nav button{display:grid;width:36px;height:36px;place-items:center;border:1px solid var(--ny-border);border-radius:8px;background:var(--ny-surface);color:var(--ny-primary)}
+.ny-departures-nav button:disabled{color:var(--ny-text-muted);opacity:.45}
+.ny-departures-nav svg{width:18px;height:18px}
+.ny-departures-empty{margin:0;color:var(--ny-text-muted);font-size:14px}
+@media(max-width:700px){.ny-window button,.ny-departures-nav button{min-height:44px;min-width:44px}}
 @media(max-width:700px){
     .ny-trip{grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:2px;min-height:0;max-height:130px;padding-bottom:0}
     .ny-trip-when p{margin:0}

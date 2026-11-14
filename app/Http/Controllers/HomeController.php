@@ -11,6 +11,8 @@ use App\Models\Port;
 use App\Models\RouteDeparture;
 use App\Models\SystemSetting;
 use App\Services\AdvertisementInventoryService;
+use App\Support\DepartureSchedule;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -33,22 +35,17 @@ class HomeController
         $destination = $search['destination'] ?? null;
         $date = $search['date'] ?? null;
 
-        $departures = RouteDeparture::with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.organization', 'reservations.seats'])
-            ->where('status', 'scheduled')->where('is_published', true)
-            ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
-            ->where('departure_at', '>=', now())
-            ->when($origin, fn ($q) => $q->whereHas('transportRoute.originPort', fn ($p) => $p->where('city', $origin)))
-            ->when($destination, fn ($q) => $q->whereHas('transportRoute.destinationPort', fn ($p) => $p->where('city', $destination)))
-            ->when($date, fn ($q) => $q->whereDate('departure_at', $date))
-            ->orderBy('departure_at')->limit(12)->get();
-        $airDepartures = AirDeparture::with(['airRoute', 'aircraft.organization', 'reservations.seats'])
-            ->where('status', 'scheduled')->where('is_published', true)
-            ->whereHas('airRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
-            ->where('departure_at', '>=', now())
-            ->when($origin, fn ($q) => $q->whereHas('airRoute', fn ($r) => $r->where('origin_city', $origin)))
-            ->when($destination, fn ($q) => $q->whereHas('airRoute', fn ($r) => $r->where('destination_city', $destination)))
-            ->when($date, fn ($q) => $q->whereDate('departure_at', $date))
-            ->orderBy('departure_at')->limit(12)->get();
+        $departures = $this->openRiverDepartures($origin, $destination, $date)->orderBy('departure_at')->limit(12)->get();
+        $airDepartures = $this->openAirDepartures($origin, $destination, $date)->orderBy('departure_at')->limit(12)->get();
+        $limaToday = now()->timezone(DepartureSchedule::ZONE)->startOfDay();
+        [$todayStart, $todayEnd] = DepartureSchedule::dayBounds($limaToday);
+        $weekEnd = $limaToday->copy()->addDays(6)->endOfDay()->utc();
+        $riverTodayCount = $hasSearch ? 0 : $this->openRiverDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $todayEnd])->count();
+        $riverWeekCount = $hasSearch ? 0 : $this->openRiverDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->count();
+        $airTodayCount = $hasSearch ? 0 : $this->openAirDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $todayEnd])->count();
+        $airWeekCount = $hasSearch ? 0 : $this->openAirDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->count();
+        $riverWindow = $hasSearch ? collect() : $this->openRiverDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->orderBy('departure_at')->limit(24)->get();
+        $airWindow = $hasSearch ? collect() : $this->openAirDepartures(null, null, null)->whereBetween('departure_at', [$todayStart, $weekEnd])->orderBy('departure_at')->limit(24)->get();
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->take(6)->get();
         $carouselAds = $this->advertising->select('home_carousel', 6);
         if ($carouselAds->isEmpty()) {
@@ -90,6 +87,30 @@ class HomeController
             ['date' => 'FEB', 'name' => 'Carnaval Amazónico', 'place' => 'Amazonía peruana', 'description' => 'Comparsas, danzas y expresiones culturales de la selva.'],
         ]);
 
-        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+        return view('home', compact('departures', 'airDepartures', 'cities', 'ads', 'searchAd', 'tripAds', 'carouselAds', 'popupAd', 'citiesForSearch', 'slides', 'corridors', 'featuredListings', 'todayDepartures', 'upcomingDepartures', 'riverNotice', 'activePorts', 'festivals', 'hasSearch', 'transport', 'riverTodayCount', 'riverWeekCount', 'airTodayCount', 'airWeekCount', 'riverWindow', 'airWindow') + ['heroDuration' => (int) SystemSetting::value('home_hero_duration', '4'), 'whatsappNumber' => SystemSetting::value('whatsapp_number'), 'whatsappMessage' => SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda con mi viaje en NavegaYA.')]);
+    }
+
+    private function openRiverDepartures(?string $origin, ?string $destination, ?string $date): Builder
+    {
+        return RouteDeparture::query()
+            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.organization', 'reservations.seats'])
+            ->where('status', 'scheduled')->where('is_published', true)
+            ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
+            ->where('departure_at', '>=', now())
+            ->when($origin, fn ($query) => $query->whereHas('transportRoute.originPort', fn ($port) => $port->where('city', $origin)))
+            ->when($destination, fn ($query) => $query->whereHas('transportRoute.destinationPort', fn ($port) => $port->where('city', $destination)))
+            ->when($date, fn ($query) => $query->whereDate('departure_at', $date));
+    }
+
+    private function openAirDepartures(?string $origin, ?string $destination, ?string $date): Builder
+    {
+        return AirDeparture::query()
+            ->with(['airRoute', 'aircraft.organization', 'reservations.seats'])
+            ->where('status', 'scheduled')->where('is_published', true)
+            ->whereHas('airRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
+            ->where('departure_at', '>=', now())
+            ->when($origin, fn ($query) => $query->whereHas('airRoute', fn ($route) => $route->where('origin_city', $origin)))
+            ->when($destination, fn ($query) => $query->whereHas('airRoute', fn ($route) => $route->where('destination_city', $destination)))
+            ->when($date, fn ($query) => $query->whereDate('departure_at', $date));
     }
 }
