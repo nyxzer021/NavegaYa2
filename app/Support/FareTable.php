@@ -169,13 +169,10 @@ class FareTable
     private static function match(TransportRoute|AirRoute $route, string $space, string $passenger, CarbonInterface $on): ?float
     {
         $day = $on->copy()->timezone('America/Lima')->toDateString();
-        $query = RouteFare::query()->where('space_type', $space)->where('passenger_type', $passenger);
-        if ($route instanceof AirRoute) {
-            $query->where('air_route_id', $route->id);
-        } else {
-            $query->where('transport_route_id', $route->id);
-        }
-        $matched = $query->get()->filter(fn (RouteFare $fare): bool => self::covers($fare, $day));
+        $matched = ($route->relationLoaded('fares')
+            ? $route->fares->where('space_type', $space)->where('passenger_type', $passenger)
+            : $route->fares()->where('space_type', $space)->where('passenger_type', $passenger)->get())
+            ->filter(fn (RouteFare $fare): bool => self::covers($fare, $day));
         if ($matched->isEmpty()) {
             return null;
         }

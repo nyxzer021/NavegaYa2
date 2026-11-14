@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AirDeparture;
 use App\Models\CompanyReview;
 use App\Models\Organization;
 use App\Models\OrganizationPhoto;
 use App\Models\PhotoComment;
 use App\Models\PhotoLike;
 use App\Models\Reservation;
+use App\Models\RouteDeparture;
 use App\Models\User;
 use App\Models\UserSanction;
+use App\Services\MarketplaceSales;
 use App\Support\AdminScope;
 use App\Support\BaggageAllowance;
+use App\Support\DepartureSchedule;
+use App\Support\FareTable;
 use App\Support\TravelPolicy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -22,13 +27,79 @@ use Illuminate\View\View;
 
 class PublicCompanyController
 {
-    public function index(): View
+    public function index(Request $request, MarketplaceSales $sales): View
     {
-        $companies = Organization::withCount(['vessels', 'transportRoutes', 'aircraft', 'airRoutes'])
-            ->withAvg(['reviews as average_rating' => fn ($query) => $query->where('status', 'published')], 'rating')
-            ->where('type', 'transport_company')->where('status', 'active')->orderBy('commercial_name')->get();
+        $filters = $request->validate([
+            'port' => ['nullable', 'integer', 'min:1'],
+            'mode' => ['nullable', 'in:river,air'],
+        ]);
+        $port = $filters['port'] ?? null;
+        $mode = $filters['mode'] ?? null;
+        $now = now()->utc();
+        $weekEnd = $now->copy()->timezone(DepartureSchedule::ZONE)->addDays(6)->endOfDay()->utc();
+        $activeRoute = fn ($query) => $query->where('status', 'active');
+        $future = fn ($query) => $query->where($query->getRelated()->qualifyColumn('status'), 'scheduled')
+            ->where('is_published', true)->where('departure_at', '>=', $now);
+        $companies = Organization::query()->where('type', 'transport_company')->where('status', 'active')
+            ->with([
+                'modalities',
+                'transportRoutes' => fn ($query) => $activeRoute($query)->with('originPort'),
+                'routeDepartures' => fn ($query) => $future($query)->with(['transportRoute.fares', 'vessel.seats', 'vessel.organization']),
+                'airDepartures' => fn ($query) => $future($query)->with(['airRoute.fares', 'aircraft.organization']),
+            ])
+            ->withCount(['airRoutes' => $activeRoute, 'vessels', 'aircraft'])
+            ->orderBy('commercial_name')->get();
 
-        return view('companies.index', compact('companies'));
+        $ports = $companies->flatMap(fn (Organization $company) => $company->transportRoutes->pluck('originPort'))
+            ->filter()->unique('id')->sortBy('name');
+
+        $companies = $companies->map(function (Organization $company) use ($weekEnd) {
+            $departures = $company->is_marketplace_paused ? collect() : $company->routeDepartures->concat($company->airDepartures);
+
+            return [
+                'company' => $company,
+                'river' => in_array('fluvial', $company->approvedModalityCodes(), true) || $company->vessels_count > 0 || $company->transportRoutes->isNotEmpty(),
+                'air' => array_intersect(['aereo', 'aereo_fluvial'], $company->approvedModalityCodes()) !== [] || $company->aircraft_count > 0 || $company->air_routes_count > 0,
+                'routes' => $company->transportRoutes->count() + $company->air_routes_count,
+                'weekly' => $departures->filter(fn ($departure) => $departure->departure_at <= $weekEnd)->count(),
+                'departures' => $departures,
+            ];
+        })->filter(fn (array $card) => (! $mode || $card[$mode])
+            && (! $port || $card['company']->transportRoutes->contains('origin_port_id', $port)))
+            ->sortByDesc(fn (array $card) => $card['weekly'] > 0)
+            ->map(function (array $card) use ($sales) {
+                $card['price'] = $card['departures']->map(fn ($departure) => $this->departurePrice($departure, $sales))->min();
+
+                return $card;
+            });
+
+        return view('companies.index', compact('companies', 'ports', 'port', 'mode'));
+    }
+
+    private function departurePrice(RouteDeparture|AirDeparture $departure, MarketplaceSales $sales): ?float
+    {
+        $air = $departure instanceof AirDeparture;
+        $route = $air ? $departure->airRoute : $departure->transportRoute;
+        $vehicle = $air ? $departure->aircraft : $departure->vessel;
+        if (! $route || ! $vehicle || ! $vehicle->organization) {
+            return null;
+        }
+
+        $spaces = $air ? collect(['seat']) : $vehicle->seats->pluck('space_type')
+            ->intersect(['hammock', 'cabin_bed'])->unique()->prepend('seat');
+        $fare = $spaces->map(fn (string $space) => FareTable::price(
+            $route, $space, 'adult', $departure->departure_at, $space === 'seat' ? (float) $departure->fare : null,
+        ))->min();
+        if ($fare === null) {
+            return null;
+        }
+
+        $route->setRelation('organization', $vehicle->organization);
+        $reservation = new Reservation(['base_amount' => $fare, 'sales_channel' => 'web']);
+        $reservation->setRelation('departure', $air ? null : $departure);
+        $reservation->setRelation('airDeparture', $air ? $departure : null);
+
+        return $sales->quote($reservation)['charged_amount'];
     }
 
     public function show(Organization $organization): View

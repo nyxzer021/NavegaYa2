@@ -13,7 +13,7 @@
             @endforeach
         </div>
         <nav class="flex gap-1 overflow-x-auto p-2" aria-label="Bandejas de moderación">
-            @foreach([['reports',' Reportes',$openCount],['profiles',' Imágenes',$pendingProfiles->count()],['reviews','⭐ Opiniones',$pendingReviewCount]] as [$key,$label,$count])
+            @foreach([['reports',' Reportes',$openCount],['profiles',' Imágenes',$pendingProfiles->count()],['reviews','Opiniones',$pendingReviewCount]] as [$key,$label,$count])
                 <a href="{{ route('admin.moderation.index',['tab'=>$key]) }}" class="flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-xs font-black {{ $activeTab===$key?'bg-emerald-950 text-white':'text-slate-600 hover:bg-slate-100' }}"><span>{{ $label }}</span>@if($count)<span class="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] text-white">{{ $count }}</span>@endif</a>
             @endforeach
         </nav>
