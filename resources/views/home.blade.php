@@ -39,10 +39,10 @@
   </div>
   </div>
   <ul class="ny-trust" aria-label="{{ __('public.trust_label') }}">
-   <li><span class="ny-trust-pay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>{{ __('public.trust_pay') }}</li>
-   <li><span class="ny-trust-qr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 21h3"/></svg></span>{{ __('public.trust_qr') }}</li>
-   <li><span class="ny-trust-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg></span>{{ __('public.trust_verified') }}</li>
-   <li><span class="ny-trust-seat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0Z"/><path d="M5 18v2"/><path d="M19 18v2"/></svg></span>{{ __('public.trust_seat') }}</li>
+   <li><span class="ny-tone-leaf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>{{ __('public.trust_pay') }}</li>
+   <li><span class="ny-tone-river"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 21h3"/></svg></span>{{ __('public.trust_qr') }}</li>
+   <li><span class="ny-tone-sun"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg></span>{{ __('public.trust_verified') }}</li>
+   <li><span class="ny-tone-coral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0Z"/><path d="M5 18v2"/><path d="M19 18v2"/></svg></span>{{ __('public.trust_seat') }}</li>
   </ul>
  </div>
 
@@ -101,10 +101,10 @@
  <section class="mx-auto mt-10 w-full max-w-6xl" aria-labelledby="antes-de-embarcar">
   <h2 id="antes-de-embarcar" class="text-2xl font-bold tracking-tight text-slate-900">{{ __('public.tips_title') }}</h2>
   <div class="ny-tips">
-   <article class="ny-tip"><span class="ny-mark ny-trust-seat"><x-ui.icon name="hammock" /></span><p>{{ __('public.tip_hammock') }}</p></article>
-   <article class="ny-tip"><span class="ny-mark ny-trust-ok"><x-ui.icon name="profile" /></span><p>{{ __('public.tip_arrive') }}</p></article>
-   @if($embarkBaggage)<article class="ny-tip"><span class="ny-mark ny-trust-qr"><x-ui.icon name="luggage" /></span><p>{{ $embarkBaggage }}</p></article>@endif
-   <article class="ny-tip"><span class="ny-mark ny-trust-pay"><x-ui.icon name="droplet" /></span><p>{{ __('public.tip_water') }}</p></article>
+   <article class="ny-tip"><span class="ny-mark ny-tone-leaf"><x-ui.icon name="hammock" /></span><p>{{ __('public.tip_hammock') }}</p></article>
+   <article class="ny-tip"><span class="ny-mark ny-tone-violet"><x-ui.icon name="profile" /></span><p>{{ __('public.tip_arrive') }}</p></article>
+   @if($embarkBaggage)<article class="ny-tip"><span class="ny-mark ny-tone-coral"><x-ui.icon name="luggage" /></span><p>{{ $embarkBaggage }}</p></article>@endif
+   <article class="ny-tip"><span class="ny-mark ny-tone-river"><x-ui.icon name="droplet" /></span><p>{{ __('public.tip_water') }}</p></article>
   </div>
  </section>
 

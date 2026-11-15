@@ -102,8 +102,8 @@
         @if($pills !== [])<p class="ny-trip-pills">@foreach($pills as $pill)<span>{{ $pill }}</span>@endforeach</p>@endif
     </div>
     <div class="ny-trip-actions">
-        <a class="ny-trip-icon" href="{{ route('companies.show', $organization) }}?politica=1" data-open-policy title="{{ $baggageTip }}" aria-label="{{ $baggageTip }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 8h8v11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <a class="ny-trip-icon is-bag" href="{{ route('companies.show', $organization) }}?politica=1" data-open-policy title="{{ $baggageTip }}" aria-label="{{ $baggageTip }}">
+            <x-ui.icon name="luggage" />
         </a>
         <x-company-whatsapp :company="$organization" :departure="$departure" icon />
         @if($canBook)
