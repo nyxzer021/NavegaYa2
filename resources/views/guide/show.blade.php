@@ -1,12 +1,150 @@
-<x-public-layout title="{{$listing->name}} · Guía Loreto"><main class="min-h-screen bg-slate-50 pb-20">
-<section class="relative h-[390px] overflow-hidden bg-emerald-950 text-white">@if($listing->banner_path)<img src="{{$listing->banner_path}}" class="absolute inset-0 h-full w-full object-cover opacity-65">@elseif($listing->images->first())<img src="{{$listing->images->first()->path}}" class="absolute inset-0 h-full w-full object-cover opacity-65">@endif<div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-emerald-950/65 to-transparent"></div><div class="relative mx-auto flex h-full max-w-6xl flex-col justify-center px-5"><span class="text-xs font-black uppercase tracking-widest text-amber-300">{{$types[$listing->type]??'Negocio turístico'}} · {{$listing->city->name}}</span><h1 class="mt-3 max-w-3xl text-4xl font-black sm:text-5xl">{{$listing->name}}</h1><div class="mt-4 flex flex-wrap items-center gap-3"><span class="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold"> {{$ratingAverage?:'Nuevo'}} @if($reviews->count()) · {{$reviews->count()}} opiniones @endif</span>@if($listing->price_reference)<span class="rounded-full bg-amber-300 px-3 py-1.5 text-xs font-black text-slate-950">Desde {{$listing->price_reference}}</span>@endif</div><p class="mt-4 max-w-2xl text-sm leading-6 text-emerald-100/85">{{$listing->description}}</p></div></section>
-<div class="mx-auto grid max-w-6xl gap-7 px-5 pt-8 lg:grid-cols-[1fr_330px]"><section>
- @if($listing->offers->count())<div><p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Explora y elige</p><h2 class="mt-1 text-2xl font-black">Publicaciones y precios</h2><div class="mt-4 grid gap-4 md:grid-cols-2">@foreach($listing->offers as $offer)<article class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">@if($offer->image_path)<img src="{{$offer->image_path}}" class="h-48 w-full object-cover">@else<div class="grid h-36 place-items-center bg-emerald-50 text-4xl">▧</div>@endif<div class="p-5"><span class="text-[9px] font-black uppercase text-emerald-700">{{$offer->offer_type}}</span><h3 class="mt-1 text-lg font-black">{{$offer->title}}</h3><p class="mt-2 text-sm leading-6 text-slate-500">{{$offer->description}}</p><div class="mt-4 flex items-end justify-between">@if($offer->price)<strong class="text-2xl text-emerald-800">S/ {{number_format($offer->price,2)}} <small class="block text-[10px] font-medium text-slate-400">{{$offer->price_unit}}</small></strong>@endif @if($offer->capacity)<span class="text-xs font-bold text-slate-500">Hasta {{$offer->capacity}} personas</span>@endif</div></div></article>@endforeach</div></div>@endif
- <div class="mt-8"><div class="flex items-end justify-between"><div><p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Contenido de la comunidad</p><h2 class="mt-1 text-2xl font-black">Galería</h2></div><span class="text-xs text-slate-500">Abre una fotografía para comentarla</span></div><div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">@forelse($listing->images as $image)@php($publishedImageReviews=$image->reviews->where('status','published'))<button type="button" onclick="document.getElementById('photo-{{$image->id}}').showModal()" class="group relative overflow-hidden rounded-2xl bg-slate-200 text-left"><img src="{{$image->path}}" alt="Fotografía de {{$listing->name}}" class="h-48 w-full object-cover transition duration-300 group-hover:scale-105"><span class="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-slate-950/80 to-transparent px-3 pb-3 pt-8 text-[10px] font-bold text-white"><span>{{$publishedImageReviews->count()}} comentario(s)</span><span>@if($publishedImageReviews->count()) {{number_format((float)$publishedImageReviews->avg('rating'),1)}}@else Comentar →@endif</span></span></button>
- <dialog id="photo-{{$image->id}}" class="m-auto w-[min(1100px,94vw)] overflow-hidden rounded-3xl bg-white p-0 shadow-2xl backdrop:bg-slate-950/85"><div class="grid max-h-[90vh] lg:grid-cols-[1.45fr_.75fr]"><div class="grid min-h-[320px] place-items-center bg-slate-950 p-3"><img src="{{$image->path}}" alt="Fotografía ampliada de {{$listing->name}}" class="max-h-[84vh] w-full object-contain"></div><aside class="overflow-y-auto p-5"><div class="flex items-start justify-between gap-3"><div><h3 class="font-black">{{$listing->name}}</h3><p class="text-xs text-slate-500">Opiniones sobre esta fotografía</p></div><button type="button" onclick="this.closest('dialog').close()" class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xl" aria-label="Cerrar">×</button></div><div class="mt-5 space-y-3">@forelse($publishedImageReviews as $photoReview)<article class="rounded-2xl bg-slate-50 p-3"><div class="flex justify-between gap-2"><strong class="text-xs">{{$photoReview->user?->name??'Viajero'}}</strong><span class="text-xs text-amber-500">{{str_repeat('',$photoReview->rating)}}</span></div><p class="mt-2 text-xs leading-5 text-slate-600">{{$photoReview->comment}}</p></article>@empty<p class="rounded-2xl border border-dashed p-5 text-center text-xs text-slate-400">Sé el primero en comentar esta fotografía.</p>@endforelse</div>
- @auth @if(auth()->user()->isCustomer())<form method="POST" action="{{route('guide.images.reviews.store',[$listing,$image])}}" class="mt-5 border-t pt-5">@csrf<label class="block text-xs font-bold">Tu valoración<select name="rating" class="mt-1 w-full rounded-xl border-slate-200"><option value="5">5  Excelente</option><option value="4">4  Muy buena</option><option value="3">3  Buena</option><option value="2">2  Regular</option><option value="1">1  Deficiente</option></select></label><label class="mt-3 block text-xs font-bold">Comentario<textarea name="comment" required minlength="3" maxlength="700" rows="3" class="mt-1 w-full rounded-xl border-slate-200" placeholder="¿Qué te transmite esta fotografía?"></textarea></label><button class="mt-3 w-full rounded-xl bg-emerald-800 px-4 py-3 text-xs font-black text-white">Publicar comentario</button></form>@endif @else <a href="{{route('login')}}" class="mt-5 flex justify-center rounded-xl bg-emerald-800 px-4 py-3 text-xs font-black text-white">Inicia sesión para comentar</a> @endauth</aside></div></dialog>@empty<div class="col-span-full rounded-2xl border border-dashed p-10 text-center text-sm text-slate-400">Próximamente más fotografías.</div>@endforelse</div></div>
- @if($listing->services)<article class="mt-7 rounded-3xl bg-white p-6 shadow-sm"><h2 class="text-xl font-black">Servicios y características</h2><p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{{$listing->services}}</p></article>@endif
- <section class="mt-7 rounded-3xl border border-slate-200 bg-white p-6"><div class="flex justify-between"><div><p class="text-[10px] font-black uppercase text-emerald-700">Experiencias reales</p><h2 class="text-xl font-black">Valoraciones de viajeros</h2></div><strong class="text-2xl text-amber-500">{{$ratingAverage?:'—'}} </strong></div><div class="mt-5 space-y-3">@forelse($reviews as $review)<article class="rounded-2xl bg-slate-50 p-4"><div class="flex justify-between"><strong class="text-sm">{{$review->user?->name??'Viajero NavegaYA'}}</strong><span class="text-amber-500">{{str_repeat('',$review->rating)}}</span></div><p class="mt-2 text-sm text-slate-600">{{$review->comment}}</p></article>@empty<p class="rounded-2xl border border-dashed p-7 text-center text-sm text-slate-400">Sé el primero en compartir tu experiencia.</p>@endforelse</div>
- @auth @if(auth()->user()->isCustomer())<form method="POST" action="{{route('guide.reviews.store',$listing)}}" class="mt-5 rounded-2xl bg-emerald-50 p-5">@csrf<h3 class="font-black">Comparte tu experiencia</h3><div class="mt-3 grid gap-3 sm:grid-cols-[160px_1fr]"><select name="rating" class="rounded-xl border-emerald-200"><option value="5">5  Excelente</option><option value="4">4  Muy bueno</option><option value="3">3  Bueno</option><option value="2">2  Regular</option><option value="1">1  Deficiente</option></select><textarea name="comment" required minlength="10" rows="2" placeholder="Cuenta qué fue lo que más te gustó" class="rounded-xl border-emerald-200"></textarea></div><button class="mt-3 rounded-xl bg-emerald-800 px-4 py-2.5 text-xs font-black text-white">Enviar valoración</button></form>@endif @endauth
- </section>
-</section><aside class="h-fit lg:sticky lg:top-24"><div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg"><p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Ficha verificada</p><h2 class="mt-1 text-xl font-black">Información del negocio</h2><dl class="mt-5 space-y-4 text-xs"><div><dt class="text-slate-400">Horario</dt><dd class="mt-2 space-y-1">@if($listing->opening_schedule)@foreach(['mon'=>'Lun','tue'=>'Mar','wed'=>'Mié','thu'=>'Jue','fri'=>'Vie','sat'=>'Sáb','sun'=>'Dom'] as $key=>$label)@php($day=$listing->opening_schedule[$key]??['closed'=>true,'periods'=>[]])<div class="flex justify-between gap-3"><span class="font-bold text-slate-500">{{$label}}</span><span class="text-right font-bold">@if($day['closed']??true) Cerrado @else {{collect($day['periods']??[])->map(fn($period)=>$period['from'].'–'.$period['to'])->join(' / ')}} @endif</span></div>@endforeach @else <span class="font-bold">{{$listing->opening_hours?:'Consultar'}}</span> @endif</dd></div><div><dt class="text-slate-400">Dirección</dt><dd class="mt-1 font-bold">{{$listing->address?:$listing->city->name}}</dd></div><div><dt class="text-slate-400">Categoría</dt><dd class="mt-1 font-bold">{{$listing->category}}</dd></div></dl>@if($listing->contact_phone)<a href="{{route('guide.contact',$listing)}}" target="_blank" class="mt-6 flex justify-center rounded-xl bg-[#25D366] px-4 py-3 text-xs font-black text-white">Consultar por WhatsApp</a>@endif @if($listing->website_url)<a href="{{$listing->website_url}}" target="_blank" class="mt-2 flex justify-center rounded-xl border px-4 py-3 text-xs font-black">Visitar sitio web</a>@endif<p class="mt-4 text-center text-[10px] leading-4 text-slate-400">Menciona que encontraste este negocio en NavegaYA.</p></div></aside></div></main></x-public-layout>
+<x-public-layout title="{{ $listing->name }} · Guía Loreto">
+@php($cover = function (?string $path): ?string { if (blank($path)) { return null; } if (str_starts_with($path, 'http') || str_starts_with($path, '/')) { return $path; } return asset('storage/'.$path); })
+@php($hero = $cover($listing->banner_path ?: $listing->images->first()?->path))
+@php($gallery = $listing->images->sortByDesc(fn ($image) => (bool) $image->is_cover)->values())
+@php($days = ['mon' => 'Lunes', 'tue' => 'Martes', 'wed' => 'Miércoles', 'thu' => 'Jueves', 'fri' => 'Viernes', 'sat' => 'Sábado', 'sun' => 'Domingo'])
+@php($hoursFor = function (array $day): string { if ($day['closed'] ?? true) { return 'Cerrado'; } return collect($day['periods'] ?? [])->map(fn ($period) => ($period['from'] ?? '').'–'.($period['to'] ?? ''))->join(' / '); })
+@php($shortType = ['lodging' => 'Hospedajes', 'gastronomy' => 'Gastronomía', 'attraction' => 'Tours', 'tourist_transport' => 'Transporte turístico', 'traveler_service' => 'Servicios', 'local_business' => 'Comercios'][$listing->type] ?? 'Negocio')
+<main class="ny-biz">
+ <header class="ny-biz-hero">
+  @if($hero)<img src="{{ $hero }}" alt="{{ $listing->name }}">@endif
+  <div class="ny-shade"></div>
+  <div class="ny-copy">
+   <p class="ny-kicker">{{ $shortType }} · {{ $listing->city->name }}</p>
+   <h1 class="ny-display">{{ $listing->name }}</h1>
+   <div class="ny-plans-actions">
+    @if($reviews->isNotEmpty())
+     <p class="ny-stars" aria-label="{{ $ratingAverage }} de 5, {{ $reviews->count() }} opiniones">
+      @for($star = 1; $star <= 5; $star++)<x-ui.icon name="star" @class(['is-on' => $star <= round($ratingAverage)]) />@endfor
+      <b>{{ $ratingAverage }}</b>
+     </p>
+    @endif
+    @if($listing->price_reference)<span class="ny-chip">Desde {{ $listing->price_reference }}</span>@endif
+    @if($listing->contact_phone)<a class="ny-btn-main" href="{{ route('guide.contact', $listing) }}"><x-ui.icon name="whatsapp" /> WhatsApp</a>@endif
+   </div>
+  </div>
+ </header>
+ <div class="ny-biz-wrap">
+  <div class="ny-biz-main">
+   @if($listing->description)<article class="ny-biz-block"><h2>Sobre este lugar</h2><p class="ny-biz-copy ny-side-gap">{{ $listing->description }}</p></article>@endif
+   <section class="ny-biz-block">
+    <h2>Galería</h2>
+    @if($gallery->isEmpty())
+     <div class="ny-biz-empty"><span class="ny-mark ny-tone-leaf"><x-ui.icon name="gallery" /></span><h2>Todavía no hay fotografías</h2><p>Cuando el negocio publique su galería, vas a verla aquí.</p></div>
+    @else
+     <div class="ny-gallery">
+      @foreach($gallery as $image)
+       @php($publishedImageReviews = $image->reviews->where('status', 'published'))
+       <button type="button" onclick="document.getElementById('photo-{{ $image->id }}').showModal()" aria-label="Abrir fotografía de {{ $listing->name }}">
+        <img src="{{ $image->path }}" alt="Fotografía de {{ $listing->name }}">
+        @if($publishedImageReviews->isNotEmpty())<span class="ny-gallery-note">{{ $publishedImageReviews->count() }} {{ $publishedImageReviews->count() === 1 ? 'comentario' : 'comentarios' }}</span>@endif
+       </button>
+       <dialog id="photo-{{ $image->id }}">
+        <div class="ny-dialog">
+         <figure><img src="{{ $image->path }}" alt="Fotografía ampliada de {{ $listing->name }}"></figure>
+         <aside>
+          <div class="ny-dialog-head">
+           <div><h3>{{ $listing->name }}</h3><p class="ny-meta">Opiniones sobre esta fotografía</p></div>
+           <button type="button" onclick="this.closest('dialog').close()" class="ny-btn-soft ny-dialog-close" aria-label="Cerrar"><x-ui.icon name="close" /></button>
+          </div>
+          <div class="ny-stack">
+           @forelse($publishedImageReviews as $photoReview)
+            <article class="ny-review">
+             <strong>{{ $photoReview->user?->name ?? 'Viajero' }}</strong>
+             <p class="ny-stars" aria-label="{{ $photoReview->rating }} de 5">@for($star = 1; $star <= 5; $star++)<x-ui.icon name="star" @class(['is-on' => $star <= $photoReview->rating]) />@endfor</p>
+             <p>{{ $photoReview->comment }}</p>
+            </article>
+           @empty
+            <p class="ny-biz-empty">Sé el primero en comentar esta fotografía.</p>
+           @endforelse
+          </div>
+          @auth
+           @if(auth()->user()->isCustomer())
+            <form method="POST" action="{{ route('guide.images.reviews.store', [$listing, $image]) }}">
+             @csrf
+             <label>Tu valoración<select name="rating"><option value="5">5 Excelente</option><option value="4">4 Muy buena</option><option value="3">3 Buena</option><option value="2">2 Regular</option><option value="1">1 Deficiente</option></select></label>
+             <label>Comentario<textarea name="comment" required minlength="3" maxlength="700" rows="3" placeholder="Qué te transmite esta fotografía"></textarea></label>
+             <button class="ny-btn-main" type="submit">Publicar comentario</button>
+            </form>
+           @endif
+          @else
+           <a class="ny-btn-main" href="{{ route('login') }}">Inicia sesión para comentar</a>
+          @endauth
+         </aside>
+        </div>
+       </dialog>
+      @endforeach
+     </div>
+    @endif
+   </section>
+   @if($listing->services)<article class="ny-biz-block"><h2>Servicios</h2><p class="ny-biz-copy ny-side-gap ny-pre">{{ $listing->services }}</p></article>@endif
+   @if($listing->offers->isNotEmpty())
+    <section class="ny-biz-block">
+     <h2>Ofertas</h2>
+     <div class="ny-offer-grid">
+      @foreach($listing->offers as $offer)
+       <article class="ny-offer">
+        <div class="ny-photo">@if($offer->image_path)<img src="{{ $offer->image_path }}" alt="{{ $offer->title }}">@else<div class="ny-photo-fallback"><span class="ny-mark ny-tone-sun"><x-ui.icon name="ticket" /></span></div>@endif</div>
+        <div>
+         @if($offer->offer_type)<p class="ny-meta">{{ $offer->offer_type }}</p>@endif
+         <h3>{{ $offer->title }}</h3>
+         @if($offer->description)<p>{{ $offer->description }}</p>@endif
+         @if($offer->price)<p class="ny-price">S/ {{ number_format($offer->price, 2) }}@if($offer->price_unit) {{ $offer->price_unit }}@endif</p>@endif
+         @if($offer->capacity)<p class="ny-meta">Hasta {{ $offer->capacity }} personas</p>@endif
+        </div>
+       </article>
+      @endforeach
+     </div>
+    </section>
+   @endif
+   <section class="ny-biz-block">
+    <h2>Opiniones</h2>
+    @if($reviews->isEmpty())
+     <div class="ny-biz-empty"><span class="ny-mark ny-tone-sun"><x-ui.icon name="star" /></span><h2>Todavía no hay opiniones</h2><p>Las estrellas aparecen cuando un viajero deja una opinión aprobada.</p></div>
+    @else
+     <div class="ny-stack">
+      @foreach($reviews as $review)
+       <article class="ny-review">
+        <strong>{{ $review->user?->name ?? 'Viajero NavegaYA' }}</strong>
+        <p class="ny-stars" aria-label="{{ $review->rating }} de 5">@for($star = 1; $star <= 5; $star++)<x-ui.icon name="star" @class(['is-on' => $star <= $review->rating]) />@endfor</p>
+        <p>{{ $review->comment }}</p>
+       </article>
+      @endforeach
+     </div>
+    @endif
+    @auth
+     @if(auth()->user()->isCustomer())
+      <form method="POST" action="{{ route('guide.reviews.store', $listing) }}" class="ny-review-form">
+       @csrf
+       <h3>Comparte tu experiencia</h3>
+       <select name="rating"><option value="5">5 Excelente</option><option value="4">4 Muy bueno</option><option value="3">3 Bueno</option><option value="2">2 Regular</option><option value="1">1 Deficiente</option></select>
+       <textarea name="comment" required minlength="10" rows="3" placeholder="Cuenta qué fue lo que más te gustó"></textarea>
+       <button class="ny-btn-main" type="submit">Enviar valoración</button>
+      </form>
+     @endif
+    @endauth
+   </section>
+  </div>
+  <aside class="ny-biz-side">
+   <div class="ny-biz-block">
+    <p class="ny-kicker">Contacto</p>
+    <h2 class="ny-side-gap">{{ $listing->name }}</h2>
+    @if($listing->opening_schedule)
+     <div class="ny-side-gap">
+      @foreach($days as $key => $label)
+       @php($day = $listing->opening_schedule[$key] ?? ['closed' => true, 'periods' => []])
+       <div class="ny-day"><span>{{ $label }}</span><b>{{ $hoursFor($day) }}</b></div>
+      @endforeach
+     </div>
+    @elseif($listing->opening_hours)
+     <p class="ny-biz-copy ny-side-gap">{{ $listing->opening_hours }}</p>
+    @endif
+    <p class="ny-biz-copy ny-side-gap"><x-ui.icon name="map-pin" class="inline h-4 w-4" /> {{ $listing->address ?: $listing->city->name }}</p>
+    @if($listing->category)<p class="ny-meta ny-side-gap">{{ $listing->category }}</p>@endif
+    @if($listing->contact_phone)<a class="ny-btn-main ny-side-gap" href="{{ route('guide.contact', $listing) }}"><x-ui.icon name="whatsapp" /> WhatsApp</a>@endif
+    @if($listing->website_url)<a class="ny-btn-soft ny-side-gap" href="{{ $listing->website_url }}" target="_blank" rel="noopener">Visitar sitio web</a>@endif
+   </div>
+  </aside>
+ </div>
+</main>
+</x-public-layout>

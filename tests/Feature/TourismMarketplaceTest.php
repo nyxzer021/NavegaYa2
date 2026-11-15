@@ -208,4 +208,20 @@ class TourismMarketplaceTest extends TestCase
         $this->actingAs($owner)->patch(route('marketplace.campaigns.pause', $campaign))->assertSessionHasNoErrors();
         $this->assertSame('paused', $campaign->fresh()->status);
     }
+
+    public function test_guide_empty_state_and_plan_page_read_real_benefits(): void
+    {
+        $this->get(route('guide.index'))
+            ->assertOk()
+            ->assertSee('Publica tu negocio')
+            ->assertDontSee('0 negocios')
+            ->assertDontSee('>0<', false);
+
+        $plan = SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->firstOrFail();
+        $page = $this->get(route('advertising.create'))->assertOk()->assertSee($plan->name);
+        $feature = $plan->benefits['features'][0] ?? null;
+        if (is_string($feature) && $feature !== '') {
+            $page->assertSee($feature);
+        }
+    }
 }

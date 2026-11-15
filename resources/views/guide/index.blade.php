@@ -1,25 +1,113 @@
 <x-public-layout title="Guía de Loreto: hospedajes, gastronomía y experiencias · NavegaYA">
-@php
-    $support = \App\Support\PhoneNumber::peru(\App\Models\SystemSetting::value('whatsapp_number'));
-@endphp
-<div class="min-h-screen bg-slate-50 pb-20"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-<x-amazon-hero-bg theme="guide" class="text-center shadow-2xl" overlay="from-slate-950/76 via-[#062c21]/52 to-slate-900/18"><div class="mx-auto max-w-3xl px-2 pb-16 pt-6"><span class="inline-flex rounded-full border border-emerald-400/30 bg-emerald-950/70 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-200 shadow-inner">Explora la Selva Peruana</span><h1 class="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">Guía de Destinos y Turismo en Loreto</h1><p class="mx-auto mt-3 max-w-2xl text-xs leading-relaxed text-emerald-100/80 sm:text-sm md:text-base">Descubre qué hacer, dónde hospedarte y cómo moverte en los ríos y reservas amazónicas.</p></div></x-amazon-hero-bg>
-<section class="relative z-20 mx-auto -mt-4 max-w-6xl px-2 sm:px-4"><div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl shadow-slate-900/10"><nav class="flex flex-wrap items-center gap-2 text-xs">@foreach([null=>'Todos','lodging'=>'Hospedajes','gastronomy'=>'Gastronomía','attraction'=>'Tours','tourist_transport'=>'Transporte turístico','traveler_service'=>'Servicios','local_business'=>'Comercios'] as $key=>$name)<a href="{{route('guide.index',array_filter(['ciudad'=>$cityId,'tipo'=>$key]))}}" class="rounded-xl px-3 py-2 font-semibold transition {{$type===$key?'bg-emerald-800 text-white shadow-sm':'bg-slate-100 text-slate-700 hover:bg-slate-200'}}">{{$name}}</a>@endforeach</nav><form method="GET"><input type="hidden" name="tipo" value="{{$type}}"><select name="ciudad" onchange="this.form.submit()" class="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-600"><option value="">Todas las localidades</option>@foreach($cities as $city)<option value="{{$city->id}}" @selected($cityId===$city->id)>{{$city->name}}</option>@endforeach</select></form></div></section>
-<section class="mt-12"><div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-<article class="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-emerald-800 p-7 text-white shadow-xl" style="background:linear-gradient(145deg,#064e3b 0%,#062c21 55%,#0f513f 100%);color:#fff"><div class="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full blur-2xl" style="background:rgba(251,191,36,.12)"></div><div class="relative"><span class="inline-flex rounded-full border border-amber-400/30 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-300" style="background:rgba(251,191,36,.14)"> Espacio publicitario</span><h2 class="mt-4 text-xl font-extrabold leading-tight text-white">¿Tienes un hotel, lodge, Airbnb, restaurante o tour?</h2><p class="mt-2.5 text-xs leading-relaxed" style="color:#d1fae5">Llega a viajeros que ya están comprando pasajes y organizando su visita a Loreto.</p><ul class="mt-4 space-y-2 text-xs font-medium" style="color:#a7f3d0"><li> Contacto directo a tu WhatsApp</li><li> Posición destacada en el directorio</li><li> Estadísticas de vistas y contactos</li></ul></div><a href="{{ $support ? 'https://wa.me/'.$support.'?text='.urlencode('Hola, deseo publicitar mi negocio en la guía de NavegaYA') : route('advertising.create') }}" target="_blank" rel="noopener" class="relative mt-6 flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-500 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-600">Anunciar mi negocio aquí</a></article>
-@foreach($ads as $ad)<a href="{{route('discover.ad',$ad)}}" target="_blank" rel="sponsored noopener" class="group flex flex-col justify-between overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-sm transition hover:shadow-xl"><div>@if($ad->image_url)<div class="relative h-48 overflow-hidden"><img src="{{$ad->image_url}}" alt="{{$ad->business_name}}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105"><span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-extrabold text-slate-950">Patrocinado</span></div>@endif<div class="p-5"><span class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{$ad->city?->name??'Loreto'}} · {{$ad->category}}</span><h2 class="mt-1 text-base font-extrabold text-slate-900 group-hover:text-emerald-800">{{$ad->title}}</h2><p class="mt-1.5 text-xs leading-relaxed text-slate-500">{{$ad->description}}</p></div></div><div class="px-5 pb-5"><span class="flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-xs font-bold text-amber-900">Conocer promoción →</span></div></a>@endforeach
-@forelse($listings as $listing)
-@php
-    $image = $listing->images->first()?->path;
-    $imageUrl = $image ? (str_starts_with($image, 'http') ? $image : (str_starts_with($image, '/') ? asset(ltrim($image, '/')) : asset('storage/'.$image))) : null;
-    $icon = match ($listing->type) { 'lodging' => '', 'gastronomy' => '', 'tourist_transport'=>'', 'traveler_service'=>'', 'local_business'=>'', default => '' };
-    $label = \App\Http\Controllers\MarketplaceBusinessController::TYPES[$listing->type] ?? 'Negocio turístico';
-@endphp
-<article class="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition duration-200 hover:shadow-xl"><div><div class="relative h-48 overflow-hidden bg-gradient-to-br from-emerald-100 to-sky-100">@if($imageUrl)<img src="{{$imageUrl}}" alt="{{$listing->name}}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">@else<div class="grid h-full place-items-center text-5xl">{{$icon}}</div>@endif<span class="absolute left-3 top-3 rounded-full bg-emerald-950/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">{{$label}}</span>@if($listing->is_featured)<span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-extrabold text-slate-950">Destacado</span>@endif</div><div class="p-5"><span class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{$listing->city->name}}{{$listing->category?' · '.$listing->category:''}}</span><h2 class="mt-1 text-base font-extrabold text-slate-900 transition group-hover:text-emerald-800">{{$listing->name}}</h2><p class="mt-1.5 text-xs leading-relaxed text-slate-500">{{$listing->description?:'Consulta información y disponibilidad directamente con el establecimiento.'}}</p><div class="mt-4 flex flex-wrap gap-1.5 text-[10px] font-medium text-slate-600">@if($listing->opening_hours)<span class="rounded-md bg-slate-100 px-2 py-0.5"> {{$listing->opening_hours}}</span>@endif @if($listing->price_reference)<span class="rounded-md bg-slate-100 px-2 py-0.5">{{$listing->price_reference}}</span>@endif @if($listing->address)<span class="rounded-md bg-slate-100 px-2 py-0.5"> {{$listing->address}}</span>@endif</div></div></div><div class="flex gap-2 px-5 pb-5">@php $listingPhone = \App\Support\PhoneNumber::peru($listing->contact_phone); @endphp
-@if($listingPhone)<a href="https://wa.me/{{ $listingPhone }}?text={{ urlencode('Hola, vi su negocio en la guía de NavegaYA y deseo información') }}" target="_blank" rel="noopener" class="flex-1 rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 text-center text-xs font-bold text-emerald-800 hover:bg-emerald-100">WhatsApp</a>@endif @if($listing->website_url)<a href="{{$listing->website_url}}" target="_blank" rel="noopener" class="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700">Sitio web</a>@endif<a href="{{route('guide.show',$listing)}}" class="flex-1 rounded-xl bg-emerald-800 px-3 py-2.5 text-center text-xs font-bold text-white">Ver ficha completa →</a></div></article>
-@empty
-@if($ads->isEmpty())<div class="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center md:col-span-2"><div class="text-4xl"></div><h2 class="mt-3 text-sm font-bold text-slate-800">Pronto agregaremos más servicios</h2><p class="mt-1 text-xs text-slate-500">Prueba con otra localidad o categoría.</p></div>@endif
-@endforelse
-</div><div class="mt-8">{{$listings->links()}}</div></section>
-</div></div>
+@php($types = [
+    null => ['Todos', 'compass', 'ny-tone-leaf'],
+    'lodging' => ['Hospedajes', 'hotel', 'ny-tone-river'],
+    'gastronomy' => ['Gastronomía', 'utensils', 'ny-tone-sun'],
+    'attraction' => ['Tours', 'leaf', 'ny-tone-leaf'],
+    'tourist_transport' => ['Transporte turístico', 'sailboat', 'ny-tone-river'],
+    'traveler_service' => ['Servicios', 'support', 'ny-tone-violet'],
+    'local_business' => ['Comercios', 'company_details', 'ny-tone-coral'],
+])
+@php($iconFor = fn (string $kind) => match ($kind) { 'lodging' => 'hotel', 'gastronomy' => 'utensils', 'attraction' => 'leaf', 'tourist_transport' => 'sailboat', 'traveler_service' => 'support', 'local_business' => 'company_details', default => 'compass' })
+@php($toneFor = fn (string $kind) => match ($kind) { 'lodging' => 'ny-tone-river', 'gastronomy' => 'ny-tone-sun', 'attraction' => 'ny-tone-leaf', 'tourist_transport' => 'ny-tone-river', 'traveler_service' => 'ny-tone-violet', default => 'ny-tone-coral' })
+@php($cover = function (?string $path): ?string { if (blank($path)) { return null; } if (str_starts_with($path, 'http') || str_starts_with($path, '/')) { return $path; } return asset('storage/'.$path); })
+<main class="ny-guide pb-16">
+ <header class="ny-guide-hero">
+  <img src="/images/branding/banner-guia-loreto.webp" alt="Selva y río en Loreto">
+  <div class="ny-shade"></div>
+  <div class="ny-copy">
+   <p class="ny-kicker">Amazonía peruana</p>
+   <h1 class="ny-display">Guía Loreto</h1>
+   <p>Hospedajes, restaurantes y experiencias de quienes ya viajan por el río.</p>
+  </div>
+ </header>
+ <div class="mx-auto max-w-6xl px-4 sm:px-6">
+  <section class="ny-guide-filters" aria-label="Filtros de la guía">
+   <nav class="ny-guide-types">
+    @foreach($types as $key => $item)
+     <a href="{{ route('guide.index', array_filter(['ciudad' => $cityId, 'tipo' => $key])) }}" class="ny-guide-type {{ (($key === '' || $key === null) && $type === null) || $type === $key ? 'is-on' : '' }}" @if((($key === '' || $key === null) && $type === null) || $type === $key) aria-current="true" @endif>
+      <span class="ny-mark {{ $item[2] }}"><x-ui.icon :name="$item[1]" /></span>{{ $item[0] }}
+     </a>
+    @endforeach
+   </nav>
+   <form class="ny-guide-city" method="GET">
+    <label for="guia-ciudad">Ciudad</label>
+    <input type="hidden" name="tipo" value="{{ $type }}">
+    <select id="guia-ciudad" name="ciudad" onchange="this.form.submit()">
+     <option value="">Todas las ciudades</option>
+     @foreach($cities as $city)<option value="{{ $city->id }}" @selected($cityId === $city->id)>{{ $city->name }}</option>@endforeach
+    </select>
+   </form>
+  </section>
+
+  @if($ads->isNotEmpty())
+  <section class="ny-guide-grid" aria-label="Anuncios patrocinados">
+   @foreach($ads as $ad)
+    @php($adPhoto = $cover($ad->image_url))
+    <a href="{{ route('discover.ad', $ad) }}" target="_blank" rel="sponsored noopener" class="ny-card-link">
+     <div class="ny-photo">
+      @if($adPhoto)<img src="{{ $adPhoto }}" alt="{{ $ad->business_name }}">@else<div class="ny-photo-fallback"><span class="ny-mark ny-tone-sun"><x-ui.icon name="megaphone" /></span></div>@endif
+      <span class="ny-badge is-paid">Patrocinado</span>
+     </div>
+     <div class="ny-card-body">
+      <p class="ny-meta">{{ $ad->city?->name ?? 'Loreto' }}@if($ad->category) · {{ $ad->category }}@endif</p>
+      <h2>{{ $ad->title ?: $ad->business_name }}</h2>
+      @if($ad->description)<p>{{ $ad->description }}</p>@endif
+      <span class="ny-btn-main">Ver promoción</span>
+     </div>
+    </a>
+   @endforeach
+  </section>
+  @endif
+
+  @if($listings->isEmpty())
+   <section class="ny-guide-empty">
+    <span class="ny-mark ny-tone-leaf"><x-ui.icon name="compass" /></span>
+    <h2>Todavía no hay negocios en esta búsqueda</h2>
+    <p>Prueba otra ciudad o categoría. Si tienes un hotel, restaurante o tour, puedes publicar tu página en la guía.</p>
+    <a class="ny-btn-main" href="{{ route('advertising.create') }}">Publica tu negocio</a>
+   </section>
+  @else
+   <section class="ny-guide-grid" aria-label="Negocios">
+    @foreach($listings as $listing)
+     @php($label = $types[$listing->type][0] ?? 'Negocio')
+     @php($photo = $cover($listing->banner_path ?: $listing->images->first()?->path))
+     @php($reviewCount = $listing->organization_id ? $listing->organization->reviews()->where('status', 'approved')->count() : 0)
+     @php($reviewAvg = $reviewCount > 0 ? round((float) $listing->organization->reviews()->where('status', 'approved')->avg('rating'), 1) : null)
+     <article class="ny-card-link">
+      <a href="{{ route('guide.show', $listing) }}" class="ny-photo">
+       @if($photo)<img src="{{ $photo }}" alt="{{ $listing->name }}">@else<div class="ny-photo-fallback"><span class="ny-mark {{ $toneFor($listing->type) }}"><x-ui.icon :name="$iconFor($listing->type)" /></span></div>@endif
+       <span class="ny-badge">{{ $label }}</span>
+      </a>
+      <div class="ny-card-body">
+       <p class="ny-meta">{{ $label }} · {{ $listing->city->name }}</p>
+       <h2><a href="{{ route('guide.show', $listing) }}">{{ $listing->name }}</a></h2>
+       @if($reviewAvg)
+        <p class="ny-stars" aria-label="{{ $reviewAvg }} de 5, {{ $reviewCount }} opiniones">
+         @for($star = 1; $star <= 5; $star++)<x-ui.icon name="star" @class(['is-on' => $star <= round($reviewAvg)]) />@endfor
+         <b>{{ $reviewAvg }}</b>
+        </p>
+       @endif
+       @if($listing->price_reference)<p class="ny-price">{{ $listing->price_reference }}</p>@endif
+       <div class="ny-card-actions">
+        <a class="ny-btn-main" href="{{ route('guide.show', $listing) }}">Ver página</a>
+        @if($listing->contact_phone)<a class="ny-btn-soft" href="{{ route('guide.contact', $listing) }}"><x-ui.icon name="whatsapp" /> WhatsApp</a>@endif
+       </div>
+      </div>
+     </article>
+    @endforeach
+    <article class="ny-card-link">
+     <div class="ny-photo"><div class="ny-photo-fallback"><span class="ny-mark ny-tone-sun"><x-ui.icon name="megaphone" /></span></div></div>
+     <div class="ny-card-body">
+      <p class="ny-meta">Para negocios de Loreto</p>
+      <h2>¿Quieres salir en esta guía?</h2>
+      <p>Tu página y tus anuncios llegan a viajeros que ya están comprando su pasaje.</p>
+      <a class="ny-btn-main" href="{{ route('advertising.create') }}">Publica tu negocio</a>
+     </div>
+    </article>
+   </section>
+   @if($listings->hasPages())<div class="ny-pager">{{ $listings->links() }}</div>@endif
+  @endif
+ </div>
+</main>
 </x-public-layout>

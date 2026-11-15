@@ -1,6 +1,62 @@
-<x-public-layout title="Planes para promocionar tu negocio · NavegaYA"><main class="bg-[#f7f6f2] pb-20">
-<section class="relative overflow-hidden bg-emerald-950 text-white"><div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,25,20,.96),rgba(4,78,59,.75),rgba(2,25,20,.45)),url('/images/branding/banner-guia-loreto.webp')] bg-cover bg-center"></div><div class="relative mx-auto max-w-6xl px-5 py-20 sm:py-24"><span class="rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-300">Marketplace turístico de Loreto</span><h1 class="mt-5 max-w-3xl text-4xl font-black leading-tight sm:text-5xl">Haz visible tu negocio ante viajeros que exploran Loreto</h1><p class="mt-4 max-w-2xl text-base leading-7 text-emerald-100/80">Publica tu hotel, lodge, restaurante, tour o servicio ante personas que ya están organizando su viaje por la Amazonía.</p><div class="mt-7 flex flex-wrap gap-3"><a href="#planes" class="rounded-xl bg-amber-400 px-5 py-3 text-sm font-black text-emerald-950">Ver planes</a><a href="{{route('guide.index')}}" class="rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold">Ver el marketplace</a></div><div class="mt-9 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">@foreach([['6','imágenes por galería'],['1','banner opcional'],['24 h','revisión comercial'],['100%','control de tu ficha']] as [$value,$label])<div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur"><strong class="text-2xl text-amber-300">{{$value}}</strong><span class="block text-[10px] text-emerald-100/70">{{$label}}</span></div>@endforeach</div></div></section>
-<section id="planes" class="mx-auto max-w-6xl px-5 pt-14"><div class="text-center"><p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Planes claros y escalables</p><h2 class="mt-2 text-3xl font-black text-slate-950">Elige cómo quieres crecer</h2><p class="mt-2 text-sm text-slate-500">Tu ficha se revisa antes de publicarse. La vigencia comienza cuando se activa el plan.</p></div><div class="mt-8 grid gap-5 lg:grid-cols-3">@foreach($plans as $index=>$plan)<article class="relative rounded-3xl border {{$index===1?'border-amber-400 bg-emerald-950 text-white shadow-xl':'border-slate-200 bg-white text-slate-900'}} p-7">@if($index===1)<span class="absolute -top-3 left-6 rounded-full bg-amber-400 px-3 py-1 text-[9px] font-black uppercase text-emerald-950">Más recomendado</span>@endif<h3 class="text-xl font-black">{{$plan->name}}</h3><p class="mt-1 text-xs {{$index===1?'text-emerald-100/70':'text-slate-500'}}">{{$plan->description}}</p><div class="mt-5"><strong class="text-4xl">S/ {{number_format($plan->monthly_price,0)}}</strong><span class="text-xs">/mes</span></div><ul class="mt-6 space-y-3 text-xs">@foreach(($plan->benefits['features']??[]) as $feature)<li> {{$feature}}</li>@endforeach<li> Ficha con banner y galería de hasta 6 imágenes</li><li> Contacto directo por WhatsApp</li></ul><a href="{{route('marketplace.register',['plan'=>$plan->code])}}" class="mt-7 flex justify-center rounded-xl {{$index===1?'bg-amber-400 text-emerald-950':'bg-emerald-800 text-white'}} px-4 py-3 text-xs font-black">Elegir {{$plan->name}} →</a></article>@endforeach</div>
-<div class="mt-12 grid gap-4 md:grid-cols-3">@foreach([['','Negocios verificados','Revisamos identidad, contenido e información comercial antes de publicar.'],['','Una ficha que vende','Banner, galería, precios, servicios, horarios y enlace directo al negocio.'],['','Resultados medibles','Consulta visualizaciones, contactos y desempeño de tus campañas.']] as [$icon,$title,$text])<article class="rounded-2xl border border-slate-200 bg-white p-5"><span class="text-2xl">{{$icon}}</span><h3 class="mt-3 font-black">{{$title}}</h3><p class="mt-1 text-xs leading-5 text-slate-500">{{$text}}</p></article>@endforeach</div>
-<div class="mt-10 rounded-3xl bg-emerald-100 p-6 text-center"><h3 class="text-xl font-black text-emerald-950">¿Necesitas ayuda para elegir?</h3><p class="mt-1 text-xs text-emerald-800">Nuestro equipo puede ayudarte a preparar tu primera ficha.</p>@if($supportNumber)<a href="https://wa.me/{{$supportNumber}}?text={{urlencode('Hola NavegaYA, deseo información sobre los planes del marketplace turístico.')}}" target="_blank" class="mt-4 inline-flex rounded-xl bg-[#25D366] px-5 py-3 text-xs font-black text-white">Atención comercial inmediata por WhatsApp</a>@else<p class="mt-4 text-xs font-black text-emerald-950">Atención comercial inmediata por WhatsApp</p>@endif</div></section>
-</main></x-public-layout>
+<x-public-layout title="Planes para promocionar tu negocio · NavegaYA">
+<main class="ny-plans">
+ <header class="ny-plans-hero">
+  <img src="/images/branding/banner-guia-loreto.webp" alt="Viajeros en la Amazonía">
+  <div class="ny-shade"></div>
+  <div class="ny-copy">
+   <p class="ny-kicker">Marketplace turístico de Loreto</p>
+   <h1 class="ny-display">Haz visible tu negocio ante viajeros que exploran Loreto</h1>
+   <p>Publica tu hotel, lodge, restaurante, tour o servicio ante personas que ya están organizando su viaje por la Amazonía.</p>
+   <div class="ny-plans-actions">
+    <a class="ny-btn-main" href="#planes">Ver planes</a>
+    <a class="ny-btn-soft" href="{{ route('guide.index') }}">Ver la Guía Loreto</a>
+   </div>
+  </div>
+ </header>
+ <div class="ny-plans-body">
+  @if(session('success_lead'))<p class="ny-guide-empty" role="status">{{ session('success_lead') }}</p>@endif
+  <section aria-label="Cómo publicar">
+   <p class="ny-kicker">Tres pasos</p>
+   <div class="ny-steps">
+    <article class="ny-step"><span class="ny-mark ny-tone-river"><x-ui.icon name="user" /></span><div><h2>Regístrate</h2><p>Crea la cuenta de tu negocio con tus datos y elige el tipo de servicio.</p></div></article>
+    <article class="ny-step"><span class="ny-mark ny-tone-sun"><x-ui.icon name="online_payments" /></span><div><h2>Paga tu plan</h2><p>La vigencia empieza cuando el pago queda activo. Sin plan vigente, la página no se publica.</p></div></article>
+    <article class="ny-step"><span class="ny-mark ny-tone-leaf"><x-ui.icon name="megaphone" /></span><div><h2>Tu página y tus anuncios salen en NavegaYA</h2><p>Después de la revisión, los viajeros te encuentran en la Guía Loreto y en las campañas de tu plan.</p></div></article>
+   </div>
+  </section>
+  <section id="planes" class="ny-section">
+   <p class="ny-kicker">Planes</p>
+   <h2 class="ny-display ny-section-title">Elige cómo quieres crecer</h2>
+   @if($plans->isEmpty())
+    <div class="ny-guide-empty"><span class="ny-mark ny-tone-sun"><x-ui.icon name="megaphone" /></span><h2>Pronto publicaremos los planes</h2><p>Mientras tanto puedes mirar la Guía Loreto.</p><a class="ny-btn-main" href="{{ route('guide.index') }}">Ver la guía</a></div>
+   @else
+    @php($featuredPlan = (int) floor(($plans->count() - 1) / 2))
+    <div class="ny-plans-grid">
+     @foreach($plans as $index => $plan)
+      <article class="ny-plan {{ $index === $featuredPlan ? 'is-mid' : '' }}">
+       @if($index === $featuredPlan)<span class="ny-plan-flag">Recomendado</span>@endif
+       <h2>{{ $plan->name }}</h2>
+       @if($plan->description)<p class="ny-meta">{{ $plan->description }}</p>@endif
+       <p><strong>S/ {{ number_format($plan->monthly_price, 0) }}</strong> <span class="ny-meta">/ mes</span></p>
+       @if(! empty($plan->benefits['features']))
+        <ul class="ny-plan-list">
+         @foreach($plan->benefits['features'] as $feature)<li><x-ui.icon name="check" class="h-4 w-4 shrink-0" /> {{ $feature }}</li>@endforeach
+        </ul>
+       @endif
+       <a class="ny-btn-main" href="{{ route('marketplace.register', ['plan' => $plan->code]) }}">Elegir {{ $plan->name }}</a>
+      </article>
+     @endforeach
+    </div>
+   @endif
+  </section>
+  <section class="ny-plans-help">
+   <h2>¿Necesitas ayuda para elegir?</h2>
+   <p class="ny-meta" style="margin-top:8px">Te ayudamos a preparar la primera ficha.</p>
+   @if($supportNumber)
+    <a class="ny-btn-main" href="https://wa.me/{{ $supportNumber }}?text={{ urlencode('Hola NavegaYA, deseo información sobre los planes del marketplace turístico.') }}">Atención comercial inmediata por WhatsApp</a>
+   @else
+    <p class="ny-btn-main">Atención comercial inmediata por WhatsApp</p>
+   @endif
+  </section>
+ </div>
+</main>
+</x-public-layout>
