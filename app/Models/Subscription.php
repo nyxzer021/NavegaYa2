@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,5 +37,16 @@ class Subscription extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Suscripción pagada y dentro de su vigencia (hora de Lima).
+     */
+    public function scopeCurrent(Builder $query): Builder
+    {
+        $today = now('America/Lima')->toDateString();
+
+        return $query->where('status', 'active')
+            ->where(fn (Builder $builder) => $builder->whereNull('ends_on')->orWhereDate('ends_on', '>=', $today));
     }
 }

@@ -25,6 +25,8 @@ class PopupAdvertisementTest extends TestCase
             'type' => 'marketplace_business', 'legal_name' => 'Lodge Popup SAC',
             'commercial_name' => 'Lodge Popup', 'ruc' => '20123456789', 'status' => 'active',
         ]);
+        $plan = SubscriptionPlan::where('code', 'basic')->firstOrFail();
+        Subscription::create(['organization_id' => $organization->id, 'subscription_plan_id' => $plan->id, 'status' => 'active', 'monthly_price' => $plan->monthly_price, 'currency' => 'PEN', 'starts_on' => today(), 'ends_on' => today()->addMonth()]);
         $advertisement = Advertisement::create([
             'organization_id' => $organization->id, 'business_name' => 'Lodge Popup',
             'business_type' => 'lodge_hotel', 'contact_name' => 'Ana', 'phone_whatsapp' => '999999999',
@@ -56,6 +58,7 @@ class PopupAdvertisementTest extends TestCase
             $user->roles()->attach($role->id, ['organization_id' => $organization->id]);
             Subscription::create(['organization_id' => $organization->id, 'subscription_plan_id' => $plan->id, 'status' => 'active', 'monthly_price' => $plan->monthly_price, 'currency' => 'PEN', 'benefits_snapshot' => $plan->benefits, 'starts_on' => today(), 'ends_on' => today()->addMonth()]);
             DestinationListing::create(['organization_id' => $organization->id, 'owner_user_id' => $user->id, 'destination_city_id' => $city->id, 'type' => 'lodging', 'status' => 'published', 'name' => "Negocio {$ruc}", 'is_active' => true]);
+
             return [$user, $organization];
         };
 

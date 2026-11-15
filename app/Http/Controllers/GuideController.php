@@ -21,8 +21,7 @@ class GuideController extends Controller
             ? $request->string('tipo')->toString() : null;
 
         $listings = DestinationListing::with(['city', 'images'])
-            ->where('is_active', true)
-            ->where('status', 'published')
+            ->publiclyVisible()
             ->when($cityId, fn ($query) => $query->where('destination_city_id', $cityId))
             ->when($type, fn ($query) => $query->where('type', $type))
             // Five directory entries + the permanent advertising card + up to three
@@ -30,9 +29,7 @@ class GuideController extends Controller
             ->orderByDesc('is_featured')->orderBy('sort_order')->orderBy('name')->paginate(5)->withQueryString();
 
         $cities = DestinationCity::where('is_active', true)->orderBy('name')->get();
-        $ads = Advertisement::with('city')->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('starts_on')->orWhereDate('starts_on', '<=', today()))
-            ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))
+        $ads = Advertisement::with('city')->active()
             ->when($cityId, fn ($query) => $query->where(fn ($q) => $q->whereNull('destination_city_id')->orWhere('destination_city_id', $cityId)))
             ->latest()->take(3)->get();
         $ads->each(fn ($ad) => $ad->increment('views'));
@@ -42,7 +39,7 @@ class GuideController extends Controller
 
     public function show(DestinationListing $listing): View
     {
-        abort_unless($listing->is_active && $listing->status === 'published', 404);
+        abort_unless($listing->isPubliclyVisible(), 404);
         $listing->increment('views');
         $reviews = $listing->organization->reviews()->with('user')->where('status', 'approved')->latest()->take(20)->get();
 
@@ -51,7 +48,7 @@ class GuideController extends Controller
 
     public function contact(DestinationListing $listing): RedirectResponse
     {
-        abort_unless($listing->is_active && $listing->status === 'published' && $listing->contact_phone, 404);
+        abort_unless($listing->contact_phone && $listing->isPubliclyVisible(), 404);
         $listing->increment('contact_clicks');
         $phone = PhoneNumber::peru($listing->contact_phone);
         abort_unless($phone, 404);
@@ -61,7 +58,7 @@ class GuideController extends Controller
 
     public function review(Request $request, DestinationListing $listing): RedirectResponse
     {
-        abort_unless($listing->is_active && $listing->status === 'published', 404);
+        abort_unless($listing->isPubliclyVisible(), 404);
         $data = $request->validate(['rating' => ['required', 'integer', 'between:1,5'], 'comment' => ['required', 'string', 'min:10', 'max:1200']]);
         CompanyReview::updateOrCreate(['organization_id' => $listing->organization_id, 'user_id' => $request->user()->id, 'reservation_id' => null], $data + ['status' => 'pending']);
 
@@ -70,7 +67,7 @@ class GuideController extends Controller
 
     public function reviewImage(Request $request, DestinationListing $listing, DestinationListingImage $image): RedirectResponse
     {
-        abort_unless($listing->is_active && $listing->status === 'published' && $image->destination_listing_id === $listing->id, 404);
+        abort_unless($image->destination_listing_id === $listing->id && $listing->isPubliclyVisible(), 404);
         $data = $request->validate(['rating' => ['required', 'integer', 'between:1,5'], 'comment' => ['required', 'string', 'min:3', 'max:700']]);
         $image->reviews()->updateOrCreate(['user_id' => $request->user()->id], $data + ['status' => 'published']);
 

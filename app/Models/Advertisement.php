@@ -46,7 +46,9 @@ class Advertisement extends Model
     {
         return $query->where('status', 'active')
             ->where(fn (Builder $builder) => $builder->whereNull('starts_on')->orWhereDate('starts_on', '<=', today()))
-            ->where(fn (Builder $builder) => $builder->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()));
+            ->where(fn (Builder $builder) => $builder->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))
+            ->where(fn (Builder $builder) => $builder->whereNull('organization_id')
+                ->orWhereHas('organization', fn (Builder $organization) => $organization->withPublicPlan()));
     }
 
     public function scopeCurrentlyActive(Builder $query): Builder

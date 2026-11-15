@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\PhoneNumber;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -55,6 +56,15 @@ class Organization extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Los negocios turísticos solo se muestran con un plan vigente; las demás organizaciones no dependen de un plan.
+     */
+    public function scopeWithPublicPlan(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $builder) => $builder->where('type', '!=', 'marketplace_business')
+            ->orWhereHas('subscriptions', fn (Builder $subscriptions) => $subscriptions->current()));
     }
 
     public function marketplaceListings(): HasMany

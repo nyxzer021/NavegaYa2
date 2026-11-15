@@ -24,7 +24,7 @@ class DiscoverController
             ->flatMap(fn (MasterRoute $route) => [$route->origin_city, $route->destination_city])
             ->filter()->countBy();
         $hasMultipleDepartments = $cities->pluck('department')->filter()->unique()->count() > 1;
-        $ads = Advertisement::with('city')->where('status', 'active')->where(fn ($q) => $q->whereNull('starts_on')->orWhereDate('starts_on', '<=', today()))->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))->get();
+        $ads = Advertisement::with('city')->active()->get();
         $ads->each(fn ($ad) => $ad->increment('views'));
         $whatsappNumber = SystemSetting::value('whatsapp_number');
         $whatsappMessage = SystemSetting::value('whatsapp_message', 'Hola, necesito ayuda para planificar mi viaje con NavegaYA.');

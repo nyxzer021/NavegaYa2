@@ -102,7 +102,7 @@ class HomeController
             ])->map(fn ($slide) => (object) $slide);
         }
         $corridors = $departures->groupBy(fn ($departure) => $departure->transportRoute->originPort->city.' → '.$departure->transportRoute->destinationPort->city);
-        $featuredListings = DestinationListing::with(['city', 'images'])->where('is_active', true)->where('is_featured', true)->orderBy('sort_order')->limit(6)->get();
+        $featuredListings = DestinationListing::with(['city', 'images'])->publiclyVisible()->where('is_featured', true)->orderBy('sort_order')->limit(6)->get();
         $todayDepartures = $departures->filter(fn ($departure) => $departure->departure_at->isToday());
         $upcomingDepartures = $departures->filter(fn ($departure) => $departure->departure_at->isAfter(today()));
         $riverNotice = SystemSetting::value('river_notice', 'Temporada de navegación estable. Confirma el estado del río y la salida con el operador antes de dirigirte al terminal.');
