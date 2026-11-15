@@ -24,6 +24,16 @@ class StageFourFleetTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Fija el reloj al mediodía de Lima para que "hoy" sea la misma fecha en UTC y en Lima.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->travelTo(now()->setTime(17, 0));
+    }
+
     public function test_the_database_rejects_a_maintenance_period_that_ends_before_it_starts(): void
     {
         [, $company] = $this->companyAdmin();

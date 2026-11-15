@@ -20,6 +20,16 @@ class CompanyPortalTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Fija el reloj al mediodía de Lima para que "hoy" sea la misma fecha en UTC y en Lima.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->travelTo(now()->setTime(17, 0));
+    }
+
     public function test_company_departures_are_strictly_isolated_by_organization(): void
     {
         [$admin, $organization] = $this->companyAdmin('Operador Uno', '20111111111');

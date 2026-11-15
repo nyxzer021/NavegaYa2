@@ -7,7 +7,7 @@
 <x-amazon-hero-bg theme="routes" class="flex w-full items-center justify-center shadow-lg" overlay="from-slate-950/65 via-[#062c21]/38 to-slate-900/10">
 <div class="mx-auto max-w-4xl px-4 pb-14 pt-4 text-center sm:pb-16">
 <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3.5 py-1 text-[11px] font-bold text-emerald-200 backdrop-blur-sm"><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span><span>Rutas Fluviales y Aéreas de Loreto</span></div>
-<h1 class="text-3xl font-black tracking-tight text-white drop-shadow-md sm:text-4xl">Rutas Fluviales y Vuelos en Loreto</h1>
+<h1 class="ny-display text-3xl font-medium tracking-tight text-white drop-shadow-md sm:text-4xl">Rutas Fluviales y Vuelos en Loreto</h1>
 <p class="mx-auto mt-2 max-w-2xl text-xs font-medium text-emerald-100/90 sm:text-sm">Itinerarios de zarpe y conexiones bimodales entre Iquitos, Yurimaguas, Nauta y la frontera amazónica.</p>
 </div>
 </x-amazon-hero-bg><div class="relative z-20 mx-auto mt-4 max-w-5xl px-2 sm:mt-5 sm:px-4"><div class="rounded-3xl border border-slate-100/80 bg-white p-4 shadow-xl shadow-slate-900/10 sm:p-6">
