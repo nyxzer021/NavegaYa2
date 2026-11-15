@@ -211,7 +211,7 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 .ny-guide h1,.ny-plans h1,.ny-biz h1{margin:8px 0 0;font-size:40px;line-height:1.05}
 .ny-guide-hero p,.ny-plans-hero p{max-width:38rem;margin:12px 0 0;color:var(--ny-text-on-dark-muted);font-size:16px}
 .ny-kicker{margin:0;color:var(--ny-accent);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-.ny-guide-filters{display:grid;gap:16px;margin-top:-28px;padding:16px;border:1px solid var(--ny-border);border-radius:var(--ny-radius-lg);background:var(--ny-surface);box-shadow:var(--ny-shadow)}
+.ny-guide-filters{position:relative;z-index:2;display:grid;gap:16px;margin-top:-28px;padding:16px;border:1px solid var(--ny-border);border-radius:var(--ny-radius-lg);background:var(--ny-surface);box-shadow:var(--ny-shadow)}
 .ny-guide-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .ny-guide-type{display:flex;min-height:44px;align-items:center;gap:8px;border:1px solid var(--ny-border);border-radius:12px;background:var(--ny-surface);padding:8px 10px;color:var(--ny-text);font-size:14px;font-weight:700;text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .ny-guide-type:hover{transform:translateY(-1px);border-color:var(--ny-primary-hover);box-shadow:var(--ny-shadow-sm)}
@@ -332,9 +332,10 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
  .ny-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(min-width:1024px){
- .ny-guide-filters{grid-template-columns:minmax(0,1fr) 240px;align-items:start}
+ .ny-guide-filters{grid-template-columns:minmax(0,1fr) 220px;align-items:center}
  .ny-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
- .ny-guide-types{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+ .ny-guide-types{display:flex;flex-wrap:wrap}
+ .ny-guide-type{white-space:nowrap}
  .ny-guide-grid,.ny-plans-grid,.ny-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
  .ny-biz-wrap{grid-template-columns:minmax(0,1fr) 320px;align-items:start}
  .ny-biz-side{position:sticky;top:88px}

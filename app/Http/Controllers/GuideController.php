@@ -41,7 +41,7 @@ class GuideController extends Controller
     {
         abort_unless($listing->isPubliclyVisible(), 404);
         $listing->increment('views');
-        $reviews = $listing->organization->reviews()->with('user')->where('status', 'approved')->latest()->take(20)->get();
+        $reviews = $listing->organization?->reviews()->with('user')->where('status', 'approved')->latest()->take(20)->get() ?? collect();
 
         return view('guide.show', ['listing' => $listing->load(['city', 'images.reviews.user', 'offers' => fn ($q) => $q->where('is_active', true)]), 'types' => MarketplaceBusinessController::TYPES, 'reviews' => $reviews, 'ratingAverage' => round((float) $reviews->avg('rating'), 1)]);
     }
@@ -58,7 +58,7 @@ class GuideController extends Controller
 
     public function review(Request $request, DestinationListing $listing): RedirectResponse
     {
-        abort_unless($listing->isPubliclyVisible(), 404);
+        abort_unless($listing->organization_id && $listing->isPubliclyVisible(), 404);
         $data = $request->validate(['rating' => ['required', 'integer', 'between:1,5'], 'comment' => ['required', 'string', 'min:10', 'max:1200']]);
         CompanyReview::updateOrCreate(['organization_id' => $listing->organization_id, 'user_id' => $request->user()->id, 'reservation_id' => null], $data + ['status' => 'pending']);
 

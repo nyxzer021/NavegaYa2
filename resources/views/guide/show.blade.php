@@ -113,7 +113,7 @@
      </div>
     @endif
     @auth
-     @if(auth()->user()->isCustomer())
+     @if(auth()->user()->isCustomer() && $listing->organization_id)
       <form method="POST" action="{{ route('guide.reviews.store', $listing) }}" class="ny-review-form">
        @csrf
        <h3>Comparte tu experiencia</h3>

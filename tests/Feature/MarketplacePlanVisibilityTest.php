@@ -50,4 +50,15 @@ class MarketplacePlanVisibilityTest extends TestCase
         $this->get(route('guide.show', $listing))->assertOk()->assertSee('Lodge Vigente');
         $this->get(route('discover.ad', $advertisement))->assertRedirect(route('guide.show', $listing));
     }
+
+    public function test_listing_created_by_the_super_admin_opens_without_a_business_account(): void
+    {
+        $listing = DestinationListing::create([
+            'destination_city_id' => DestinationCity::where('name', 'Iquitos')->firstOrFail()->id,
+            'type' => 'attraction', 'status' => 'published', 'is_active' => true,
+            'name' => 'Mirador del Itaya', 'sort_order' => 1,
+        ]);
+
+        $this->get(route('guide.show', $listing))->assertOk()->assertSee('Mirador del Itaya');
+    }
 }
