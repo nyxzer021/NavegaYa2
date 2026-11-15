@@ -132,7 +132,7 @@ class CompanyPortalMenu
     }
 
     /**
-     * @return array<int, array{label: string, items: array<int, array<string, mixed>>}>
+     * @return array<int, array{key: string|null, label: string|null, items: array<int, array<string, mixed>>}>
      */
     public function sections(): array
     {
@@ -145,6 +145,7 @@ class CompanyPortalMenu
                 continue;
             }
             $group = $row['group'];
+            $sections[$group]['key'] = $group;
             $sections[$group]['label'] = $group === null ? null : __('company_portal.section.'.$group);
             $sections[$group]['items'][] = $this->item($row, $profile);
         }
@@ -231,6 +232,13 @@ class CompanyPortalMenu
             $this->row('company', 'company_details', 'company.details.index', ['company.details.*'], $company, false),
             $this->row('company', 'branches', 'company.branches.index', ['company.branches.*'], $company, false),
             $this->row('company', 'online_payments', 'company.online-payments.index', ['company.online-payments.*'], $company, false),
+            $this->row('operation', 'fleet', 'company.fleet.index', ['company.fleet.*', 'company.vessels.*', 'company.aircraft.*'], $operation, true),
+            $this->row('operation', 'routes', 'company.routes.index', ['company.routes.*'], $operation, true),
+            $this->row('operation', 'departures', 'company.departures.index', ['company.departures.index', 'company.departures.create', 'company.departures.edit', 'company.departures.store', 'company.departures.update', 'company.departures.status', 'company.departures.contingency'], $operation, true),
+            $this->row('operation', 'fares', 'company.fares.index', ['company.fares.*'], $operation, true),
+            $this->row('operation', 'boarding', 'company.counter.index', ['company.counter.*', 'company.boarding.*', 'company.departures.manifest'], $operation, true),
+            $this->row('operation', 'crew', 'company.crew.index', ['company.crew.*'], $operation, true),
+            $this->row('operation', 'incidents', 'company.incidents.index', ['company.incidents.*'], $operation, true),
             $this->row('channels', 'pos', 'company.pos.index', ['company.pos.*'], $channels, true),
             $this->row('channels', 'agencies', 'company.agencies.index', ['company.agencies.*'], $channels, true),
             $this->row('channels', 'parcels', 'company.parcels.index', ['company.parcels.*'], $channels, true),
@@ -242,22 +250,15 @@ class CompanyPortalMenu
             $this->row('finance', 'agency_commissions', 'company.agency-commissions.index', ['company.agency-commissions.*'], $finance, true),
             $this->row('finance', 'receipts', 'company.receipts.index', ['company.receipts.*'], $finance, true),
             $this->row('finance', 'reports', 'company.reports.index', ['company.reports.*'], $finance, true),
-            $this->row('operation', 'fleet', 'company.fleet.index', ['company.fleet.*', 'company.vessels.*', 'company.aircraft.*'], $operation, true),
-            $this->row('operation', 'routes', 'company.routes.index', ['company.routes.*'], $operation, true),
-            $this->row('operation', 'departures', 'company.departures.index', ['company.departures.index', 'company.departures.create', 'company.departures.edit', 'company.departures.store', 'company.departures.update', 'company.departures.status', 'company.departures.contingency'], $operation, true),
-            $this->row('operation', 'fares', 'company.fares.index', ['company.fares.*'], $operation, true),
-            $this->row('operation', 'boarding', 'company.counter.index', ['company.counter.*', 'company.boarding.*', 'company.departures.manifest'], $operation, true),
-            $this->row('operation', 'crew', 'company.crew.index', ['company.crew.*'], $operation, true),
-            $this->row('operation', 'incidents', 'company.incidents.index', ['company.incidents.*'], $operation, true),
-            $this->row('users', 'team', 'company.staff.index', ['company.staff.*'], $users, false),
-            $this->row('users', 'roles', 'company.roles.index', ['company.roles.*'], $users, false),
-            $this->row('users', 'audit', 'company.audit.index', ['company.audit.*'], $users, false),
             $this->row('content', 'page', 'company.profile.edit', ['company.profile.*'], $content, false),
             $this->row('content', 'page_sections', 'company.page-sections.index', ['company.page-sections.*'], $content, false),
             $this->row('content', 'gallery', 'company.gallery.index', ['company.gallery.*'], $content, false),
             $this->row('content', 'policies', 'company.policies.index', ['company.policies.*'], $content, false),
             $this->row('content', 'appearance', 'company.appearance.index', ['company.appearance.*'], $content, false),
             $this->row('content', 'advertising', 'company.advertising.index', ['company.advertising.*'], $content, false),
+            $this->row('users', 'team', 'company.staff.index', ['company.staff.*'], $users, false),
+            $this->row('users', 'roles', 'company.roles.index', ['company.roles.*'], $users, false),
+            $this->row('users', 'audit', 'company.audit.index', ['company.audit.*'], $users, false),
             $this->row('help', 'messages', 'messages.index', ['messages.*'], $help, false),
             $this->row('help', 'support', 'support.index', ['support.*'], $help, false),
             $this->row('help', 'whatsapp', 'company.whatsapp.index', ['company.whatsapp.*'], $help, false),

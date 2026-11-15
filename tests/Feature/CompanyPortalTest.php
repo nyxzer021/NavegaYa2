@@ -416,7 +416,7 @@ class CompanyPortalTest extends TestCase
             ->assertOk()
             ->assertSee('data-menu-lead="operacion"', false)
             ->assertSee('Mi empresa')
-            ->assertSeeInOrder(['Mi empresa', 'Canales de venta', 'Ventas y finanzas', 'Operación'])
+            ->assertSeeInOrder(['Mi empresa', 'Operación', 'Canales de venta', 'Ventas y finanzas', 'Contenido', 'Usuarios y privilegios', 'Ayuda'])
             ->assertSee('Inicio')
             ->assertSee('Pasajes vendidos')
             ->assertSee('1 registrada · 1 habilitada')
