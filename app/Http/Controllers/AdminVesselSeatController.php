@@ -7,6 +7,7 @@ use App\Models\Vessel;
 use App\Models\VesselSeat;
 use App\Support\AdminScope;
 use App\Support\FleetPlan;
+use App\Support\VesselLayout;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,9 @@ class AdminVesselSeatController extends Controller
             'places' => $places,
             'planLocked' => $planLocked,
             'seatRoutePrefix' => $routePrefix,
+            'layoutState' => VesselLayout::editorState($vessel),
+            'placesPeople' => (int) $places->sum(fn (VesselSeat $place): int => FleetPlan::occupants($place)),
+            'showDesigner' => $seats->isNotEmpty() || $request->boolean('disenar') || filled(data_get($vessel->layout, $deck.'.cells')),
         ]);
     }
 
@@ -92,6 +96,32 @@ class AdminVesselSeatController extends Controller
         }
 
         return redirect()->route($routePrefix.'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $data['deck']])->with('success', $message);
+    }
+
+    /**
+     * Guarda el plano dibujado en el diseñador visual para una cubierta.
+     */
+    public function saveLayout(Request $request, Vessel $vessel): RedirectResponse
+    {
+        $this->authorizeVessel($vessel);
+        $this->abortIfPlanLocked($request, $vessel);
+        $data = $request->validate([
+            'deck' => ['required', 'in:'.implode(',', array_keys(VesselLayout::DECKS))],
+            'rows' => ['required', 'integer', 'min:1', 'max:'.VesselLayout::MAX_ROWS],
+            'columns' => ['required', 'integer', 'min:1', 'max:'.VesselLayout::MAX_COLUMNS],
+            'cells' => ['required', 'json'],
+        ]);
+        $cells = collect(json_decode($data['cells'], true) ?: [])
+            ->filter(fn ($cell): bool => is_array($cell) && isset($cell['r'], $cell['c'], $cell['t'])
+                && ($cell['t'] === 'seat' || array_key_exists((string) $cell['t'], VesselLayout::ELEMENTS)))
+            ->map(fn (array $cell): array => ['r' => (int) $cell['r'], 'c' => (int) $cell['c'], 't' => (string) $cell['t'], 'b' => (bool) ($cell['b'] ?? false)])
+            ->values()->all();
+
+        $total = VesselLayout::save($vessel, $data['deck'], (int) $data['rows'], (int) $data['columns'], $cells);
+        $label = VesselLayout::DECKS[$data['deck']];
+
+        return redirect()->route($this->routePrefix($request).'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $data['deck']])
+            ->with('success', "Plano guardado: {$label} con {$total} ".($total === 1 ? 'asiento' : 'asientos').'.');
     }
 
     public function destroyDeck(Request $request, Vessel $vessel): RedirectResponse

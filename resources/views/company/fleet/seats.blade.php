@@ -53,6 +53,7 @@
                     <h3 class="text-lg font-black text-slate-950">{{ $isEditing ? 'Cambiar' : 'Armar' }} {{ strtolower($deckName) }}</h3>
                     <p class="mt-1 text-sm text-slate-500">Cada fila tiene asientos a la izquierda del pasillo y a la derecha. El dibujo cambia al instante.</p>
                     @if($isEditing)<p class="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Guardar reemplaza solo esta cubierta. La otra conserva su plano.</p>@endif
+                    @unless($isEditing)<a class="mt-3 inline-flex text-sm font-bold text-emerald-800 underline" href="{{ route($seatRoutePrefix.'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $deck, 'disenar' => 1]) }}">Prefiero dibujarla casilla por casilla</a>@endunless
                     <form method="POST" action="{{ route($seatRoutePrefix.'.vessels.seats.generate', $vessel) }}" class="mt-4 grid gap-3">
                         @csrf
                         @if($isEditing)<input type="hidden" name="replace_existing" value="1">@endif
@@ -73,7 +74,7 @@
                     </form>
                 @else
                     <h3 class="text-lg font-black text-slate-950">Plano listo</h3>
-                    <p class="mt-1 text-sm text-slate-500">Pulsa un asiento para bloquearlo. El viajero no podrá comprarlo: úsalo si hay un motor, una columna o un asiento dañado.</p>
+                    <p class="mt-1 text-sm text-slate-500">En el diseñador puedes mover asientos, agregar baños, escaleras o la cabina de mando, y bloquear un asiento dañado: el viajero no podrá comprarlo.</p>
                     <div class="mt-4 flex flex-wrap gap-2">
                         <a class="inline-flex h-11 items-center rounded-xl bg-[#062c21] px-4 text-sm font-bold text-white" href="{{ route($seatRoutePrefix.'.vessels.seats.edit', ['vessel' => $vessel, 'deck' => $deck, 'edit' => 1]) }}">Cambiar filas</a>
                         <form method="POST" action="{{ route($seatRoutePrefix.'.vessels.seats.destroy-deck', $vessel) }}" onsubmit="return confirm('¿Eliminar el plano de esta cubierta?')">
@@ -86,11 +87,15 @@
                 @include('company.fleet._places')
             </div>
             <div>
+                @unless($showDesigner && ! $isEditing)
                 <div class="mb-3 flex flex-wrap gap-4 text-sm text-slate-700">
                     <span class="inline-flex items-center gap-2"><i class="ny-seat ny-seat-sample"></i><span><strong>Libre.</strong> Se vende.</span></span>
                     <span class="inline-flex items-center gap-2"><i class="ny-seat ny-seat-sample blocked"></i><span><strong>Bloqueado.</strong> El viajero no puede elegirlo.</span></span>
                 </div>
-                @if($seats->isNotEmpty() && ! $isEditing)
+                @endunless
+                @if($showDesigner && ! $isEditing)
+                    @include('company.fleet._designer')
+                @elseif($seats->isNotEmpty() && ! $isEditing)
                     @php($maxColumn = (int) $seats->max('column_position'))
                     <div class="ny-stage">
                         <div class="ny-hull" style="--ny-cols: {{ max(1, $maxColumn) }}">

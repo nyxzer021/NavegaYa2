@@ -30,22 +30,23 @@
         $freeHammocks = $selectedDeparture->vessel->seats->where('space_type', 'hammock')->filter(fn ($seat) => $seat->is_available && ! in_array($seat->id, $occupiedSeatIds, true));
     @endphp
     @foreach($gridSeats->groupBy('deck') as $deck => $deckSeats)
-      @php($maxColumn = (int) $deckSeats->max('column_position'))
+      @php($plan = \App\Support\VesselLayout::grid($selectedDeparture->vessel, (string) $deck, $deckSeats))
       <h4 class="mt-4 text-sm font-bold text-slate-700">{{ $deck === 'principal' ? 'Cubierta principal' : ($deck === 'superior' ? 'Cubierta superior' : 'Cubierta '.$deck) }}</h4>
-      <x-vessel-hull :columns="$maxColumn">
-        @foreach($deckSeats->groupBy('row_position') as $row => $rowSeats)
-          <div class="ny-row"><span class="ny-rowno">{{ $row }}</span>
-            @for($column = 1; $column <= max(1, $maxColumn); $column++)
-              @php($seat = $rowSeats->firstWhere('column_position', $column))
-              @if($seat)
+      <x-vessel-hull :columns="$plan['columns']">
+        @foreach($plan['grid'] as $line)
+          @php($firstSeat = collect($line)->pluck('seat')->filter()->first())
+          <div class="ny-row"><span class="ny-rowno">{{ $firstSeat ? preg_replace('/\D.*/', '', $firstSeat->code) : '' }}</span>
+            @foreach($line as $cell)
+              @if($seat = $cell['seat'])
                 <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" class="peer sr-only" @disabled(in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available)><span class="ny-seat peer-checked:border-amber-400 peer-checked:bg-[#062c21] peer-checked:text-amber-300 {{ in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available ? 'blocked' : '' }}">{{ $seat->code }}</span></label>
               @else
-                <span class="ny-aisle"></span>
+                <x-vessel-deco :type="$cell['type']" />
               @endif
-            @endfor
+            @endforeach
           </div>
         @endforeach
       </x-vessel-hull>
+      <x-vessel-deco-legend :plan="$plan" />
     @endforeach
     @if($cabins->isNotEmpty() || $freeHammocks->isNotEmpty())
       <div class="mt-4 flex flex-wrap gap-2 text-sm font-bold">

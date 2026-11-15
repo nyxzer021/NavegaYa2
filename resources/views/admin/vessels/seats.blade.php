@@ -1,5 +1,6 @@
 <x-app-layout>
 <x-slot name="header"><h2 class="ny-page-title">Plano de asientos</h2></x-slot>
+@include('components.vessel-deck-styles')
 <style>
 .sp{max-width:1180px;margin:auto;color:#183d35}.back{color:#126858;font-size:13px;font-weight:850;text-decoration:none}.hero{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:15px;padding:28px 32px;border-radius:24px;background:linear-gradient(125deg,#0c3b32,#176d60);color:#fff;box-shadow:0 18px 40px #0a393018}.hero .eyebrow{margin:0;color:#f5c344;font-size:11px;font-weight:900;letter-spacing:.16em}.hero h1{margin:7px 0 5px;font-size:32px}.hero p{margin:0;color:#d8eee8}.stats{display:flex;gap:10px}.stat{min-width:110px;padding:11px;border:1px solid #ffffff33;border-radius:14px;background:#ffffff10;text-align:center}.stat b{display:block;font-size:20px}.stat span{font-size:9px;color:#cce7df;letter-spacing:.08em;text-transform:uppercase}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.tab{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border:1px solid #d4e4df;border-radius:14px;background:#fff;color:#31564d;font-size:13px;font-weight:850;text-decoration:none}.tab.active{border-color:#126858;background:#126858;color:#fff;box-shadow:0 8px 20px #12685829}.tab small{display:grid;place-items:center;min-width:28px;height:24px;border-radius:99px;background:#12685817}.tab.active small{background:#ffffff29}.ok{padding:13px 16px;border-radius:12px;background:#e7f8f1;color:#087057;font-weight:750}
@@ -25,11 +26,11 @@
 @if($errors->any())<div style="color:#be123c;font-size:12px">@foreach($errors->all() as $error)<p>{{$error}}</p>@endforeach</div>@endif
 <button id="generateButton" class="button" style="width:100%;margin-top:18px">{{$isEditing?'Guardar nuevo plano':'Generar plano de cubierta'}}</button></form>
 @else
-<h2>Plano configurado</h2><p>La {{$deck==='principal'?'cubierta principal':'cubierta superior'}} tiene <strong>{{$seats->count()}} asientos</strong>. Pulsa cada asiento para bloquearlo o habilitarlo.</p><div class="actions"><a class="button" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>$deck,'edit'=>1])}}">Editar distribución</a><form method="POST" action="{{route($seatRoutePrefix.'.vessels.seats.destroy-deck',$vessel)}}" onsubmit="return confirm('¿Eliminar el plano de esta cubierta?')">@csrf @method('DELETE')<input type="hidden" name="deck" value="{{$deck}}"><button class="button warn">Eliminar</button></form></div>
+<h2>Plano configurado</h2><p>La {{$deck==='principal'?'cubierta principal':'cubierta superior'}} tiene <strong>{{$seats->count()}} asientos</strong>. En el diseñador puedes mover asientos, agregar baños, escaleras o la cabina de mando, y bloquear asientos.</p><div class="actions"><a class="button" href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>$deck,'edit'=>1])}}">Editar distribución</a><form method="POST" action="{{route($seatRoutePrefix.'.vessels.seats.destroy-deck',$vessel)}}" onsubmit="return confirm('¿Eliminar el plano de esta cubierta?')">@csrf @method('DELETE')<input type="hidden" name="deck" value="{{$deck}}"><button class="button warn">Eliminar</button></form></div>
 @endif
 @include('company.fleet._places')
 </section>
-<section class="map"><div class="map-head"><div><h2>{{$deck==='principal'?'Cubierta principal':'Cubierta superior'}}</h2><p>Vista desde arriba · toca un asiento para cambiar su disponibilidad.</p></div><div class="legend"><span><i style="background:#ccece3"></i>Disponible</span><span><i style="background:#e5eaeb"></i>Bloqueado</span></div></div>
+<section class="map">@if($showDesigner && ! $isEditing)@include('company.fleet._designer')@else<div class="map-head"><div><h2>{{$deck==='principal'?'Cubierta principal':'Cubierta superior'}}</h2><p>Vista desde arriba · toca un asiento para cambiar su disponibilidad.</p></div><div class="legend"><span><i style="background:#ccece3"></i>Disponible</span><span><i style="background:#e5eaeb"></i>Bloqueado</span></div></div>
 @if($seats->isNotEmpty())
 @php($maxColumn=$seats->max('column_position'))
 <div class="stage"><div class="boat" style="--boat-width:{{max(390,118+($maxColumn*47))}}px"><div class="helm"><b>◉</b> CABINA DE MANDO</div><div class="cabin">
@@ -40,7 +41,8 @@
 @endfor</div>
 @endforeach
 </div><div class="exit">SALIDA</div><p class="stern">POPA · PARTE POSTERIOR</p></div></div>
-@else<div class="empty"><i></i><b>Esta cubierta todavía no tiene distribución</b>Configura las filas y asientos para visualizar la lancha.</div>@endif
+@else<div class="empty"><i></i><b>Esta cubierta todavía no tiene distribución</b>Configura las filas y asientos para visualizar la lancha. <a href="{{route($seatRoutePrefix.'.vessels.seats.edit',['vessel'=>$vessel,'deck'=>$deck,'disenar'=>1])}}">Dibujar casilla por casilla</a></div>@endif
+@endif
 </section></div></div>
 <script>
 const updateCount=()=>{const rows=Number(document.getElementById('rows')?.value)||0,left=Number(document.getElementById('leftSeats')?.value)||0,right=Number(document.getElementById('rightSeats')?.value)||0,preview=document.getElementById('seatPreview');if(!preview)return;const current=rows*(left+right),total=current+Number(preview.dataset.other),limit=Number(preview.dataset.limit),button=document.getElementById('generateButton'),exceeds=total>limit;document.getElementById('seatCount').textContent=current;document.getElementById('totalSeatCount').textContent=total;preview.style.background=exceeds?'#fff1f2':'#edf7f4';preview.style.color=exceeds?'#be123c':'#31544c';button.disabled=exceeds;button.style.opacity=exceeds?'.5':'1';button.title=exceeds?'La suma de ambas cubiertas supera la capacidad máxima.':''};['rows','leftSeats','rightSeats'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCount));updateCount();
