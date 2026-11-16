@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use App\Services\AdvertisementInventoryService;
 use App\Services\BookingPaymentService;
 use App\Services\MarketplaceSales;
+use App\Support\AdminScope;
 use App\Support\BoardingQr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,7 +63,14 @@ class PaymentController extends Controller
         $destinationAds = $advertising->select('post_purchase', 3, [], $destination, ['lodge_hotel', 'restaurant', 'tour_operator', 'charter_transport']);
         $advertising->register($destinationAds);
 
-        return view('tickets.show', compact('reservation', 'isSandbox', 'destinationAds', 'destination'));
+        $viewer = auth()->user();
+        $canVoid = $viewer !== null
+            && $reservation->sales_channel === 'counter'
+            && $reservation->status === 'confirmed'
+            && ((int) $viewer->id === (int) $reservation->sold_by_user_id
+                || ($viewer->isCompanyAdmin() && (int) AdminScope::organizationId($viewer) === (int) $route->organization_id));
+
+        return view('tickets.show', compact('reservation', 'isSandbox', 'destinationAds', 'destination', 'canVoid'));
     }
 
     public function qr(string $ticketCode): Response
@@ -73,11 +81,17 @@ class PaymentController extends Controller
         return response(BoardingQr::svg($ticket), 200, ['Content-Type' => 'image/svg+xml', 'Cache-Control' => 'private, max-age=300']);
     }
 
-    public function pdf(string $ticketCode)
+    public function pdf(Request $request, string $ticketCode)
     {
-        $ticket = Ticket::where('code', $ticketCode)->with(['reservationSeat.reservation.departure.transportRoute.originPort', 'reservationSeat.reservation.departure.transportRoute.destinationPort', 'reservationSeat.reservation.departure.vessel.organization', 'reservationSeat.reservation.airDeparture.airRoute', 'reservationSeat.reservation.airDeparture.aircraft.organization', 'reservationSeat.seat', 'reservationSeat.aircraftSeat'])->firstOrFail();
+        $ticket = Ticket::where('code', $ticketCode)->with(['reservationSeat.reservation.departure.transportRoute.originPort', 'reservationSeat.reservation.departure.transportRoute.destinationPort', 'reservationSeat.reservation.departure.vessel.organization', 'reservationSeat.reservation.airDeparture.airRoute', 'reservationSeat.reservation.airDeparture.aircraft.organization', 'reservationSeat.seat', 'reservationSeat.aircraftSeat', 'reservationSeat.reservation.payments'])->firstOrFail();
         $this->ensureTicketAccess($ticket);
         $qrDataUri = BoardingQr::dataUri($ticket);
+        if ($request->query('papel') === '80') {
+            return app('dompdf.wrapper')
+                ->loadView('tickets.slip', compact('ticket', 'qrDataUri'))
+                ->setPaper([0, 0, 226.77, 680])
+                ->download('ticket-'.$ticket->code.'.pdf');
+        }
 
         return app('dompdf.wrapper')->loadView('tickets.pdf', compact('ticket', 'qrDataUri'))->setPaper('a4')->download('boleto-'.$ticket->code.'.pdf');
     }

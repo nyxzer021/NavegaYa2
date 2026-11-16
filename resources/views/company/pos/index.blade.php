@@ -1,66 +1,193 @@
 @extends('layouts.company')
-@section('title', 'Punto de venta')
-@section('page-title', 'Punto de venta')
+@section('title', __('pos.title'))
+@section('page-title', __('pos.title'))
 @section('content')
-<div class="mx-auto max-w-6xl space-y-5">
- <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p class="text-sm font-semibold text-emerald-800">Agencia física · muelle</p><h2 class="mt-1 text-2xl font-black text-slate-950">Vender pasaje en el muelle</h2><p class="mt-1 max-w-2xl text-sm text-slate-500">Cobra la tarifa en efectivo y entrega el boleto. NavegaYA no cobra comisión por esta venta. Solo aparecen los zarpes de hoy.</p></div></div></section>
+<div class="ny-pos">
+ <header class="ny-pos-hero">
+  <p class="ny-pos-kicker">{{ __('pos.kicker') }}</p>
+  <h2>{{ __('pos.headline') }}</h2>
+  <p>{{ __('pos.lead') }}</p>
+ </header>
+
+ @if(session('success'))<p class="ny-pos-note" role="status">{{ session('success') }}</p>@endif
+ @if($errors->any())<p class="ny-pos-note is-alert" role="alert">{{ $errors->first() }}</p>@endif
+
+ @if($todayCount > 0 || $freeSeats > 0 || ($prices['seat']['adult'] ?? null))
+ <section class="ny-pos-kpis" aria-label="{{ __('pos.title') }}">
+  @if($todayCount > 0)
+   <article class="ny-pos-kpi" style="--c: var(--ny-tone-river)"><span class="ny-pos-pill"><x-ui.icon name="departures" /></span><b>{{ $todayCount }}</b><span>{{ __('pos.today') }}</span></article>
+  @endif
+  @if($freeSeats > 0)
+   <article class="ny-pos-kpi" style="--c: var(--ny-tone-leaf)"><span class="ny-pos-pill"><x-ui.icon name="ticket" /></span><b>{{ $freeSeats }}</b><span>{{ __('pos.free') }}</span></article>
+  @endif
+  @if($prices['seat']['adult'] ?? null)
+   <article class="ny-pos-kpi" style="--c: var(--ny-tone-sun)"><span class="ny-pos-pill"><x-ui.icon name="cash" /></span><b>S/ {{ number_format($prices['seat']['adult'], 2) }}</b><span>{{ __('pos.fare') }}</span></article>
+  @endif
+ </section>
+ @endif
+
  @if($departures->isEmpty())
- <div class="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-  <strong class="block text-slate-800">Hoy no hay una salida para vender en el muelle</strong>
-  <p class="mt-1 text-sm text-slate-500">El pasajero paga solo la tarifa de la empresa.</p>
-  @if(auth()->user()?->isCompanyAdmin())
-   <a href="{{ route('company.departures.create') }}" class="mt-4 inline-flex h-10 items-center text-sm font-bold text-emerald-800">Programar salida</a>
-  @endif
-  @if($upcoming->isNotEmpty())
-   <div class="mt-6 text-left"><p class="text-sm font-bold text-slate-700">Ya programadas para otro día</p><ul class="mt-2 space-y-2">@foreach($upcoming as $departure)<li class="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{{ $departure->departure_at->translatedFormat('D d M · H:i') }} · {{ $departure->transportRoute->originPort->city }} → {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</li>@endforeach</ul></div>
-  @endif
- </div>
- @else
- <form method="GET" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><label class="text-sm font-semibold text-slate-600">Salida de hoy</label><div class="mt-1 flex gap-2"><select name="departure" class="h-11 flex-1 rounded-xl border-slate-200 bg-slate-50 text-xs font-bold" onchange="this.form.submit()">@foreach($departures as $departure)<option value="{{ $departure->id }}" @selected($selectedDeparture?->id === $departure->id)>{{ $departure->departure_at->format('H:i') }} · {{ $departure->transportRoute->originPort->city }}  {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</option>@endforeach</select></div></form>
- <form method="POST" action="{{ route('company.pos.store') }}" class="grid gap-5 lg:grid-cols-[1fr_380px]">@csrf<input type="hidden" name="departure_id" value="{{ $selectedDeparture->id }}">
-  @include('components.vessel-deck-styles')
-  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-      <div><h3 class="font-black text-slate-950">Selecciona un asiento</h3><p class="text-sm text-slate-500">El plano es el de la embarcación. Los grises ya están ocupados o bloqueados.</p></div>
-      <div class="flex gap-4 text-sm text-slate-600"><span class="inline-flex items-center gap-2"><i class="ny-seat ny-seat-sample"></i>Libre</span><span class="inline-flex items-center gap-2"><i class="ny-seat ny-seat-sample blocked"></i>Ocupado</span></div>
-    </div>
-    @php
-        $gridSeats = $selectedDeparture->vessel->seats->where('space_type', 'seat')->sortBy(['deck', 'row_position', 'column_position']);
-        $cabins = $selectedDeparture->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code');
-        $freeHammocks = $selectedDeparture->vessel->seats->where('space_type', 'hammock')->filter(fn ($seat) => $seat->is_available && ! in_array($seat->id, $occupiedSeatIds, true));
-    @endphp
-    @foreach($gridSeats->groupBy('deck') as $deck => $deckSeats)
-      @php($plan = \App\Support\VesselLayout::grid($selectedDeparture->vessel, (string) $deck, $deckSeats))
-      <h4 class="mt-4 text-sm font-bold text-slate-700">{{ $deck === 'principal' ? 'Cubierta principal' : ($deck === 'superior' ? 'Cubierta superior' : 'Cubierta '.$deck) }}</h4>
-      <x-vessel-hull :columns="$plan['columns']">
-        @foreach($plan['grid'] as $line)
-          @php($firstSeat = collect($line)->pluck('seat')->filter()->first())
-          <div class="ny-row"><span class="ny-rowno">{{ $firstSeat ? preg_replace('/\D.*/', '', $firstSeat->code) : '' }}</span>
-            @foreach($line as $cell)
-              @if($seat = $cell['seat'])
-                <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" class="peer sr-only" @disabled(in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available)><span class="ny-seat peer-checked:border-amber-400 peer-checked:bg-[#062c21] peer-checked:text-amber-300 {{ in_array($seat->id, $occupiedSeatIds, true) || ! $seat->is_available ? 'blocked' : '' }}">{{ $seat->code }}</span></label>
-              @else
-                <x-vessel-deco :type="$cell['type']" />
-              @endif
-            @endforeach
-          </div>
-        @endforeach
-      </x-vessel-hull>
-      <x-vessel-deco-legend :plan="$plan" />
-    @endforeach
-    @if($cabins->isNotEmpty() || $freeHammocks->isNotEmpty())
-      <div class="mt-4 flex flex-wrap gap-2 text-sm font-bold">
-        @foreach($cabins as $cabin)
-          <label class="rounded-xl border border-slate-200 px-3 py-2"><input type="radio" name="seat_id" value="{{ $cabin->id }}" @disabled(in_array($cabin->id, $occupiedSeatIds, true) || ! $cabin->is_available)> Camarote {{ $cabin->code }} · {{ $cabin->bed_count }} camas</label>
-        @endforeach
-        @if($freeHammocks->isNotEmpty())
-          <label class="rounded-xl border border-slate-200 px-3 py-2"><input type="radio" name="place" value="hammock"> Hamaca libre</label>
-        @endif
-      </div>
-    @endif
+  <section class="ny-pos-empty">
+   <span class="ny-pos-pill is-lg" style="--c: var(--ny-tone-river)"><x-ui.icon name="fleet" /></span>
+   <h2>{{ __('pos.empty_title') }}</h2>
+   <p>{{ __('pos.empty_body') }}</p>
+   @if(auth()->user()?->isCompanyAdmin())<a class="ny-pos-main" href="{{ route('company.departures.create') }}">{{ __('pos.schedule') }}</a>@endif
+   @if($later->isNotEmpty())<a class="ny-pos-soft" href="{{ route('company.pos.index', ['horizonte' => 'semana']) }}">{{ __('pos.later') }}</a>@endif
   </section>
-  <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-black text-slate-900">Datos del pasajero</h3><div class="mt-4 space-y-3">@foreach([['passenger_name','Nombres y apellidos','text'],['document_number','DNI / documento','text'],['passenger_age','Edad','number'],['phone','Teléfono / WhatsApp','text'],['email','Correo (opcional)','email']] as [$name,$label,$type])<label class="block"><span class="text-sm font-semibold text-slate-600">{{ $label }}</span><input type="{{ $type }}" name="{{ $name }}" value="{{ old($name) }}" @required($name!=='email') class="mt-1 h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm font-semibold"></label>@endforeach<label class="block"><span class="text-sm font-semibold text-slate-600">Tipo de documento</span><select name="document_type" class="mt-1 h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm font-semibold"><option>DNI</option><option>CE</option><option>Pasaporte</option></select></label></div>@if($errors->any())<p class="mt-3 rounded-xl bg-rose-50 p-3 text-xs text-rose-700">{{ $errors->first() }}</p>@endif<div class="mt-4 rounded-xl bg-emerald-50 p-3 text-xs"><span class="text-slate-500">Cobro en efectivo</span><strong class="float-right text-lg text-slate-900">S/ {{ number_format((float)$selectedDeparture->fare,2) }}</strong></div><button class="mt-4 h-10 w-full rounded-xl bg-amber-400 text-sm font-black text-emerald-950">Cobrar y emitir boleto</button></aside>
- </form>
+ @else
+  <div class="ny-pos-switch">
+   <a href="{{ route('company.pos.index', array_filter(['departure' => $selectedDeparture?->id])) }}" @class(['is-on' => ! $week])>{{ __('pos.only_today') }}</a>
+   <a href="{{ route('company.pos.index', array_filter(['horizonte' => 'semana', 'departure' => $selectedDeparture?->id])) }}" @class(['is-on' => $week])>{{ __('pos.this_week') }}</a>
+  </div>
+  <form method="GET" class="ny-pos-card">
+   @if($week)<input type="hidden" name="horizonte" value="semana">@endif
+   <label>{{ __('pos.departure') }}
+    <select name="departure" onchange="this.form.submit()">
+     @foreach($departures as $departure)
+      <option value="{{ $departure->id }}" @selected($selectedDeparture?->id === $departure->id)>{{ \App\Support\DepartureSchedule::show($departure->departure_at, 'D d M · H:i') }} · {{ $departure->transportRoute->originPort->city }} → {{ $departure->transportRoute->destinationPort->city }} · {{ $departure->vessel->name }}</option>
+     @endforeach
+    </select>
+   </label>
+  </form>
+
+  <form method="POST" action="{{ route('company.pos.store') }}" class="ny-pos-grid" x-data="posDesk({{ \Illuminate\Support\Js::from(['prices' => $prices, 'discounts' => $discounts->map(fn ($discount) => ['id' => $discount->id, 'kind' => $discount->kind, 'value' => (float) $discount->value])->values(), 'cargo' => $allowance['cargo']]) }})">
+   @csrf
+   <input type="hidden" name="departure_id" value="{{ $selectedDeparture->id }}">
+   <ol class="ny-pos-steps">
+    <li class="is-done"><span><x-ui.icon name="check" /></span>{{ __('pos.step_departure') }}</li>
+    <li :class="seat ? 'is-done' : 'is-now'"><span x-show="!seat">2</span><span x-cloak x-show="seat"><x-ui.icon name="check" /></span>{{ __('pos.step_seat') }}</li>
+    <li :class="named ? 'is-done' : (seat ? 'is-now' : '')"><span x-show="!named">3</span><span x-cloak x-show="named"><x-ui.icon name="check" /></span>{{ __('pos.step_passenger') }}</li>
+    <li :class="named ? 'is-now' : ''"><span>4</span>{{ __('pos.step_pay') }}</li>
+    <li><span>5</span>{{ __('pos.step_ticket') }}</li>
+   </ol>
+   @include('components.vessel-deck-styles')
+   <section class="ny-pos-card">
+    <h3>{{ __('pos.seat_title') }}</h3>
+    <p>{{ __('pos.seat_help') }}</p>
+    <div class="ny-pos-legend">
+     <span><i class="ny-seat"></i>{{ __('pos.free_seat') }}</span>
+     <span><i class="ny-seat is-taken"></i>{{ __('pos.taken_seat') }}</span>
+     <span><i class="ny-seat is-held"></i>{{ __('pos.held_seat') }}</span>
+    </div>
+    @foreach($decks as $deck)
+     <h4>{{ $deck['deck'] === 'principal' ? __('pos.deck_main') : ($deck['deck'] === 'superior' ? __('pos.deck_upper') : __('pos.deck_other', ['deck' => $deck['deck']])) }}</h4>
+     <x-vessel-hull :columns="$deck['plan']['columns']">
+      @foreach($deck['plan']['grid'] as $line)
+       @php($firstSeat = collect($line)->pluck('seat')->filter()->first())
+       <div class="ny-row"><span class="ny-rowno">{{ $firstSeat ? preg_replace('/\D.*/', '', $firstSeat->code) : '' }}</span>
+        @foreach($line as $cell)
+         @if($seat = $cell['seat'])
+          @php($held = in_array($seat->id, $heldIds, true))
+          @php($taken = ! $held && (in_array($seat->id, $occupiedIds, true) || ! $seat->is_available))
+          <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" data-space="seat" class="peer sr-only" @disabled($held || $taken) @change="space = 'seat'; seat = true"><span @class(['ny-seat', 'is-taken' => $taken, 'is-held' => $held])>{{ $seat->code }}</span></label>
+         @else
+          <x-vessel-deco :type="$cell['type']" />
+         @endif
+        @endforeach
+       </div>
+      @endforeach
+     </x-vessel-hull>
+     <x-vessel-deco-legend :plan="$deck['plan']" />
+    @endforeach
+    @if($cabins->isNotEmpty() || $hammocks > 0)
+     <div class="ny-pos-places">
+      @foreach($cabins as $cabin)
+       @php($held = in_array($cabin->id, $heldIds, true))
+       @php($taken = ! $held && (in_array($cabin->id, $occupiedIds, true) || ! $cabin->is_available))
+       <label class="ny-pos-place"><input type="radio" name="seat_id" value="{{ $cabin->id }}" data-space="cabin_bed" @disabled($held || $taken) @change="space = 'cabin_bed'; seat = true"><span>{{ __('pos.cabin', ['code' => $cabin->code]) }}</span>@if($held)<em>{{ __('pos.held_seat') }}</em>@endif</label>
+      @endforeach
+      @if($hammocks > 0)
+       <label class="ny-pos-place"><input type="radio" name="place" value="hammock" @change="space = 'hammock'; seat = true"><span>{{ __('pos.hammock') }}</span><em>{{ __('pos.hammocks', ['count' => $hammocks]) }}</em></label>
+      @endif
+     </div>
+    @endif
+   </section>
+
+   <aside class="ny-pos-card ny-pos-sale">
+    <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-river)"><x-ui.icon name="user" /></span>{{ __('pos.passenger') }}</h3>
+    <label>{{ __('pos.first_name') }}<input name="first_name" x-model="firstName" required autocomplete="given-name"></label>
+    <label>{{ __('pos.last_name') }}<input name="last_name" x-model="lastName" required autocomplete="family-name"></label>
+    <label>{{ __('pos.document_type') }}
+     <select name="document_type">
+      @foreach(['DNI', 'CE', 'Pasaporte'] as $type)<option @selected(old('document_type') === $type)>{{ $type }}</option>@endforeach
+     </select>
+    </label>
+    <label>{{ __('pos.document_number') }}<input name="document_number" value="{{ old('document_number') }}" required><small>{{ __('pos.document_help') }}</small></label>
+    <label>{{ __('pos.guardian') }} <em>{{ __('pos.optional') }}</em><input name="guardian_document" value="{{ old('guardian_document') }}"></label>
+    <label>{{ __('pos.phone') }} <em>{{ __('pos.optional') }}</em><input name="phone" value="{{ old('phone') }}" inputmode="tel"></label>
+    <label>{{ __('pos.email') }} <em>{{ __('pos.optional') }}</em><input type="email" name="email" value="{{ old('email') }}"></label>
+    <label>{{ __('pos.passenger_type') }}
+     <select name="passenger_type" x-model="passenger">
+      @foreach(['adult', 'child', 'student', 'senior', 'infant'] as $type)<option value="{{ $type }}">{{ __('pos.'.$type) }}</option>@endforeach
+     </select>
+    </label>
+    @if($discounts->isNotEmpty())
+     <label>{{ __('pos.discount') }}
+      <select name="discount_id" x-model="discountId">
+       <option value="">{{ __('pos.no_discount') }}</option>
+       @foreach($discounts as $discount)<option value="{{ $discount->id }}">{{ $discount->name }}</option>@endforeach
+      </select>
+     </label>
+    @endif
+    @if($sites->isNotEmpty())
+     <label>{{ __('pos.site') }}
+      <select name="site_id" required>
+       @foreach($sites as $site)<option value="{{ $site->id }}" @selected(old('site_id') == $site->id)>{{ $site->name }}</option>@endforeach
+      </select>
+     </label>
+    @endif
+
+    <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-sun)"><x-ui.icon name="luggage" /></span>{{ __('pos.baggage') }}</h3>
+    <p class="ny-pos-help">{{ __('pos.allowance', ['hand' => $allowance['hand'], 'hold' => $allowance['hold']]) }}</p>
+    <div class="ny-pos-split">
+     <label>{{ __('pos.hand') }}<input type="number" name="hand_kg" min="0" max="200" value="{{ old('hand_kg', 0) }}" x-model.number="hand"></label>
+     <label>{{ __('pos.hold') }}<input type="number" name="hold_kg" min="0" max="500" value="{{ old('hold_kg', 0) }}" x-model.number="hold"></label>
+    </div>
+    <p class="ny-pos-note is-alert" x-cloak x-show="over">{{ __('pos.cargo_warn', ['kg' => $allowance['cargo']]) }} <a href="{{ route('company.parcels.index') }}">{{ __('pos.cargo_link') }}</a></p>
+
+    <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-leaf)"><x-ui.icon name="cash" /></span>{{ __('pos.pay') }}</h3>
+    <div class="ny-pos-pays">
+     <label class="ny-pos-pay" style="--c: var(--ny-tone-leaf-deep)" :class="method === 'cash' && 'is-on'"><input type="radio" name="method" value="cash" x-model="method"><span class="ny-pos-pill"><x-ui.icon name="cash" /></span>{{ __('pos.cash') }}</label>
+     <label class="ny-pos-pay" style="--c: var(--ny-tone-violet-deep)" :class="method === 'yape' && 'is-on'"><input type="radio" name="method" value="yape" x-model="method"><span class="ny-pos-pill"><x-ui.icon name="wallet" /></span>{{ __('pos.yape') }}</label>
+     <label class="ny-pos-pay" style="--c: var(--ny-tone-coral-deep)" :class="method === 'card' && 'is-on'"><input type="radio" name="method" value="card" x-model="method"><span class="ny-pos-pill"><x-ui.icon name="card" /></span>{{ __('pos.card') }}</label>
+    </div>
+    <label x-show="method === 'cash'" x-cloak>{{ __('pos.received') }}<input type="number" name="cash_tendered" min="0" step="0.01" value="{{ old('cash_tendered') }}" x-model="tendered" :required="method === 'cash'"></label>
+    <p class="ny-pos-change" x-show="method === 'cash' && change !== null" x-cloak><span>{{ __('pos.change') }}</span><b x-text="money(change)"></b></p>
+    <label x-show="method !== 'cash'" x-cloak>{{ __('pos.operation') }}<input name="operation_number" value="{{ old('operation_number') }}" :required="method !== 'cash'"></label>
+
+    <div class="ny-pos-total">
+     <span>{{ __('pos.total') }}</span>
+     <strong x-text="total === null ? '{{ __('pos.no_fare') }}' : money(total)"></strong>
+     <small>{{ __('pos.no_fee') }}</small>
+    </div>
+    <button class="ny-pos-main" type="submit">{{ __('pos.submit') }}</button>
+   </aside>
+  </form>
+  <script>
+   function posDesk(config) {
+    return {
+     prices: config.prices, discounts: config.discounts, cargoLimit: config.cargo,
+     method: @js(old('method', 'cash')), passenger: @js(old('passenger_type', 'adult')), space: 'seat', seat: false,
+     discountId: @js((string) old('discount_id', '')), tendered: @js(old('cash_tendered', '')), hand: @js((int) old('hand_kg', 0)), hold: @js((int) old('hold_kg', 0)),
+     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')),
+     get named() { return String(this.firstName).trim() !== '' && String(this.lastName).trim() !== ''; },
+     get base() { const row = this.prices[this.space] || {}; return row[this.passenger] ?? null; },
+     get discount() {
+      const row = this.discounts.find((item) => String(item.id) === String(this.discountId));
+      if (!row || this.base === null) return 0;
+      const off = row.kind === 'percent' ? this.base * Number(row.value) / 100 : Number(row.value);
+      return Math.min(Math.max(0, Math.round(off * 100) / 100), this.base);
+     },
+     get total() { return this.base === null ? null : Math.round((this.base - this.discount) * 100) / 100; },
+     get change() {
+      if (this.total === null || this.tendered === '' || this.tendered === null) return null;
+      return Math.round((Number(this.tendered) - this.total) * 100) / 100;
+     },
+     get over() { return Number(this.hand) + Number(this.hold) > Number(this.cargoLimit); },
+     money(value) { return 'S/ ' + Number(value).toFixed(2); }
+    };
+   }
+  </script>
  @endif
 </div>
 @endsection

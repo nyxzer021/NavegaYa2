@@ -251,23 +251,35 @@ class CompanyPortalTest extends TestCase
         [$admin, $organization] = $this->companyAdmin('Operador Muelle', '20999999995');
         $organization->update(['commission_rate' => 7.5, 'physical_sales_commission_rate' => 5]);
         $departure = $this->departure($organization, 'Nave Muelle', 'Iquitos', 'Pebas');
-        $departure->update(['departure_at' => now()->setTime(15, 0), 'status' => 'scheduled', 'is_published' => true]);
+        $departure->update(['departure_at' => now()->addHours(5), 'status' => 'scheduled', 'is_published' => true]);
         $seat = $departure->vessel->seats()->create(['code' => '1A', 'row_position' => 1, 'column_position' => 1, 'deck' => 1, 'is_available' => true]);
 
         $this->actingAs($admin)->post(route('company.pos.store'), [
             'departure_id' => $departure->id,
             'seat_id' => $seat->id,
+            'first_name' => 'Pasajero',
+            'last_name' => 'de muelle',
             'document_type' => 'DNI',
             'document_number' => '12345678',
-            'passenger_name' => 'Pasajero de muelle',
-            'passenger_age' => 30,
+            'passenger_type' => 'adult',
             'phone' => '999999999',
+            'method' => 'cash',
+            'cash_tendered' => 100,
         ])->assertRedirect();
 
         $this->assertDatabaseHas('payments', [
-            'method' => 'cash_dock',
+            'method' => 'cash',
+            'amount' => 95,
+            'cash_tendered' => 100,
+            'cash_change' => 5,
             'commission_rate' => 0,
             'commission_amount' => 0,
+        ]);
+        $this->assertDatabaseHas('reservations', [
+            'route_departure_id' => $departure->id,
+            'service_fee_amount' => 0,
+            'sales_channel' => 'counter',
+            'sold_by_user_id' => $admin->id,
         ]);
     }
 

@@ -141,6 +141,7 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::get('/salidas/{departure}/manifiesto', [CompanyDepartureController::class, 'manifest'])->name('departures.manifest');
     Route::get('/pos', [CompanyPosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
+    Route::post('/pos/{reservation}/anular', [CompanyPosController::class, 'void'])->name('pos.void');
     Route::get('/cierre-de-caja', [CompanyPreparationController::class, 'show'])->defaults('page', 'cash_close')->name('cash-close.index');
 });
 Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {

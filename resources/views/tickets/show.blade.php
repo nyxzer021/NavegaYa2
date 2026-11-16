@@ -6,13 +6,15 @@
     <title>Boleto confirmado · NavegaYA</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body{margin:0;background:#f4f7f6;color:#173b33}.wrap{max-width:900px;margin:24px auto;padding:0 20px}.ticket{margin-top:15px;padding:24px;border:1px solid #dce8e3;border-radius:18px;background:#fff}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid span{display:block;color:#6b8179;font-size:11px}.qr{display:flex;gap:20px;align-items:center;margin-top:18px}.qr img{width:145px}.button{display:inline-block;margin-top:15px;padding:11px 15px;border-radius:10px;background:#f2b624;color:#173b33;font-weight:850;text-decoration:none}.review{margin-top:18px;padding:18px;border:1px solid #a7e6d1;border-radius:16px;background:#ecfdf5}.review p{margin:5px 0;color:#45675f;font-size:13px}@media(max-width:640px){.grid{grid-template-columns:1fr}.qr{align-items:flex-start;flex-direction:column}}
+        body{margin:0;background:#f4f7f6;color:#173b33}.wrap{max-width:900px;margin:24px auto;padding:0 20px}.ticket{margin-top:15px;padding:24px;border:1px solid #dce8e3;border-radius:18px;background:#fff}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid span{display:block;color:#6b8179;font-size:12px}.qr{display:flex;gap:20px;align-items:center;margin-top:18px}.qr img{width:145px}.button{display:inline-block;margin-top:15px;margin-right:8px;padding:11px 15px;border-radius:10px;background:#f2b624;color:#173b33;font-weight:850;text-decoration:none}.review{margin-top:18px;padding:18px;border:1px solid #a7e6d1;border-radius:16px;background:#ecfdf5}.review p{margin:5px 0;color:#45675f;font-size:13px}.void{display:grid;gap:8px;margin-top:16px}.void input{min-height:44px;border:1px solid #dce8e3;border-radius:10px;padding:8px 12px;font-size:14px}.void button{min-height:44px;border:0;border-radius:10px;background:#b42336;color:#fff;font-weight:800}@media(max-width:640px){.grid{grid-template-columns:1fr}.qr{align-items:flex-start;flex-direction:column}}
     </style>
 </head>
 <body>
 <x-public-nav current="travels" />
 <main class="wrap">
     <h1>Boletos confirmados</h1>
+    @if(session('success'))<p class="review" role="status">{{ session('success') }}</p>@endif
+    @if(session('cargo_offer'))<p class="review" role="status">{{ __('pos.cargo_ready') }} <a href="{{ session('cargo_offer') }}">{{ __('pos.cargo_link') }}</a></p>@endif
     @php
         $isAir = $reservation->isAir();
         $trip = $isAir ? $reservation->airDeparture : $reservation->departure;
@@ -31,13 +33,20 @@
             @if($seat->ticket)
             <div class="qr">
                 <img src="{{ route('tickets.qr', $seat->ticket->code) }}" alt="Código QR del boleto">
-                <div><strong>QR y código seguro de abordaje</strong><br>Reserva {{ $reservation->code }}<br>Boleto {{ $seat->ticket->code }}<br><a class="button" href="{{ route('tickets.pdf', $seat->ticket->code) }}">Descargar PDF</a></div>
+                <div><strong>QR y código seguro de abordaje</strong><br>Reserva {{ $reservation->code }}<br>Boleto {{ $seat->ticket->code }}<br><a class="button" href="{{ route('tickets.pdf', $seat->ticket->code) }}">{{ __('pos.print_a4') }}</a><a class="button" href="{{ route('tickets.pdf', ['ticketCode' => $seat->ticket->code, 'papel' => '80']) }}">{{ __('pos.print_80') }}</a></div>
             </div>
             @else
             <p>Boleto pendiente de emisión. Reserva {{ $reservation->code }}</p>
             @endif
         </article>
     @endforeach
+    @if($canVoid)
+        <form class="void" method="POST" action="{{ route('company.pos.void', $reservation) }}">
+            @csrf
+            <label>{{ __('pos.void_title') }}<input name="reason" required minlength="3" placeholder="{{ __('pos.void_reason') }}"></label>
+            <button type="submit">{{ __('pos.void_submit') }}</button>
+        </form>
+    @endif
     <x-company-whatsapp :company="$organization" :departure="$trip" :code="$reservation->code" class="mt-4" />
     @if($trip->status === 'completed')
         <section class="review">

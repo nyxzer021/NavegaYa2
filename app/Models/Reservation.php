@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Reservation extends Model
 {
-    protected $fillable = ['user_id', 'checkout_order_id', 'route_departure_id', 'air_departure_id', 'code', 'contact_name', 'contact_email', 'contact_phone', 'contact_document', 'total_amount', 'base_amount', 'discount_amount', 'service_fee_amount', 'status', 'sales_channel', 'payment_method', 'expires_at', 'paid_at',
+    protected $fillable = ['user_id', 'sold_by_user_id', 'organization_site_id', 'checkout_order_id', 'route_departure_id', 'air_departure_id', 'code', 'contact_name', 'contact_email', 'contact_phone', 'contact_document', 'total_amount', 'base_amount', 'discount_amount', 'service_fee_amount', 'status', 'sales_channel', 'payment_method', 'expires_at', 'paid_at', 'voided_at', 'voided_by_user_id', 'void_reason',
         'travel_policy_version_id', 'platform_terms_version_id', 'discount_id', 'discount_held',
     ];
 
@@ -23,6 +23,7 @@ class Reservation extends Model
             'service_fee_amount' => 'decimal:2',
             'expires_at' => 'datetime',
             'paid_at' => 'datetime',
+            'voided_at' => 'datetime',
             'discount_held' => 'boolean',
         ];
     }

@@ -3,133 +3,197 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
+use App\Models\Discount;
 use App\Models\Organization;
+use App\Models\OrganizationSite;
 use App\Models\Reservation;
-use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
-use App\Services\BookingPaymentService;
-use App\Services\HammockSale;
+use App\Models\RouteDepartureSeatHold;
+use App\Services\CounterSale;
 use App\Support\AdminScope;
+use App\Support\BaggageAllowance;
 use App\Support\DepartureSchedule;
 use App\Support\FareTable;
+use App\Support\VesselLayout;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CompanyPosController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, CounterSale $sales): View
     {
         $organizationId = AdminScope::organizationId($request->user());
         abort_unless($organizationId, 403);
-        $organization = Organization::with('vessels.basePort')->where('status', 'active')->findOrFail($organizationId);
-        $expired = Reservation::where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
-        Reservation::expirePending($expired);
-        $departures = RouteDeparture::query()
-            ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
-            ->tap(fn ($query) => DepartureSchedule::onThisLimaDay($query))->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])->where('is_published', true)
-            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.seats'])
-            ->orderBy('departure_at')->get();
-        $selectedDeparture = $departures->firstWhere('id', $request->integer('departure')) ?? $departures->first();
-        $occupiedSeatIds = $selectedDeparture
-            ? ReservationSeat::where('route_departure_id', $selectedDeparture->id)->pluck('vessel_seat_id')->all()
+        $organization = Organization::query()->where('status', 'active')->findOrFail($organizationId);
+        $week = $request->query('horizonte') === 'semana';
+        [$todayStart, $todayEnd] = DepartureSchedule::dayBounds();
+        $until = $week
+            ? now()->timezone(DepartureSchedule::ZONE)->addDays(6)->endOfDay()->utc()
+            : $todayEnd;
+        $departures = $this->openDepartures($organizationId, $todayStart, $until);
+        $selected = $departures->firstWhere('id', $request->integer('departure')) ?? $departures->first();
+        $heldIds = $selected
+            ? RouteDepartureSeatHold::query()->where('route_departure_id', $selected->id)->pluck('vessel_seat_id')->map(fn ($id): int => (int) $id)->all()
             : [];
-        $upcoming = RouteDeparture::query()
-            ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
-            ->where('departure_at', '>', now()->endOfDay())
-            ->where('is_published', true)
-            ->whereIn('status', ['scheduled', 'delayed', 'rescheduled'])
-            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel'])
-            ->orderBy('departure_at')->limit(3)->get();
+        $occupiedIds = $selected ? $sales->busySeatIdsFor($selected->id) : [];
+        $decks = $selected ? $this->decks($selected) : [];
+        $cabins = $selected ? $selected->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code')->values() : collect();
+        $hammocks = $selected ? $selected->vessel->seats->where('space_type', 'hammock')->where('is_available', true)->whereNotIn('id', $occupiedIds)->count() : 0;
+        $free = $selected
+            ? $selected->vessel->seats->where('is_available', true)->whereNotIn('id', $occupiedIds)->count()
+            : 0;
+        $prices = $selected ? $this->prices($selected) : [];
+        $discounts = Discount::query()
+            ->where('organization_id', $organizationId)
+            ->where('status', 'active')
+            ->whereJsonContains('channels', 'counter')
+            ->orderBy('name')
+            ->get(['id', 'name', 'kind', 'value']);
+        $sites = OrganizationSite::query()->where('organization_id', $organizationId)->where('is_active', true)->orderBy('name')->get();
+        $allowance = BaggageAllowance::for($organization);
+        $later = $departures->isEmpty() ? $this->openDepartures($organizationId, $todayEnd, now()->timezone(DepartureSchedule::ZONE)->addDays(6)->endOfDay()->utc()) : collect();
 
-        return view('company.pos.index', compact('organization', 'departures', 'selectedDeparture', 'occupiedSeatIds', 'upcoming'));
+        return view('company.pos.index', [
+            'organization' => $organization,
+            'departures' => $departures,
+            'selectedDeparture' => $selected,
+            'week' => $week,
+            'heldIds' => $heldIds,
+            'occupiedIds' => $occupiedIds,
+            'decks' => $decks,
+            'cabins' => $cabins,
+            'hammocks' => $hammocks,
+            'freeSeats' => $free,
+            'prices' => $prices,
+            'discounts' => $discounts,
+            'sites' => $sites,
+            'allowance' => $allowance,
+            'later' => $later,
+            'todayCount' => $departures->filter(fn (RouteDeparture $departure): bool => $departure->departure_at->between($todayStart, $todayEnd))->count(),
+        ]);
     }
 
-    public function store(Request $request, BookingPaymentService $payments): RedirectResponse
+    public function store(Request $request, CounterSale $sales): RedirectResponse
     {
+        $organizationId = AdminScope::organizationId($request->user());
+        abort_unless($organizationId, 403);
+        $departure = RouteDeparture::with('transportRoute')->find($request->integer('departure_id'));
+        if ($departure && (int) $departure->transportRoute->organization_id !== (int) $organizationId) {
+            abort(403);
+        }
+        if ($departure) {
+            $sales->assertOpen($departure);
+        }
         $data = $request->validate([
-            'departure_id' => ['required', 'integer', 'exists:route_departures,id'],
+            'departure_id' => ['required', 'integer'],
             'place' => ['nullable', 'in:hammock'],
-            'seat_id' => ['required_unless:place,hammock', 'nullable', 'integer', 'exists:vessel_seats,id'],
+            'seat_id' => ['required_unless:place,hammock', 'nullable', 'integer'],
+            'site_id' => ['nullable', 'integer'],
+            'first_name' => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
             'document_type' => ['required', 'in:DNI,CE,Pasaporte'],
             'document_number' => ['required', 'string', 'max:40'],
-            'passenger_name' => ['required', 'string', 'max:150'],
-            'passenger_age' => ['required', 'integer', 'min:0', 'max:120'],
-            'phone' => ['required', 'string', 'max:40'],
+            'guardian_document' => ['nullable', 'string', 'max:40'],
+            'phone' => ['nullable', 'string', 'max:40'],
             'email' => ['nullable', 'email', 'max:150'],
+            'passenger_type' => ['required', 'in:'.implode(',', CounterSale::PASSENGERS)],
+            'discount_id' => ['nullable', 'integer'],
+            'hand_kg' => ['nullable', 'integer', 'min:0', 'max:200'],
+            'hold_kg' => ['nullable', 'integer', 'min:0', 'max:500'],
+            'method' => ['required', 'in:cash,yape,card'],
+            'cash_tendered' => ['required_if:method,cash', 'nullable', 'numeric', 'min:0'],
+            'operation_number' => ['required_if:method,yape,card', 'nullable', 'string', 'max:40'],
+        ], [
+            'operation_number.required_if' => 'El número de operación es obligatorio.',
+            'cash_tendered.required_if' => 'Indica el monto recibido.',
         ]);
-        $organizationId = AdminScope::organizationId($request->user());
-        abort_unless(Organization::query()->whereKey($organizationId)->where('status', 'active')->exists(), 403);
-        $departure = RouteDeparture::with('transportRoute')->findOrFail($data['departure_id']);
-        abort_unless((int) $departure->transportRoute->organization_id === (int) $organizationId && $departure->departure_at->isToday(), 403);
-        abort_unless($departure->is_published && in_array($departure->status, ['scheduled', 'delayed', 'rescheduled'], true), 422, 'La salida no está habilitada para ventas.');
 
-        try {
-            $reservation = DB::transaction(function () use ($data, $departure, $request) {
-                if ($request->input('place') === 'hammock') {
-                    return app(HammockSale::class)->reserve($departure, [
-                        'name' => $data['passenger_name'],
-                        'email' => ($data['email'] ?? null) ?: 'venta-'.strtolower($data['document_number']).'@pos.navegaya.test',
-                        'phone' => $data['phone'],
-                        'document' => $data['document_number'],
-                        'document_type' => $data['document_type'],
-                        'age' => (int) $data['passenger_age'],
-                        'channel' => 'counter',
-                        'expires_at' => null,
-                    ]);
-                }
-
-                $expired = Reservation::where('route_departure_id', $departure->id)->where('status', 'pending_payment')->where('expires_at', '<=', now())->pluck('id');
-                Reservation::expirePending($expired);
-                $seat = $departure->vessel->seats()->whereKey($data['seat_id'])->where('is_available', true)->lockForUpdate()->firstOrFail();
-                abort_if(ReservationSeat::where('route_departure_id', $departure->id)->where('vessel_seat_id', $seat->id)->exists(), 422, 'El asiento ya no está disponible.');
-                $space = $seat->space_type ?: 'seat';
-                $departure->loadMissing('transportRoute');
-                $amount = FareTable::price($departure->transportRoute, $space, 'adult', $departure->departure_at, $space === 'seat' ? (float) $departure->fare : null);
-                if ($amount === null) {
-                    throw new DomainException('Esa clase no está disponible en esta ruta.');
-                }
-                FareTable::assertVests($departure, FareTable::occupants($seat));
-                $code = 'POS-'.now()->format('ymd').'-'.Str::upper(Str::random(6));
-                $reservation = Reservation::create([
-                    'route_departure_id' => $departure->id,
-                    'code' => $code,
-                    'contact_name' => $data['passenger_name'],
-                    'contact_email' => ($data['email'] ?? null) ?: strtolower($code).'@pos.navegaya.test',
-                    'contact_phone' => $data['phone'],
-                    'contact_document' => $data['document_number'],
-                    'base_amount' => $amount,
-                    'discount_amount' => 0,
-                    'total_amount' => $amount,
-                    'status' => 'pending_payment',
-                    'sales_channel' => 'counter',
-                ]);
-                ReservationSeat::create([
-                    'reservation_id' => $reservation->id,
-                    'route_departure_id' => $departure->id,
-                    'vessel_seat_id' => $seat->id,
-                    'passenger_name' => $data['passenger_name'],
-                    'document_type' => $data['document_type'],
-                    'document_number' => $data['document_number'],
-                    'passenger_age' => $data['passenger_age'],
-                ]);
-
-                return $reservation;
-            });
-        } catch (DomainException $exception) {
-            return back()->withInput()->withErrors(['place' => $exception->getMessage()]);
+        if (! $departure) {
+            throw ValidationException::withMessages(['departure_id' => 'Elige una salida abierta.']);
         }
 
-        $payments->confirm($reservation, [
-            'method' => 'cash_dock',
-            'provider' => 'pos',
-            'provider_reference' => 'CASH-'.$reservation->code,
-            'provider_payload' => ['registered_by' => $request->user()->id],
-        ], 0.0);
+        try {
+            $sale = $sales->sell($request->user(), $departure, $data);
+        } catch (DomainException $exception) {
+            return back()->withInput()->withErrors(['seat_id' => $exception->getMessage()]);
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
 
-        return redirect()->route('tickets.show', $reservation->code)->with('success', 'Venta en muelle registrada y boleto emitido.');
+        return redirect()
+            ->route('tickets.show', $sale['reservation']->code)
+            ->with('success', __('pos.sold'))
+            ->with('cargo_offer', $sale['cargo'] ? route('company.parcels.index') : null);
+    }
+
+    public function void(Request $request, Reservation $reservation, CounterSale $sales): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
+        try {
+            $sales->void($request, $reservation, $data['reason']);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('company.pos.index')->with('success', __('pos.voided'));
+    }
+
+    /**
+     * @return Collection<int, RouteDeparture>
+     */
+    private function openDepartures(int $organizationId, mixed $from, mixed $until)
+    {
+        return RouteDeparture::query()
+            ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
+            ->where('departure_at', '>', now())
+            ->where('departure_at', '<=', $until)
+            ->where('departure_at', '>=', $from)
+            ->where('is_published', true)
+            ->whereIn('status', CounterSale::OPEN_STATUSES)
+            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.seats'])
+            ->orderBy('departure_at')
+            ->get();
+    }
+
+    /**
+     * @return list<array{label: string, plan: array<string, mixed>}>
+     */
+    private function decks(RouteDeparture $departure): array
+    {
+        $decks = [];
+        $seats = $departure->vessel->seats->where('space_type', 'seat')->sortBy(['deck', 'row_position', 'column_position']);
+        foreach ($seats->groupBy('deck') as $deck => $deckSeats) {
+            $decks[] = [
+                'deck' => (string) $deck,
+                'plan' => VesselLayout::grid($departure->vessel, (string) $deck, $deckSeats),
+            ];
+        }
+
+        return $decks;
+    }
+
+    /**
+     * @return array<string, array<string, ?float>>
+     */
+    private function prices(RouteDeparture $departure): array
+    {
+        $prices = [];
+        foreach (['seat', 'hammock', 'cabin_bed'] as $space) {
+            foreach (CounterSale::PASSENGERS as $passenger) {
+                $prices[$space][$passenger] = FareTable::price(
+                    $departure->transportRoute,
+                    $space,
+                    $passenger,
+                    $departure->departure_at,
+                    $space === 'seat' ? (float) $departure->fare : null,
+                );
+            }
+        }
+
+        return $prices;
     }
 }

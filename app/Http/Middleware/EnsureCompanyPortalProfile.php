@@ -17,6 +17,7 @@ class EnsureCompanyPortalProfile
     public const SELLER_ROUTES = [
         'company.pos.index',
         'company.pos.store',
+        'company.pos.void',
         'company.parcels.index',
         'company.freight.index',
         'company.sales.index',
