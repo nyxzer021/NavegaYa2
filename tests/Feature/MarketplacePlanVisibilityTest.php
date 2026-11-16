@@ -15,6 +15,16 @@ class MarketplacePlanVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * El plan vence según el día de Lima; a medianoche UTC "ayer" en UTC todavía es hoy en Lima.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->travelTo(now()->setTime(17, 0));
+    }
+
     public function test_business_page_and_campaign_disappear_when_the_plan_expires_and_return_after_renewal(): void
     {
         $organization = Organization::create([

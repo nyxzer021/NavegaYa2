@@ -132,15 +132,14 @@ class CounterSale
                 ],
             ]);
 
-            return [$confirmed, $tendered, $change, $data['operation_number'] ?? null];
-        });
+            Payment::query()->where('reservation_id', $confirmed->id)->where('provider_reference', 'POS-'.$confirmed->code)->update([
+                'cash_tendered' => $tendered,
+                'cash_change' => $change,
+                'operation_number' => $data['operation_number'] ?? null,
+            ]);
 
-        [$confirmed, $tendered, $change, $operation] = $confirmed;
-        Payment::query()->where('reservation_id', $confirmed->id)->where('provider_reference', 'POS-'.$confirmed->code)->update([
-            'cash_tendered' => $tendered,
-            'cash_change' => $change,
-            'operation_number' => $operation,
-        ]);
+            return $confirmed;
+        });
 
         return [
             'reservation' => $confirmed->refresh(),
@@ -172,6 +171,9 @@ class CounterSale
         DB::transaction(function () use ($request, $reservation, $reason, $seller): void {
             $locked = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
             abort_unless($locked->status === 'confirmed', 422);
+            $releasedSeats = $locked->seats()->with('seat:id,code')->get()
+                ->map(fn (ReservationSeat $row): ?string => $row->seat?->code)
+                ->filter()->values()->all();
             $locked->seats()->update(['vessel_seat_id' => null]);
             Ticket::query()->whereIn('reservation_seat_id', $locked->seats()->pluck('id'))->update(['status' => 'voided']);
             Payment::query()->where('reservation_id', $locked->id)->where('status', 'confirmed')->update([
@@ -189,6 +191,7 @@ class CounterSale
                 'reason' => $reason,
                 'method' => $locked->payment_method,
                 'amount' => (string) $locked->total_amount,
+                'seats' => $releasedSeats,
             ]);
         });
     }
