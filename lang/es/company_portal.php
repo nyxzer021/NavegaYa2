@@ -9,6 +9,7 @@ return [
     'role' => [
         'admin' => 'Administrador',
         'counter' => 'Vendedor',
+        'agency' => 'Agencia',
     ],
     'modality' => [
         'river' => 'Fluvial',
@@ -56,6 +57,7 @@ return [
         'cash_close' => 'Cierre de caja',
         'sales' => 'Historial de ventas',
         'my_sales' => 'Mis ventas',
+        'lots' => 'Mis lotes',
         'collections' => 'Cobros y conciliación',
         'refunds' => 'Reembolsos',
         'agency_commissions' => 'Comisiones de agencias',

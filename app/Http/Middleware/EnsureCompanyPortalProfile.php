@@ -25,6 +25,20 @@ class EnsureCompanyPortalProfile
         'company.cash-close.index',
     ];
 
+    /**
+     * El vendedor de una agencia solo vende los pasajes de sus lotes.
+     *
+     * @var list<string>
+     */
+    public const AGENCY_ROUTES = [
+        'company.pos.index',
+        'company.pos.store',
+        'company.pos.void',
+        'company.sales.index',
+        'company.sales.export',
+        'company.agency-lots.index',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -36,8 +50,9 @@ class EnsureCompanyPortalProfile
             return $next($request);
         }
 
+        $allowed = $user->agency_id ? self::AGENCY_ROUTES : self::SELLER_ROUTES;
         $name = $request->route()?->getName();
-        abort_unless(is_string($name) && in_array($name, self::SELLER_ROUTES, true), 403);
+        abort_unless(is_string($name) && in_array($name, $allowed, true), 403);
 
         return $next($request);
     }

@@ -28,6 +28,10 @@ class CompanyPortalMenu
 
     public function roleLabel(): string
     {
+        if ($this->user->agency_id) {
+            return __('company_portal.role.agency');
+        }
+
         return $this->isAdmin()
             ? __('company_portal.role.admin')
             : __('company_portal.role.counter');
@@ -66,6 +70,7 @@ class CompanyPortalMenu
         return [
             'admin' => ['*'],
             'seller' => ['pos', 'parcels', 'freight', 'sales', 'cash_close'],
+            'agency' => ['pos', 'sales', 'lots'],
             'operator' => ['departures', 'boarding', 'fleet', 'crew', 'incidents'],
             'finance' => ['sales', 'collections', 'refunds', 'agency_commissions', 'receipts', 'reports'],
         ];
@@ -136,11 +141,14 @@ class CompanyPortalMenu
      */
     public function sections(): array
     {
-        $profile = $this->isAdmin() ? 'admin' : 'seller';
+        $profile = $this->isAdmin() ? 'admin' : ($this->user->agency_id ? 'agency' : 'seller');
         $allowed = $this->profiles()[$profile];
         $sections = [];
 
         foreach ($this->catalog() as $row) {
+            if ($row['key'] === 'lots' && $profile !== 'agency') {
+                continue;
+            }
             if (! in_array('*', $allowed, true) && ! in_array($row['key'], $allowed, true)) {
                 continue;
             }
@@ -190,7 +198,7 @@ class CompanyPortalMenu
 
         return [
             'key' => $row['key'],
-            'label' => $profile === 'seller' && $row['key'] === 'sales'
+            'label' => in_array($profile, ['seller', 'agency'], true) && $row['key'] === 'sales'
                 ? __('company_portal.menu.my_sales')
                 : __('company_portal.menu.'.$row['key']),
             'href' => $reason === null && Route::has($row['route']) ? route($row['route']) : null,
@@ -245,6 +253,7 @@ class CompanyPortalMenu
             $this->row('channels', 'freight', 'company.freight.index', ['company.freight.*'], $channels, true),
             $this->row('channels', 'cash_close', 'company.cash-close.index', ['company.cash-close.*'], $channels, true),
             $this->row('finance', 'sales', 'company.sales.index', ['company.sales.*', 'company.commissions.*'], $finance, true),
+            $this->row('finance', 'lots', 'company.agency-lots.index', ['company.agency-lots.*'], '#6d28d9', true),
             $this->row('finance', 'collections', 'company.collections.index', ['company.collections.*'], $finance, true),
             $this->row('finance', 'refunds', 'company.refunds.index', ['company.refunds.*'], $finance, true),
             $this->row('finance', 'agency_commissions', 'company.agency-commissions.index', ['company.agency-commissions.*'], $finance, true),

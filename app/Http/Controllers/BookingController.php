@@ -6,6 +6,7 @@ use App\Models\Discount;
 use App\Models\Reservation;
 use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
+use App\Models\RouteDepartureSeatHold;
 use App\Models\VesselSeat;
 use App\Services\HammockSale;
 use App\Support\DiscountLedger;
@@ -25,7 +26,9 @@ class BookingController extends Controller
         $this->expireReservations($departure);
         $departure->load(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.organization', 'vessel.seats']);
         abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
-        $occupiedSeatIds = ReservationSeat::query()->where('route_departure_id', $departure->id)->pluck('vessel_seat_id')->all();
+        $occupiedSeatIds = ReservationSeat::query()->where('route_departure_id', $departure->id)->pluck('vessel_seat_id')
+            ->merge(RouteDepartureSeatHold::query()->where('route_departure_id', $departure->id)->pluck('vessel_seat_id'))
+            ->unique()->values()->all();
         $cabins = $departure->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code')->values();
         $freeHammocks = $departure->vessel->seats->where('space_type', 'hammock')->filter(
             fn ($seat): bool => $seat->is_available && ! in_array($seat->id, $occupiedSeatIds, true)
@@ -106,8 +109,11 @@ class BookingController extends Controller
                     throw new DomainException('Uno o más asientos ya no están disponibles para esta salida.');
                 }
                 $occupied = ReservationSeat::where('route_departure_id', $departure->id)->whereIn('vessel_seat_id', $seatIds)->exists();
-                if ($occupied) {
-                    throw new DomainException('Uno de los asientos acaba de ser reservado por otra persona. Elige otro asiento.');
+                $held = RouteDepartureSeatHold::query()->where('route_departure_id', $departure->id)->whereIn('vessel_seat_id', $seatIds)->exists();
+                if ($occupied || $held) {
+                    throw new DomainException($held
+                        ? 'Uno de los asientos está apartado para una agencia.'
+                        : 'Uno de los asientos acaba de ser reservado por otra persona. Elige otro asiento.');
                 }
                 $chosen = VesselSeat::query()->whereIn('id', $seatIds)->get()->keyBy('id');
                 $departure->loadMissing('transportRoute');

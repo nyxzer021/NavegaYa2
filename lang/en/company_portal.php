@@ -9,6 +9,7 @@ return [
     'role' => [
         'admin' => 'Administrator',
         'counter' => 'Seller',
+        'agency' => 'Agency',
     ],
     'modality' => [
         'river' => 'River',
@@ -56,6 +57,7 @@ return [
         'cash_close' => 'Cash close',
         'sales' => 'Sales history',
         'my_sales' => 'My sales',
+        'lots' => 'My lots',
         'collections' => 'Collections and reconciliation',
         'refunds' => 'Refunds',
         'agency_commissions' => 'Agency commissions',

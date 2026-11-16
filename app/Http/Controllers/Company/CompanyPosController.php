@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agency;
 use App\Models\Discount;
 use App\Models\Organization;
 use App\Models\OrganizationSite;
 use App\Models\Reservation;
 use App\Models\RouteDeparture;
 use App\Models\RouteDepartureSeatHold;
+use App\Services\AgencySale;
 use App\Services\CounterSale;
 use App\Support\AdminScope;
 use App\Support\BaggageAllowance;
@@ -29,23 +31,38 @@ class CompanyPosController extends Controller
         $organizationId = AdminScope::organizationId($request->user());
         abort_unless($organizationId, 403);
         $organization = Organization::query()->where('status', 'active')->findOrFail($organizationId);
+        $agency = $this->agency($request, $organizationId);
+        $agencySuspended = $agency !== null && ! $agency->isActive();
         $week = $request->query('horizonte') === 'semana';
         [$todayStart, $todayEnd] = DepartureSchedule::dayBounds();
         $until = $week
             ? now()->timezone(DepartureSchedule::ZONE)->addDays(6)->endOfDay()->utc()
             : $todayEnd;
-        $departures = $this->openDepartures($organizationId, $todayStart, $until);
+        $departures = $agencySuspended
+            ? collect()
+            : ($agency
+                ? $this->agencyDepartures($organizationId, $agency)
+                : $this->openDepartures($organizationId, $todayStart, $until));
         $selected = $departures->firstWhere('id', $request->integer('departure')) ?? $departures->first();
         $heldIds = $selected
             ? RouteDepartureSeatHold::query()->where('route_departure_id', $selected->id)->pluck('vessel_seat_id')->map(fn ($id): int => (int) $id)->all()
             : [];
+        $sellableIds = $agency && $selected
+            ? RouteDepartureSeatHold::query()->where('route_departure_id', $selected->id)->where('agency_id', $agency->id)->pluck('vessel_seat_id')->map(fn ($id): int => (int) $id)->all()
+            : [];
+        if ($agency) {
+            $heldIds = array_values(array_diff($heldIds, $sellableIds));
+        }
         $occupiedIds = $selected ? $sales->busySeatIdsFor($selected->id) : [];
         $decks = $selected ? $this->decks($selected) : [];
         $cabins = $selected ? $selected->vessel->seats->where('space_type', 'cabin_bed')->sortBy('code')->values() : collect();
+        $lotHammocks = $agency && $selected
+            ? $selected->vessel->seats->where('space_type', 'hammock')->whereIn('id', $sellableIds)->values()
+            : collect();
         $hammocks = $selected ? $selected->vessel->seats->where('space_type', 'hammock')->where('is_available', true)->whereNotIn('id', $occupiedIds)->count() : 0;
-        $free = $selected
-            ? $selected->vessel->seats->where('is_available', true)->whereNotIn('id', $occupiedIds)->count()
-            : 0;
+        $free = $agency
+            ? count($sellableIds)
+            : ($selected ? $selected->vessel->seats->where('is_available', true)->whereNotIn('id', $occupiedIds)->count() : 0);
         $prices = $selected ? $this->prices($selected) : [];
         $discounts = Discount::query()
             ->where('organization_id', $organizationId)
@@ -54,8 +71,13 @@ class CompanyPosController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'kind', 'value']);
         $sites = OrganizationSite::query()->where('organization_id', $organizationId)->where('is_active', true)->orderBy('name')->get();
+        if (! $agency && $request->user()->organization_site_id) {
+            $sites = $sites->where('id', $request->user()->organization_site_id)->values();
+        }
         $allowance = BaggageAllowance::for($organization);
-        $later = $departures->isEmpty() ? $this->openDepartures($organizationId, $todayEnd, now()->timezone(DepartureSchedule::ZONE)->addDays(6)->endOfDay()->utc()) : collect();
+        $later = ($departures->isEmpty() && ! $agency)
+            ? $this->openDepartures($organizationId, $todayEnd, now()->timezone(DepartureSchedule::ZONE)->addDays(6)->endOfDay()->utc())
+            : collect();
 
         return view('company.pos.index', [
             'organization' => $organization,
@@ -63,21 +85,25 @@ class CompanyPosController extends Controller
             'selectedDeparture' => $selected,
             'week' => $week,
             'heldIds' => $heldIds,
+            'sellableIds' => $sellableIds,
             'occupiedIds' => $occupiedIds,
             'decks' => $decks,
             'cabins' => $cabins,
             'hammocks' => $hammocks,
+            'lotHammocks' => $lotHammocks,
             'freeSeats' => $free,
             'prices' => $prices,
-            'discounts' => $discounts,
-            'sites' => $sites,
+            'discounts' => $agency ? collect() : $discounts,
+            'sites' => $agency ? collect() : $sites,
             'allowance' => $allowance,
             'later' => $later,
             'todayCount' => $departures->filter(fn (RouteDeparture $departure): bool => $departure->departure_at->between($todayStart, $todayEnd))->count(),
+            'agency' => $agency,
+            'agencySuspended' => $agencySuspended,
         ]);
     }
 
-    public function store(Request $request, CounterSale $sales): RedirectResponse
+    public function store(Request $request, CounterSale $sales, AgencySale $agencySales): RedirectResponse
     {
         $organizationId = AdminScope::organizationId($request->user());
         abort_unless($organizationId, 403);
@@ -88,7 +114,7 @@ class CompanyPosController extends Controller
         if ($departure) {
             $sales->assertOpen($departure);
         }
-        $data = $request->validate([
+        $rules = [
             'departure_id' => ['required', 'integer'],
             'place' => ['nullable', 'in:hammock'],
             'seat_id' => ['required_unless:place,hammock', 'nullable', 'integer'],
@@ -107,9 +133,15 @@ class CompanyPosController extends Controller
             'method' => ['required', 'in:cash,yape,card'],
             'cash_tendered' => ['required_if:method,cash', 'nullable', 'numeric', 'min:0'],
             'operation_number' => ['required_if:method,yape,card', 'nullable', 'string', 'max:40'],
-        ], [
+        ];
+        $agency = $this->agency($request, $organizationId);
+        if ($agency) {
+            $rules['sale_price'] = ['required', 'numeric', 'min:0'];
+        }
+        $data = $request->validate($rules, [
             'operation_number.required_if' => 'El número de operación es obligatorio.',
             'cash_tendered.required_if' => 'Indica el monto recibido.',
+            'sale_price.required' => 'Indica el precio de venta.',
         ]);
 
         if (! $departure) {
@@ -117,7 +149,9 @@ class CompanyPosController extends Controller
         }
 
         try {
-            $sale = $sales->sell($request->user(), $departure, $data);
+            $sale = $agency
+                ? $agencySales->sell($request->user(), $agency, $departure, $data)
+                : $sales->sell($request->user(), $departure, $data);
         } catch (DomainException $exception) {
             return back()->withInput()->withErrors(['seat_id' => $exception->getMessage()]);
         } catch (ValidationException $exception) {
@@ -127,7 +161,7 @@ class CompanyPosController extends Controller
         return redirect()
             ->route('tickets.show', $sale['reservation']->code)
             ->with('success', __('pos.sold'))
-            ->with('cargo_offer', $sale['cargo'] ? route('company.parcels.index') : null);
+            ->with('cargo_offer', $agency || ! $sale['cargo'] ? null : route('company.parcels.index'));
     }
 
     public function void(Request $request, Reservation $reservation, CounterSale $sales): RedirectResponse
@@ -195,5 +229,35 @@ class CompanyPosController extends Controller
         }
 
         return $prices;
+    }
+
+    private function agency(Request $request, int $organizationId): ?Agency
+    {
+        $id = $request->user()?->agency_id;
+        if (! $id) {
+            return null;
+        }
+        $agency = Agency::query()->whereKey($id)->first();
+        abort_unless($agency && (int) $agency->organization_id === $organizationId, 403);
+
+        return $agency;
+    }
+
+    /**
+     * @return Collection<int, RouteDeparture>
+     */
+    private function agencyDepartures(int $organizationId, Agency $agency)
+    {
+        $ids = RouteDepartureSeatHold::query()->where('agency_id', $agency->id)->pluck('route_departure_id');
+
+        return RouteDeparture::query()
+            ->whereIn('id', $ids)
+            ->whereHas('transportRoute', fn ($query) => $query->where('organization_id', $organizationId))
+            ->where('departure_at', '>', now())
+            ->where('is_published', true)
+            ->whereIn('status', CounterSale::OPEN_STATUSES)
+            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.seats'])
+            ->orderBy('departure_at')
+            ->get();
     }
 }

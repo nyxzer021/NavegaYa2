@@ -65,7 +65,7 @@ class PaymentController extends Controller
 
         $viewer = auth()->user();
         $canVoid = $viewer !== null
-            && $reservation->sales_channel === 'counter'
+            && in_array($reservation->sales_channel, ['counter', 'agency'], true)
             && $reservation->status === 'confirmed'
             && ((int) $viewer->id === (int) $reservation->sold_by_user_id
                 || ($viewer->isCompanyAdmin() && (int) AdminScope::organizationId($viewer) === (int) $route->organization_id));

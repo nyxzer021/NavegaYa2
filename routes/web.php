@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAdvertisementController;
 use App\Http\Controllers\Admin\AdminAdvertisingSubscriptionController;
+use App\Http\Controllers\Admin\AdminAgencyController;
 use App\Http\Controllers\Admin\AdminCompanyController;
 use App\Http\Controllers\Admin\AdminCompanyOperationController;
 use App\Http\Controllers\Admin\AdminContentPolicyController;
@@ -42,11 +43,13 @@ use App\Http\Controllers\AdminTransportRouteController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminVesselController;
 use App\Http\Controllers\AdminVesselSeatController;
+use App\Http\Controllers\AgencyInvitationController;
 use App\Http\Controllers\AirBookingController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusinessMessageController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Company\CompanyAdvertisingController;
+use App\Http\Controllers\Company\CompanyAgencyController;
 use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyDepartureController;
 use App\Http\Controllers\Company\CompanyDetailsController;
@@ -142,6 +145,7 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::get('/pos', [CompanyPosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
     Route::post('/pos/{reservation}/anular', [CompanyPosController::class, 'void'])->name('pos.void');
+    Route::get('/mis-lotes', [CompanyAgencyController::class, 'lots'])->name('agency-lots.index');
     Route::get('/cierre-de-caja', [CompanyPreparationController::class, 'show'])->defaults('page', 'cash_close')->name('cash-close.index');
 });
 Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {
@@ -169,7 +173,14 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::post('/sedes', [CompanySiteController::class, 'store'])->name('sites.store');
     Route::patch('/sedes/{site}', [CompanySiteController::class, 'update'])->name('sites.update');
     Route::delete('/sedes/{site}', [CompanySiteController::class, 'destroy'])->name('sites.destroy');
-    Route::get('/agencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'agencies')->name('agencies.index');
+    Route::get('/agencias', [CompanyAgencyController::class, 'index'])->name('agencies.index');
+    Route::post('/agencias', [CompanyAgencyController::class, 'store'])->name('agencies.store');
+    Route::patch('/agencias/{agency}', [CompanyAgencyController::class, 'update'])->name('agencies.update');
+    Route::post('/agencias/{agency}/invitar', [CompanyAgencyController::class, 'invite'])->name('agencies.invite');
+    Route::post('/agencias/{agency}/lotes', [CompanyAgencyController::class, 'storeLot'])->name('agencies.lots.store');
+    Route::patch('/agencias/lotes/{lot}/pago', [CompanyAgencyController::class, 'pay'])->name('agencies.lots.pay');
+    Route::post('/agencias/lotes/{lot}/liberar', [CompanyAgencyController::class, 'release'])->name('agencies.lots.release');
+    Route::post('/sedes/{site}/vendedor', [CompanyAgencyController::class, 'assignSeller'])->name('branches.assign');
     Route::get('/encomiendas', [CompanyPreparationController::class, 'show'])->defaults('page', 'parcels')->name('parcels.index');
     Route::get('/envio-de-carga', [CompanyPreparationController::class, 'show'])->defaults('page', 'freight')->name('freight.index');
     Route::get('/comisiones-de-agencias', [CompanyPreparationController::class, 'show'])->defaults('page', 'agency_commissions')->name('agency-commissions.index');
@@ -307,7 +318,8 @@ Route::get('/registro-empresa/verificar/{organization}', [CompanyRegistrationCon
 Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('admin')->name('admin.')->group(function () {
     Route::patch('/solicitudes/soporte/{supportTicket}', [SupportTicketController::class, 'respond'])->name('support.respond');
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/agencias-autorizadas', [AdminPreparationController::class, 'show'])->defaults('page', 'agencies')->name('agencies.index');
+    Route::get('/agencias-autorizadas', [AdminAgencyController::class, 'index'])->name('agencies.index');
+    Route::post('/agencias-autorizadas/{agency}/suspender', [AdminAgencyController::class, 'suspend'])->name('agencies.suspend');
     Route::get('/conexiones-de-pago', [AdminPreparationController::class, 'show'])->defaults('page', 'payment_connections')->name('payment-connections.index');
     Route::get('/cobros-conciliacion', [AdminPreparationController::class, 'show'])->defaults('page', 'reconciliation')->name('reconciliation.index');
     Route::get('/politicas-base', [AdminContentPolicyController::class, 'base'])->name('base-policies.index');
@@ -498,5 +510,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
 
 Route::get('/activar-empresa/{token}', [CompanyActivationController::class, 'create'])->name('company.activation');
 Route::post('/activar-empresa/{token}', [CompanyActivationController::class, 'store']);
+Route::get('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'create'])->name('agency.invitation');
+Route::post('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'store'])->name('agency.invitation.store');
 
 require __DIR__.'/auth.php';

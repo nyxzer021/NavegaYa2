@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Reservation;
 use App\Models\ReservationSeat;
 use App\Models\RouteDeparture;
+use App\Models\RouteDepartureSeatHold;
 use App\Models\VesselSeat;
 use App\Support\FareTable;
 use DomainException;
@@ -25,6 +26,8 @@ class HammockSale
             $this->releaseExpired($locked);
 
             $taken = ReservationSeat::query()->where('route_departure_id', $locked->id)->pluck('vessel_seat_id');
+            $held = RouteDepartureSeatHold::query()->where('route_departure_id', $locked->id)->pluck('vessel_seat_id');
+            $taken = $taken->merge($held)->unique();
             $hammock = VesselSeat::query()
                 ->where('vessel_id', $locked->vessel_id)
                 ->where('space_type', 'hammock')

@@ -153,7 +153,7 @@ class CounterSale
         $reservation->loadMissing('departure.transportRoute', 'seats.ticket', 'payments');
         $organizationId = (int) $reservation->departure?->transportRoute?->organization_id;
         abort_unless($organizationId === (int) AdminScope::organizationId($seller), 403);
-        abort_unless($reservation->sales_channel === 'counter' && $reservation->status === 'confirmed', 422);
+        abort_unless(in_array($reservation->sales_channel, ['counter', 'agency'], true) && $reservation->status === 'confirmed', 422);
 
         $soldOn = ($reservation->paid_at ?? $reservation->created_at)?->copy()->timezone(DepartureSchedule::ZONE);
         $today = now()->timezone(DepartureSchedule::ZONE);
@@ -171,10 +171,20 @@ class CounterSale
         DB::transaction(function () use ($request, $reservation, $reason, $seller): void {
             $locked = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
             abort_unless($locked->status === 'confirmed', 422);
-            $releasedSeats = $locked->seats()->with('seat:id,code')->get()
+            $seatRows = $locked->seats()->with('seat:id,code')->get();
+            $releasedSeats = $seatRows
                 ->map(fn (ReservationSeat $row): ?string => $row->seat?->code)
                 ->filter()->values()->all();
+            $seatIds = $seatRows->pluck('vessel_seat_id')->filter()->map(fn ($id): int => (int) $id)->all();
             $locked->seats()->update(['vessel_seat_id' => null]);
+            if ($locked->sales_channel === 'agency' && $locked->agency_id && $locked->agency_lot_id) {
+                foreach ($seatIds as $seatId) {
+                    RouteDepartureSeatHold::query()->firstOrCreate(
+                        ['route_departure_id' => $locked->route_departure_id, 'vessel_seat_id' => $seatId],
+                        ['kind' => 'agency', 'agency_id' => $locked->agency_id, 'agency_lot_id' => $locked->agency_lot_id],
+                    );
+                }
+            }
             Ticket::query()->whereIn('reservation_seat_id', $locked->seats()->pluck('id'))->update(['status' => 'voided']);
             Payment::query()->where('reservation_id', $locked->id)->where('status', 'confirmed')->update([
                 'status' => 'voided',

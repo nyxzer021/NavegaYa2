@@ -423,3 +423,57 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 @media(max-width:699px){
  .ny-pos h2{font-size:22px}
 }
+.ny-agency{display:grid;gap:24px;color:var(--ny-text)}
+.ny-agency-hero h2,.ny-agency h3,.ny-agency h4{margin:0;color:var(--ny-text)}
+.ny-agency-hero h2{font-size:28px}
+.ny-agency-kicker{margin:0;color:var(--ny-tone-violet-deep);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.ny-agency p{margin:0;color:var(--ny-text-muted);font-size:14px}
+.ny-agency-kpis,.ny-agency-grid{display:grid;gap:16px}
+.ny-agency-kpi,.ny-agency-card,.ny-agency-branch{border:1px solid var(--ny-border);border-radius:12px;background:var(--ny-surface);box-shadow:var(--ny-shadow-sm)}
+.ny-agency-kpi{display:grid;gap:4px;padding:16px 16px 18px;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 16%,var(--ny-surface)),var(--ny-surface) 42%);border-top:4px solid var(--c)}
+.ny-agency-kpi b{font-size:28px;line-height:1}
+.ny-agency-kpi span:last-child{font-size:12px;color:var(--ny-text-muted)}
+.ny-agency-card,.ny-agency-branch{display:grid;gap:12px;padding:16px 20px}
+.ny-agency-card.is-agency{border-top:4px solid var(--ny-tone-violet)}
+.ny-agency-head{display:flex;gap:12px;align-items:flex-start}
+.ny-agency-head div{flex:1;min-width:0;display:grid;gap:4px}
+.ny-agency-pill{display:inline-grid;width:36px;height:36px;flex:0 0 36px;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--c) 18%,var(--ny-surface));color:var(--c)}
+.ny-agency-pill svg{width:16px;height:16px}
+.ny-agency-pill.is-lg{width:56px;height:56px}
+.ny-agency-pill.is-lg svg{width:24px;height:24px}
+.ny-agency-badge{display:inline-flex;align-items:center;gap:6px;min-height:36px;border:0;border-radius:999px;padding:0 12px;font-size:14px;font-weight:800}
+.ny-agency-badge svg{width:16px;height:16px}
+.ny-agency-badge.is-pending{background:color-mix(in srgb,var(--ny-tone-sun) 22%,var(--ny-surface));color:var(--ny-tone-sun-deep)}
+.ny-agency-badge.is-paid{background:color-mix(in srgb,var(--ny-tone-leaf) 20%,var(--ny-surface));color:var(--ny-tone-leaf-deep)}
+.ny-agency-bar{display:flex;height:12px;overflow:hidden;border-radius:999px;background:var(--ny-surface-muted)}
+.ny-agency-bar i{display:block;height:100%}
+.ny-agency-bar .is-sold{background:var(--ny-tone-river)}
+.ny-agency-bar .is-free{background:var(--ny-tone-violet)}
+.ny-agency-bar .is-released{background:var(--ny-tone-sun)}
+.ny-agency-counts{display:flex;flex-wrap:wrap;gap:12px;margin:0;padding:0;list-style:none}
+.ny-agency-counts li{display:flex;align-items:center;gap:8px;font-size:14px}
+.ny-agency-form{display:grid;gap:12px}
+.ny-agency label{display:grid;gap:6px;font-size:12px;font-weight:700}
+.ny-agency input,.ny-agency select{height:40px;border:1px solid var(--ny-border);border-radius:8px;padding:0 12px;font-size:14px;background:var(--ny-surface);color:var(--ny-text)}
+.ny-agency-check{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px}
+.ny-agency-check input{width:18px;height:18px}
+.ny-agency-main,.ny-agency-soft{min-height:44px;border-radius:8px;padding:0 16px;font-size:14px;font-weight:800}
+.ny-agency-main{border:0;background:var(--ny-tone-violet-deep);color:var(--ny-text-on-dark)}
+.ny-agency-soft{border:1px solid var(--ny-border);background:var(--ny-surface);color:var(--ny-text)}
+.ny-agency-empty{display:grid;justify-items:center;gap:8px;padding:32px 16px;border:1px dashed var(--ny-border);border-radius:12px;background:var(--ny-surface);text-align:center}
+.ny-agency-empty h2{font-size:20px}
+.ny-agency-note{margin:0;border-radius:12px;background:color-mix(in srgb,var(--ny-tone-leaf) 14%,var(--ny-surface));padding:12px;color:var(--ny-tone-leaf-deep);font-size:14px;font-weight:700}
+.ny-agency-note.is-alert{background:color-mix(in srgb,var(--ny-tone-coral) 14%,var(--ny-surface));color:var(--ny-tone-coral-deep)}
+.ny-agency-note a{color:inherit}
+.ny-agency .ny-seat-form:has(:checked) .ny-seat{background:var(--ny-tone-violet-deep);color:var(--ny-text-on-dark);border-color:var(--ny-tone-violet-deep)}
+.ny-agency .ny-seat{min-width:44px;height:44px}
+@media(min-width:900px){
+ .ny-agency-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .ny-agency-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ny-agency-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ny-agency-form .ny-agency-main,.ny-agency-form .ny-agency-soft{grid-column:1 / -1;justify-self:start}
+}
+@media(max-width:699px){
+ .ny-agency-hero h2{font-size:22px}
+ .ny-agency-badge{min-height:44px}
+}

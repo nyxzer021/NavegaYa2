@@ -105,7 +105,8 @@ class CompanyPortalMenuTest extends TestCase
         $this->actingAs($admin)->get(route('admin.agencies.index'))
             ->assertOk()
             ->assertSee('Agencias autorizadas')
-            ->assertSee('En preparación');
+            ->assertSee('Todavía no hay agencias autorizadas')
+            ->assertDontSee('En preparación');
     }
 
     /**

@@ -26,7 +26,13 @@
  </section>
  @endif
 
- @if($departures->isEmpty())
+ @if($agencySuspended ?? false)
+  <section class="ny-pos-empty">
+   <span class="ny-pos-pill is-lg" style="--c: var(--ny-tone-coral)"><x-ui.icon name="store" /></span>
+   <h2>{{ __('agencies.suspended_sale') }}</h2>
+   <p>{{ __('agencies.suspended_sale_body') }}</p>
+  </section>
+ @elseif($departures->isEmpty())
   <section class="ny-pos-empty">
    <span class="ny-pos-pill is-lg" style="--c: var(--ny-tone-river)"><x-ui.icon name="fleet" /></span>
    <h2>{{ __('pos.empty_title') }}</h2>
@@ -35,10 +41,12 @@
    @if($later->isNotEmpty())<a class="ny-pos-soft" href="{{ route('company.pos.index', ['horizonte' => 'semana']) }}">{{ __('pos.later') }}</a>@endif
   </section>
  @else
+  @if(! ($agency ?? null))
   <div class="ny-pos-switch">
    <a href="{{ route('company.pos.index', array_filter(['departure' => $selectedDeparture?->id])) }}" @class(['is-on' => ! $week])>{{ __('pos.only_today') }}</a>
    <a href="{{ route('company.pos.index', array_filter(['horizonte' => 'semana', 'departure' => $selectedDeparture?->id])) }}" @class(['is-on' => $week])>{{ __('pos.this_week') }}</a>
   </div>
+  @endif
   <form method="GET" class="ny-pos-card">
    @if($week)<input type="hidden" name="horizonte" value="semana">@endif
    <label>{{ __('pos.departure') }}
@@ -50,7 +58,7 @@
    </label>
   </form>
 
-  <form method="POST" action="{{ route('company.pos.store') }}" class="ny-pos-grid" x-data="posDesk({{ \Illuminate\Support\Js::from(['prices' => $prices, 'discounts' => $discounts->map(fn ($discount) => ['id' => $discount->id, 'kind' => $discount->kind, 'value' => (float) $discount->value])->values(), 'cargo' => $allowance['cargo']]) }})">
+  <form method="POST" action="{{ route('company.pos.store') }}" class="ny-pos-grid" x-data="posDesk({{ \Illuminate\Support\Js::from(['prices' => $prices, 'discounts' => $discounts->map(fn ($discount) => ['id' => $discount->id, 'kind' => $discount->kind, 'value' => (float) $discount->value])->values(), 'cargo' => $allowance['cargo'], 'agency' => ($agency ?? null) !== null, 'percent' => (float) (($agency ?? null)?->max_surcharge_percent ?? 0)]) }})">
    @csrf
    <input type="hidden" name="departure_id" value="{{ $selectedDeparture->id }}">
    <ol class="ny-pos-steps">
@@ -79,7 +87,9 @@
          @if($seat = $cell['seat'])
           @php($held = in_array($seat->id, $heldIds, true))
           @php($taken = ! $held && (in_array($seat->id, $occupiedIds, true) || ! $seat->is_available))
-          <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" data-space="seat" class="peer sr-only" @disabled($held || $taken) @change="space = 'seat'; seat = true"><span @class(['ny-seat', 'is-taken' => $taken, 'is-held' => $held])>{{ $seat->code }}</span></label>
+          @php($mine = ($agency ?? null) && in_array($seat->id, $sellableIds, true))
+          @php($blocked = ($agency ?? null) ? (! $mine || $taken) : ($held || $taken))
+          <label class="ny-seat-form"><input type="radio" name="seat_id" value="{{ $seat->id }}" data-space="seat" class="peer sr-only" @disabled($blocked) @change="space = 'seat'; seat = true"><span @class(['ny-seat', 'is-taken' => $taken || (($agency ?? null) && ! $mine && ! $held), 'is-held' => $held && ! $mine])>{{ $seat->code }}</span></label>
          @else
           <x-vessel-deco :type="$cell['type']" />
          @endif
@@ -89,14 +99,19 @@
      </x-vessel-hull>
      <x-vessel-deco-legend :plan="$deck['plan']" />
     @endforeach
-    @if($cabins->isNotEmpty() || $hammocks > 0)
+    @if($cabins->isNotEmpty() || $lotHammocks->isNotEmpty() || (! ($agency ?? null) && $hammocks > 0))
      <div class="ny-pos-places">
       @foreach($cabins as $cabin)
        @php($held = in_array($cabin->id, $heldIds, true))
        @php($taken = ! $held && (in_array($cabin->id, $occupiedIds, true) || ! $cabin->is_available))
-       <label class="ny-pos-place"><input type="radio" name="seat_id" value="{{ $cabin->id }}" data-space="cabin_bed" @disabled($held || $taken) @change="space = 'cabin_bed'; seat = true"><span>{{ __('pos.cabin', ['code' => $cabin->code]) }}</span>@if($held)<em>{{ __('pos.held_seat') }}</em>@endif</label>
+       @php($mine = ($agency ?? null) && in_array($cabin->id, $sellableIds, true))
+       @php($blocked = ($agency ?? null) ? (! $mine || $taken) : ($held || $taken))
+       <label class="ny-pos-place"><input type="radio" name="seat_id" value="{{ $cabin->id }}" data-space="cabin_bed" @disabled($blocked) @change="space = 'cabin_bed'; seat = true"><span>{{ __('pos.cabin', ['code' => $cabin->code]) }}</span>@if($held && ! $mine)<em>{{ __('pos.held_seat') }}</em>@endif</label>
       @endforeach
-      @if($hammocks > 0)
+      @foreach($lotHammocks as $hammock)
+       <label class="ny-pos-place"><input type="radio" name="seat_id" value="{{ $hammock->id }}" data-space="hammock" @change="space = 'hammock'; seat = true"><span>{{ $hammock->code }}</span></label>
+      @endforeach
+      @if(! ($agency ?? null) && $hammocks > 0)
        <label class="ny-pos-place"><input type="radio" name="place" value="hammock" @change="space = 'hammock'; seat = true"><span>{{ __('pos.hammock') }}</span><em>{{ __('pos.hammocks', ['count' => $hammocks]) }}</em></label>
       @endif
      </div>
@@ -121,6 +136,12 @@
       @foreach(['adult', 'child', 'student', 'senior', 'infant'] as $type)<option value="{{ $type }}">{{ __('pos.'.$type) }}</option>@endforeach
      </select>
     </label>
+    @if($agency ?? null)
+     <label>{{ __('agencies.sale_price') }}
+      <input type="number" name="sale_price" min="0" step="0.01" value="{{ old('sale_price') }}" x-model="salePrice" required>
+      <small>{{ __('agencies.price_between') }} <span x-text="range"></span></small>
+     </label>
+    @endif
     @if($discounts->isNotEmpty())
      <label>{{ __('pos.discount') }}
       <select name="discount_id" x-model="discountId">
@@ -143,7 +164,7 @@
      <label>{{ __('pos.hand') }}<input type="number" name="hand_kg" min="0" max="200" value="{{ old('hand_kg', 0) }}" x-model.number="hand"></label>
      <label>{{ __('pos.hold') }}<input type="number" name="hold_kg" min="0" max="500" value="{{ old('hold_kg', 0) }}" x-model.number="hold"></label>
     </div>
-    <p class="ny-pos-note is-alert" x-cloak x-show="over">{{ __('pos.cargo_warn', ['kg' => $allowance['cargo']]) }} <a href="{{ route('company.parcels.index') }}">{{ __('pos.cargo_link') }}</a></p>
+    <p class="ny-pos-note is-alert" x-cloak x-show="over">{{ __('pos.cargo_warn', ['kg' => $allowance['cargo']]) }} @if(! ($agency ?? null))<a href="{{ route('company.parcels.index') }}">{{ __('pos.cargo_link') }}</a>@endif</p>
 
     <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-leaf)"><x-ui.icon name="cash" /></span>{{ __('pos.pay') }}</h3>
     <div class="ny-pos-pays">
@@ -166,19 +187,31 @@
   <script>
    function posDesk(config) {
     return {
-     prices: config.prices, discounts: config.discounts, cargoLimit: config.cargo,
+     prices: config.prices, discounts: config.discounts, cargoLimit: config.cargo, agency: config.agency, percent: Number(config.percent || 0),
      method: @js(old('method', 'cash')), passenger: @js(old('passenger_type', 'adult')), space: 'seat', seat: false,
      discountId: @js((string) old('discount_id', '')), tendered: @js(old('cash_tendered', '')), hand: @js((int) old('hand_kg', 0)), hold: @js((int) old('hold_kg', 0)),
-     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')),
+     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')), salePrice: @js(old('sale_price', '')),
      get named() { return String(this.firstName).trim() !== '' && String(this.lastName).trim() !== ''; },
      get base() { const row = this.prices[this.space] || {}; return row[this.passenger] ?? null; },
+     get range() {
+      if (!this.agency || this.base === null) return '';
+      const cap = Math.round(this.base * (100 + this.percent)) / 100;
+      return 'S/ ' + Number(this.base).toFixed(2) + ' – S/ ' + cap.toFixed(2);
+     },
      get discount() {
       const row = this.discounts.find((item) => String(item.id) === String(this.discountId));
       if (!row || this.base === null) return 0;
       const off = row.kind === 'percent' ? this.base * Number(row.value) / 100 : Number(row.value);
       return Math.min(Math.max(0, Math.round(off * 100) / 100), this.base);
      },
-     get total() { return this.base === null ? null : Math.round((this.base - this.discount) * 100) / 100; },
+     get total() {
+      if (this.agency) {
+       if (this.salePrice === '' || this.salePrice === null) return this.base;
+       const price = Math.round(Number(this.salePrice) * 100) / 100;
+       return Number.isFinite(price) ? price : null;
+      }
+      return this.base === null ? null : Math.round((this.base - this.discount) * 100) / 100;
+     },
      get change() {
       if (this.total === null || this.tendered === '' || this.tendered === null) return null;
       return Math.round((Number(this.tendered) - this.total) * 100) / 100;

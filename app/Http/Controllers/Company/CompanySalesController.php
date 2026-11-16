@@ -79,10 +79,16 @@ class CompanySalesController extends Controller
 
     private function scopeReservations(Builder $query, int $organizationId): Builder
     {
-        return $query->where(function (Builder $query) use ($organizationId): void {
+        $query->where(function (Builder $query) use ($organizationId): void {
             $query->whereHas('departure.transportRoute', fn (Builder $route) => $route->where('organization_id', $organizationId))
                 ->orWhereHas('airDeparture.airRoute', fn (Builder $route) => $route->where('organization_id', $organizationId));
         });
+        $agencyId = auth()->user()?->agency_id;
+        if ($agencyId) {
+            $query->where('agency_id', $agencyId);
+        }
+
+        return $query;
     }
 
     private function ticketRelations(): array
