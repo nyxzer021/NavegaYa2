@@ -22,7 +22,7 @@ class CompanyPortalMenuTest extends TestCase
                 'Inicio',
                 'Mi empresa', 'Datos de la empresa', 'Sedes y terminales', 'Pagos en línea',
                 'Operación', 'Flota', 'Rutas', 'Programación de salidas', 'Tarifas y descuentos', 'Embarque y manifiestos', 'Tripulación', 'Incidencias',
-                'Canales de venta', 'Punto de venta', 'Agencias autorizadas', 'Encomiendas', 'Envío de carga', 'Cierre de caja',
+                'Canales de venta', 'Punto de venta', 'Agencias autorizadas', 'Encomiendas y carga', 'Cierre de caja',
                 'Ventas y finanzas', 'Historial de ventas', 'Cobros y conciliación', 'Reembolsos', 'Comisiones de agencias', 'Comprobantes', 'Reportes',
                 'Contenido', 'Página de la empresa', 'Secciones de la página', 'Galería y opiniones', 'Políticas de viaje', 'Apariencia', 'Campañas publicitarias',
                 'Usuarios y privilegios', 'Usuarios', 'Perfiles y permisos', 'Auditoría',
@@ -61,7 +61,9 @@ class CompanyPortalMenuTest extends TestCase
         $this->actingAs($counter)->get(route('company.pos.index'))
             ->assertOk()
             ->assertSee('Punto de venta')
+            ->assertSee('Encomiendas y carga')
             ->assertSee('Cierre de caja')
+            ->assertDontSee('Envío de carga')
             ->assertSee('Mis ventas')
             ->assertDontSee('Programar salida')
             ->assertDontSee('Cobros y conciliación')

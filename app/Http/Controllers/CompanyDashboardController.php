@@ -198,6 +198,14 @@ class CompanyDashboardController extends Controller
                 'href' => route('company.departures.index'),
             ]);
         }
+        $loose = CargoShipment::query()->where('organization_id', $organization->id)->where('needs_reassignment', true)->count();
+        if ($loose > 0) {
+            $items->push([
+                'title' => __('cargo.reassign_title'),
+                'detail' => __('cargo.reassign_body'),
+                'href' => route('company.parcels.index'),
+            ]);
+        }
         $cargo = $this->pendingCargoCount($organization);
         if ($cargo > 0) {
             $items->push([

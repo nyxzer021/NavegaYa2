@@ -69,7 +69,7 @@ class CompanyPortalMenu
     {
         return [
             'admin' => ['*'],
-            'seller' => ['pos', 'parcels', 'freight', 'sales', 'cash_close'],
+            'seller' => ['pos', 'parcels', 'sales', 'cash_close'],
             'agency' => ['pos', 'sales', 'lots'],
             'operator' => ['departures', 'boarding', 'fleet', 'crew', 'incidents'],
             'finance' => ['sales', 'collections', 'refunds', 'agency_commissions', 'receipts', 'reports'],
@@ -249,8 +249,7 @@ class CompanyPortalMenu
             $this->row('operation', 'incidents', 'company.incidents.index', ['company.incidents.*'], $operation, true),
             $this->row('channels', 'pos', 'company.pos.index', ['company.pos.*'], $channels, true),
             $this->row('channels', 'agencies', 'company.agencies.index', ['company.agencies.*'], $channels, true),
-            $this->row('channels', 'parcels', 'company.parcels.index', ['company.parcels.*'], $channels, true),
-            $this->row('channels', 'freight', 'company.freight.index', ['company.freight.*'], $channels, true),
+            $this->row('channels', 'parcels', 'company.parcels.index', ['company.parcels.*', 'company.freight.*'], '#d97706', true),
             $this->row('channels', 'cash_close', 'company.cash-close.index', ['company.cash-close.*'], $channels, true),
             $this->row('finance', 'sales', 'company.sales.index', ['company.sales.*', 'company.commissions.*'], $finance, true),
             $this->row('finance', 'lots', 'company.agency-lots.index', ['company.agency-lots.*'], '#6d28d9', true),

@@ -161,7 +161,13 @@ class CompanyPosController extends Controller
         return redirect()
             ->route('tickets.show', $sale['reservation']->code)
             ->with('success', __('pos.sold'))
-            ->with('cargo_offer', $agency || ! $sale['cargo'] ? null : route('company.parcels.index'));
+            ->with('cargo_offer', $agency || ! $sale['cargo'] ? null : route('company.parcels.index', array_filter([
+                'remitente' => trim($data['first_name'].' '.$data['last_name']),
+                'documento' => $data['document_number'],
+                'telefono' => $data['phone'] ?? null,
+                'peso' => ((int) ($data['hand_kg'] ?? 0)) + ((int) ($data['hold_kg'] ?? 0)),
+                'salida' => $departure->id,
+            ])));
     }
 
     public function void(Request $request, Reservation $reservation, CounterSale $sales): RedirectResponse

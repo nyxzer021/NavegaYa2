@@ -58,7 +58,7 @@
    </label>
   </form>
 
-  <form method="POST" action="{{ route('company.pos.store') }}" class="ny-pos-grid" x-data="posDesk({{ \Illuminate\Support\Js::from(['prices' => $prices, 'discounts' => $discounts->map(fn ($discount) => ['id' => $discount->id, 'kind' => $discount->kind, 'value' => (float) $discount->value])->values(), 'cargo' => $allowance['cargo'], 'agency' => ($agency ?? null) !== null, 'percent' => (float) (($agency ?? null)?->max_surcharge_percent ?? 0)]) }})">
+  <form method="POST" action="{{ route('company.pos.store') }}" class="ny-pos-grid" x-data="posDesk({{ \Illuminate\Support\Js::from(['prices' => $prices, 'discounts' => $discounts->map(fn ($discount) => ['id' => $discount->id, 'kind' => $discount->kind, 'value' => (float) $discount->value])->values(), 'cargo' => $allowance['cargo'], 'agency' => ($agency ?? null) !== null, 'percent' => (float) (($agency ?? null)?->max_surcharge_percent ?? 0), 'departure' => $selectedDeparture?->id, 'parcels' => route('company.parcels.index')]) }})">
    @csrf
    <input type="hidden" name="departure_id" value="{{ $selectedDeparture->id }}">
    <ol class="ny-pos-steps">
@@ -127,9 +127,9 @@
       @foreach(['DNI', 'CE', 'Pasaporte'] as $type)<option @selected(old('document_type') === $type)>{{ $type }}</option>@endforeach
      </select>
     </label>
-    <label>{{ __('pos.document_number') }}<input name="document_number" value="{{ old('document_number') }}" required><small>{{ __('pos.document_help') }}</small></label>
+    <label>{{ __('pos.document_number') }}<input name="document_number" x-model="documentNumber" required><small>{{ __('pos.document_help') }}</small></label>
     <label>{{ __('pos.guardian') }} <em>{{ __('pos.optional') }}</em><input name="guardian_document" value="{{ old('guardian_document') }}"></label>
-    <label>{{ __('pos.phone') }} <em>{{ __('pos.optional') }}</em><input name="phone" value="{{ old('phone') }}" inputmode="tel"></label>
+    <label>{{ __('pos.phone') }} <em>{{ __('pos.optional') }}</em><input name="phone" x-model="phone" inputmode="tel"></label>
     <label>{{ __('pos.email') }} <em>{{ __('pos.optional') }}</em><input type="email" name="email" value="{{ old('email') }}"></label>
     <label>{{ __('pos.passenger_type') }}
      <select name="passenger_type" x-model="passenger">
@@ -164,7 +164,7 @@
      <label>{{ __('pos.hand') }}<input type="number" name="hand_kg" min="0" max="200" value="{{ old('hand_kg', 0) }}" x-model.number="hand"></label>
      <label>{{ __('pos.hold') }}<input type="number" name="hold_kg" min="0" max="500" value="{{ old('hold_kg', 0) }}" x-model.number="hold"></label>
     </div>
-    <p class="ny-pos-note is-alert" x-cloak x-show="over">{{ __('pos.cargo_warn', ['kg' => $allowance['cargo']]) }} @if(! ($agency ?? null))<a href="{{ route('company.parcels.index') }}">{{ __('pos.cargo_link') }}</a>@endif</p>
+    <p class="ny-pos-note is-alert" x-cloak x-show="over">{{ __('pos.cargo_warn', ['kg' => $allowance['cargo']]) }} @if(! ($agency ?? null))<a :href="cargoHref">{{ __('pos.cargo_link') }}</a>@endif</p>
 
     <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-leaf)"><x-ui.icon name="cash" /></span>{{ __('pos.pay') }}</h3>
     <div class="ny-pos-pays">
@@ -190,7 +190,7 @@
      prices: config.prices, discounts: config.discounts, cargoLimit: config.cargo, agency: config.agency, percent: Number(config.percent || 0),
      method: @js(old('method', 'cash')), passenger: @js(old('passenger_type', 'adult')), space: 'seat', seat: false,
      discountId: @js((string) old('discount_id', '')), tendered: @js(old('cash_tendered', '')), hand: @js((int) old('hand_kg', 0)), hold: @js((int) old('hold_kg', 0)),
-     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')), salePrice: @js(old('sale_price', '')),
+     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')), documentNumber: @js(old('document_number', '')), phone: @js(old('phone', '')), salePrice: @js(old('sale_price', '')), departureId: String(config.departure || ''), parcelBase: config.parcels,
      get named() { return String(this.firstName).trim() !== '' && String(this.lastName).trim() !== ''; },
      get base() { const row = this.prices[this.space] || {}; return row[this.passenger] ?? null; },
      get range() {
@@ -217,6 +217,17 @@
       return Math.round((Number(this.tendered) - this.total) * 100) / 100;
      },
      get over() { return Number(this.hand) + Number(this.hold) > Number(this.cargoLimit); },
+     get cargoHref() {
+      const params = new URLSearchParams();
+      const name = (String(this.firstName) + ' ' + String(this.lastName)).trim();
+      if (name) params.set('remitente', name);
+      if (this.documentNumber) params.set('documento', this.documentNumber);
+      if (this.phone) params.set('telefono', this.phone);
+      const kilos = Number(this.hand || 0) + Number(this.hold || 0);
+      if (kilos > 0) params.set('peso', String(kilos));
+      if (this.departureId) params.set('salida', this.departureId);
+      return this.parcelBase + '?' + params.toString();
+     },
      money(value) { return 'S/ ' + Number(value).toFixed(2); }
     };
    }

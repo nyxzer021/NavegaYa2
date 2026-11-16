@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AsLimaDateTime;
+use App\Services\CargoDesk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,11 @@ class RouteDeparture extends Model
             if (! $model->code) {
                 $date = ($model->departure_at ?? now())->format('ymd');
                 $model->forceFill(['code' => 'SAL-'.$date.'-'.str_pad((string) $model->id, 6, '0', STR_PAD_LEFT)])->saveQuietly();
+            }
+        });
+        static::updated(function (self $model): void {
+            if ($model->wasChanged('status') && $model->status === 'cancelled') {
+                app(CargoDesk::class)->releaseDeparture($model);
             }
         });
     }
@@ -57,6 +63,11 @@ class RouteDeparture extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function cargoShipments(): HasMany
+    {
+        return $this->hasMany(CargoShipment::class);
     }
 
     public function assignments(): HasMany

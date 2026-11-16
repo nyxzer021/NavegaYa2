@@ -36,8 +36,12 @@ class CompanySellerAccessTest extends TestCase
                 }
                 $response = $this->call($method, $uri);
                 $label = $method.' '.$uri;
-                if (in_array($route->getName(), $allowed, true) && $method === 'GET') {
-                    $response->assertOk($label);
+                if (in_array($route->getName(), $allowed, true) && $method === 'GET' && $route->parameterNames() === []) {
+                    if ($route->getName() === 'company.freight.index') {
+                        $response->assertRedirect(route('company.parcels.index'));
+                    } else {
+                        $response->assertOk($label);
+                    }
                 } elseif (in_array($route->getName(), $allowed, true)) {
                     $this->assertNotSame(403, $response->getStatusCode(), $label);
                 } else {
