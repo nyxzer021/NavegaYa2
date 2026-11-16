@@ -12,6 +12,7 @@ use App\Models\Port;
 use App\Models\Reservation;
 use App\Models\Role;
 use App\Models\RouteDeparture;
+use App\Models\RouteDepartureSeatHold;
 use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
@@ -202,6 +203,54 @@ class AgencyChannelTest extends TestCase
         $this->actingAs($seller)->get(route('company.parcels.index'))->assertForbidden();
         $this->actingAs($seller)->get(route('company.agencies.index'))->assertForbidden();
         $this->actingAs($seller)->get(route('company.agency-lots.index'))->assertOk()->assertSee('Mis lotes');
+    }
+
+    public function test_a_hammock_lot_holds_the_requested_quantity_and_never_more_than_the_free_ones(): void
+    {
+        [$admin, $organization] = $this->company('Agencia Hamacas', '20610000007');
+        $departure = $this->departure($organization, 'Nave Hamacas');
+        foreach (['H1', 'H2', 'H3'] as $index => $code) {
+            $departure->vessel->seats()->create([
+                'code' => $code, 'row_position' => 2, 'column_position' => $index + 1,
+                'deck' => 'principal', 'space_type' => 'hammock', 'is_available' => true,
+            ]);
+        }
+        $agency = $this->agency($organization);
+
+        $this->actingAs($admin)->post(route('company.agencies.lots.store', $agency), [
+            'departure_id' => $departure->id, 'hammocks' => 2, 'unit_price' => 50, 'payment_status' => 'pending',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $held = RouteDepartureSeatHold::query()->where('route_departure_id', $departure->id)->with('seat')->get();
+        $this->assertCount(2, $held);
+        $this->assertTrue($held->every(fn (RouteDepartureSeatHold $hold): bool => $hold->seat->space_type === 'hammock'));
+
+        $this->actingAs($admin)->post(route('company.agencies.lots.store', $agency), [
+            'departure_id' => $departure->id, 'hammocks' => 2, 'unit_price' => 50, 'payment_status' => 'pending',
+        ])->assertSessionHasErrors('hammocks');
+        $this->assertDatabaseCount('route_departure_seat_holds', 2);
+        $this->assertDatabaseCount('agency_lots', 1);
+    }
+
+    public function test_only_navega_ya_lifts_a_suspension_it_placed(): void
+    {
+        [$admin, $organization] = $this->company('Agencia Vigilada', '20610000008');
+        $agency = $this->agency($organization);
+        $platform = User::factory()->create();
+        $platform->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador'])->id);
+
+        $this->actingAs($platform)->post(route('admin.agencies.suspend', $agency), ['suspension_reason' => 'RUC observado'])->assertRedirect();
+        $this->assertSame('suspended', $agency->refresh()->status);
+
+        $this->actingAs($admin)->patch(route('company.agencies.update', $agency), [
+            'status' => 'active', 'max_surcharge_percent' => 5,
+        ])->assertSessionHasErrors('status');
+        $this->assertSame('suspended', $agency->refresh()->status);
+        $this->assertSame('RUC observado', $agency->suspension_reason);
+
+        $this->actingAs($platform)->post(route('admin.agencies.reactivate', $agency))->assertRedirect();
+        $this->assertSame('active', $agency->refresh()->status);
+        $this->assertNull($agency->suspended_by_user_id);
     }
 
     /**

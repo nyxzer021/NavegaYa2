@@ -45,4 +45,18 @@ class Agency extends Model
     {
         return $this->status === 'active';
     }
+
+    public function suspendedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'suspended_by_user_id');
+    }
+
+    /**
+     * Una suspensión de NavegaYA solo la levanta NavegaYA, no la empresa.
+     */
+    public function isSuspendedByPlatform(): bool
+    {
+        return $this->status === 'suspended'
+            && $this->suspendedBy?->roles()->where('code', 'super_admin')->exists() === true;
+    }
 }

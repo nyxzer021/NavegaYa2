@@ -118,18 +118,17 @@ class AgencySale
                 ],
             ]);
 
-            return [$confirmed, $tendered, $change, $data['operation_number'] ?? null];
-        });
+            Payment::query()
+                ->where('reservation_id', $confirmed->id)
+                ->where('provider_reference', 'POS-'.$confirmed->code)
+                ->update([
+                    'cash_tendered' => $tendered,
+                    'cash_change' => $change,
+                    'operation_number' => $data['operation_number'] ?? null,
+                ]);
 
-        [$confirmed, $tendered, $change, $operation] = $confirmed;
-        Payment::query()
-            ->where('reservation_id', $confirmed->id)
-            ->where('provider_reference', 'POS-'.$confirmed->code)
-            ->update([
-                'cash_tendered' => $tendered,
-                'cash_change' => $change,
-                'operation_number' => $operation,
-            ]);
+            return $confirmed;
+        });
 
         return [
             'reservation' => $confirmed->refresh(),

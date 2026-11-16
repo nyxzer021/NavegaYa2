@@ -31,7 +31,7 @@ class CompanyAgencyController extends Controller
         $organization = $this->organization($request);
         $agencies = Agency::query()
             ->where('organization_id', $organization->id)
-            ->with(['lots.departure.transportRoute.originPort', 'lots.departure.transportRoute.destinationPort', 'lots.departure.vessel', 'lots.holds.seat', 'sellers'])
+            ->with(['lots.departure.transportRoute.originPort', 'lots.departure.transportRoute.destinationPort', 'lots.departure.vessel', 'lots.holds.seat', 'sellers', 'suspendedBy.roles'])
             ->orderBy('name')
             ->get();
         $tallies = [];
@@ -115,6 +115,14 @@ class CompanyAgencyController extends Controller
             'max_surcharge_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'suspension_reason' => ['required_if:status,suspended', 'nullable', 'string', 'min:3', 'max:255'],
         ]);
+        if ($agency->isSuspendedByPlatform()) {
+            if ($data['status'] === 'active') {
+                throw ValidationException::withMessages(['status' => __('agencies.platform_locked')]);
+            }
+            $agency->update(['max_surcharge_percent' => $data['max_surcharge_percent']]);
+
+            return back()->with('success', __('agencies.updated'));
+        }
         $agency->update([
             'status' => $data['status'],
             'max_surcharge_percent' => $data['max_surcharge_percent'],

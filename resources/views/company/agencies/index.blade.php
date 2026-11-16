@@ -98,13 +98,15 @@
      {{ $agency->status === 'active' ? __('agencies.active') : __('agencies.suspended') }}
     </span>
    </header>
+   @php($platformLocked = $agency->isSuspendedByPlatform())
    @if($agency->suspension_reason)<p class="ny-agency-note is-alert">{{ $agency->suspension_reason }}</p>@endif
+   @if($platformLocked)<p class="ny-agency-note is-alert">{{ __('agencies.platform_locked') }}</p>@endif
 
    <form method="POST" action="{{ route('company.agencies.update', $agency) }}" class="ny-agency-form">
     @csrf @method('PATCH')
     <label>{{ __('agencies.status') }}
      <select name="status">
-      <option value="active" @selected($agency->status === 'active')>{{ __('agencies.active') }}</option>
+      <option value="active" @selected($agency->status === 'active') @disabled($platformLocked)>{{ __('agencies.active') }}</option>
       <option value="suspended" @selected($agency->status === 'suspended')>{{ __('agencies.suspended') }}</option>
      </select>
     </label>

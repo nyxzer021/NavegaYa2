@@ -320,6 +320,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/agencias-autorizadas', [AdminAgencyController::class, 'index'])->name('agencies.index');
     Route::post('/agencias-autorizadas/{agency}/suspender', [AdminAgencyController::class, 'suspend'])->name('agencies.suspend');
+    Route::post('/agencias-autorizadas/{agency}/reactivar', [AdminAgencyController::class, 'reactivate'])->name('agencies.reactivate');
     Route::get('/conexiones-de-pago', [AdminPreparationController::class, 'show'])->defaults('page', 'payment_connections')->name('payment-connections.index');
     Route::get('/cobros-conciliacion', [AdminPreparationController::class, 'show'])->defaults('page', 'reconciliation')->name('reconciliation.index');
     Route::get('/politicas-base', [AdminContentPolicyController::class, 'base'])->name('base-policies.index');

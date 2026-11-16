@@ -34,4 +34,16 @@ class AdminAgencyController extends Controller
 
         return back()->with('success', __('agencies.suspended_by_admin'));
     }
+
+    public function reactivate(Agency $agency): RedirectResponse
+    {
+        $agency->update([
+            'status' => 'active',
+            'suspension_reason' => null,
+            'suspended_at' => null,
+            'suspended_by_user_id' => null,
+        ]);
+
+        return back()->with('success', __('agencies.reactivated_by_admin'));
+    }
 }

@@ -32,8 +32,12 @@
       <label>{{ __('agencies.reason') }}<input name="suspension_reason" required></label>
       <button class="ny-agency-main" type="submit">{{ __('agencies.suspend') }}</button>
      </form>
-    @elseif($agency->suspension_reason)
-     <p class="ny-agency-note is-alert">{{ $agency->suspension_reason }}</p>
+    @else
+     @if($agency->suspension_reason)<p class="ny-agency-note is-alert">{{ $agency->suspension_reason }}</p>@endif
+     <form method="POST" action="{{ route('admin.agencies.reactivate', $agency) }}" class="ny-agency-form">
+      @csrf
+      <button class="ny-agency-main" type="submit">{{ __('agencies.reactivate') }}</button>
+     </form>
     @endif
    </article>
   @endforeach
