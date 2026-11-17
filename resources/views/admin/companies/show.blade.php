@@ -156,6 +156,15 @@
             <label class="text-xs font-bold text-slate-600 sm:col-span-2">Motivo<input name="reason" required minlength="5" maxlength="500" value="{{ old('reason') }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm"></label>
             <button class="h-11 w-fit rounded-xl bg-[#062c21] px-4 text-xs font-black text-white">Guardar corrección</button>
         </form>
+        <form method="POST" action="{{ route('admin.companies.short-code.update', $organization) }}" class="mt-4 grid gap-3 sm:grid-cols-2">
+            @csrf
+            @method('PATCH')
+            <label class="text-xs font-bold text-slate-600">Sigla de las guías
+                <input name="short_code" required maxlength="6" value="{{ old('short_code', $organization->short_code) }}" class="mt-1 block h-11 w-full rounded-xl border-slate-200 bg-slate-50 text-sm">
+            </label>
+            <p class="self-end text-xs text-slate-500">{{ $organization->shortCodeIsPrinted() ? 'Hay guías impresas con esta sigla. Si la cambias, esas guías no van a coincidir con la sigla nueva.' : '3 a 6 letras. El código de la guía queda ENC-SIGLA-fecha-número.' }}</p>
+            <button class="h-11 w-fit rounded-xl bg-[#062c21] px-4 text-xs font-black text-white">Cambiar sigla</button>
+        </form>
     </section>
 
     <div class="space-y-5">

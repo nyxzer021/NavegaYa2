@@ -30,6 +30,11 @@ class CargoShipment extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationSite::class, 'organization_site_id');
+    }
+
     public function departure(): BelongsTo
     {
         return $this->belongsTo(RouteDeparture::class, 'route_departure_id');

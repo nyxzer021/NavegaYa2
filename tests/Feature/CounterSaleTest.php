@@ -19,6 +19,7 @@ use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Models\VesselSeat;
+use App\Services\CashDesk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -327,6 +328,7 @@ class CounterSaleTest extends TestCase
         $seller = User::factory()->create();
         $seller->roles()->attach(Role::firstOrCreate(['code' => 'company_counter'], ['name' => 'Vendedor'])->id, ['organization_id' => $organization->id]);
         $seller->organizations()->attach($organization->id, ['status' => 'active']);
+        app(CashDesk::class)->open($seller, $organization->id, null, 0);
 
         return [$seller, $organization];
     }

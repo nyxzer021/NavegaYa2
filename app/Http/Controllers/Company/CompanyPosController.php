@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
+use App\Models\CashSession;
 use App\Models\Discount;
 use App\Models\Organization;
 use App\Models\OrganizationSite;
@@ -100,6 +101,7 @@ class CompanyPosController extends Controller
             'todayCount' => $departures->filter(fn (RouteDeparture $departure): bool => $departure->departure_at->between($todayStart, $todayEnd))->count(),
             'agency' => $agency,
             'agencySuspended' => $agencySuspended,
+            'cashSessions' => $agency ? collect() : CashSession::query()->where('user_id', $request->user()->id)->where('organization_id', $organizationId)->whereNull('closed_at')->get(),
         ]);
     }
 

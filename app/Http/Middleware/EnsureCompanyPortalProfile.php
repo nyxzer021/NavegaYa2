@@ -28,6 +28,10 @@ class EnsureCompanyPortalProfile
         'company.sales.index',
         'company.sales.export',
         'company.cash-close.index',
+        'company.cash-close.open',
+        'company.cash-close.close',
+        'company.cash-close.print',
+        'company.cash-close.export',
     ];
 
     /**

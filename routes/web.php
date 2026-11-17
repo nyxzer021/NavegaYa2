@@ -53,6 +53,7 @@ use App\Http\Controllers\Company\CompanyAdvertisingController;
 use App\Http\Controllers\Company\CompanyAgencyController;
 use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyCargoController;
+use App\Http\Controllers\Company\CompanyCashController;
 use App\Http\Controllers\Company\CompanyDepartureController;
 use App\Http\Controllers\Company\CompanyDetailsController;
 use App\Http\Controllers\Company\CompanyFleetController;
@@ -150,7 +151,11 @@ Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profil
     Route::post('/pos', [CompanyPosController::class, 'store'])->name('pos.store');
     Route::post('/pos/{reservation}/anular', [CompanyPosController::class, 'void'])->name('pos.void');
     Route::get('/mis-lotes', [CompanyAgencyController::class, 'lots'])->name('agency-lots.index');
-    Route::get('/cierre-de-caja', [CompanyPreparationController::class, 'show'])->defaults('page', 'cash_close')->name('cash-close.index');
+    Route::get('/cierre-de-caja', [CompanyCashController::class, 'index'])->name('cash-close.index');
+    Route::post('/cierre-de-caja', [CompanyCashController::class, 'open'])->name('cash-close.open');
+    Route::post('/cierre-de-caja/{cashSession}/cerrar', [CompanyCashController::class, 'close'])->name('cash-close.close');
+    Route::get('/cierre-de-caja/{cashSession}/ticket', [CompanyCashController::class, 'print'])->name('cash-close.print');
+    Route::get('/cierre-de-caja.csv', [CompanyCashController::class, 'export'])->name('cash-close.export');
 });
 Route::middleware(['auth', 'role:company_admin|company_counter', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {
     Route::get('/publicidad', [CompanyAdvertisingController::class, 'index'])->name('advertising.index');
@@ -346,6 +351,7 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/empresas/{organization}/comision', [AdminCompanyController::class, 'updateCommission'])->name('companies.commission.update');
     Route::patch('/empresas/{organization}/puerto-base', [AdminCompanyController::class, 'updateBasePort'])->name('companies.base-port.update');
     Route::patch('/empresas/{organization}/datos', [AdminCompanyController::class, 'updateIdentity'])->name('companies.identity.update');
+    Route::patch('/empresas/{organization}/sigla', [AdminCompanyController::class, 'updateShortCode'])->name('companies.short-code.update');
     Route::post('/empresas/{organization}/politica-viaje', [AdminContentPolicyController::class, 'updateCompany'])->name('companies.travel-policy.update');
     Route::patch('/empresas/{organization}/toggle-status', [AdminCompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
     Route::get('/empresas/{organization}/documentos/{document}', [AdminCompanyController::class, 'downloadDocument'])->name('companies.documents.download');

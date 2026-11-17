@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\CargoShipment;
+use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class CargoTrackingController extends Controller
@@ -27,6 +29,11 @@ class CargoTrackingController extends Controller
             'document.required' => __('tracking.miss'),
         ]);
 
+        $code = strtoupper(trim($data['code']));
+        if ($this->blocked($code)) {
+            return back()->withInput()->withErrors(['code' => __('tracking.miss')]);
+        }
+
         $shipment = CargoShipment::query()
             ->with([
                 'departure.transportRoute.originPort',
@@ -34,10 +41,12 @@ class CargoTrackingController extends Controller
                 'departure.vessel',
                 'events' => fn ($query) => $query->orderBy('happened_at'),
             ])
-            ->where('code', strtoupper(trim($data['code'])))
+            ->where('code', $code)
             ->first();
 
         if ($shipment === null || ! $this->documentMatches($shipment, $data['document'])) {
+            $this->rememberFailure($code);
+
             return back()->withInput()->withErrors(['code' => __('tracking.miss')]);
         }
 
@@ -73,5 +82,23 @@ class CargoTrackingController extends Controller
         $tail = substr($clean, -4);
 
         return '****'.($tail !== '' ? $tail : '');
+    }
+
+    private function failureKey(string $code): string
+    {
+        $hour = now()->timezone(DepartureSchedule::ZONE)->format('YmdH');
+
+        return 'cargo-track-fails:'.$code.':'.$hour;
+    }
+
+    private function blocked(string $code): bool
+    {
+        return (int) Cache::get($this->failureKey($code), 0) >= 5;
+    }
+
+    private function rememberFailure(string $code): void
+    {
+        $key = $this->failureKey($code);
+        Cache::put($key, (int) Cache::get($key, 0) + 1, now()->addHour());
     }
 }

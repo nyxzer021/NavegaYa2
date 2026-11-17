@@ -287,4 +287,16 @@ class Organization extends Model
     {
         return $this->hasManyThrough(AirDeparture::class, AirRoute::class);
     }
+
+    public function shortCodeIsPrinted(): bool
+    {
+        if (blank($this->short_code)) {
+            return false;
+        }
+
+        return CargoShipment::query()
+            ->where('organization_id', $this->id)
+            ->where('code', 'like', 'ENC-'.$this->short_code.'-%')
+            ->exists();
+    }
 }

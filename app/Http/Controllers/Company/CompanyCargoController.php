@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
 use App\Models\CargoShipment;
+use App\Models\CashSession;
 use App\Models\Organization;
 use App\Models\OrganizationSite;
 use App\Models\RouteDeparture;
@@ -71,6 +72,7 @@ class CompanyCargoController extends Controller
             'pendingPay' => CargoShipment::query()->where('organization_id', $organization->id)->where('payment_status', 'pending')->count(),
             'loose' => CargoShipment::query()->where('organization_id', $organization->id)->where('needs_reassignment', true)->count(),
             'onlyLoose' => $onlyLoose,
+            'cashOpen' => CashSession::query()->where('user_id', $request->user()->id)->where('organization_id', $organization->id)->whereNull('closed_at')->exists(),
             'prefill' => [
                 'sender_name' => $request->string('remitente')->toString(),
                 'sender_document' => $request->string('documento')->toString(),

@@ -12,6 +12,29 @@
  @if(session('success'))<p class="ny-pos-note" role="status">{{ session('success') }}</p>@endif
  @if($errors->any())<p class="ny-pos-note is-alert" role="alert">{{ $errors->first() }}</p>@endif
 
+ @if(!($agency ?? false) && ($cashSessions ?? collect())->isEmpty())
+ <div class="ny-cash">
+ <section class="ny-cash-card">
+  <h2>{{ __('cash.open_title') }}</h2>
+  <p>{{ __('cash.open_body') }}</p>
+  <form class="ny-cash-open" method="POST" action="{{ route('company.cash-close.open') }}">
+   @csrf
+   @if(($sites ?? collect())->isNotEmpty())
+    <label>{{ __('cash.site') }}
+     <select name="site_id" required>
+      @foreach($sites as $site)<option value="{{ $site->id }}">{{ $site->name }}</option>@endforeach
+     </select>
+    </label>
+   @endif
+   <label>{{ __('cash.float') }}<input name="opening_float" type="number" min="0" step="0.01" inputmode="decimal" required></label>
+   <button type="submit">{{ __('cash.open') }}</button>
+  </form>
+ </section>
+ </div>
+ @elseif(!($agency ?? false))
+ <p class="ny-pos-note">{{ __('cash.open_ready') }} <a href="{{ route('company.cash-close.index') }}">{{ __('cash.title') }}</a></p>
+ @endif
+
  @if($todayCount > 0 || $freeSeats > 0 || ($prices['seat']['adult'] ?? null))
  <section class="ny-pos-kpis" aria-label="{{ __('pos.title') }}">
   @if($todayCount > 0)

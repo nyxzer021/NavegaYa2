@@ -80,6 +80,16 @@ class Reservation extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function soldBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sold_by_user_id');
+    }
+
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationSite::class, 'organization_site_id');
+    }
+
     public function seats(): HasMany
     {
         return $this->hasMany(ReservationSeat::class);

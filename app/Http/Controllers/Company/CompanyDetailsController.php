@@ -32,6 +32,7 @@ class CompanyDetailsController extends Controller
             'ports' => $organization->catalogPorts(),
             'correction' => $correction,
             'correctionAuthor' => $correction?->user?->name,
+            'siglaLocked' => $organization->shortCodeIsPrinted(),
         ]);
     }
 
@@ -68,6 +69,11 @@ class CompanyDetailsController extends Controller
             'short_code.unique' => 'Esa sigla ya la usa otra empresa.',
             'base_port_id.exists' => 'Elige un puerto activo del catálogo.',
         ]);
+        if ($request->exists('short_code') && ($data['short_code'] ?? null) !== $organization->short_code && $organization->shortCodeIsPrinted()) {
+            return back()->withInput()->withErrors([
+                'short_code' => 'La sigla ya está impresa en guías. Solo el administrador de la plataforma puede cambiarla.',
+            ]);
+        }
         if (($data['base_port_id'] ?? null) && ! $organization->acceptsCatalogPort(Port::query()->findOrFail($data['base_port_id']))) {
             return back()->withErrors(['base_port_id' => 'Ese puerto no corresponde a tus modalidades aprobadas.'])->withInput();
         }

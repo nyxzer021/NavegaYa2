@@ -20,8 +20,8 @@
                 <x-ui.input name="legal_name" label="Razón social" value="{{ old('legal_name', $organization->legal_name) }}" required />
                 <x-ui.input name="commercial_name" label="Nombre comercial" value="{{ old('commercial_name', $organization->commercial_name) }}" />
                 <div>
-                    <x-ui.input name="short_code" label="Sigla de las guías" value="{{ old('short_code', $organization->short_code) }}" maxlength="6" />
-                    <p class="mt-1 text-sm text-slate-500">3 a 6 letras. El código queda ENC-SIGLA-fecha-número.</p>
+                    <x-ui.input name="short_code" label="Sigla de las guías" value="{{ old('short_code', $organization->short_code) }}" maxlength="6" @readonly($siglaLocked) />
+                    <p class="mt-1 text-sm text-slate-500">{{ $siglaLocked ? 'La sigla ya está impresa en guías. Solo el administrador de la plataforma puede cambiarla.' : '3 a 6 letras. El código queda ENC-SIGLA-fecha-número.' }}</p>
                 </div>
                 <label class="ny-ui-field"><span>Puerto o aeródromo base</span>
                     <select name="base_port_id">

@@ -423,6 +423,23 @@ class AdminCompanyController extends Controller
         ]);
     }
 
+    public function updateShortCode(Request $request, Organization $organization): RedirectResponse
+    {
+        $request->merge(['short_code' => strtoupper(trim((string) $request->input('short_code')))]);
+        $data = $request->validate([
+            'short_code' => ['required', 'regex:/^[A-Z]{3,6}$/', Rule::unique('organizations', 'short_code')->ignore($organization->id)],
+        ], [
+            'short_code.regex' => 'La sigla son 3 a 6 letras, sin números.',
+            'short_code.unique' => 'Esa sigla ya la usa otra empresa.',
+        ]);
+        $printed = $organization->shortCodeIsPrinted();
+        $organization->update(['short_code' => $data['short_code']]);
+
+        return back()->with('success', $printed
+            ? 'Sigla actualizada. Las guías ya impresas conservan la sigla anterior y no van a coincidir.'
+            : 'Sigla actualizada.');
+    }
+
     public function destroy(Organization $organization): RedirectResponse
     {
         $organization->update(['status' => 'suspended']);

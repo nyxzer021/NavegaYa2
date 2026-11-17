@@ -17,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class CargoDesk
 {
+    public function __construct(private readonly CashDesk $cash) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -38,7 +40,8 @@ class CargoDesk
             $shipment = $this->createShipment($organization, $departure, $seller, $data, $weight, $amount, $method, $siteId);
             $this->event($shipment, 'received', $seller->id, null);
             if ($method !== 'recipient') {
-                $this->collect($shipment, $seller, $siteId, $data, $amount);
+                $session = $this->cash->requireOpen($seller, $organization->id, $siteId);
+                $this->collect($shipment, $seller, $siteId, $data, $amount, $session->id);
             }
 
             return $shipment->refresh();
@@ -105,7 +108,8 @@ class CargoDesk
                 }
                 $this->assertPayment($data, (float) $locked->amount);
                 $siteId = $this->siteId($locked->organization_id, $data['site_id'] ?? null);
-                $this->collect($locked, $seller, $siteId, $data, (float) $locked->amount);
+                $session = $this->cash->requireOpen($seller, (int) $locked->organization_id, $siteId);
+                $this->collect($locked, $seller, $siteId, $data, (float) $locked->amount, $session->id);
             }
             $locked->update([
                 'status' => 'delivered',
@@ -230,7 +234,7 @@ class CargoDesk
     /**
      * @param  array<string, mixed>  $data
      */
-    private function collect(CargoShipment $shipment, User $seller, ?int $siteId, array $data, float $amount): void
+    private function collect(CargoShipment $shipment, User $seller, ?int $siteId, array $data, float $amount, int $sessionId): void
     {
         $method = (string) $data['method'];
         $tendered = $method === 'cash' ? round((float) $data['cash_tendered'], 2) : null;
@@ -253,6 +257,7 @@ class CargoDesk
             'paid_at' => now(),
             'collected_by_user_id' => $seller->id,
             'organization_site_id' => $siteId,
+            'cash_session_id' => $sessionId,
         ]);
     }
 

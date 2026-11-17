@@ -10,12 +10,20 @@ use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
+use App\Services\CashDesk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class CargoTrackingTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_the_public_page_shows_status_and_hides_money_and_phones(): void
     {
@@ -25,6 +33,7 @@ class CargoTrackingTest extends TestCase
             'route_departure_id' => $departure->id,
         ]))->assertRedirect();
         $shipment = CargoShipment::query()->firstOrFail();
+        $shipment->events()->update(['note' => 'entregado a Ana Ríos, doc 87654321']);
 
         $this->get(route('cargo.track', ['codigo' => $shipment->code]))
             ->assertOk()
@@ -46,7 +55,9 @@ class CargoTrackingTest extends TestCase
             ->assertDontSee('065600100')
             ->assertDontSee('065600200')
             ->assertDontSee('28.00')
-            ->assertDontSee('25.00');
+            ->assertDontSee('25.00')
+            ->assertDontSee('87654321')
+            ->assertDontSee('Ana Ríos');
 
         CargoShipment::query()->create([
             'code' => 'ENC-20261116-0001',
@@ -106,6 +117,34 @@ class CargoTrackingTest extends TestCase
             'code' => 'ENC-NONE-20261116-0001',
             'document' => '00000000',
         ])->assertStatus(429);
+    }
+
+    public function test_five_failed_lookups_hide_the_parcel_until_the_hour_passes(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-16 20:00:00'));
+        [$seller, $organization] = $this->staff();
+        $this->actingAs($seller)->post(route('company.parcels.store'), $this->parcel())->assertRedirect();
+        $code = CargoShipment::query()->firstOrFail()->code;
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->from(route('cargo.track'))->post(route('cargo.track.lookup'), [
+                'code' => $code,
+                'document' => '00000000',
+            ])->assertRedirect();
+        }
+
+        $this->from(route('cargo.track'))
+            ->followingRedirects()
+            ->post(route('cargo.track.lookup'), ['code' => $code, 'document' => '44556677'])
+            ->assertOk()
+            ->assertSee(__('tracking.miss'))
+            ->assertDontSee('****6677');
+
+        Carbon::setTestNow(Carbon::parse('2026-11-16 21:00:00'));
+        $this->post(route('cargo.track.lookup'), [
+            'code' => $code,
+            'document' => '44556677',
+        ])->assertOk()->assertSee('****6677')->assertDontSee('87654321');
     }
 
     public function test_a_vessel_without_capacity_accepts_the_parcel_and_warns(): void
@@ -225,6 +264,7 @@ class CargoTrackingTest extends TestCase
         $seller = User::factory()->create();
         $seller->roles()->attach(Role::firstOrCreate(['code' => 'company_counter'], ['name' => 'Vendedor'])->id, ['organization_id' => $organization->id]);
         $seller->organizations()->attach($organization->id, ['status' => 'active']);
+        app(CashDesk::class)->open($seller, $organization->id, null, 0);
 
         return [$seller, $organization];
     }

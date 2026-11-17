@@ -32,7 +32,10 @@ class CounterSale
     /** @var list<string> */
     public const PASSENGERS = ['adult', 'child', 'student', 'senior', 'infant'];
 
-    public function __construct(private readonly BookingPaymentService $payments) {}
+    public function __construct(
+        private readonly BookingPaymentService $payments,
+        private readonly CashDesk $cash,
+    ) {}
 
     public function assertOpen(RouteDeparture $departure): void
     {
@@ -58,8 +61,9 @@ class CounterSale
         $hand = (int) ($data['hand_kg'] ?? 0);
         $hold = (int) ($data['hold_kg'] ?? 0);
         $siteId = $this->siteId($organization->id, $data['site_id'] ?? null);
+        $session = $this->cash->requireOpen($seller, (int) $organization->id, $siteId);
 
-        $confirmed = DB::transaction(function () use ($seller, $departure, $data, $hand, $hold, $siteId) {
+        $confirmed = DB::transaction(function () use ($seller, $departure, $data, $hand, $hold, $siteId, $session) {
             $locked = RouteDeparture::query()->whereKey($departure->id)->lockForUpdate()->firstOrFail();
             $this->assertOpen($locked);
             $this->releaseExpired($locked);
@@ -123,6 +127,12 @@ class CounterSale
                 'method' => $method,
                 'provider' => 'pos',
                 'provider_reference' => 'POS-'.$reservation->code,
+                'cash_tendered' => $tendered,
+                'cash_change' => $change,
+                'operation_number' => $data['operation_number'] ?? null,
+                'cash_session_id' => $session->id,
+                'collected_by_user_id' => $seller->id,
+                'organization_site_id' => $siteId,
                 'provider_payload' => [
                     'registered_by' => $seller->id,
                     'site_id' => $siteId,
@@ -130,12 +140,6 @@ class CounterSale
                     'cash_change' => $change,
                     'operation_number' => $data['operation_number'] ?? null,
                 ],
-            ]);
-
-            Payment::query()->where('reservation_id', $confirmed->id)->where('provider_reference', 'POS-'.$confirmed->code)->update([
-                'cash_tendered' => $tendered,
-                'cash_change' => $change,
-                'operation_number' => $data['operation_number'] ?? null,
             ]);
 
             return $confirmed;
@@ -186,10 +190,15 @@ class CounterSale
                 }
             }
             Ticket::query()->whereIn('reservation_seat_id', $locked->seats()->pluck('id'))->update(['status' => 'voided']);
-            Payment::query()->where('reservation_id', $locked->id)->where('status', 'confirmed')->update([
-                'status' => 'voided',
-                'voided_at' => now(),
-            ]);
+            foreach (Payment::query()->where('reservation_id', $locked->id)->where('status', 'confirmed')->get() as $payment) {
+                if ($this->cash->moveVoid($seller, $payment, $reason)) {
+                    continue;
+                }
+                $payment->update([
+                    'status' => 'voided',
+                    'voided_at' => now(),
+                ]);
+            }
             $locked->update([
                 'status' => 'cancelled',
                 'voided_at' => now(),

@@ -13,6 +13,7 @@ use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
+use App\Services\CashDesk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -253,6 +254,7 @@ class CompanyPortalTest extends TestCase
         $departure = $this->departure($organization, 'Nave Muelle', 'Iquitos', 'Pebas');
         $departure->update(['departure_at' => now()->addHours(5), 'status' => 'scheduled', 'is_published' => true]);
         $seat = $departure->vessel->seats()->create(['code' => '1A', 'row_position' => 1, 'column_position' => 1, 'deck' => 1, 'is_available' => true]);
+        app(CashDesk::class)->open($admin, $organization->id, null, 20);
 
         $this->actingAs($admin)->post(route('company.pos.store'), [
             'departure_id' => $departure->id,

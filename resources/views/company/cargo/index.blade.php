@@ -10,6 +10,26 @@
  </header>
 
  @if($errors->any())<p class="ny-parcel-note is-alert" role="alert">{{ $errors->first() }}</p>@endif
+ @if(!($cashOpen ?? false))
+ <div class="ny-cash">
+ <section class="ny-cash-card">
+  <h2>{{ __('cash.open_title') }}</h2>
+  <p>{{ __('cash.open_body') }}</p>
+  <form class="ny-cash-open" method="POST" action="{{ route('company.cash-close.open') }}">
+   @csrf
+   @if($sites->isNotEmpty())
+    <label>{{ __('cash.site') }}
+     <select name="site_id" required>
+      @foreach($sites as $site)<option value="{{ $site->id }}">{{ $site->name }}</option>@endforeach
+     </select>
+    </label>
+   @endif
+   <label>{{ __('cash.float') }}<input name="opening_float" type="number" min="0" step="0.01" inputmode="decimal" required></label>
+   <button type="submit">{{ __('cash.open') }}</button>
+  </form>
+ </section>
+ </div>
+ @endif
  @if($loose > 0)
   <p class="ny-parcel-note is-alert" role="status">{{ __('cargo.reassign_title') }}. {{ __('cargo.reassign_body') }}</p>
  @endif

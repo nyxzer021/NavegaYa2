@@ -17,6 +17,7 @@ use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Models\VesselSeat;
+use App\Services\CashDesk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -123,6 +124,7 @@ class AgencyChannelTest extends TestCase
         $counter = User::factory()->create();
         $counter->roles()->attach(Role::where('code', 'company_counter')->firstOrFail()->id, ['organization_id' => $organization->id]);
         $counter->organizations()->attach($organization->id, ['status' => 'active']);
+        app(CashDesk::class)->open($counter, $organization->id, null, 0);
 
         $this->actingAs($counter)->from(route('company.pos.index'))->post(route('company.pos.store'), $this->payload($departure, [
             'seat_id' => $seat->id, 'method' => 'cash', 'cash_tendered' => 100,

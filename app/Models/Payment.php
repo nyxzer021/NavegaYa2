@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Support\DiscountLedger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 class Payment extends Model
 {
     protected $fillable = [
-        'reservation_id', 'cargo_shipment_id', 'collected_by_user_id', 'organization_site_id', 'checkout_order_id', 'subscription_id', 'purpose', 'method', 'provider', 'provider_reference', 'webhook_event_id',
-        'amount', 'cash_tendered', 'cash_change', 'operation_number', 'currency_code', 'commission_rate', 'commission_amount', 'operator_net', 'status', 'paid_at', 'voided_at',
+        'reservation_id', 'cargo_shipment_id', 'collected_by_user_id', 'organization_site_id', 'cash_session_id', 'checkout_order_id', 'subscription_id', 'purpose', 'method', 'provider', 'provider_reference', 'webhook_event_id',
+        'amount', 'cash_tendered', 'cash_change', 'operation_number', 'adjustment_note', 'currency_code', 'commission_rate', 'commission_amount', 'operator_net', 'status', 'paid_at', 'voided_at',
         'requires_review', 'review_reason', 'commission_status', 'commission_invoiced_at', 'commission_paid_at', 'commission_reference', 'provider_payload',
     ];
 
@@ -39,6 +40,12 @@ class Payment extends Model
 
     protected static function booted(): void
     {
+        static::updating(function (self $payment): void {
+            $payment->guardClosedSession($payment->getOriginal('cash_session_id'));
+        });
+        static::deleting(function (self $payment): void {
+            $payment->guardClosedSession($payment->cash_session_id);
+        });
         static::updated(function (self $payment): void {
             if ($payment->wasChanged('status') && $payment->status === 'refunded' && $payment->reservation_id) {
                 $reservation = $payment->reservation;
@@ -47,6 +54,24 @@ class Payment extends Model
                 }
             }
         });
+    }
+
+    public function cashSession(): BelongsTo
+    {
+        return $this->belongsTo(CashSession::class);
+    }
+
+    private function guardClosedSession(mixed $sessionId): void
+    {
+        if (! $sessionId) {
+            return;
+        }
+        $closed = CashSession::query()->whereKey($sessionId)->whereNotNull('closed_at')->exists();
+        if ($closed) {
+            throw ValidationException::withMessages([
+                'payment' => 'Ese cobro pertenece a un turno cerrado y no se puede modificar.',
+            ]);
+        }
     }
 
     public function reservation(): BelongsTo

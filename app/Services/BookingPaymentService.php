@@ -27,6 +27,12 @@ class BookingPaymentService
             $reservation->loadMissing(['departure.transportRoute.organization', 'airDeparture.airRoute.organization', 'seats']);
             $quote = $this->sales->quote($reservation);
             $commission = $this->sales->commission($quote);
+            $drawer = [];
+            foreach (['cash_tendered', 'cash_change', 'operation_number', 'cash_session_id', 'collected_by_user_id', 'organization_site_id'] as $key) {
+                if (array_key_exists($key, $paymentData)) {
+                    $drawer[$key] = $paymentData[$key];
+                }
+            }
 
             Payment::updateOrCreate(
                 ['provider_reference' => $paymentData['provider_reference']],
@@ -51,6 +57,7 @@ class BookingPaymentService
                         'service_fee_amount' => $quote['service_fee_amount'],
                         'commission_model' => 'passenger_fee',
                     ]),
+                    ...$drawer,
                 ],
             );
 
