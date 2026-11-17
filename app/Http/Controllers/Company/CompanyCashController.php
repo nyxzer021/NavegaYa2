@@ -161,9 +161,9 @@ class CompanyCashController extends Controller
     private function paymentRow(CashSession $session, Payment $payment): array
     {
         $voided = $payment->voided_at !== null || $payment->status === 'voided';
-        $net = $payment->method === 'cash'
-            ? $this->money((float) ($payment->cash_tendered ?? 0) - (float) ($payment->cash_change ?? 0))
-            : '';
+        $net = $payment->method !== 'cash'
+            ? ''
+            : ($voided ? $this->money(0) : $this->money((float) ($payment->cash_tendered ?? 0) - (float) ($payment->cash_change ?? 0)));
         $note = $payment->adjustment_note;
         if (blank($note) && $voided) {
             $note = $payment->reservation?->void_reason;
@@ -171,8 +171,8 @@ class CompanyCashController extends Controller
 
         return [
             $session->id,
-            DepartureSchedule::show($session->opened_at),
-            $session->closed_at ? DepartureSchedule::show($session->closed_at) : '',
+            $this->csvMoment($session->opened_at),
+            $session->closed_at ? $this->csvMoment($session->closed_at) : '',
             $session->site?->name,
             $payment->collector?->name ?: $payment->reservation?->soldBy?->name ?: $session->user?->name,
             $payment->reservation?->code ?: $payment->cargoShipment?->code,
@@ -200,8 +200,8 @@ class CompanyCashController extends Controller
 
         return [
             $session->id,
-            DepartureSchedule::show($session->opened_at),
-            $closed ? DepartureSchedule::show($session->closed_at) : '',
+            $this->csvMoment($session->opened_at),
+            $closed ? $this->csvMoment($session->closed_at) : '',
             $session->site?->name,
             $session->user?->name,
             'Resumen',
@@ -224,8 +224,8 @@ class CompanyCashController extends Controller
     {
         return match ($method) {
             'cash' => 'efectivo',
-            'yape' => 'Yape',
-            'plin' => 'Plin',
+            'yape' => 'yape',
+            'plin' => 'plin',
             'transfer' => 'transferencia',
             'card' => 'tarjeta',
             default => $method,
@@ -235,6 +235,11 @@ class CompanyCashController extends Controller
     private function money(float $amount): string
     {
         return number_format($amount, 2, '.', '');
+    }
+
+    private function csvMoment(mixed $moment): string
+    {
+        return DepartureSchedule::show($moment, 'Y-m-d H:i');
     }
 
     /**

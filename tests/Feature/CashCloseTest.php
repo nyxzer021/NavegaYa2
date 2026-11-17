@@ -246,20 +246,36 @@ class CashCloseTest extends TestCase
     {
         [$seller, $organization] = $this->seller('Vendedor Csv', '20641000014');
         $departure = $this->departure($organization);
-        $seat = $this->seat($departure, '6A');
+        $departure->update(['fare' => 80]);
+        $voidedSeat = $this->seat($departure, '6A');
+        $keptSeat = $this->seat($departure, '6B', 2);
         $this->open($seller, $organization, 20);
-        $this->actingAs($seller)->post(route('company.pos.store'), $this->ticket($departure, $seat, [
+        $this->actingAs($seller)->post(route('company.pos.store'), $this->ticket($departure, $voidedSeat, [
             'method' => 'cash',
             'cash_tendered' => 100,
+            'document_number' => '44556677',
         ]))->assertRedirect();
-        $reservation = Reservation::query()->firstOrFail();
+        $this->actingAs($seller)->post(route('company.pos.store'), $this->ticket($departure, $keptSeat, [
+            'method' => 'cash',
+            'cash_tendered' => 100,
+            'document_number' => '44556678',
+        ]))->assertRedirect();
+        $this->actingAs($seller)->post(route('company.parcels.store'), $this->parcel([
+            'method' => 'yape',
+            'operation_number' => 'YAPE-7788',
+            'amount' => 25,
+        ]))->assertRedirect();
+        $reservation = Reservation::query()->whereHas('seats', fn ($query) => $query->where('vessel_seat_id', $voidedSeat->id))->firstOrFail();
         $this->actingAs($seller)->post(route('company.pos.void', $reservation), [
             'reason' => 'Anula la sonda de verificación',
         ])->assertRedirect();
         $this->actingAs($seller)->post(route('company.cash-close.close', CashSession::query()->first()), [
-            'counted_cash' => 20,
+            'counted_cash' => 100,
             'closing_note' => 'Cierre sin la sonda',
         ])->assertRedirect();
+        $this->actingAs($seller)->get(route('company.cash-close.index'))
+            ->assertOk()
+            ->assertSee('16/11/2026 · 10:00');
 
         $csv = $this->actingAs($seller)->get(route('company.cash-close.export'))->streamedContent();
         $this->assertSame("\xEF\xBB\xBF", substr($csv, 0, 3));
@@ -271,19 +287,33 @@ class CashCloseTest extends TestCase
 
         $voided = collect($rows)->first(fn (array $row): bool => ($row[5] ?? null) === $reservation->code);
         $this->assertNotNull($voided);
+        $this->assertSame('2026-11-16 10:00', $voided[1]);
+        $this->assertSame('2026-11-16 10:00', $voided[2]);
         $this->assertSame('pasaje', $voided[6]);
         $this->assertSame('efectivo', $voided[7]);
-        $this->assertSame('95.00', $voided[8]);
-        $this->assertSame('95.00', $voided[9]);
+        $this->assertSame('80.00', $voided[8]);
+        $this->assertSame('0.00', $voided[9]);
         $this->assertSame('anulado', $voided[11]);
         $this->assertSame('Anula la sonda de verificación', $voided[12]);
         $this->assertSame('', $voided[17]);
+        $yape = collect($rows)->first(fn (array $row): bool => ($row[10] ?? null) === 'YAPE-7788');
+        $this->assertSame('yape', $yape[7]);
+
+        $net = 0;
+        foreach (array_slice($rows, 1) as $row) {
+            if (($row[5] ?? null) === 'Resumen' || ($row[9] ?? '') === '') {
+                continue;
+            }
+            $net += (int) round(((float) $row[9]) * 100);
+        }
+        $this->assertSame(8000, $net);
 
         $summary = collect($rows)->first(fn (array $row): bool => ($row[5] ?? null) === 'Resumen');
         $this->assertNotNull($summary);
+        $this->assertSame('2026-11-16 10:00', $summary[1]);
         $this->assertSame('20.00', $summary[13]);
-        $this->assertSame('20.00', $summary[14]);
-        $this->assertSame('20.00', $summary[15]);
+        $this->assertSame('100.00', $summary[14]);
+        $this->assertSame('100.00', $summary[15]);
         $this->assertSame('0.00', $summary[16]);
         $this->assertSame('Cierre sin la sonda', $summary[17]);
         $this->assertSame(1, substr_count($csv, 'Cierre sin la sonda'));
@@ -554,12 +584,12 @@ class CashCloseTest extends TestCase
         ]);
     }
 
-    private function seat(RouteDeparture $departure, string $code): VesselSeat
+    private function seat(RouteDeparture $departure, string $code, int $column = 1): VesselSeat
     {
         return $departure->vessel->seats()->create([
             'code' => $code,
             'row_position' => 1,
-            'column_position' => 1,
+            'column_position' => $column,
             'deck' => 'principal',
             'space_type' => 'seat',
             'is_available' => true,
