@@ -210,10 +210,12 @@ class CashCloseTest extends TestCase
 
         $this->actingAs($seller)->get(route('company.cash-close.index', ['fecha' => '2026-11-16']))
             ->assertOk()
-            ->assertSee('Cruce de medianoche');
+            ->assertSee('Cruce de medianoche')
+            ->assertSee(__('cash.daily'));
         $this->actingAs($seller)->get(route('company.cash-close.index', ['fecha' => '2026-11-17']))
             ->assertOk()
-            ->assertDontSee('Cruce de medianoche');
+            ->assertDontSee('Cruce de medianoche')
+            ->assertDontSee(__('cash.daily'));
     }
 
     public function test_another_company_and_an_agency_seller_cannot_open_the_cash_desk(): void

@@ -33,6 +33,8 @@ return [
     'no_site' => 'Sin sede',
     'no_departure' => 'Sin salida',
     'unknown_seller' => 'Sin vendedor',
+    'daily' => 'Día consolidado',
+    'daily_body' => 'Suma de los turnos cuya apertura cae en este día, hora de Lima.',
     'closed_list' => 'Cierres del día',
     'empty_day' => 'Este día no tiene cierres.',
     'print' => 'Ticket 80 mm',

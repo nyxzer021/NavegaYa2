@@ -31,6 +31,15 @@
  </form>
  @endif
 
+ @if($admin && $daily)
+ <section class="ny-cash-card">
+  <h2>{{ __('cash.daily') }}</h2>
+  <p>{{ __('cash.daily_body') }}</p>
+  @include('company.cash.summary', ['summary' => $daily])
+  <p>{{ __('cash.counted') }} <b>{{ $money($daily['counted']) }}</b> · {{ __('cash.difference') }} <b>{{ $money($daily['difference']) }}</b></p>
+ </section>
+ @endif
+
  @if($canOpen)
  <section class="ny-cash-card">
   <h2><span class="ny-cash-pill" style="--c: var(--ny-tone-leaf)"><x-ui.icon name="cash" /></span>{{ __('cash.open_title') }}</h2>

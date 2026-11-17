@@ -70,6 +70,7 @@ class CompanyCashController extends Controller
                 : collect(),
             'day' => $day->timezone(DepartureSchedule::ZONE)->toDateString(),
             'admin' => $user->isCompanyAdmin(),
+            'daily' => $user->isCompanyAdmin() ? $this->daily($open, $closed, $summaries, $start, $end) : null,
         ]);
     }
 
@@ -168,6 +169,63 @@ class CompanyCashController extends Controller
             }
             fclose($out);
         }, $name, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * @param  Collection<int, CashSession>  $open
+     * @param  Collection<int, CashSession>  $closed
+     * @param  array<int, array{purposes: array<string, float>, methods: array<string, float>, sellers: array<string, float>, operations: list<array{method: string, number: string, amount: float, purpose: string}>, commission: float, expected: float}>  $summaries
+     * @return array{purposes: array<string, float>, methods: array<string, float>, sellers: array<string, float>, operations: array{}, commission: float, expected: float, counted: float, difference: float}|null
+     */
+    private function daily(Collection $open, Collection $closed, array $summaries, Carbon $start, Carbon $end): ?array
+    {
+        $sessions = $closed->concat($open->filter(
+            fn (CashSession $session): bool => $session->opened_at !== null
+                && $session->opened_at->greaterThanOrEqualTo($start)
+                && $session->opened_at->lessThanOrEqualTo($end),
+        ))->unique('id')->values();
+        if ($sessions->isEmpty()) {
+            return null;
+        }
+
+        $purposes = [];
+        $methods = [];
+        $sellers = [];
+        $expected = 0;
+        $counted = 0;
+        $difference = 0;
+        $commission = 0;
+        foreach ($sessions as $session) {
+            $summary = $summaries[$session->id];
+            foreach ($summary['purposes'] as $key => $amount) {
+                $purposes[$key] = ($purposes[$key] ?? 0) + (int) round($amount * 100);
+            }
+            foreach ($summary['methods'] as $key => $amount) {
+                $methods[$key] = ($methods[$key] ?? 0) + (int) round($amount * 100);
+            }
+            foreach ($summary['sellers'] as $key => $amount) {
+                $sellers[$key] = ($sellers[$key] ?? 0) + (int) round($amount * 100);
+            }
+            $expected += (int) round($summary['expected'] * 100);
+            $commission += (int) round($summary['commission'] * 100);
+            if ($session->closed_at !== null) {
+                $counted += (int) round(((float) $session->counted_cash) * 100);
+                $difference += (int) round(((float) $session->difference) * 100);
+            }
+        }
+
+        $money = fn (array $cents): array => array_map(fn (int $cents): float => round($cents / 100, 2), $cents);
+
+        return [
+            'purposes' => $money($purposes),
+            'methods' => $money($methods),
+            'sellers' => $money($sellers),
+            'operations' => [],
+            'commission' => round($commission / 100, 2),
+            'expected' => round($expected / 100, 2),
+            'counted' => round($counted / 100, 2),
+            'difference' => round($difference / 100, 2),
+        ];
     }
 
     private function organization(Request $request): Organization

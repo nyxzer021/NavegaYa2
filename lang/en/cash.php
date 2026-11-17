@@ -33,6 +33,8 @@ return [
     'no_site' => 'No site',
     'no_departure' => 'No departure',
     'unknown_seller' => 'No seller',
+    'daily' => 'Daily total',
+    'daily_body' => 'Sum of the shifts opened on this day, Lima time.',
     'closed_list' => 'Closes of the day',
     'empty_day' => 'This day has no closes.',
     'print' => '80 mm ticket',
