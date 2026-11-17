@@ -7,6 +7,7 @@ use App\Models\CargoShipment;
 use App\Models\CashSession;
 use App\Models\MasterRoute;
 use App\Models\Organization;
+use App\Models\OrganizationSite;
 use App\Models\Payment;
 use App\Models\Port;
 use App\Models\Reservation;
@@ -19,6 +20,8 @@ use App\Models\VesselSeat;
 use App\Services\CashDesk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -150,7 +153,7 @@ class CashCloseTest extends TestCase
         $this->assertSame('95.00', $payment->fresh()->amount);
         $this->assertSame('confirmed', $payment->fresh()->status);
 
-        $this->open($seller, $organization, 0);
+        $this->open($seller, $organization, 95);
         $reservation = Reservation::query()->firstOrFail();
         $this->actingAs($seller)->post(route('company.pos.void', $reservation), [
             'reason' => 'El pasajero no viaja',
@@ -162,6 +165,162 @@ class CashCloseTest extends TestCase
         $this->assertSame((int) CashSession::query()->whereNull('closed_at')->value('id'), $refund->cash_session_id);
         $this->assertSame('-95.00', $refund->cash_tendered);
         $this->assertSame('El pasajero no viaja', $refund->adjustment_note);
+        $this->assertNull($refund->authorized_by_user_id);
+    }
+
+    public function test_a_cash_refund_over_the_drawer_is_blocked_unless_an_admin_authorizes_it(): void
+    {
+        [$seller, $organization] = $this->seller('Vendedor Tope', '20641000012');
+        $admin = User::factory()->create(['name' => 'Admin Autoriza']);
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'company_admin'], ['name' => 'Administrador'])->id, ['organization_id' => $organization->id]);
+        $admin->organizations()->attach($organization->id, ['status' => 'active']);
+        $departure = $this->departure($organization);
+        $seat = $this->seat($departure, '5A');
+        $this->open($seller, $organization, 10);
+        $this->actingAs($seller)->post(route('company.pos.store'), $this->ticket($departure, $seat, [
+            'method' => 'cash',
+            'cash_tendered' => 100,
+        ]))->assertRedirect();
+        $this->actingAs($seller)->post(route('company.cash-close.close', CashSession::query()->where('user_id', $seller->id)->first()), [
+            'counted_cash' => 105,
+        ])->assertRedirect();
+
+        $this->open($seller, $organization, 0);
+        $reservation = Reservation::query()->firstOrFail();
+        $this->actingAs($seller)->from(route('company.pos.index'))->post(route('company.pos.void', $reservation), [
+            'reason' => 'El pasajero no viaja',
+        ])->assertRedirect()->assertSessionHasErrors('reason');
+        $this->assertSame('confirmed', $reservation->fresh()->status);
+        $this->assertSame(0, Payment::query()->where('amount', '<', 0)->count());
+
+        $this->open($admin, $organization, 0);
+        $this->actingAs($admin)->post(route('company.pos.void', $reservation), [
+            'reason' => 'Autorizo la devolución sin efectivo en caja',
+        ])->assertRedirect();
+
+        $refund = Payment::query()->where('amount', '<', 0)->firstOrFail();
+        $this->assertSame($admin->id, $refund->authorized_by_user_id);
+        $this->assertSame('Autorizo la devolución sin efectivo en caja', $refund->adjustment_note);
+        $this->assertSame((int) CashSession::query()->where('user_id', $admin->id)->value('id'), $refund->cash_session_id);
+        $this->assertSame('105.00', CashSession::query()->where('user_id', $seller->id)->whereNotNull('closed_at')->value('expected_cash'));
+
+        $this->actingAs($admin)->get(route('company.cash-close.index'))
+            ->assertOk()
+            ->assertSee(__('cash.daily_closed'))
+            ->assertSee(__('cash.daily_open'))
+            ->assertSee('S/ 105.00')
+            ->assertSee('S/ -95.00')
+            ->assertDontSee('S/ 10.00');
+    }
+
+    public function test_recipient_pay_shows_the_site_that_received_the_parcel(): void
+    {
+        [$seller, $organization] = $this->seller('Vendedor Sede', '20641000013');
+        $site = OrganizationSite::query()->create([
+            'organization_id' => $organization->id,
+            'name' => 'Muelle Prueba',
+            'kind' => 'terminal',
+            'address' => 'Malecón',
+            'city' => 'Iquitos',
+            'is_active' => true,
+        ]);
+        app(CashDesk::class)->open($seller, $organization->id, $site->id, 0);
+        $this->actingAs($seller)->post(route('company.parcels.store'), $this->parcel([
+            'method' => 'recipient',
+            'site_id' => $site->id,
+            'amount' => 18,
+        ]))->assertRedirect();
+
+        $shipment = CargoShipment::query()->firstOrFail();
+        $this->assertSame($site->id, $shipment->received_at_site_id);
+        $this->assertNull($shipment->organization_site_id);
+        $this->assertDatabaseMissing('payments', ['cargo_shipment_id' => $shipment->id]);
+        $this->actingAs($seller)->get(route('company.cash-close.index'))
+            ->assertOk()
+            ->assertSee($shipment->code)
+            ->assertSee('Muelle Prueba')
+            ->assertDontSee(__('cash.no_site'));
+    }
+
+    public function test_the_csv_lists_a_voided_payment_and_keeps_the_closing_note_on_the_summary(): void
+    {
+        [$seller, $organization] = $this->seller('Vendedor Csv', '20641000014');
+        $departure = $this->departure($organization);
+        $seat = $this->seat($departure, '6A');
+        $this->open($seller, $organization, 20);
+        $this->actingAs($seller)->post(route('company.pos.store'), $this->ticket($departure, $seat, [
+            'method' => 'cash',
+            'cash_tendered' => 100,
+        ]))->assertRedirect();
+        $reservation = Reservation::query()->firstOrFail();
+        $this->actingAs($seller)->post(route('company.pos.void', $reservation), [
+            'reason' => 'Anula la sonda de verificación',
+        ])->assertRedirect();
+        $this->actingAs($seller)->post(route('company.cash-close.close', CashSession::query()->first()), [
+            'counted_cash' => 20,
+            'closing_note' => 'Cierre sin la sonda',
+        ])->assertRedirect();
+
+        $csv = $this->actingAs($seller)->get(route('company.cash-close.export'))->streamedContent();
+        $this->assertSame("\xEF\xBB\xBF", substr($csv, 0, 3));
+        $lines = array_values(array_filter(preg_split("/\r\n|\n|\r/", substr($csv, 3)) ?: [], fn (string $line): bool => $line !== ''));
+        $rows = array_map(str_getcsv(...), $lines);
+        $this->assertSame([
+            'Turno', 'Abierto', 'Cerrado', 'Sede', 'Vendedor', 'Referencia', 'Propósito', 'Método', 'Monto', 'Efectivo neto', 'Operación', 'Estado', 'Nota de ajuste', 'Fondo', 'Esperado', 'Contado', 'Diferencia', 'Nota de cierre',
+        ], $rows[0]);
+
+        $voided = collect($rows)->first(fn (array $row): bool => ($row[5] ?? null) === $reservation->code);
+        $this->assertNotNull($voided);
+        $this->assertSame('pasaje', $voided[6]);
+        $this->assertSame('efectivo', $voided[7]);
+        $this->assertSame('95.00', $voided[8]);
+        $this->assertSame('95.00', $voided[9]);
+        $this->assertSame('anulado', $voided[11]);
+        $this->assertSame('Anula la sonda de verificación', $voided[12]);
+        $this->assertSame('', $voided[17]);
+
+        $summary = collect($rows)->first(fn (array $row): bool => ($row[5] ?? null) === 'Resumen');
+        $this->assertNotNull($summary);
+        $this->assertSame('20.00', $summary[13]);
+        $this->assertSame('20.00', $summary[14]);
+        $this->assertSame('20.00', $summary[15]);
+        $this->assertSame('0.00', $summary[16]);
+        $this->assertSame('Cierre sin la sonda', $summary[17]);
+        $this->assertSame(1, substr_count($csv, 'Cierre sin la sonda'));
+        $this->assertStringNotContainsString(',cash,', $csv);
+    }
+
+    public function test_the_cash_adjustment_migration_rolls_back(): void
+    {
+        $path = storage_path('framework/testing-cash-rollback.sqlite');
+        if (is_file($path)) {
+            unlink($path);
+        }
+        touch($path);
+        config([
+            'database.connections.cashprobe' => array_merge(config('database.connections.sqlite'), [
+                'database' => $path,
+            ]),
+        ]);
+        DB::purge('cashprobe');
+
+        try {
+            $this->artisan('migrate', ['--database' => 'cashprobe', '--no-interaction' => true])->assertSuccessful();
+            $this->assertTrue(Schema::connection('cashprobe')->hasColumn('cargo_shipments', 'received_at_site_id'));
+            $this->assertTrue(Schema::connection('cashprobe')->hasColumn('payments', 'authorized_by_user_id'));
+
+            $this->artisan('migrate:rollback', ['--database' => 'cashprobe', '--step' => 1, '--no-interaction' => true])->assertSuccessful();
+            $this->assertFalse(Schema::connection('cashprobe')->hasColumn('cargo_shipments', 'received_at_site_id'));
+            $this->assertFalse(Schema::connection('cashprobe')->hasColumn('payments', 'authorized_by_user_id'));
+
+            $this->artisan('migrate', ['--database' => 'cashprobe', '--no-interaction' => true])->assertSuccessful();
+            $this->assertTrue(Schema::connection('cashprobe')->hasColumn('cargo_shipments', 'received_at_site_id'));
+        } finally {
+            DB::purge('cashprobe');
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
     }
 
     public function test_recipient_pay_stays_out_of_the_shift_until_delivery(): void
@@ -211,7 +370,9 @@ class CashCloseTest extends TestCase
         $this->actingAs($seller)->get(route('company.cash-close.index', ['fecha' => '2026-11-16']))
             ->assertOk()
             ->assertSee('Cruce de medianoche')
-            ->assertSee(__('cash.daily'));
+            ->assertSee(__('cash.daily'))
+            ->assertSee(__('cash.daily_closed'))
+            ->assertDontSee(__('cash.daily_open'));
         $this->actingAs($seller)->get(route('company.cash-close.index', ['fecha' => '2026-11-17']))
             ->assertOk()
             ->assertDontSee('Cruce de medianoche')

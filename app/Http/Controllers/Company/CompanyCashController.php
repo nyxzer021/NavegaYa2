@@ -133,7 +133,7 @@ class CompanyCashController extends Controller
             ->where('organization_id', $organization->id)
             ->whereBetween('opened_at', [$start, $end])
             ->when(! $user->isCompanyAdmin(), fn ($query) => $query->where('user_id', $user->id))
-            ->with(['user', 'site', 'payments.collector', 'payments.reservation.soldBy'])
+            ->with(['user', 'site', 'payments.collector', 'payments.reservation.soldBy', 'payments.cargoShipment'])
             ->orderBy('opened_at')
             ->get();
         $name = 'cierre-'.$day->timezone(DepartureSchedule::ZONE)->format('Ymd').'.csv';
@@ -141,49 +141,116 @@ class CompanyCashController extends Controller
         return response()->streamDownload(function () use ($sessions): void {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Turno', 'Abierto', 'Sede', 'Vendedor', 'Proposito', 'Metodo', 'Monto', 'Efectivo neto', 'Operacion', 'Nota']);
+            fputcsv($out, ['Turno', 'Abierto', 'Cerrado', 'Sede', 'Vendedor', 'Referencia', 'Propósito', 'Método', 'Monto', 'Efectivo neto', 'Operación', 'Estado', 'Nota de ajuste', 'Fondo', 'Esperado', 'Contado', 'Diferencia', 'Nota de cierre']);
             foreach ($sessions as $session) {
-                $payments = $session->payments->where('status', 'confirmed')->whereNull('voided_at');
-                if ($payments->isEmpty()) {
-                    fputcsv($out, [$session->id, DepartureSchedule::show($session->opened_at), $session->site?->name, $session->user?->name, '', '', '', '', '', $session->closing_note]);
-
-                    continue;
-                }
+                $payments = $session->payments
+                    ->filter(fn (Payment $payment): bool => in_array($payment->status, ['confirmed', 'voided'], true))
+                    ->sortBy('id');
                 foreach ($payments as $payment) {
-                    $net = $payment->method === 'cash'
-                        ? round((float) ($payment->cash_tendered ?? 0) - (float) ($payment->cash_change ?? 0), 2)
-                        : '';
-                    fputcsv($out, [
-                        $session->id,
-                        DepartureSchedule::show($session->opened_at),
-                        $session->site?->name,
-                        $payment->collector?->name ?: $payment->reservation?->soldBy?->name,
-                        $payment->purpose === 'cargo' ? 'encomienda' : 'pasaje',
-                        $payment->method,
-                        $payment->amount,
-                        $net,
-                        $payment->operation_number,
-                        $payment->adjustment_note ?: $session->closing_note,
-                    ]);
+                    fputcsv($out, $this->paymentRow($session, $payment));
                 }
+                fputcsv($out, $this->summaryRow($session));
             }
             fclose($out);
         }, $name, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     /**
+     * @return list<int|string|null>
+     */
+    private function paymentRow(CashSession $session, Payment $payment): array
+    {
+        $voided = $payment->voided_at !== null || $payment->status === 'voided';
+        $net = $payment->method === 'cash'
+            ? $this->money((float) ($payment->cash_tendered ?? 0) - (float) ($payment->cash_change ?? 0))
+            : '';
+        $note = $payment->adjustment_note;
+        if (blank($note) && $voided) {
+            $note = $payment->reservation?->void_reason;
+        }
+
+        return [
+            $session->id,
+            DepartureSchedule::show($session->opened_at),
+            $session->closed_at ? DepartureSchedule::show($session->closed_at) : '',
+            $session->site?->name,
+            $payment->collector?->name ?: $payment->reservation?->soldBy?->name ?: $session->user?->name,
+            $payment->reservation?->code ?: $payment->cargoShipment?->code,
+            $payment->purpose === 'cargo' ? 'encomienda' : 'pasaje',
+            $this->methodLabel((string) $payment->method),
+            $this->money((float) $payment->amount),
+            $net,
+            $payment->operation_number,
+            $voided ? 'anulado' : ($this->desk->cents((float) $payment->amount) < 0 ? 'ajuste' : 'confirmado'),
+            $note,
+            '',
+            '',
+            '',
+            '',
+            '',
+        ];
+    }
+
+    /**
+     * @return list<int|string|null>
+     */
+    private function summaryRow(CashSession $session): array
+    {
+        $closed = $session->closed_at !== null;
+
+        return [
+            $session->id,
+            DepartureSchedule::show($session->opened_at),
+            $closed ? DepartureSchedule::show($session->closed_at) : '',
+            $session->site?->name,
+            $session->user?->name,
+            'Resumen',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            $this->money((float) $session->opening_float),
+            $this->money($closed ? (float) $session->expected_cash : $this->desk->expectedCash($session)),
+            $closed ? $this->money((float) $session->counted_cash) : '',
+            $closed ? $this->money((float) $session->difference) : '',
+            $session->closing_note,
+        ];
+    }
+
+    private function methodLabel(string $method): string
+    {
+        return match ($method) {
+            'cash' => 'efectivo',
+            'yape' => 'Yape',
+            'plin' => 'Plin',
+            'transfer' => 'transferencia',
+            'card' => 'tarjeta',
+            default => $method,
+        };
+    }
+
+    private function money(float $amount): string
+    {
+        return number_format($amount, 2, '.', '');
+    }
+
+    /**
      * @param  Collection<int, CashSession>  $open
      * @param  Collection<int, CashSession>  $closed
      * @param  array<int, array{purposes: array<string, float>, methods: array<string, float>, sellers: array<string, float>, operations: list<array{method: string, number: string, amount: float, purpose: string}>, commission: float, expected: float}>  $summaries
-     * @return array{purposes: array<string, float>, methods: array<string, float>, sellers: array<string, float>, operations: array{}, commission: float, expected: float, counted: float, difference: float}|null
+     * @return array{purposes: array<string, float>, methods: array<string, float>, sellers: array<string, float>, operations: array{}, commission: float, closed: array{expected: float, counted: float, difference: float}|null, open: array{expected: float}|null}|null
      */
     private function daily(Collection $open, Collection $closed, array $summaries, Carbon $start, Carbon $end): ?array
     {
-        $sessions = $closed->concat($open->filter(
+        $openedToday = $open->filter(
             fn (CashSession $session): bool => $session->opened_at !== null
                 && $session->opened_at->greaterThanOrEqualTo($start)
                 && $session->opened_at->lessThanOrEqualTo($end),
-        ))->unique('id')->values();
+        )->values();
+        $sessions = $closed->concat($openedToday)->unique('id')->values();
         if ($sessions->isEmpty()) {
             return null;
         }
@@ -191,10 +258,11 @@ class CompanyCashController extends Controller
         $purposes = [];
         $methods = [];
         $sellers = [];
-        $expected = 0;
+        $commission = 0;
+        $closedExpected = 0;
         $counted = 0;
         $difference = 0;
-        $commission = 0;
+        $openExpected = 0;
         foreach ($sessions as $session) {
             $summary = $summaries[$session->id];
             foreach ($summary['purposes'] as $key => $amount) {
@@ -206,12 +274,15 @@ class CompanyCashController extends Controller
             foreach ($summary['sellers'] as $key => $amount) {
                 $sellers[$key] = ($sellers[$key] ?? 0) + (int) round($amount * 100);
             }
-            $expected += (int) round($summary['expected'] * 100);
             $commission += (int) round($summary['commission'] * 100);
             if ($session->closed_at !== null) {
+                $closedExpected += (int) round(((float) $session->expected_cash) * 100);
                 $counted += (int) round(((float) $session->counted_cash) * 100);
                 $difference += (int) round(((float) $session->difference) * 100);
             }
+        }
+        foreach ($openedToday as $session) {
+            $openExpected += (int) round($summaries[$session->id]['expected'] * 100);
         }
 
         $money = fn (array $cents): array => array_map(fn (int $cents): float => round($cents / 100, 2), $cents);
@@ -222,9 +293,14 @@ class CompanyCashController extends Controller
             'sellers' => $money($sellers),
             'operations' => [],
             'commission' => round($commission / 100, 2),
-            'expected' => round($expected / 100, 2),
-            'counted' => round($counted / 100, 2),
-            'difference' => round($difference / 100, 2),
+            'closed' => $closed->isEmpty() ? null : [
+                'expected' => round($closedExpected / 100, 2),
+                'counted' => round($counted / 100, 2),
+                'difference' => round($difference / 100, 2),
+            ],
+            'open' => $openedToday->isEmpty() ? null : [
+                'expected' => round($openExpected / 100, 2),
+            ],
         ];
     }
 
@@ -273,7 +349,7 @@ class CompanyCashController extends Controller
 
             return [
                 'code' => (string) $shipment->code,
-                'site' => $shipment->site?->name ?: __('cash.no_site'),
+                'site' => $shipment->receivedSite?->name ?: $shipment->site?->name ?: __('cash.no_site'),
                 'departure' => $route ? trim(($route->originPort?->name ?? '').' → '.($route->destinationPort?->name ?? '')) : __('cash.no_departure'),
                 'amount' => (float) $shipment->amount,
                 'days' => $from ? (int) $from->diff($today)->days : 0,

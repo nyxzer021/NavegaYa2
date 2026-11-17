@@ -35,8 +35,13 @@
  <section class="ny-cash-card">
   <h2>{{ __('cash.daily') }}</h2>
   <p>{{ __('cash.daily_body') }}</p>
-  @include('company.cash.summary', ['summary' => $daily])
-  <p>{{ __('cash.counted') }} <b>{{ $money($daily['counted']) }}</b> · {{ __('cash.difference') }} <b>{{ $money($daily['difference']) }}</b></p>
+  @include('company.cash.summary', ['summary' => $daily, 'showExpected' => false])
+  @if($daily['closed'])
+  <p>{{ __('cash.daily_closed') }}: {{ __('cash.daily_expected') }} <b>{{ $money($daily['closed']['expected']) }}</b> · {{ __('cash.daily_counted') }} <b>{{ $money($daily['closed']['counted']) }}</b> · {{ __('cash.daily_difference') }} <b>{{ $money($daily['closed']['difference']) }}</b></p>
+  @endif
+  @if($daily['open'])
+  <p>{{ __('cash.daily_open') }}: {{ __('cash.daily_expected') }} <b>{{ $money($daily['open']['expected']) }}</b> · {{ __('cash.open_state') }}</p>
+  @endif
  </section>
  @endif
 

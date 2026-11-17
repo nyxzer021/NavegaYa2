@@ -36,4 +36,6 @@
 @if((int) round($summary['commission'] * 100) !== 0)
  <p class="ny-cash-commission">{{ __('cash.commission') }} <b>{{ $money($summary['commission']) }}</b></p>
 @endif
+@if($showExpected ?? true)
 <p class="ny-cash-expected">{{ __('cash.expected') }} <b>{{ $money($summary['expected']) }}</b></p>
+@endif

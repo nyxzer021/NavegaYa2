@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class Payment extends Model
 {
     protected $fillable = [
-        'reservation_id', 'cargo_shipment_id', 'collected_by_user_id', 'organization_site_id', 'cash_session_id', 'checkout_order_id', 'subscription_id', 'purpose', 'method', 'provider', 'provider_reference', 'webhook_event_id',
+        'reservation_id', 'cargo_shipment_id', 'collected_by_user_id', 'authorized_by_user_id', 'organization_site_id', 'cash_session_id', 'checkout_order_id', 'subscription_id', 'purpose', 'method', 'provider', 'provider_reference', 'webhook_event_id',
         'amount', 'cash_tendered', 'cash_change', 'operation_number', 'adjustment_note', 'currency_code', 'commission_rate', 'commission_amount', 'operator_net', 'status', 'paid_at', 'voided_at',
         'requires_review', 'review_reason', 'commission_status', 'commission_invoiced_at', 'commission_paid_at', 'commission_reference', 'provider_payload',
     ];

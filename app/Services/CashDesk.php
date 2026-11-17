@@ -169,7 +169,7 @@ class CashDesk
             ->where('payment_status', 'pending')
             ->where('payment_method', 'recipient')
             ->where('status', '!=', 'delivered')
-            ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'site'])
+            ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'site', 'receivedSite'])
             ->orderBy('received_at')
             ->get();
     }
@@ -197,6 +197,20 @@ class CashDesk
         $net = $payment->method === 'cash'
             ? round((float) ($payment->cash_tendered ?? $payment->amount) - (float) ($payment->cash_change ?? 0), 2)
             : null;
+        $authorizedBy = null;
+        if ($net !== null && $this->cents($net) > $this->cents($this->expectedCash($open))) {
+            if (! $user->isCompanyAdmin()) {
+                throw ValidationException::withMessages([
+                    'reason' => 'No hay efectivo suficiente en el turno para esta devolución.',
+                ]);
+            }
+            if (blank($reason)) {
+                throw ValidationException::withMessages([
+                    'reason' => 'La autorización necesita una nota.',
+                ]);
+            }
+            $authorizedBy = $user->id;
+        }
         Payment::query()->create([
             'reservation_id' => $payment->reservation_id,
             'cargo_shipment_id' => $payment->cargo_shipment_id,
@@ -215,6 +229,7 @@ class CashDesk
             'status' => 'confirmed',
             'paid_at' => now(),
             'collected_by_user_id' => $user->id,
+            'authorized_by_user_id' => $authorizedBy,
             'organization_site_id' => $open->organization_site_id,
             'cash_session_id' => $open->id,
         ]);

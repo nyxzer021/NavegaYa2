@@ -114,8 +114,8 @@
   <p class="ny-parcel-change" x-show="method === 'cash' && price !== '' && tendered !== ''" x-cloak>{{ __('cargo.change') }} <b x-text="'S/ ' + (Math.round((Number(tendered) - Number(price)) * 100) / 100).toFixed(2)"></b></p>
   <label x-show="method === 'yape' || method === 'card'" x-cloak>{{ __('cargo.operation') }}<input name="operation_number" value="{{ old('operation_number') }}" :required="method === 'yape' || method === 'card'"></label>
   @if($sites->isNotEmpty())
-   <label x-show="method !== 'recipient'" x-cloak>{{ __('cargo.site') }}
-    <select name="site_id" :required="method !== 'recipient'">
+   <label>{{ __('cargo.site') }}
+    <select name="site_id" required>
      @foreach($sites as $site)<option value="{{ $site->id }}" @selected(old('site_id') == $site->id)>{{ $site->name }}</option>@endforeach
     </select>
    </label>

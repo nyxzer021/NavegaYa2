@@ -35,7 +35,7 @@ class CargoDesk
             if ($method !== 'recipient') {
                 $this->assertPayment($data, $amount);
             }
-            $siteId = $method === 'recipient' ? null : $this->siteId($organization->id, $data['site_id'] ?? null);
+            $siteId = $this->siteId($organization->id, $data['site_id'] ?? null);
 
             $shipment = $this->createShipment($organization, $departure, $seller, $data, $weight, $amount, $method, $siteId);
             $this->event($shipment, 'received', $seller->id, null);
@@ -308,7 +308,8 @@ class CargoDesk
             'received_at' => now(),
             'received_by_user_id' => $seller->id,
             'collected_by_user_id' => $method === 'recipient' ? null : $seller->id,
-            'organization_site_id' => $siteId,
+            'organization_site_id' => $method === 'recipient' ? null : $siteId,
+            'received_at_site_id' => $siteId,
         ];
 
         $payload['code'] = $this->nextCode($organization);
