@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title' => 'Parcel tracking',
+    'kicker' => 'No account',
+    'lead' => 'Enter the waybill code and the sender or recipient document.',
+    'code' => 'Waybill code',
+    'document' => 'Document',
+    'search' => 'Look up',
+    'miss' => 'No parcel matches those details.',
+    'status' => 'Status',
+    'route' => 'Route',
+    'when' => 'Departure',
+    'vessel' => 'Vessel',
+    'history' => 'History',
+    'sender_document' => 'Sender document',
+    'recipient_document' => 'Recipient document',
+    'no_departure' => 'No departure assigned',
+    'event_received' => 'Received',
+    'event_assigned' => 'Assigned to a departure',
+    'event_boarded' => 'Boarded',
+    'event_delivered' => 'Delivered',
+    'event_unassigned' => 'Back to received, with no departure',
+    'event_other' => 'Update',
+];

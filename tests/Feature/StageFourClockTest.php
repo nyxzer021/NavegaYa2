@@ -19,11 +19,24 @@ use App\Models\Vessel;
 use App\Models\VesselSeat;
 use App\Support\DepartureSchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class StageFourClockTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Carbon::setTestNow(Carbon::parse('2026-11-16 11:00:00'));
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_eight_in_lima_is_stored_in_utc_and_shown_on_home_and_ticket(): void
     {

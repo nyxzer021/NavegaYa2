@@ -15,6 +15,13 @@
     <p class="text-sm font-semibold text-emerald-800">{{ $hasRiver && $hasAir ? 'Lanchas y avionetas' : ($hasAir ? 'Avionetas' : 'Lanchas y motonaves') }}</p>
     <h2 class="mt-1 text-2xl font-black text-slate-950">Registro y configuración de flota</h2>
     <p class="mt-1 text-sm text-slate-500">Habilita lo que opera tu empresa. Después registra cada unidad y diseña su plano.</p>
+    @php($missingCapacity = $vessels->filter(fn ($vessel) => $vessel->status === 'ready' && $vessel->cargo_capacity_tons === null))
+    @if($missingCapacity->isNotEmpty())
+        <p class="ny-parcel-note is-alert" role="status">{{ __('cargo.no_capacity_admin') }}</p>
+        <ul>
+            @foreach($missingCapacity as $vessel)<li>{{ $vessel->name }}</li>@endforeach
+        </ul>
+    @endif
 </section>
 <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
     <h3 class="text-lg font-black text-slate-950">Qué transportas</h3>

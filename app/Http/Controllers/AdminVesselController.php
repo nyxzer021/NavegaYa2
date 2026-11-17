@@ -14,9 +14,11 @@ class AdminVesselController extends Controller
 {
     public function index(): View
     {
-        $vessels = Vessel::query()->with(['organization', 'basePort'])->withCount('seats')->when(AdminScope::organizationId(auth()->user()), fn ($query, $id) => $query->where('organization_id', $id))->latest()->paginate(12);
+        $scope = AdminScope::organizationId(auth()->user());
+        $vessels = Vessel::query()->with(['organization', 'basePort'])->withCount('seats')->when($scope, fn ($query, $id) => $query->where('organization_id', $id))->latest()->paginate(12);
+        $withoutCapacity = Vessel::query()->with('organization')->where('status', 'ready')->whereNull('cargo_capacity_tons')->when($scope, fn ($query, $id) => $query->where('organization_id', $id))->orderBy('name')->get();
 
-        return view('admin.vessels.index', compact('vessels'));
+        return view('admin.vessels.index', compact('vessels', 'withoutCapacity'));
     }
 
     public function create(): View

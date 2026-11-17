@@ -47,6 +47,7 @@ use App\Http\Controllers\AgencyInvitationController;
 use App\Http\Controllers\AirBookingController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusinessMessageController;
+use App\Http\Controllers\CargoTrackingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Company\CompanyAdvertisingController;
 use App\Http\Controllers\Company\CompanyAgencyController;
@@ -96,6 +97,8 @@ use App\Http\Controllers\WeatherController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/seguimiento/encomienda', [CargoTrackingController::class, 'show'])->name('cargo.track');
+Route::post('/seguimiento/encomienda', [CargoTrackingController::class, 'lookup'])->middleware('throttle:8,1')->name('cargo.track.lookup');
 Route::get('/anunciate', [PublicAdController::class, 'showLanding'])->name('advertising.create');
 Route::post('/anunciate', [PublicAdController::class, 'storeLead'])->middleware('throttle:10,1')->name('advertising.store');
 Route::get('/pagina/{slug}', [PublicPageController::class, 'show'])->name('pages.show');

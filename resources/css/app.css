@@ -489,6 +489,9 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 .ny-parcel-kpi span:last-child{font-size:12px;color:var(--ny-text-muted)}
 .ny-parcel-card{display:grid;gap:12px;padding:16px 20px}
 .ny-parcel-card.is-parcel{border-top:4px solid var(--ny-tone-sun)}
+.ny-parcel-card.is-loose{border-color:var(--ny-tone-coral);box-shadow:0 0 0 3px color-mix(in srgb,var(--ny-tone-coral) 28%,transparent)}
+.ny-parcel-badge.is-loose{background:color-mix(in srgb,var(--ny-tone-coral) 18%,var(--ny-surface));color:var(--ny-tone-coral-deep)}
+.ny-parcel-links a.is-on{text-decoration:underline}
 .ny-parcel-head{display:flex;gap:12px;align-items:flex-start}
 .ny-parcel-head div{flex:1;min-width:0}
 .ny-parcel-pill{display:inline-grid;width:36px;height:36px;flex:0 0 36px;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--c) 18%,var(--ny-surface));color:var(--c);vertical-align:middle}
@@ -562,3 +565,24 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
  .ny-slip.is-80 .ny-slip-sheet,.ny-slip.is-etiqueta .ny-slip-sheet{width:72mm;margin:0;padding:0;box-shadow:none;border-radius:0}
  .ny-slip.is-80 .ny-slip-sheet header,.ny-slip.is-etiqueta .ny-slip-sheet header{background:#fff;color:#000;padding:0}
 }
+.ny-track{margin:0;background:var(--ny-background);color:var(--ny-text);font-family:var(--ny-body-font)}
+.ny-track main{width:min(640px,calc(100% - 32px));margin:0 auto;padding:24px 0 40px}
+.ny-track h1{margin:4px 0;font-size:28px}
+.ny-track p{margin:0;font-size:14px;color:var(--ny-text-muted)}
+.ny-track-kicker{color:var(--ny-tone-sun-deep);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.ny-track form,.ny-track-card{display:grid;gap:12px;margin-top:16px;padding:16px;border:1px solid var(--ny-border);border-radius:12px;background:var(--ny-surface);box-shadow:var(--ny-shadow-sm)}
+.ny-track label{display:grid;gap:6px;font-size:12px;font-weight:700}
+.ny-track input{height:44px;border:1px solid var(--ny-border);border-radius:8px;padding:0 12px;font-size:16px;background:var(--ny-surface);color:var(--ny-text)}
+.ny-track button{min-height:44px;border:0;border-radius:8px;background:var(--ny-tone-sun-deep);color:var(--ny-primary-deep);font-size:14px;font-weight:800}
+.ny-track-note{border-radius:12px;padding:12px;background:color-mix(in srgb,var(--ny-tone-coral) 16%,var(--ny-surface));color:var(--ny-tone-coral-deep);font-size:14px;font-weight:700}
+.ny-track-card h2,.ny-track-card h3{margin:0;font-size:16px}
+.ny-track-card dl{display:grid;gap:12px;margin:0}
+.ny-track-card dt{font-size:12px;font-weight:800;color:var(--ny-text-muted)}
+.ny-track-card dd{margin:0;font-size:16px}
+.ny-track-card ol{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.ny-track-card li{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.ny-track-badge{display:inline-flex;align-items:center;min-height:36px;border-radius:999px;padding:0 12px;font-size:14px;font-weight:800}
+.ny-track-badge.is-received{background:color-mix(in srgb,var(--ny-tone-sun) 22%,var(--ny-surface));color:var(--ny-tone-sun-deep)}
+.ny-track-badge.is-boarded{background:color-mix(in srgb,var(--ny-tone-river) 18%,var(--ny-surface));color:var(--ny-tone-river-deep)}
+.ny-track-badge.is-delivered{background:color-mix(in srgb,var(--ny-tone-leaf) 20%,var(--ny-surface));color:var(--ny-tone-leaf-deep)}
+@media(max-width:699px){.ny-track h1{font-size:22px}}

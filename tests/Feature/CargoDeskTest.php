@@ -29,7 +29,7 @@ class CargoDeskTest extends TestCase
         $this->actingAs($seller)->post(route('company.parcels.store'), $this->parcel())->assertRedirect();
         $this->actingAs($seller)->post(route('company.parcels.store'), $this->parcel(['sender_document' => '44556678']))->assertRedirect();
         $this->assertSame(
-            ['ENC-20261115-0001', 'ENC-20261115-0002'],
+            ['ENC-'.$organization->short_code.'-20261115-0001', 'ENC-'.$organization->short_code.'-20261115-0002'],
             CargoShipment::query()->where('organization_id', $organization->id)->orderBy('code')->pluck('code')->all(),
         );
 
@@ -37,8 +37,8 @@ class CargoDeskTest extends TestCase
         $this->actingAs($seller)->post(route('company.parcels.store'), $this->parcel(['sender_document' => '44556679']))->assertRedirect();
         $this->actingAs($otherSeller)->post(route('company.parcels.store'), $this->parcel())->assertRedirect();
 
-        $this->assertDatabaseHas('cargo_shipments', ['organization_id' => $organization->id, 'code' => 'ENC-20261116-0001']);
-        $this->assertDatabaseHas('cargo_shipments', ['organization_id' => $other->id, 'code' => 'ENC-20261116-0002']);
+        $this->assertDatabaseHas('cargo_shipments', ['organization_id' => $organization->id, 'code' => 'ENC-'.$organization->short_code.'-20261116-0001']);
+        $this->assertDatabaseHas('cargo_shipments', ['organization_id' => $other->id, 'code' => 'ENC-'.$other->short_code.'-20261116-0001']);
     }
 
     public function test_a_departure_cannot_take_more_weight_than_the_vessel(): void
@@ -214,6 +214,7 @@ class CargoDeskTest extends TestCase
             'ruc' => $ruc,
             'email' => strtolower(str_replace(' ', '', $name)).'@test.pe',
             'status' => 'active',
+            'short_code' => $this->sigla($ruc),
         ]);
         $seller = User::factory()->create();
         $seller->roles()->attach(Role::firstOrCreate(['code' => 'company_counter'], ['name' => 'Vendedor'])->id, ['organization_id' => $organization->id]);
@@ -261,5 +262,13 @@ class CargoDeskTest extends TestCase
             'status' => 'scheduled',
             'is_published' => true,
         ]);
+    }
+
+    private function sigla(string $ruc): string
+    {
+        $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $n = (int) substr($ruc, -4);
+
+        return $alphabet[intdiv($n, 676) % 26].$alphabet[intdiv($n, 26) % 26].$alphabet[$n % 26].'X';
     }
 }

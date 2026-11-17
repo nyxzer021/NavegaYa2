@@ -22,10 +22,13 @@ class CompanyCargoController extends Controller
     public function index(Request $request, CargoDesk $desk): View
     {
         $organization = $this->organization($request);
+        $onlyLoose = $request->boolean('reasignar');
         $shipments = CargoShipment::query()
             ->where('organization_id', $organization->id)
+            ->when($onlyLoose, fn ($query) => $query->where('needs_reassignment', true))
             ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'events.user'])
-            ->latest()
+            ->orderByDesc('needs_reassignment')
+            ->latest('id')
             ->limit(40)
             ->get();
         [$start, $end] = DepartureSchedule::dayBounds();
@@ -67,6 +70,7 @@ class CompanyCargoController extends Controller
             'deliveredToday' => CargoShipment::query()->where('organization_id', $organization->id)->whereBetween('delivered_at', [$start, $end])->count(),
             'pendingPay' => CargoShipment::query()->where('organization_id', $organization->id)->where('payment_status', 'pending')->count(),
             'loose' => CargoShipment::query()->where('organization_id', $organization->id)->where('needs_reassignment', true)->count(),
+            'onlyLoose' => $onlyLoose,
             'prefill' => [
                 'sender_name' => $request->string('remitente')->toString(),
                 'sender_document' => $request->string('documento')->toString(),
@@ -144,7 +148,7 @@ class CompanyCargoController extends Controller
         return view('company.cargo.guide', [
             'shipment' => $shipment->load(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'organization']),
             'paper' => $paper,
-            'qr' => CargoGuideQr::dataUri(route('company.parcels.guide', $shipment)),
+            'qr' => CargoGuideQr::dataUri(route('cargo.track', ['codigo' => $shipment->code])),
         ]);
     }
 

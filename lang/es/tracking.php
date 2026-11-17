@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title' => 'Seguimiento de encomienda',
+    'kicker' => 'Sin cuenta',
+    'lead' => 'Escribe el código de la guía y el documento del remitente o del destinatario.',
+    'code' => 'Código de guía',
+    'document' => 'Documento',
+    'search' => 'Consultar',
+    'miss' => 'No encontramos una encomienda con esos datos.',
+    'status' => 'Estado',
+    'route' => 'Ruta',
+    'when' => 'Salida',
+    'vessel' => 'Embarcación',
+    'history' => 'Historial',
+    'sender_document' => 'Documento del remitente',
+    'recipient_document' => 'Documento del destinatario',
+    'no_departure' => 'Sin salida asignada',
+    'event_received' => 'Recibida',
+    'event_assigned' => 'Asignada a una salida',
+    'event_boarded' => 'Embarcada',
+    'event_delivered' => 'Entregada',
+    'event_unassigned' => 'Volvió a recibida, sin salida',
+    'event_other' => 'Actualización',
+];

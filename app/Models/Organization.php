@@ -19,7 +19,7 @@ class Organization extends Model
     }
 
     protected $fillable = [
-        'type', 'modality', 'base_city', 'base_port_id', 'legal_name', 'commercial_name', 'contact_name',
+        'type', 'modality', 'base_city', 'base_port_id', 'legal_name', 'commercial_name', 'short_code', 'contact_name',
         'representative_document_number', 'representative_email', 'representative_phone',
         'ruc', 'email', 'phone', 'whatsapp', 'whatsapp_message', 'whatsapp_cargo', 'whatsapp_hours_from', 'whatsapp_hours_until', 'whatsapp_show_outside_hours',
         'service_hours', 'show_public_whatsapp', 'whatsapp_hidden_by_admin', 'whatsapp_hidden_reason', 'whatsapp_hidden_by', 'whatsapp_hidden_at',

@@ -38,6 +38,10 @@ class CompanyDetailsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $organization = $this->organization($request);
+        if ($request->exists('short_code')) {
+            $sigla = strtoupper(trim((string) $request->input('short_code')));
+            $request->merge(['short_code' => $sigla === '' ? null : $sigla]);
+        }
         $data = $request->validate([
             'legal_name' => ['required', 'string', 'max:180'],
             'commercial_name' => ['nullable', 'string', 'max:180'],
@@ -45,6 +49,7 @@ class CompanyDetailsController extends Controller
             'address' => ['required', 'string', 'max:255'],
             'base_city' => ['required', 'string', 'max:100'],
             'contact_name' => ['required', 'string', 'max:180'],
+            'short_code' => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z]{3,6}$/', Rule::unique('organizations', 'short_code')->ignore($organization->id)],
             'representative_document_number' => ['nullable', 'string', 'max:20'],
             'representative_email' => ['nullable', 'email', 'max:255'],
             'representative_phone' => ['nullable', 'string', 'max:30'],
@@ -59,16 +64,22 @@ class CompanyDetailsController extends Controller
             'address.required' => 'Indica la dirección fiscal.',
             'base_city.required' => 'Indica la ciudad.',
             'contact_name.required' => 'Indica al representante legal.',
+            'short_code.regex' => 'La sigla son 3 a 6 letras, sin números.',
+            'short_code.unique' => 'Esa sigla ya la usa otra empresa.',
             'base_port_id.exists' => 'Elige un puerto activo del catálogo.',
         ]);
         if (($data['base_port_id'] ?? null) && ! $organization->acceptsCatalogPort(Port::query()->findOrFail($data['base_port_id']))) {
             return back()->withErrors(['base_port_id' => 'Ese puerto no corresponde a tus modalidades aprobadas.'])->withInput();
         }
 
-        $organization->update(collect($data)->only([
+        $fields = collect($data)->only([
             'legal_name', 'commercial_name', 'base_port_id', 'address', 'base_city',
             'contact_name', 'representative_document_number', 'representative_email', 'representative_phone',
-        ])->all());
+        ])->all();
+        if ($request->exists('short_code')) {
+            $fields['short_code'] = $data['short_code'] ?? null;
+        }
+        $organization->update($fields);
 
         $this->storeDocument($request, $organization, 'ruc_document', 'ruc', $data['ruc_expires_on'] ?? null, $data['ruc_reference'] ?? null);
         $this->storeDocument($request, $organization, 'representative_document', 'representative', $data['representative_expires_on'] ?? null, $data['representative_reference'] ?? null);

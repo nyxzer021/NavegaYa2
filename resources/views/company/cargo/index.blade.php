@@ -13,6 +13,10 @@
  @if($loose > 0)
   <p class="ny-parcel-note is-alert" role="status">{{ __('cargo.reassign_title') }}. {{ __('cargo.reassign_body') }}</p>
  @endif
+ <p class="ny-parcel-links">
+  <a href="{{ route('company.parcels.index') }}" @class(['is-on' => ! $onlyLoose])>{{ __('cargo.reassign_all') }}</a>
+  <a href="{{ route('company.parcels.index', ['reasignar' => 1]) }}" @class(['is-on' => $onlyLoose])>{{ __('cargo.reassign_filter') }}@if($loose > 0) ({{ $loose }})@endif</a>
+ </p>
 
  @if($receivedToday > 0 || $boardedToday > 0 || $deliveredToday > 0 || $pendingPay > 0)
  <section class="ny-parcel-kpis">
@@ -73,7 +77,7 @@
   </label>
   <template x-if="departure && capacities[departure]">
    <div>
-    <p class="ny-parcel-help" x-show="!capacities[departure].limit">{{ __('cargo.no_capacity') }}</p>
+    <p class="ny-parcel-note is-alert" x-show="!capacities[departure].limit">{{ __('cargo.no_capacity') }}</p>
     <div class="ny-parcel-bar" x-show="capacities[departure].limit" :class="'is-' + capacities[departure].tone"><i :style="'width:' + capacities[departure].percent + '%'"></i></div>
     <p class="ny-parcel-help" x-show="capacities[departure].limit" x-text="capacities[departure].used + ' kg / ' + capacities[departure].limit + ' kg'"></p>
    </div>
@@ -102,7 +106,7 @@
  @forelse($shipments as $shipment)
   @php($volume = (int) $shipment->length_cm * (int) $shipment->width_cm * (int) $shipment->height_cm)
   @php($load = $capacities[$shipment->route_departure_id] ?? null)
-  <article class="ny-parcel-card is-parcel">
+  <article @class(['ny-parcel-card is-parcel', 'is-loose' => $shipment->needs_reassignment])>
    <header class="ny-parcel-head">
     <span class="ny-parcel-pill" style="--c: var(--ny-tone-sun)"><x-ui.icon name="parcels" /></span>
     <div>
@@ -126,7 +130,7 @@
     @else
      <span class="ny-parcel-badge is-delivered"><x-ui.icon name="check" />{{ __('cargo.paid') }}</span>
     @endif
-    @if($shipment->needs_reassignment)<span class="ny-parcel-badge is-received">{{ __('cargo.no_departure') }}</span>@endif
+    @if($shipment->needs_reassignment)<span class="ny-parcel-badge is-loose">{{ __('cargo.reassign_badge') }}</span>@endif
    </p>
    @if($shipment->departure)
     <p>{{ \App\Support\DepartureSchedule::show($shipment->departure->departure_at, 'D d M · H:i') }} · {{ $shipment->departure->transportRoute->originPort->city }} → {{ $shipment->departure->transportRoute->destinationPort->city }}</p>
@@ -134,7 +138,7 @@
      <div @class(['ny-parcel-bar', 'is-'.$load['tone']])<i style="width: {{ $load['percent'] }}%"></i></div>
      <p class="ny-parcel-help">{{ __('cargo.used', ['used' => number_format($load['used'], 2), 'limit' => number_format($load['limit'], 2)]) }}</p>
     @elseif($load)
-     <p class="ny-parcel-help">{{ __('cargo.no_capacity') }}</p>
+     <p class="ny-parcel-note is-alert">{{ __('cargo.no_capacity') }}</p>
     @endif
    @else
     <p>{{ __('cargo.no_departure') }}</p>

@@ -306,52 +306,44 @@ class CargoDesk
             'organization_site_id' => $siteId,
         ];
 
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $payload['code'] = $this->nextCode($organization->id);
-            try {
-                return CargoShipment::query()->create($payload);
-            } catch (QueryException $exception) {
-                if ($attempt === 4 || ! str_contains($exception->getMessage(), 'cargo_shipments.code')) {
-                    throw $exception;
-                }
-            }
-        }
+        $payload['code'] = $this->nextCode($organization);
 
-        throw new \LogicException('No se pudo generar el código de guía.');
+        return CargoShipment::query()->create($payload);
     }
 
-    private function nextCode(int $organizationId): string
+    private function nextCode(Organization $organization): string
     {
+        $sigla = strtoupper((string) $organization->short_code);
+        if (! preg_match('/^[A-Z]{3,6}$/', $sigla)) {
+            throw ValidationException::withMessages([
+                'code' => 'Define la sigla de la empresa, de 3 a 6 letras, en Datos de la empresa.',
+            ]);
+        }
         $day = now(DepartureSchedule::ZONE)->toDateString();
         $counter = CargoGuideCounter::query()
-            ->where('organization_id', $organizationId)
+            ->where('organization_id', $organization->id)
             ->where('lima_on', $day)
             ->lockForUpdate()
             ->first();
         if ($counter === null) {
             try {
                 $counter = CargoGuideCounter::query()->create([
-                    'organization_id' => $organizationId,
+                    'organization_id' => $organization->id,
                     'lima_on' => $day,
                     'last_number' => 0,
                 ]);
             } catch (QueryException) {
                 $counter = CargoGuideCounter::query()
-                    ->where('organization_id', $organizationId)
+                    ->where('organization_id', $organization->id)
                     ->where('lima_on', $day)
                     ->lockForUpdate()
                     ->firstOrFail();
             }
         }
-        $number = (int) $counter->last_number;
-        $prefix = 'ENC-'.str_replace('-', '', $day).'-';
-        do {
-            $number++;
-            $code = $prefix.sprintf('%04d', $number);
-        } while (CargoShipment::query()->where('code', $code)->exists());
+        $number = (int) $counter->last_number + 1;
         $counter->update(['last_number' => $number]);
 
-        return $code;
+        return sprintf('ENC-%s-%s-%04d', $sigla, str_replace('-', '', $day), $number);
     }
 
     private function event(CargoShipment $shipment, string $kind, ?int $userId, ?string $note): void
