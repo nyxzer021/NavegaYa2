@@ -6,6 +6,7 @@ use App\Models\AirDeparture;
 use App\Models\CompanyReview;
 use App\Models\Organization;
 use App\Models\OrganizationPhoto;
+use App\Models\OrganizationSite;
 use App\Models\PhotoComment;
 use App\Models\PhotoLike;
 use App\Models\Reservation;
@@ -155,10 +156,19 @@ class PublicCompanyController
         $canManageMedia = $viewer
             && $viewer->roles()->where('code', 'company_admin')->exists()
             && (int) AdminScope::organizationId($viewer) === (int) $organization->id;
+        $saleSites = $organization->sites
+            ->filter(fn (OrganizationSite $site): bool => $site->isPubliclyListed())
+            ->sortBy(fn (OrganizationSite $site): string => mb_strtolower($site->name))
+            ->values();
+        $saleAgencies = $organization->agencies()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'organization_id', 'name', 'phone']);
 
         return view('companies.show', compact(
             'organization', 'reviews', 'average', 'completedReservations', 'hasUpcomingTrip',
             'baggage', 'policyPoints', 'travelPolicy', 'threads', 'traveledIds', 'commentCount', 'reactionCount', 'canManageMedia',
+            'saleSites', 'saleAgencies',
         ));
     }
 

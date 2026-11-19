@@ -56,4 +56,12 @@ return [
     'tip_hold' => ':kg kg en bodega',
     'tip_and' => 'y',
     'tip_water' => 'Lleva agua',
+    'where_to_buy' => 'Dónde comprar',
+    'where_site' => 'Sede',
+    'where_branch' => 'Sucursal',
+    'where_agency' => 'Agencia',
+    'where_hours' => 'Horario',
+    'where_phone' => 'Teléfono',
+    'where_whatsapp' => 'WhatsApp',
+    'where_directions' => 'Cómo llegar',
 ];

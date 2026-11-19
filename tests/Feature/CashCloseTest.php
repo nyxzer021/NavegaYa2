@@ -339,7 +339,12 @@ class CashCloseTest extends TestCase
             $this->assertTrue(Schema::connection('cashprobe')->hasColumn('cargo_shipments', 'received_at_site_id'));
             $this->assertTrue(Schema::connection('cashprobe')->hasColumn('payments', 'authorized_by_user_id'));
 
-            $this->artisan('migrate:rollback', ['--database' => 'cashprobe', '--step' => 1, '--no-interaction' => true])->assertSuccessful();
+            $this->artisan('migrate:rollback', [
+                '--database' => 'cashprobe',
+                '--path' => 'database/migrations/2026_11_17_175715_add_cash_close_site_and_authorization.php',
+                '--step' => count(glob(database_path('migrations/*.php'))),
+                '--no-interaction' => true,
+            ])->assertSuccessful();
             $this->assertFalse(Schema::connection('cashprobe')->hasColumn('cargo_shipments', 'received_at_site_id'));
             $this->assertFalse(Schema::connection('cashprobe')->hasColumn('payments', 'authorized_by_user_id'));
 

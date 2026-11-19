@@ -92,6 +92,11 @@ class Organization extends Model
         return $this->hasMany(OrganizationSite::class);
     }
 
+    public function agencies(): HasMany
+    {
+        return $this->hasMany(Agency::class);
+    }
+
     public function basePort(): BelongsTo
     {
         return $this->belongsTo(Port::class, 'base_port_id');

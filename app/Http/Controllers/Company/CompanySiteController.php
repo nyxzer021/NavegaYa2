@@ -65,6 +65,7 @@ class CompanySiteController extends Controller
             'address' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:100'],
             'hours' => ['nullable', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'receives_cargo' => ['nullable', 'boolean'],
             'show_on_where_to_buy' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
@@ -82,6 +83,7 @@ class CompanySiteController extends Controller
                 'port_id' => 'Ese puerto no corresponde a tus modalidades aprobadas.',
             ]);
         }
+        $data['phone'] = filled($data['phone'] ?? null) ? trim((string) $data['phone']) : null;
         $data['receives_cargo'] = $request->boolean('receives_cargo');
         $data['show_on_where_to_buy'] = $request->boolean('show_on_where_to_buy');
         $data['is_active'] = $request->boolean('is_active');

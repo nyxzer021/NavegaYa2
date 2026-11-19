@@ -56,4 +56,12 @@ return [
     'tip_hold' => ':kg kg checked',
     'tip_and' => 'and',
     'tip_water' => 'Bring water',
+    'where_to_buy' => 'Where to buy',
+    'where_site' => 'Branch',
+    'where_branch' => 'Office',
+    'where_agency' => 'Agency',
+    'where_hours' => 'Hours',
+    'where_phone' => 'Phone',
+    'where_whatsapp' => 'WhatsApp',
+    'where_directions' => 'Directions',
 ];

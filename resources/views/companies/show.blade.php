@@ -8,7 +8,24 @@
     .company-tone svg{width:18px;height:18px;fill:currentColor}
     .company-tab .company-tone{width:22px;height:22px}
     .company-tab .company-tone svg{width:12px;height:12px}
-    .company-tone.is-salidas{background:var(--tone-salidas)}.company-tone.is-informacion{background:var(--tone-informacion)}.company-tone.is-flota{background:var(--tone-flota)}.company-tone.is-galeria{background:var(--tone-galeria)}.company-tone.is-comentarios{background:var(--tone-comentarios)}.company-tone.is-agencias{background:var(--tone-agencias)}.company-tone.is-carga{background:var(--tone-carga)}.company-tone.is-like{background:var(--tone-like)}.company-tone.is-emoji{background:var(--tone-emoji)}.company-tone.is-send{background:var(--tone-send)}.company-tone.is-whatsapp{background:var(--tone-whatsapp)}
+    .company-tone.is-salidas{background:var(--tone-salidas)}.company-tone.is-informacion{background:var(--tone-informacion)}.company-tone.is-flota{background:var(--tone-flota)}.company-tone.is-galeria{background:var(--tone-galeria)}.company-tone.is-comentarios{background:var(--tone-comentarios)}.company-tone.is-agencias{background:var(--tone-agencias)}.company-tone.is-comprar{background:var(--ny-tone-leaf-deep)}.company-tone.is-carga{background:var(--tone-carga)}.company-tone.is-like{background:var(--tone-like)}.company-tone.is-emoji{background:var(--tone-emoji)}.company-tone.is-send{background:var(--tone-send)}.company-tone.is-whatsapp{background:var(--tone-whatsapp)}
+    .where-grid{display:grid;gap:12px;min-width:0}
+    .where-card{display:flex;min-width:0;flex-direction:column;gap:10px;border:1px solid var(--ny-border);border-radius:12px;background:var(--ny-surface);padding:16px;box-shadow:var(--ny-shadow-sm)}
+    .where-head{display:flex;min-width:0;align-items:center;gap:12px}
+    .where-pill{display:grid;width:36px;height:36px;flex:none;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--where) 18%,var(--ny-surface));color:var(--where-ink)}
+    .where-pill.is-site{--where:var(--ny-tone-leaf);--where-ink:var(--ny-tone-leaf-deep)}
+    .where-pill.is-agency{--where:var(--ny-tone-violet);--where-ink:var(--ny-tone-violet-deep)}
+    .where-card:hover .where-pill{background:var(--where-ink);color:var(--ny-surface)}
+    .where-icon{width:16px;height:16px}
+    .where-kicker{margin:0;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--where-ink)}
+    .where-head h3{margin:0;overflow-wrap:anywhere;font-size:16px;font-weight:800;color:var(--ny-text)}
+    .where-line{display:flex;min-width:0;align-items:flex-start;gap:8px;margin:0;font-size:14px;line-height:1.4;color:var(--ny-text)}
+    .where-line span{min-width:0;overflow-wrap:anywhere}
+    .where-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+    .where-btn{display:inline-flex;min-height:44px;align-items:center;gap:6px;border-radius:8px;padding:0 12px;font-size:14px;font-weight:800;text-decoration:none}
+    .where-btn.is-wa{background:var(--ny-tone-leaf-deep);color:var(--ny-text-on-dark)}
+    .where-btn.is-map{background:var(--ny-tone-river-deep);color:var(--ny-text-on-dark)}
+    @media (min-width:768px){.where-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .company-stat strong{display:block;font-size:1.35rem;line-height:1.1;color:#10231D}
     .company-stat strong.is-empty{font-size:1rem}
     .company-stat strong.is-phrase{font-size:.95rem;line-height:1.3;font-weight:800}
@@ -309,7 +326,9 @@
         <button type="button" data-open="informacion" class="company-tab"><span class="company-tone is-informacion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg></span>Información</button>
         <button type="button" data-open="flota" class="company-tab"><span class="company-tone is-flota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15.2 12 19l9-3.8v-2.2L12 16.2 3 13v2.2ZM12 3 4 8.2 12 12l8-3.8L12 3Z"/></svg></span>Flota</button>
         <button type="button" data-open="galeria" class="company-tab"><span class="company-tone is-galeria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2.2 3.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM19 17l-4.2-5.2-2.6 3.1-1.7-2L6 17h13Z"/></svg></span>Galería</button>
-        <button type="button" data-open="agencias" class="company-tab"><span class="company-tone is-agencias"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9.2L12 4l8 5.2V20h-5.2v-5.5H9.2V20H4Z"/></svg></span>Agencias</button>
+        @if($saleSites->isNotEmpty() || $saleAgencies->isNotEmpty())
+            <button type="button" data-open="donde-comprar" class="company-tab"><span class="company-tone is-comprar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9.2L12 4l8 5.2V20h-5.2v-5.5H9.2V20H4Z"/></svg></span>{{ trans('public.where_to_buy', [], 'es') }}</button>
+        @endif
         <button type="button" data-open="carga" class="company-tab"><span class="company-tone is-carga"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.2 12 3l9 4.2v9.6L12 21l-9-4.2V7.2Z"/></svg></span>Encomiendas y carga</button>
     </nav>
 
@@ -513,17 +532,12 @@
         @endif
     </section>
 
-    <section id="agencias" data-panel="agencias" class="company-panel company-card mx-auto mt-5 max-w-3xl" hidden>
-        @include('companies.partials.panel-heading', ['tone' => 'agencias', 'title' => 'Agencias'])
-        <p class="mt-1 text-sm text-[#607069]">Terminales propios y agencias autorizadas</p>
-        <ul class="mt-3 space-y-2 text-sm">
-            @forelse($organization->sites->where('is_active', true)->where('show_on_where_to_buy', true)->where('hidden_by_admin', false) as $site)
-                <li><strong>{{ $site->name }}</strong> · {{ $site->city }} · {{ $site->address }}</li>
-            @empty
-                <li>La empresa todavía no publicó puntos de venta.</li>
-            @endforelse
-        </ul>
-    </section>
+    @if($saleSites->isNotEmpty() || $saleAgencies->isNotEmpty())
+        <section id="donde-comprar" data-panel="donde-comprar" class="company-panel mt-5" hidden>
+            @include('companies.partials.panel-heading', ['tone' => 'comprar', 'title' => trans('public.where_to_buy', [], 'es')])
+            @include('companies.partials.where-to-buy')
+        </section>
+    @endif
     <section id="carga" data-panel="carga" class="company-panel mt-5" hidden>
         <section class="company-cargo" data-port="{{ $dock?->name ?: 'el puerto de embarque' }}" data-price-pequeno="{{ number_format($presentation['cargo']['pequeno'], 2, '.', '') }}" data-price-mediano="{{ number_format($presentation['cargo']['mediano'], 2, '.', '') }}" data-price-grande="{{ number_format($presentation['cargo']['grande'], 2, '.', '') }}" data-port-note="{{ $presentation['cargo']['port_note'] }}" data-weight-label="{{ trans('public.cargo_weight', ['weight' => '__KG__'], 'es') }}" data-reference-note="{{ trans('public.cargo_reference', [], 'es') }}">
             @include('companies.partials.panel-heading', ['tone' => 'carga', 'title' => 'Encomiendas y carga'])
@@ -609,8 +623,8 @@
     (function () {
         var root = document.getElementById('company-ficha');
         if (!root) return;
-        var names = ['salidas', 'informacion', 'flota', 'galeria', 'agencias', 'carga'];
-        var aliases = { testimonios: 'galeria', opiniones: 'galeria', experiencias: 'galeria', 'donde-comprar': 'agencias' };
+        var names = ['salidas', 'informacion', 'flota', 'galeria'@if($saleSites->isNotEmpty() || $saleAgencies->isNotEmpty()), 'donde-comprar'@endif, 'carga'];
+        var aliases = { testimonios: 'galeria', opiniones: 'galeria', experiencias: 'galeria', agencias: 'donde-comprar' };
         var cargoType = 'mediano';
         var cargoWeight = 5;
         var cargoLabels = { pequeno: 'pequeña', mediano: 'mediana', grande: 'grande' };

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrganizationSite extends Model
 {
     protected $fillable = [
-        'organization_id', 'name', 'kind', 'port_id', 'address', 'city', 'hours', 'receives_cargo',
+        'organization_id', 'name', 'kind', 'port_id', 'address', 'city', 'hours', 'phone', 'receives_cargo',
         'show_on_where_to_buy', 'is_active', 'hidden_by_admin', 'hidden_reason', 'hidden_by', 'hidden_at',
     ];
 
