@@ -40,6 +40,9 @@ class StoredFiles
         if ($path === null || $path === '') {
             return null;
         }
+        if (str_starts_with($path, '/storage/') && self::uploadsDisk() !== 'public') {
+            return Storage::disk(self::uploadsDisk())->url(ltrim(substr($path, strlen('/storage/')), '/'));
+        }
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
             return $path;
         }

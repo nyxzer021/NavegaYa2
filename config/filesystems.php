@@ -68,6 +68,22 @@ return [
             'response_checksum_validation' => 'when_required',
         ],
 
+        // Bucket privado de R2 para documentos (RUC, permisos, DNI): sin URL pública.
+        's3_private' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_PRIVATE_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
+        ],
+
     ],
 
     /*

@@ -30,10 +30,12 @@ class CopyUploadsToR2Test extends TestCase
             'filesystems.disks.s3.bucket' => 'prueba',
             'filesystems.disks.s3.key' => 'prueba',
             'filesystems.disks.s3.secret' => 'prueba',
+            'filesystems.disks.s3_private.bucket' => 'privado',
         ]);
         Storage::fake('public');
         Storage::fake('local');
         Storage::fake('s3');
+        Storage::fake('s3_private');
         Storage::disk('public')->put('company-profiles/logo.jpg', 'logo');
         Storage::disk('local')->put('organization-documents/1/ruc.pdf', 'pdf');
 
@@ -42,12 +44,43 @@ class CopyUploadsToR2Test extends TestCase
             ->assertSuccessful();
 
         Storage::disk('s3')->assertExists('company-profiles/logo.jpg');
-        Storage::disk('s3')->assertExists('organization-documents/1/ruc.pdf');
+        Storage::disk('s3_private')->assertExists('organization-documents/1/ruc.pdf');
+        Storage::disk('s3')->assertMissing('organization-documents/1/ruc.pdf');
         Storage::disk('public')->assertExists('company-profiles/logo.jpg');
         Storage::disk('local')->assertExists('organization-documents/1/ruc.pdf');
 
         $this->artisan('navegaya:copy-uploads-to-r2')
             ->expectsOutputToContain('Copiados: 0. Ya estaban: 2. Fallidos: 0.')
             ->assertSuccessful();
+    }
+
+    public function test_documents_are_never_copied_to_the_public_bucket_without_a_private_one(): void
+    {
+        config([
+            'filesystems.disks.s3.bucket' => 'prueba',
+            'filesystems.disks.s3.key' => 'prueba',
+            'filesystems.disks.s3.secret' => 'prueba',
+            'filesystems.disks.s3_private.bucket' => null,
+        ]);
+        Storage::fake('public');
+        Storage::fake('local');
+        Storage::fake('s3');
+        Storage::disk('public')->put('company-profiles/logo.jpg', 'logo');
+        Storage::disk('local')->put('organization-documents/1/ruc.pdf', 'pdf');
+
+        $this->artisan('navegaya:copy-uploads-to-r2')
+            ->expectsOutputToContain('Copiados: 1. Ya estaban: 0. Fallidos: 0.')
+            ->assertSuccessful();
+
+        Storage::disk('s3')->assertExists('company-profiles/logo.jpg');
+        Storage::disk('s3')->assertMissing('organization-documents/1/ruc.pdf');
+    }
+
+    public function test_images_saved_before_r2_point_to_the_bucket_once_uploads_move(): void
+    {
+        config(['filesystems.uploads_disk' => 's3', 'filesystems.disks.s3.url' => 'https://archivos.example.test']);
+
+        $this->assertSame('https://archivos.example.test/company-profiles/logo.jpg', StoredFiles::publicUrl('/storage/company-profiles/logo.jpg'));
+        $this->assertSame('/images/hero.jpg', StoredFiles::publicUrl('/images/hero.jpg'));
     }
 }

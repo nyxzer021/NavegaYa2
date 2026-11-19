@@ -9,7 +9,7 @@ class CopyUploadsToR2 extends Command
 {
     protected $signature = 'navegaya:copy-uploads-to-r2';
 
-    protected $description = 'Copia a R2 las imágenes y documentos que ya están en el disco, sin borrar los originales';
+    protected $description = 'Copia a R2 las imágenes (bucket público) y los documentos (bucket privado), sin borrar los originales';
 
     public function handle(): int
     {
@@ -20,11 +20,18 @@ class CopyUploadsToR2 extends Command
             return self::FAILURE;
         }
 
+        $targets = ['public' => 's3'];
+        if (filled(config('filesystems.disks.s3_private.bucket'))) {
+            $targets['local'] = 's3_private';
+        } else {
+            $this->components->warn('Falta AWS_PRIVATE_BUCKET: los documentos no se copiaron. Nunca van al bucket público.');
+        }
+
         $copied = 0;
         $skipped = 0;
         $failed = 0;
-        foreach (['public', 'local'] as $source) {
-            [$copiedNow, $skippedNow, $failedNow] = $this->copyDisk($source, 's3');
+        foreach ($targets as $source => $destination) {
+            [$copiedNow, $skippedNow, $failedNow] = $this->copyDisk($source, $destination);
             $copied += $copiedNow;
             $skipped += $skippedNow;
             $failed += $failedNow;
