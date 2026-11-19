@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Notifications\VerifyOrganizationContactEmail;
 use App\Services\CompanyProvisioningService;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -32,7 +33,7 @@ class CompanyRegistrationController extends Controller
                 OrganizationDocument::create([
                     'organization_id' => $organization->id,
                     'type' => $type,
-                    'path' => $file->store('organization-documents/'.$organization->id),
+                    'path' => StoredFiles::storeDocument($file, 'organization-documents/'.$organization->id),
                     'original_name' => $file->getClientOriginalName(),
                 ]);
             }
@@ -46,11 +47,11 @@ class CompanyRegistrationController extends Controller
                     'permit_scope' => $code === 'fluvial' ? $request->input('fluvial_permit_scope') : null,
                     'permit_number' => $request->input($prefix.'_permit_number'),
                     'permit_expires_on' => $request->input($prefix.'_permit_expires_on'),
-                    'permit_path' => $permit?->store('organization-documents/'.$organization->id),
+                    'permit_path' => $permit ? StoredFiles::storeDocument($permit, 'organization-documents/'.$organization->id) : null,
                     'permit_original_name' => $permit?->getClientOriginalName(),
                     'aoc_number' => $code === 'fluvial' ? null : $request->input($prefix.'_aoc_number'),
                     'aoc_expires_on' => $code === 'fluvial' ? null : $request->input($prefix.'_aoc_expires_on'),
-                    'aoc_path' => $aoc?->store('organization-documents/'.$organization->id),
+                    'aoc_path' => $aoc ? StoredFiles::storeDocument($aoc, 'organization-documents/'.$organization->id) : null,
                     'aoc_original_name' => $aoc?->getClientOriginalName(),
                 ]);
             }

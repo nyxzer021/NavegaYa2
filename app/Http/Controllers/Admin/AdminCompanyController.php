@@ -16,11 +16,11 @@ use App\Services\CompanyProvisioningService;
 use App\Support\AuditRecorder;
 use App\Support\DepartureSchedule;
 use App\Support\PhoneNumber;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -197,7 +197,7 @@ class AdminCompanyController extends Controller
     {
         abort_unless($document->organization_id === $organization->id, 404);
 
-        return Storage::download($document->path, $document->original_name);
+        return StoredFiles::documentDownload($document->path, $document->original_name);
     }
 
     public function show(Organization $organization): View
@@ -416,7 +416,7 @@ class AdminCompanyController extends Controller
         OrganizationDocument::query()->create([
             'organization_id' => $organization->id,
             'type' => $type,
-            'path' => $file->store('organization-documents/'.$organization->id),
+            'path' => StoredFiles::storeDocument($file, 'organization-documents/'.$organization->id),
             'original_name' => $file->getClientOriginalName(),
             'expires_on' => $expiresOn,
             'reference_number' => $reference,

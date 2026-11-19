@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\Port;
 use App\Support\AdminScope;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -126,7 +127,7 @@ class CompanyDetailsController extends Controller
             'permit_scope' => $data['code'] === 'fluvial' ? ($data['permit_scope'] ?? null) : null,
             'permit_number' => $data['permit_number'],
             'permit_expires_on' => $data['permit_expires_on'],
-            'permit_path' => $permit->store('organization-documents/'.$organization->id),
+            'permit_path' => StoredFiles::storeDocument($permit, 'organization-documents/'.$organization->id),
             'permit_original_name' => $permit->getClientOriginalName(),
             'rejection_reason' => null,
             'reviewed_by' => null,
@@ -136,7 +137,7 @@ class CompanyDetailsController extends Controller
             $aoc = $request->file('aoc');
             $payload['aoc_number'] = $data['aoc_number'];
             $payload['aoc_expires_on'] = $data['aoc_expires_on'];
-            $payload['aoc_path'] = $aoc->store('organization-documents/'.$organization->id);
+            $payload['aoc_path'] = StoredFiles::storeDocument($aoc, 'organization-documents/'.$organization->id);
             $payload['aoc_original_name'] = $aoc->getClientOriginalName();
         }
 
@@ -166,7 +167,7 @@ class CompanyDetailsController extends Controller
         OrganizationDocument::create([
             'organization_id' => $organization->id,
             'type' => $type,
-            'path' => $file->store('organization-documents/'.$organization->id),
+            'path' => StoredFiles::storeDocument($file, 'organization-documents/'.$organization->id),
             'original_name' => $file->getClientOriginalName(),
             'expires_on' => $expiresOn,
             'reference_number' => $reference,

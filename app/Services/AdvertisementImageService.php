@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\StoredFiles;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -68,7 +68,7 @@ class AdvertisementImageService
                 }
 
                 $path = 'advertisements/'.Str::uuid().'.webp';
-                Storage::disk('public')->put($path, $optimized);
+                StoredFiles::putPublic($path, $optimized);
 
                 return $path;
             } finally {

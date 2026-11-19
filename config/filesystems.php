@@ -15,6 +15,11 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    // En local los dos quedan en disco. En Railway se apuntan al disco s3 (R2).
+    'uploads_disk' => env('UPLOADS_DISK', 'public'),
+
+    'documents_disk' => env('DOCUMENTS_DISK', 'local'),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
@@ -58,6 +63,9 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
+            // R2 rechaza la firma de checksum que el SDK de AWS manda por defecto.
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
         ],
 
     ],

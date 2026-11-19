@@ -79,7 +79,7 @@
 
     $selected = $backgrounds[$theme] ?? $backgrounds['routes'];
     $managedImage = \App\Models\SiteHero::query()->where('key', $theme)->value('image_path');
-    $resolvedImage = $image ?: ($managedImage ? Storage::url($managedImage) : null);
+    $resolvedImage = $image ?: ($managedImage ? \App\Support\StoredFiles::publicUrl($managedImage) : null);
     $source = $resolvedImage
         ? (str_starts_with($resolvedImage, 'http') || str_starts_with($resolvedImage, '/') ? $resolvedImage : asset(ltrim($resolvedImage, '/')))
         : (file_exists(public_path($selected['local_file'])) ? asset($selected['local_file']) : $approvedAmazonImage);

@@ -11,11 +11,11 @@ use App\Models\SupportTicket;
 use App\Support\CompanyBase;
 use App\Support\DepartureSchedule;
 use App\Support\FleetMaintenance;
+use App\Support\StoredFiles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CompanyDashboardController extends Controller
@@ -307,10 +307,10 @@ class CompanyDashboardController extends Controller
             'logo' => ['nullable', 'image', 'max:5120'], 'cover' => ['nullable', 'image', 'max:5120'],
         ]);
         if ($request->hasFile('logo')) {
-            $data['logo_path'] = Storage::url($request->file('logo')->store('company-profiles', 'public'));
+            $data['logo_path'] = StoredFiles::storePublic($request->file('logo'), 'company-profiles');
         }
         if ($request->hasFile('cover')) {
-            $data['cover_image_path'] = Storage::url($request->file('cover')->store('company-profiles', 'public'));
+            $data['cover_image_path'] = StoredFiles::storePublic($request->file('cover'), 'company-profiles');
         }
         if ($request->hasFile('logo') || $request->hasFile('cover')) {
             $data['profile_content_status'] = 'pending';

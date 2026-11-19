@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\StoredFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class IncidentPhoto extends Model
 {
@@ -13,7 +13,7 @@ class IncidentPhoto extends Model
     protected static function booted(): void
     {
         static::deleting(function (self $photo): void {
-            Storage::disk('local')->delete($photo->path);
+            StoredFiles::deleteDocument($photo->path);
         });
     }
 

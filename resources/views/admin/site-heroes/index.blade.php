@@ -12,7 +12,7 @@
                 <form method="POST" action="{{route('admin.site-heroes.update',$key)}}" enctype="multipart/form-data" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     @csrf @method('PATCH')
                     <div class="aspect-[16/6] bg-slate-100">
-                        <x-amazon-hero-bg :theme="$key" :image="$hero?->image_path ? Storage::url($hero->image_path) : null" class="!m-0 !h-full !min-h-0 !max-h-none !rounded-none !shadow-none" />
+                        <x-amazon-hero-bg :theme="$key" :image="$hero?->image_path ? \App\Support\StoredFiles::publicUrl($hero->image_path) : null" class="!m-0 !h-full !min-h-0 !max-h-none !rounded-none !shadow-none" />
                     </div>
                     <div class="p-5">
                         <h2 class="text-lg font-black text-slate-950">{{$label}}</h2>

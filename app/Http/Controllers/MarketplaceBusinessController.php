@@ -14,13 +14,13 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\AdvertisementImageService;
+use App\Support\StoredFiles;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -90,8 +90,8 @@ class MarketplaceBusinessController extends Controller
         }
         if ($request->hasFile('banner')) {
             if ($listing->banner_path) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $listing->banner_path));
-            } $data['banner_path'] = Storage::url($request->file('banner')->store('marketplace-banners', 'public'));
+                StoredFiles::deletePublic($listing->banner_path);
+            } $data['banner_path'] = StoredFiles::storePublic($request->file('banner'), 'marketplace-banners');
         }
         $days = ['mon' => 'Lunes', 'tue' => 'Martes', 'wed' => 'Miércoles', 'thu' => 'Jueves', 'fri' => 'Viernes', 'sat' => 'Sábado', 'sun' => 'Domingo'];
         $schedule = [];
@@ -121,7 +121,7 @@ class MarketplaceBusinessController extends Controller
         $data['moderation_notes'] = null;
         $listing->update($data);
         foreach ($request->file('images', []) as $image) {
-            $listing->images()->create(['path' => Storage::url($image->store('marketplace-gallery', 'public')), 'sort_order' => ($listing->images()->max('sort_order') ?? 0) + 1, 'is_cover' => $listing->images()->count() === 0]);
+            $listing->images()->create(['path' => StoredFiles::storePublic($image, 'marketplace-gallery'), 'sort_order' => ($listing->images()->max('sort_order') ?? 0) + 1, 'is_cover' => $listing->images()->count() === 0]);
         }
 
         return back()->with('success', $data['status'] === 'pending_review' ? 'Ficha enviada a revisión.' : 'Borrador guardado.');
@@ -197,7 +197,7 @@ class MarketplaceBusinessController extends Controller
         [, $listing] = $this->owned($request);
         $data = $request->validate(['title' => ['required', 'string', 'max:150'], 'offer_type' => ['nullable', 'string', 'max:60'], 'description' => ['nullable', 'string', 'max:1000'], 'price' => ['nullable', 'numeric', 'min:0'], 'price_unit' => ['nullable', 'string', 'max:60'], 'capacity' => ['nullable', 'integer', 'min:1', 'max:999'], 'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096']]);
         if ($request->hasFile('image')) {
-            $data['image_path'] = Storage::url($request->file('image')->store('marketplace-offers', 'public'));
+            $data['image_path'] = StoredFiles::storePublic($request->file('image'), 'marketplace-offers');
         }
         unset($data['image']);
         $listing->offers()->create($data + ['is_active' => true, 'sort_order' => ($listing->offers()->max('sort_order') ?? 0) + 1]);
@@ -210,7 +210,7 @@ class MarketplaceBusinessController extends Controller
         [, $listing] = $this->owned($request);
         abort_unless($offer->destination_listing_id === $listing->id, 404);
         if ($offer->image_path) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $offer->image_path));
+            StoredFiles::deletePublic($offer->image_path);
         }
         $offer->delete();
 
@@ -222,8 +222,8 @@ class MarketplaceBusinessController extends Controller
         [, $listing] = $this->owned($request);
         abort_unless($image->destination_listing_id === $listing->id, 404);
         $request->validate(['image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']]);
-        Storage::disk('public')->delete(str_replace('/storage/', '', $image->path));
-        $image->update(['path' => Storage::url($request->file('image')->store('marketplace-gallery', 'public'))]);
+        StoredFiles::deletePublic($image->path);
+        $image->update(['path' => StoredFiles::storePublic($request->file('image'), 'marketplace-gallery')]);
 
         return back()->with('success', 'Imagen reemplazada correctamente.');
     }
@@ -244,13 +244,13 @@ class MarketplaceBusinessController extends Controller
         }
         if ($request->hasFile('banner')) {
             if ($listing->banner_path) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $listing->banner_path));
+                StoredFiles::deletePublic($listing->banner_path);
             }
-            $listing->update(['banner_path' => Storage::url($request->file('banner')->store('marketplace-banners', 'public'))]);
+            $listing->update(['banner_path' => StoredFiles::storePublic($request->file('banner'), 'marketplace-banners')]);
         }
         foreach ($request->file('images', []) as $image) {
             $isFirst = $listing->images()->count() === 0;
-            $created = $listing->images()->create(['path' => Storage::url($image->store('marketplace-gallery', 'public')), 'sort_order' => ($listing->images()->max('sort_order') ?? 0) + 1, 'is_cover' => $isFirst]);
+            $created = $listing->images()->create(['path' => StoredFiles::storePublic($image, 'marketplace-gallery'), 'sort_order' => ($listing->images()->max('sort_order') ?? 0) + 1, 'is_cover' => $isFirst]);
             if ($isFirst && ! $listing->banner_path) {
                 $listing->update(['banner_path' => $created->path]);
             }
@@ -276,7 +276,7 @@ class MarketplaceBusinessController extends Controller
     {
         [, $listing] = $this->owned($request);
         abort_unless($image->destination_listing_id === $listing->id, 404);
-        Storage::disk('public')->delete(str_replace('/storage/', '', $image->path));
+        StoredFiles::deletePublic($image->path);
         $wasCover = $image->is_cover;
         $image->delete();
         if ($wasCover) {

@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CrewMember;
 use App\Models\DepartureIncident;
 use App\Models\IncidentPhoto;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFiles;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -35,6 +35,6 @@ class AdminIncidentController extends Controller
         $photo->load('incident');
         CompanyIncidentController::authorizePhoto($photo);
 
-        return Storage::disk('local')->response($photo->path, $photo->original_name ?: 'foto');
+        return StoredFiles::documentResponse($photo->path, $photo->original_name);
     }
 }

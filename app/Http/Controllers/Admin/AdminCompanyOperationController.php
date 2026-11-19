@@ -8,9 +8,9 @@ use App\Models\OrganizationDocument;
 use App\Models\OrganizationModality;
 use App\Models\OrganizationSite;
 use App\Support\AuditRecorder;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -123,6 +123,6 @@ class AdminCompanyOperationController extends Controller
         $name = $kind === 'aoc' ? $modality->aoc_original_name : $modality->permit_original_name;
         abort_unless(is_string($path) && $path !== '', 404);
 
-        return Storage::download($path, $name ?: 'documento');
+        return StoredFiles::documentDownload($path, $name);
     }
 }

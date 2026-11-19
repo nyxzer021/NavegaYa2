@@ -13,7 +13,7 @@ class ProductionReadiness extends Command
     public function handle(): int
     {
         $failures = [];
-        $filesystem = (string) config('filesystems.default');
+        $filesystem = (string) config('filesystems.uploads_disk');
         $mailFrom = (string) config('mail.from.address');
         $checks = [
             'APP_ENV=production' => app()->environment('production'),

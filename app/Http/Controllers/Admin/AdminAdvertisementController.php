@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use App\Services\AdvertisementImageService;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -69,7 +69,7 @@ class AdminAdvertisementController extends Controller
         if ($request->hasFile('banner_image')) {
             $newBannerPath = $images->store($request->file('banner_image'));
             if ($ad->banner_image_path) {
-                Storage::disk('public')->delete($ad->banner_image_path);
+                StoredFiles::deletePublic($ad->banner_image_path);
             }
             $data['banner_image_path'] = $newBannerPath;
         }

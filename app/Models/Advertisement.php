@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Support\StoredFiles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class Advertisement extends Model
 {
@@ -63,6 +63,6 @@ class Advertisement extends Model
 
     public function getCreativeUrlAttribute(): ?string
     {
-        return $this->banner_image_path ? Storage::url($this->banner_image_path) : $this->image_url;
+        return StoredFiles::publicUrl($this->banner_image_path) ?? $this->image_url;
     }
 }

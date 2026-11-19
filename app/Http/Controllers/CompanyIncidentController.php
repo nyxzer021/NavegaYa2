@@ -9,10 +9,10 @@ use App\Models\RouteDeparture;
 use App\Support\AdminScope;
 use App\Support\CrewRoster;
 use App\Support\DepartureSchedule;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -106,7 +106,7 @@ class CompanyIncidentController extends Controller
                 'action' => $data['action'],
             ]);
             foreach ($request->file('photos', []) as $photo) {
-                $path = $photo->store('incident-photos/'.$organization->id, 'local');
+                $path = StoredFiles::storeDocument($photo, 'incident-photos/'.$organization->id);
                 $incident->photos()->create([
                     'path' => $path,
                     'original_name' => $photo->getClientOriginalName(),
@@ -124,7 +124,7 @@ class CompanyIncidentController extends Controller
         $photo->load('incident');
         $this->authorizePhoto($photo);
 
-        return Storage::disk('local')->response($photo->path, $photo->original_name ?: 'foto');
+        return StoredFiles::documentResponse($photo->path, $photo->original_name);
     }
 
     public static function authorizePhoto(IncidentPhoto $photo): void

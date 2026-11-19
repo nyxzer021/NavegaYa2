@@ -21,7 +21,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --opti
 COPY . .
 COPY --from=assets /app/public/build ./public/build
 RUN composer dump-autoload --no-dev --optimize --no-interaction \
-    && chmod +x deploy/railway-start.sh \
+    && chmod +x deploy/railway-start.sh deploy/railway-queue.sh \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
     && chown -R www-data:www-data storage bootstrap/cache
 EXPOSE 8080

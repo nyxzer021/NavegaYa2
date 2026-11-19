@@ -7,11 +7,11 @@ use App\Models\OrganizationBanner;
 use App\Models\OrganizationPhoto;
 use App\Support\AdminScope;
 use App\Support\CompanyPublicPresentation;
+use App\Support\StoredFiles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -33,7 +33,7 @@ class CompanyPublicProfileController extends Controller
         $data = $request->validate($this->rules(), $this->uploadMessages());
         $data['profile_content_status'] = 'published';
         if ($request->hasFile('logo')) {
-            $data['logo_path'] = Storage::url($request->file('logo')->store('company-profiles', 'public'));
+            $data['logo_path'] = StoredFiles::storePublic($request->file('logo'), 'company-profiles');
         }
         unset($data['logo']);
         if ($this->presentationWasSent($request)) {
@@ -59,7 +59,7 @@ class CompanyPublicProfileController extends Controller
         foreach ($data['photos'] as $photo) {
             $next++;
             $organization->photos()->create([
-                'path' => Storage::url($photo->store('company-profiles', 'public')),
+                'path' => StoredFiles::storePublic($photo, 'company-profiles'),
                 'caption' => $data['caption'] ?? null,
                 'alt_text' => $data['caption'] ?? null,
                 'status' => 'pending',
@@ -227,7 +227,7 @@ class CompanyPublicProfileController extends Controller
         $binary = file_get_contents($file->getRealPath());
         $image = function_exists('imagecreatefromstring') && function_exists('imagewebp') ? @imagecreatefromstring((string) $binary) : false;
         if ($image === false) {
-            return Storage::url($file->store('company-banners', 'public'));
+            return StoredFiles::storePublic($file, 'company-banners');
         }
         $width = imagesx($image);
         $height = imagesy($image);
@@ -240,15 +240,17 @@ class CompanyPublicProfileController extends Controller
         $canvas = imagecreatetruecolor(max(1, $targetWidth), max(1, $targetHeight));
         imagecopyresampled($canvas, $image, 0, 0, 0, 0, imagesx($canvas), imagesy($canvas), $width, $height);
         $relative = 'company-banners/'.Str::uuid().'.webp';
-        $absolute = storage_path('app/public/'.$relative);
-        if (! is_dir(dirname($absolute))) {
-            mkdir(dirname($absolute), 0775, true);
-        }
-        imagewebp($canvas, $absolute, 82);
+        ob_start();
+        imagewebp($canvas, null, 82);
+        $encoded = ob_get_clean();
         imagedestroy($image);
         imagedestroy($canvas);
+        if (! is_string($encoded) || $encoded === '') {
+            return StoredFiles::storePublic($file, 'company-banners');
+        }
+        StoredFiles::putPublic($relative, $encoded);
 
-        return Storage::url($relative);
+        return StoredFiles::publicUrl($relative) ?? $relative;
     }
 
     public function usePhotoAsCover(Request $request, OrganizationPhoto $photo): JsonResponse|RedirectResponse

@@ -22,6 +22,10 @@ Schedule::command('queue:prune-failed --hours=336')
     ->dailyAt('03:00')
     ->withoutOverlapping();
 
+Schedule::command('navegaya:prune-ephemeral')
+    ->dailyAt('03:20')
+    ->withoutOverlapping();
+
 Schedule::command('navegaya:operations-health')
     ->everyFiveMinutes()
     ->withoutOverlapping();

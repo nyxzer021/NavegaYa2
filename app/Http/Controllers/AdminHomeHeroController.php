@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\HomeHeroSlide;
 use App\Models\SystemSetting;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminHomeHeroController
@@ -65,7 +65,7 @@ class AdminHomeHeroController
         ];
         $data = $request->validate($rules);
         if ($request->hasFile('image')) {
-            $data['image_path'] = Storage::url($request->file('image')->store('home-hero', 'public'));
+            $data['image_path'] = StoredFiles::storePublic($request->file('image'), 'home-hero');
         }
         unset($data['image']);
         $data['is_active'] = $request->boolean('is_active');

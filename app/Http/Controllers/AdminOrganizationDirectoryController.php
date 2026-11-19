@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\CompanyReview;
 use App\Models\Organization;
 use App\Support\AdminScope;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminOrganizationDirectoryController extends Controller
@@ -46,10 +46,10 @@ class AdminOrganizationDirectoryController extends Controller
         $this->authorizeOrganization($organization);
         $data = $request->validate(['commercial_name' => ['nullable', 'string', 'max:150'], 'whatsapp' => ['nullable', 'string', 'max:30'], 'phone' => ['nullable', 'string', 'max:30'], 'website' => ['nullable', 'url', 'max:500'], 'address' => ['nullable', 'string', 'max:250'], 'public_description' => ['nullable', 'string', 'max:1500'], 'logo' => ['nullable', 'image', 'max:5120'], 'cover' => ['nullable', 'image', 'max:5120']]);
         if ($request->hasFile('logo')) {
-            $data['logo_path'] = Storage::url($request->file('logo')->store('company-profiles', 'public'));
+            $data['logo_path'] = StoredFiles::storePublic($request->file('logo'), 'company-profiles');
         }
         if ($request->hasFile('cover')) {
-            $data['cover_image_path'] = Storage::url($request->file('cover')->store('company-profiles', 'public'));
+            $data['cover_image_path'] = StoredFiles::storePublic($request->file('cover'), 'company-profiles');
         }
         unset($data['logo'],$data['cover']);
         $organization->update($data);

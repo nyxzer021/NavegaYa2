@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BusinessCategory;
 use App\Models\DestinationCity;
 use App\Models\DestinationListing;
 use App\Models\DestinationListingImage;
-use App\Models\BusinessCategory;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminDestinationListingController
@@ -111,7 +111,7 @@ class AdminDestinationListingController
     {
         abort_if($item->images()->count() + count($r->file('images', [])) > 6, 422, 'La galería admite como máximo 6 imágenes.');
         foreach ($r->file('images', []) as $index => $image) {
-            $item->images()->create(['path' => Storage::url($image->store('destination-listings', 'public')), 'sort_order' => $item->images()->max('sort_order') + $index + 1, 'is_cover' => $item->images()->count() === 0 && $index === 0]);
+            $item->images()->create(['path' => StoredFiles::storePublic($image, 'destination-listings'), 'sort_order' => $item->images()->max('sort_order') + $index + 1, 'is_cover' => $item->images()->count() === 0 && $index === 0]);
         }
     }
 }

@@ -11,7 +11,6 @@ use App\Models\Payment;
 use App\Models\RouteDeparture;
 use App\Models\User;
 use App\Support\DepartureSchedule;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -326,26 +325,19 @@ class CargoDesk
             ]);
         }
         $day = now(DepartureSchedule::ZONE)->toDateString();
+        $now = now();
+        CargoGuideCounter::query()->insertOrIgnore([
+            'organization_id' => $organization->id,
+            'lima_on' => $day,
+            'last_number' => 0,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
         $counter = CargoGuideCounter::query()
             ->where('organization_id', $organization->id)
             ->where('lima_on', $day)
             ->lockForUpdate()
-            ->first();
-        if ($counter === null) {
-            try {
-                $counter = CargoGuideCounter::query()->create([
-                    'organization_id' => $organization->id,
-                    'lima_on' => $day,
-                    'last_number' => 0,
-                ]);
-            } catch (QueryException) {
-                $counter = CargoGuideCounter::query()
-                    ->where('organization_id', $organization->id)
-                    ->where('lima_on', $day)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-            }
-        }
+            ->firstOrFail();
         $number = (int) $counter->last_number + 1;
         $counter->update(['last_number' => $number]);
 

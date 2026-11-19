@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\DestinationCity;
 use App\Models\DestinationReview;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminDestinationController
@@ -64,7 +64,7 @@ class AdminDestinationController
         $rules = ['name' => [$creating ? 'required' : 'sometimes', 'string', 'max:100', 'unique:destination_cities,name'.($creating ? '' : ','.$request->route('city')->id)], 'department' => ['required', 'string', 'max:100'], 'river' => ['nullable', 'string', 'max:100'], 'summary' => ['nullable', 'string', 'max:3000'], 'summary_en' => ['nullable', 'string', 'max:3000'], 'attractions' => ['nullable', 'string', 'max:3000'], 'attractions_en' => ['nullable', 'string', 'max:3000'], 'lodging' => ['nullable', 'string', 'max:3000'], 'lodging_en' => ['nullable', 'string', 'max:3000'], 'gastronomy' => ['nullable', 'string', 'max:3000'], 'gastronomy_en' => ['nullable', 'string', 'max:3000'], 'image_url' => ['nullable', 'url', 'max:500'], 'image_alt' => ['nullable', 'string', 'max:180'], 'image_alt_en' => ['nullable', 'string', 'max:180'], 'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'sort_order' => ['nullable', 'integer', 'min:1', 'max:999'], 'is_active' => ['nullable', 'boolean'], 'show_in_discover' => ['nullable', 'boolean']];
         $data = $request->validate($rules);
         if ($request->hasFile('image')) {
-            $data['image_url'] = Storage::url($request->file('image')->store('destinations', 'public'));
+            $data['image_url'] = StoredFiles::storePublic($request->file('image'), 'destinations');
         }unset($data['image']);
         $data['sort_order'] = $data['sort_order'] ?? ($request->route('city')?->sort_order ?? (DestinationCity::max('sort_order') + 1));
         $data['is_active'] = $request->boolean('is_active');

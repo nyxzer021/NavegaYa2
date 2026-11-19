@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\SiteHero;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminSiteHeroController
@@ -43,9 +43,9 @@ class AdminSiteHeroController
 
         $hero = SiteHero::query()->firstOrNew(['key' => $key]);
         if ($hero->exists && $hero->image_path) {
-            Storage::disk('public')->delete($hero->image_path);
+            StoredFiles::deletePublic($hero->image_path);
         }
-        $hero->image_path = $data['image']->store('site-heroes', 'public');
+        $hero->image_path = $data['image']->store('site-heroes', StoredFiles::uploadsDisk());
         $hero->save();
 
         return back()->with('success', 'Portada de '.$this->label($key).' actualizada.');
