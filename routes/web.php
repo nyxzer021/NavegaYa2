@@ -93,6 +93,7 @@ use App\Http\Controllers\PublicLocaleController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicPortController;
 use App\Http\Controllers\PublicRouteCatalogController;
+use App\Http\Controllers\StaffInvitationController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TravelController;
 use App\Http\Controllers\WeatherController;
@@ -136,8 +137,11 @@ Route::get('/dashboard', DashboardController::class)->middleware('auth')->name('
 Route::get('/empresa/panel', [CompanyDashboardController::class, 'index'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.dashboard');
 Route::patch('/empresa/panel/perfil', [CompanyDashboardController::class, 'updateProfile'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.dashboard.profile');
 Route::post('/empresa/personal', [CompanyStaffController::class, 'store'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.store');
+Route::patch('/empresa/personal/{user}', [CompanyStaffController::class, 'update'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.update');
 Route::patch('/empresa/personal/{user}/estado', [CompanyStaffController::class, 'toggle'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.toggle');
-Route::delete('/empresa/personal/{user}', [CompanyStaffController::class, 'destroy'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.destroy');
+Route::patch('/empresa/personal/invitaciones/{invitation}', [CompanyStaffController::class, 'updateInvitation'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.invitations.update');
+Route::post('/empresa/personal/invitaciones/{invitation}/reenviar', [CompanyStaffController::class, 'resend'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.invitations.resend');
+Route::delete('/empresa/personal/invitaciones/{invitation}', [CompanyStaffController::class, 'cancel'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.invitations.cancel');
 Route::get('/empresa/despacho', [CompanyCounterController::class, 'index'])->middleware(['auth', 'role:company_admin|company_counter|company_operator', 'company.profile'])->name('company.counter.index');
 Route::middleware(['auth', 'role:company_admin|company_counter|company_operator|company_finance', 'company.profile'])->prefix('empresa')->name('company.')->group(function () {
     Route::get('/salidas', [CompanyDepartureController::class, 'index'])->name('departures.index');
@@ -527,6 +531,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
 
 Route::get('/activar-empresa/{token}', [CompanyActivationController::class, 'create'])->name('company.activation');
 Route::post('/activar-empresa/{token}', [CompanyActivationController::class, 'store']);
+Route::get('/equipo/invitacion/{token}', [StaffInvitationController::class, 'create'])->name('staff.invitation');
+Route::post('/equipo/invitacion/{token}', [StaffInvitationController::class, 'store'])->name('staff.invitation.store');
 Route::get('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'create'])->name('agency.invitation');
 Route::post('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'store'])->name('agency.invitation.store');
 

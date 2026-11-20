@@ -79,9 +79,41 @@ class CompanyPermissions
         'company.activation',
     ];
 
+    /**
+     * @return list<string>
+     */
+    public static function assignableProfiles(): array
+    {
+        return ['admin', 'seller', 'operator', 'finance'];
+    }
+
+    public static function roleForProfile(string $profile): string
+    {
+        return match ($profile) {
+            'admin' => self::ADMIN,
+            'operator' => self::OPERATOR,
+            'finance' => self::FINANCE,
+            default => self::SELLER,
+        };
+    }
+
+    public static function profileForRole(string $code): ?string
+    {
+        return match ($code) {
+            self::ADMIN => 'admin',
+            self::OPERATOR => 'operator',
+            self::FINANCE => 'finance',
+            self::SELLER => 'seller',
+            default => null,
+        };
+    }
+
     public static function profile(User $user): ?string
     {
-        $codes = $user->roles()->pluck('code');
+        $organizationId = AdminScope::organizationId($user);
+        $codes = $user->roles()
+            ->when($organizationId !== null, fn ($query) => $query->where('role_user.organization_id', $organizationId))
+            ->pluck('code');
         if ($codes->contains(self::ADMIN)) {
             return 'admin';
         }

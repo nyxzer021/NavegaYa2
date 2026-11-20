@@ -1,94 +1,222 @@
 @extends('layouts.company')
-@section('title', 'Usuarios')
-@section('page-title', 'Usuarios')
+@section('title', __('company_portal.menu.team'))
+@section('page-title', __('company_portal.menu.team'))
 @section('content')
-<div class="mx-auto max-w-6xl space-y-5" x-data="{ open: {{ $errors->any() ? 'true' : 'false' }} }">
-    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-                <h2 class="text-2xl font-black text-slate-950">Equipo de muelle</h2>
-                <p class="mt-1 max-w-2xl text-sm text-slate-500">Estos usuarios solo pueden despachar pasajeros y consultar manifiestos de {{ $organization->commercial_name ?: $organization->legal_name }}.</p>
-            </div>
-            <button type="button" @click="open = !open" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-400 px-5 text-sm font-black text-emerald-950">Nuevo counter</button>
-        </div>
+@php
+    $tone = [
+        'admin' => 'var(--ny-tone-violet)',
+        'seller' => 'var(--ny-tone-river)',
+        'operator' => 'var(--ny-tone-leaf)',
+        'finance' => 'var(--ny-tone-sun)',
+    ];
+    $roleLabel = fn (string $profile): string => __('company_portal.role.'.($profile === 'seller' ? 'counter' : $profile));
+    $company = $organization->commercial_name ?: $organization->legal_name;
+    $inviteUrl = session('invite_url');
+    $whatsapp = $inviteUrl
+        ? 'https://wa.me/?text='.rawurlencode(__('staff.whatsapp_text', ['name' => session('invite_name'), 'company' => $company, 'url' => $inviteUrl]))
+        : null;
+@endphp
+<style>
+    .ny-staff { display: grid; gap: 16px; }
+    .ny-staff-lead { margin: 0; color: var(--ny-text-muted); font-size: 14px; }
+    .ny-staff-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .ny-staff-kpi, .ny-staff-card, .ny-staff-row { border: 1px solid var(--ny-border); border-radius: 12px; background: var(--ny-surface); }
+    .ny-staff-kpi { display: flex; align-items: center; gap: 12px; padding: 16px; }
+    .ny-staff-kpi b { display: block; font-size: 28px; line-height: 1; }
+    .ny-staff-kpi span { color: var(--ny-text-muted); font-size: 12px; font-weight: 700; }
+    .ny-staff-pill { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 8px; background: var(--c); color: var(--ny-surface); }
+    .ny-staff-pill svg { width: 16px; height: 16px; }
+    .ny-staff-card, .ny-staff-row { padding: 16px; }
+    .ny-staff-card h2, .ny-staff-row h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; }
+    .ny-staff-form, .ny-staff-edit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; margin-top: 12px; }
+    .ny-staff label { display: grid; gap: 4px; color: var(--ny-text); font-size: 12px; font-weight: 700; }
+    .ny-staff input, .ny-staff select { height: 40px; border: 1px solid var(--ny-border); border-radius: 8px; background: var(--ny-surface); padding: 0 12px; color: var(--ny-text); font-size: 14px; }
+    .ny-staff-hint, .ny-staff-meta { margin: 8px 0 0; color: var(--ny-text-muted); font-size: 12px; }
+    .ny-staff-btn, .ny-staff-quiet, .ny-staff-danger { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 8px; padding: 0 12px; font-size: 14px; font-weight: 700; text-decoration: none; }
+    .ny-staff-btn { border: 0; background: var(--ny-primary-deep); color: var(--ny-text-on-dark); }
+    .ny-staff-quiet { border: 1px solid var(--ny-border); background: var(--ny-surface); color: var(--ny-text); }
+    .ny-staff-danger { border: 1px solid color-mix(in srgb, var(--ny-tone-coral) 45%, var(--ny-border)); background: var(--ny-surface); color: var(--ny-tone-coral-deep); }
+    .ny-staff-main { min-height: 40px; }
+    .ny-staff-note { margin: 0; border-radius: 12px; background: color-mix(in srgb, var(--ny-tone-leaf) 14%, var(--ny-surface)); padding: 12px; color: var(--ny-tone-leaf-deep); font-size: 14px; }
+    .ny-staff-note.is-alert { background: color-mix(in srgb, var(--ny-tone-sun) 24%, var(--ny-surface)); color: var(--ny-tone-sun-deep); }
+    .ny-staff-link { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+    .ny-staff-link input { min-width: 0; flex: 1; }
+    .ny-staff-badge { display: inline-flex; align-items: center; min-height: 24px; border-radius: 999px; background: color-mix(in srgb, var(--c) 18%, var(--ny-surface)); padding: 0 8px; color: var(--c); font-size: 12px; font-weight: 700; }
+    .ny-staff-row { display: grid; gap: 8px; }
+    .ny-staff-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+    .ny-staff-person { min-width: 0; }
+    .ny-staff-person p { margin: 2px 0 0; color: var(--ny-text-muted); font-size: 14px; }
+    .ny-staff-menu { margin-top: 4px; }
+    .ny-staff-menu summary { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; border: 1px solid var(--ny-border); border-radius: 8px; padding: 0 12px; font-size: 14px; font-weight: 700; cursor: pointer; list-style: none; }
+    .ny-staff-menu summary::-webkit-details-marker { display: none; }
+    @media (max-width: 800px) {
+        .ny-staff-kpis, .ny-staff-form, .ny-staff-edit { grid-template-columns: 1fr; }
+        .ny-staff-btn, .ny-staff-quiet, .ny-staff-danger, .ny-staff-menu summary { min-height: 44px; }
+    }
+</style>
+<div class="ny-staff">
+    <p class="ny-staff-lead">{{ __('staff.lead') }}</p>
+    <section class="ny-staff-kpis">
+        <article class="ny-staff-kpi"><span class="ny-staff-pill" style="--c: var(--ny-tone-leaf)"><x-ui.icon name="check" /></span><div><b>{{ $counts['active'] }}</b><span>{{ __('staff.active') }}</span></div></article>
+        <article class="ny-staff-kpi"><span class="ny-staff-pill" style="--c: var(--ny-tone-sun)"><x-ui.icon name="messages" /></span><div><b>{{ $counts['invited'] }}</b><span>{{ __('staff.invited_count') }}</span></div></article>
+        <article class="ny-staff-kpi"><span class="ny-staff-pill" style="--c: var(--ny-tone-coral)"><x-ui.icon name="lock" /></span><div><b>{{ $counts['suspended'] }}</b><span>{{ __('staff.suspended_count') }}</span></div></article>
     </section>
 
-    @if($errors->any())
-        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>
+    @if(session('success'))<p class="ny-staff-note" role="status">{{ session('success') }}</p>@endif
+    @if($errors->any())<p class="ny-staff-note is-alert" role="alert">{{ $errors->first() }}</p>@endif
+    @if($inviteUrl)
+        <section class="ny-staff-card">
+            <h2>{{ __('staff.link') }}</h2>
+            <div class="ny-staff-link">
+                <input id="staff-invite-url" readonly value="{{ $inviteUrl }}">
+                <button class="ny-staff-quiet" type="button" id="staff-copy">{{ __('staff.copy') }}</button>
+                <a class="ny-staff-btn" target="_blank" rel="noopener" href="{{ $whatsapp }}">{{ __('staff.whatsapp') }}</a>
+            </div>
+        </section>
     @endif
 
-    <form x-show="open" x-cloak method="POST" action="{{ route('company.staff.store') }}" class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
-        @csrf
-        <label class="text-sm font-semibold text-slate-700">Nombre completo<input required name="name" value="{{ old('name') }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm font-semibold"></label>
-        <label class="text-sm font-semibold text-slate-700">Correo<input required type="email" name="email" value="{{ old('email') }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm font-semibold"></label>
-        <label class="text-sm font-semibold text-slate-700">DNI / documento<input required name="document_number" value="{{ old('document_number') }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm font-semibold"></label>
-        <label class="text-sm font-semibold text-slate-700">Teléfono<input required name="phone" value="{{ old('phone') }}" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm font-semibold"></label>
-        <label class="text-sm font-semibold text-slate-700">Contraseña temporal<input required type="password" name="password" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm font-semibold"></label>
-        <label class="text-sm font-semibold text-slate-700">Confirmar contraseña<input required type="password" name="password_confirmation" class="mt-1 h-11 w-full rounded-xl border-slate-200 text-sm font-semibold"></label>
-        <button class="h-11 rounded-xl bg-[#062c21] px-5 text-sm font-bold text-white sm:col-span-2 lg:col-span-3">Crear acceso</button>
-    </form>
-
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 px-5 py-5">
-            <h3 class="text-lg font-black text-slate-950">Usuarios del counter</h3>
-            <p class="mt-1 text-sm text-slate-500">{{ \App\Support\SpanishCount::phrase($counterStaff->count(), 'acceso', 'accesos') }}</p>
-        </div>
-        <div class="divide-y divide-slate-100 md:hidden">
-            @forelse($counterStaff as $staff)
-                @php($membership = $staff->organizations->first()?->pivot)
-                <article class="space-y-3 px-5 py-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <strong class="text-slate-950">{{ $staff->name }}</strong>
-                            <p class="text-sm text-slate-500">{{ $staff->email }}</p>
-                        </div>
-                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $membership?->status === 'active' ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600' }}">{{ $membership?->status === 'active' ? 'Activo' : 'Inactivo' }}</span>
-                    </div>
-                    <p class="text-sm text-slate-600">{{ $staff->document_number ?: 'Sin documento' }} · {{ $staff->phone ?: 'Sin teléfono' }}</p>
-                    <div class="flex flex-wrap gap-2">
-                        <form method="POST" action="{{ route('company.staff.toggle', $staff) }}">@csrf @method('PATCH')<button class="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700">{{ $membership?->status === 'active' ? 'Deshabilitar' : 'Habilitar' }}</button></form>
-                        <form method="POST" action="{{ route('company.staff.destroy', $staff) }}">@csrf @method('DELETE')<button class="min-h-10 rounded-xl border border-rose-200 px-4 text-sm font-bold text-rose-700">Retirar</button></form>
-                    </div>
-                </article>
-            @empty
-                <div class="px-5 py-14 text-center">
-                    <strong class="block text-slate-800">Todavía no hay usuarios counter</strong>
-                    <p class="mt-1 text-sm text-slate-500">Crea un acceso para el personal que despacha en el muelle.</p>
-                </div>
-            @endforelse
-        </div>
-        <div class="hidden overflow-x-auto md:block">
-            <table class="min-w-full text-left text-sm">
-                <thead class="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
-                    <tr>
-                        <th class="px-5 py-3">Usuario</th>
-                        <th class="px-4 py-3">Documento</th>
-                        <th class="px-4 py-3">Teléfono</th>
-                        <th class="px-4 py-3">Estado</th>
-                        <th class="px-5 py-3 text-right">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($counterStaff as $staff)
-                        @php($membership = $staff->organizations->first()?->pivot)
-                        <tr>
-                            <td class="px-5 py-4"><strong class="text-slate-950">{{ $staff->name }}</strong><span class="block text-sm text-slate-500">{{ $staff->email }}</span></td>
-                            <td class="px-4 py-4 text-slate-700">{{ $staff->document_number }}</td>
-                            <td class="px-4 py-4 text-slate-700">{{ $staff->phone }}</td>
-                            <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $membership?->status === 'active' ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600' }}">{{ $membership?->status === 'active' ? 'Activo' : 'Inactivo' }}</span></td>
-                            <td class="px-5 py-4">
-                                <div class="flex justify-end gap-2">
-                                    <form method="POST" action="{{ route('company.staff.toggle', $staff) }}">@csrf @method('PATCH')<button class="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700">{{ $membership?->status === 'active' ? 'Deshabilitar' : 'Habilitar' }}</button></form>
-                                    <form method="POST" action="{{ route('company.staff.destroy', $staff) }}">@csrf @method('DELETE')<button class="min-h-10 rounded-xl border border-rose-200 px-4 text-sm font-bold text-rose-700">Retirar</button></form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5" class="px-5 py-14 text-center text-sm text-slate-500">Todavía no hay usuarios counter.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    <section class="ny-staff-card">
+        <h2><span class="ny-staff-pill" style="--c: var(--ny-tone-river)"><x-ui.icon name="team" /></span> {{ __('staff.invite') }}</h2>
+        <form class="ny-staff-form" method="POST" action="{{ route('company.staff.store') }}">
+            @csrf
+            <label>{{ __('staff.name') }}<input name="name" value="{{ old('name') }}" required maxlength="120"></label>
+            <label>{{ __('staff.email') }}<input name="email" type="email" value="{{ old('email') }}" required maxlength="150"></label>
+            <label>{{ __('staff.profile') }}
+                <select name="profile" required>
+                    @foreach($profiles as $profile)
+                        <option value="{{ $profile }}" @selected(old('profile', 'seller') === $profile)>{{ $roleLabel($profile) }}</option>
+                    @endforeach
+                </select>
+            </label>
+            @if($sites->isNotEmpty())
+                <label>{{ __('staff.site') }}
+                    <select name="site_id">
+                        <option value="">{{ __('staff.site_optional') }}</option>
+                        @foreach($sites as $site)
+                            <option value="{{ $site->id }}" @selected((string) old('site_id') === (string) $site->id)>{{ $site->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+            @endif
+            <button class="ny-staff-btn ny-staff-main" type="submit">{{ __('staff.send') }}</button>
+        </form>
+        @if($sites->isNotEmpty())<p class="ny-staff-hint">{{ __('staff.site_hint') }}</p>@endif
     </section>
+
+    @foreach($invitations as $invitation)
+        @php($expired = $invitation->expires_at->isPast())
+        <article class="ny-staff-row">
+            <div class="ny-staff-top">
+                <div class="ny-staff-person">
+                    <h3>{{ $invitation->name }}</h3>
+                    <p>{{ $invitation->email }}</p>
+                </div>
+                <div>
+                    <span class="ny-staff-badge" style="--c: {{ $tone[$invitation->profile] }}">{{ $roleLabel($invitation->profile) }}</span>
+                    <span class="ny-staff-badge" style="--c: var(--ny-tone-sun)">{{ __('staff.state_invited') }}</span>
+                </div>
+            </div>
+            <p class="ny-staff-meta">{{ $invitation->site?->name ?: __('staff.no_site') }} · {{ $expired ? __('staff.expired') : __('staff.expires', ['date' => \App\Support\DepartureSchedule::show($invitation->expires_at)]) }}</p>
+            <div class="ny-staff-link">
+                <input readonly value="{{ route('staff.invitation', $invitation->token) }}">
+                <a class="ny-staff-quiet" target="_blank" rel="noopener" href="{{ 'https://wa.me/?text='.rawurlencode(__('staff.whatsapp_text', ['name' => $invitation->name, 'company' => $company, 'url' => route('staff.invitation', $invitation->token)])) }}">{{ __('staff.whatsapp') }}</a>
+            </div>
+            <details class="ny-staff-menu">
+                <summary>{{ __('staff.actions') }}</summary>
+                <form class="ny-staff-edit" method="POST" action="{{ route('company.staff.invitations.update', $invitation) }}">
+                    @csrf @method('PATCH')
+                    <label>{{ __('staff.profile') }}
+                        <select name="profile">
+                            @foreach($profiles as $profile)
+                                <option value="{{ $profile }}" @selected($invitation->profile === $profile)>{{ $roleLabel($profile) }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    @if($sites->isNotEmpty())
+                        <label>{{ __('staff.site') }}
+                            <select name="site_id">
+                                <option value="">{{ __('staff.site_optional') }}</option>
+                                @foreach($sites as $site)
+                                    <option value="{{ $site->id }}" @selected((int) $invitation->organization_site_id === (int) $site->id)>{{ $site->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    @endif
+                    <button class="ny-staff-quiet" type="submit">{{ __('staff.save') }}</button>
+                </form>
+                <div class="ny-staff-link">
+                    <form method="POST" action="{{ route('company.staff.invitations.resend', $invitation) }}">@csrf<button class="ny-staff-quiet" type="submit">{{ __('staff.resend') }}</button></form>
+                    <form method="POST" action="{{ route('company.staff.invitations.cancel', $invitation) }}">@csrf @method('DELETE')<button class="ny-staff-danger" type="submit">{{ __('staff.cancel') }}</button></form>
+                </div>
+            </details>
+        </article>
+    @endforeach
+
+    @foreach($members as $member)
+        @php($profile = \App\Support\CompanyTeam::memberProfile($member, $organization->id) ?? 'seller')
+        @php($active = $member->organizations->first()?->pivot->status === 'active')
+        @php($siteName = $sites->firstWhere('id', $member->organization_site_id)?->name)
+        @php($drawer = $openCash->get($member->id))
+        <article class="ny-staff-row">
+            <div class="ny-staff-top">
+                <div class="ny-staff-person">
+                    <h3>{{ $member->name }}</h3>
+                    <p>{{ $member->email }}</p>
+                </div>
+                <div>
+                    <span class="ny-staff-badge" style="--c: {{ $tone[$profile] ?? 'var(--ny-tone-river)' }}">{{ $roleLabel($profile) }}</span>
+                    <span class="ny-staff-badge" style="--c: {{ $active ? 'var(--ny-tone-leaf)' : 'var(--ny-tone-coral)' }}">{{ $active ? __('staff.state_active') : __('staff.state_suspended') }}</span>
+                </div>
+            </div>
+            <p class="ny-staff-meta">{{ $siteName ?: __('staff.no_site') }} · {{ __('staff.last_login') }}: {{ $member->last_login_at ? \App\Support\DepartureSchedule::show($member->last_login_at) : __('staff.never') }}</p>
+            @if($drawer)
+                <p class="ny-staff-note is-alert">{{ __('staff.open_cash', ['name' => $member->name, 'site' => $drawer->site?->name ?: __('staff.no_site'), 'when' => \App\Support\DepartureSchedule::show($drawer->opened_at)]) }}</p>
+            @endif
+            @if((int) session('open_cash_user') === (int) $member->id)
+                <form method="POST" action="{{ route('company.staff.toggle', $member) }}">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="confirm" value="1">
+                    <button class="ny-staff-danger" type="submit">{{ __('staff.suspend_confirm') }}</button>
+                </form>
+            @endif
+            <details class="ny-staff-menu">
+                <summary>{{ __('staff.actions') }}</summary>
+                <form class="ny-staff-edit" method="POST" action="{{ route('company.staff.update', $member) }}">
+                    @csrf @method('PATCH')
+                    <label>{{ __('staff.profile') }}
+                        <select name="profile">
+                            @foreach($profiles as $option)
+                                <option value="{{ $option }}" @selected($profile === $option)>{{ $roleLabel($option) }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    @if($sites->isNotEmpty())
+                        <label>{{ __('staff.site') }}
+                            <select name="site_id">
+                                <option value="">{{ __('staff.site_optional') }}</option>
+                                @foreach($sites as $site)
+                                    <option value="{{ $site->id }}" @selected((int) $member->organization_site_id === (int) $site->id)>{{ $site->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    @endif
+                    <button class="ny-staff-quiet" type="submit">{{ __('staff.save') }}</button>
+                </form>
+                <form method="POST" action="{{ route('company.staff.toggle', $member) }}">
+                    @csrf @method('PATCH')
+                    @if($drawer)<input type="hidden" name="confirm" value="1">@endif
+                    <button class="{{ $active ? 'ny-staff-danger' : 'ny-staff-quiet' }}" type="submit">{{ $active ? ($drawer ? __('staff.suspend_confirm') : __('staff.suspend')) : __('staff.reactivate') }}</button>
+                </form>
+            </details>
+        </article>
+    @endforeach
 </div>
+<script>
+    document.getElementById('staff-copy')?.addEventListener('click', function () {
+        var input = document.getElementById('staff-invite-url');
+        input.select();
+        navigator.clipboard.writeText(input.value);
+        this.textContent = @json(__('staff.copied'));
+    });
+</script>
 @endsection

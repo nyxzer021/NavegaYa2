@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Organization;
 use App\Models\Role;
+use App\Models\StaffInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,18 +19,24 @@ class CompanyCounterAccessTest extends TestCase
         Role::firstOrCreate(['code' => 'company_counter'], ['name' => 'Counter']);
 
         $this->actingAs($admin)->post(route('company.staff.store'), [
-            'name' => 'Counter Puerto', 'email' => 'counter@example.test', 'document_number' => '12345678',
-            'phone' => '999888777', 'password' => 'secreto123', 'password_confirmation' => 'secreto123',
+            'name' => 'Counter Puerto', 'email' => 'counter@example.test', 'profile' => 'seller',
+            'password' => 'secreto123', 'password_confirmation' => 'secreto123',
         ])->assertRedirect();
+        $this->assertDatabaseMissing('users', ['email' => 'counter@example.test']);
+        $invitation = StaffInvitation::query()->firstOrFail();
+        $this->post(route('staff.invitation.store', $invitation->token), [
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+        ])->assertRedirect(route('company.pos.index'));
 
         $counter = User::where('email', 'counter@example.test')->firstOrFail();
         $this->assertDatabaseHas('organization_user', ['organization_id' => $organization->id, 'user_id' => $counter->id, 'status' => 'active']);
         $this->assertDatabaseHas('role_user', ['user_id' => $counter->id, 'organization_id' => $organization->id]);
         $this->actingAs($admin)->get(route('company.staff.index'))
             ->assertOk()
-            ->assertSee('Equipo de muelle')
+            ->assertSee('Usuarios')
             ->assertSee('Counter Puerto')
-            ->assertSee('md:hidden', false)
+            ->assertDontSee('name="password"', false)
             ->assertDontSee('text-[9px]', false)
             ->assertDontSee('min-w-[720px]', false);
         $this->actingAs($counter)->get(route('dashboard'))->assertRedirect(route('company.pos.index'));

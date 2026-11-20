@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Database\Factories\UserFactory;
+use App\Support\AdminScope;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'phone', 'document_number', 'google_id', 'password', 'email_verified_at', 'agency_id', 'organization_site_id'])]
+#[Fillable(['name', 'email', 'phone', 'document_number', 'google_id', 'password', 'email_verified_at', 'agency_id', 'organization_site_id', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -30,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -71,7 +73,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isCompanyAdmin(): bool
     {
-        return $this->roles()->where('code', 'company_admin')->exists();
+        $organizationId = AdminScope::organizationId($this);
+
+        return $this->roles()
+            ->where('code', 'company_admin')
+            ->when($organizationId !== null, fn ($query) => $query->where('role_user.organization_id', $organizationId))
+            ->exists();
     }
 
     public function isCustomer(): bool

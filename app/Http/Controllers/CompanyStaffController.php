@@ -2,69 +2,78 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Role;
+use App\Models\StaffInvitation;
 use App\Models\User;
+use App\Support\CompanyTeam;
+use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class CompanyStaffController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
-        $organization = $this->organization();
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'document_number' => ['required', 'string', 'max:40'],
-            'phone' => ['required', 'string', 'max:40'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $invitation = CompanyTeam::invite($request);
 
-        DB::transaction(function () use ($data, $organization): void {
-            $user = User::create(array_merge($data, ['password' => Hash::make($data['password']), 'email_verified_at' => now()]));
-            $user->organizations()->attach($organization->id, ['status' => 'active']);
-            $user->roles()->attach(Role::where('code', 'company_counter')->firstOrFail()->id, ['organization_id' => $organization->id]);
-        });
-
-        return back()->with('success', 'Usuario Counter creado y vinculado a tu empresa.');
+        return back()
+            ->with('success', __('staff.invited', ['email' => $invitation->email]))
+            ->with('invite_url', route('staff.invitation', $invitation->token))
+            ->with('invite_name', $invitation->name);
     }
 
-    public function toggle(User $user): RedirectResponse
+    public function update(Request $request, User $user): RedirectResponse
     {
-        $organization = $this->organization();
-        $this->authorizeCounter($user, $organization->id);
-        $membership = $user->organizations()->whereKey($organization->id)->firstOrFail();
-        $next = $membership->pivot->status === 'active' ? 'inactive' : 'active';
-        $user->organizations()->updateExistingPivot($organization->id, ['status' => $next]);
+        CompanyTeam::change($request, $user);
 
-        return back()->with('success', $next === 'active' ? 'Usuario Counter habilitado.' : 'Usuario Counter deshabilitado.');
+        return back()->with('success', __('staff.profile_saved', ['name' => $user->name]));
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function toggle(Request $request, User $user): RedirectResponse
     {
-        $organization = $this->organization();
-        $this->authorizeCounter($user, $organization->id);
-        DB::transaction(function () use ($user, $organization): void {
-            $user->roles()->wherePivot('organization_id', $organization->id)->detach();
-            $user->organizations()->detach($organization->id);
-            if ($user->organizations()->doesntExist() && $user->roles()->doesntExist()) {
-                $user->delete();
-            }
-        });
+        $organizationId = CompanyTeam::organization($request)->id;
+        $membership = $user->organizations()->whereKey($organizationId)->first();
+        $active = $membership?->pivot->status === 'active';
+        if (! $active) {
+            CompanyTeam::reactivate($request, $user);
 
-        return back()->with('success', 'Usuario Counter retirado de la empresa.');
+            return back()->with('success', __('staff.reactivated', ['name' => $user->name]));
+        }
+        $drawer = CompanyTeam::openDrawer($user, $organizationId);
+        if ($drawer !== null && ! $request->boolean('confirm')) {
+            return back()
+                ->with('open_cash_user', $user->id)
+                ->withErrors(['confirm' => __('staff.open_cash', [
+                    'name' => $user->name,
+                    'site' => $drawer->site?->name ?: __('staff.no_site'),
+                    'when' => DepartureSchedule::show($drawer->opened_at),
+                ])]);
+        }
+        CompanyTeam::suspend($request, $user);
+
+        return back()->with('success', __('staff.suspended', ['name' => $user->name]));
     }
 
-    private function authorizeCounter(User $user, int $organizationId): void
+    public function updateInvitation(Request $request, StaffInvitation $invitation): RedirectResponse
     {
-        abort_unless($user->organizations()->whereKey($organizationId)->exists()
-            && $user->roles()->where('code', 'company_counter')->wherePivot('organization_id', $organizationId)->exists(), 404);
+        CompanyTeam::changeInvitation($request, $invitation);
+
+        return back()->with('success', __('staff.profile_saved', ['name' => $invitation->name]));
     }
 
-    private function organization()
+    public function resend(Request $request, StaffInvitation $invitation): RedirectResponse
     {
-        return auth()->user()->organizations()->wherePivot('status', 'active')->where('organizations.status', 'active')->firstOrFail();
+        $invitation = CompanyTeam::resend($request, $invitation);
+
+        return back()
+            ->with('success', __('staff.resent', ['email' => $invitation->email]))
+            ->with('invite_url', route('staff.invitation', $invitation->token))
+            ->with('invite_name', $invitation->name);
+    }
+
+    public function cancel(Request $request, StaffInvitation $invitation): RedirectResponse
+    {
+        CompanyTeam::cancel($request, $invitation);
+
+        return back()->with('success', __('staff.cancelled', ['email' => $invitation->email]));
     }
 }
