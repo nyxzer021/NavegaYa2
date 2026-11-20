@@ -72,6 +72,7 @@
    <h2><span class="ny-cash-pill" style="--c: var(--ny-tone-sun)"><x-ui.icon name="cash" /></span>{{ $session->user?->name }}</h2>
    <p>{{ $session->site?->name ?: __('cash.no_site') }} · {{ __('cash.opened_at') }} {{ \App\Support\DepartureSchedule::show($session->opened_at) }} · {{ __('cash.float') }} {{ $money((float) $session->opening_float) }}</p>
    @include('company.cash.summary', ['summary' => $summary])
+   @if($canOperate)
    <form class="ny-cash-open" method="POST" action="{{ route('company.cash-close.close', $session) }}">
     @csrf
     <label>{{ __('cash.counted') }}
@@ -82,6 +83,7 @@
     </label>
     <button type="submit">{{ __('cash.close') }}</button>
    </form>
+   @endif
   </section>
  @endforeach
 

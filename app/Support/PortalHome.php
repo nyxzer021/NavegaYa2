@@ -16,6 +16,8 @@ class PortalHome
         return match (true) {
             $roles->contains('company_counter') => ['url' => route('company.pos.index'), 'label' => 'Volver a mi panel'],
             $roles->contains('company_admin') => ['url' => route('company.dashboard'), 'label' => 'Volver a mi panel'],
+            $roles->contains('company_operator') => ['url' => route('company.departures.index'), 'label' => 'Volver a mi panel'],
+            $roles->contains('company_finance') => ['url' => route('company.sales.index'), 'label' => 'Volver a mi panel'],
             $roles->contains('marketplace_admin') => ['url' => route('marketplace.dashboard'), 'label' => 'Volver a mi panel'],
             $roles->intersect(['super_admin', 'admin'])->isNotEmpty() => ['url' => route('admin.dashboard'), 'label' => 'Volver a mi panel'],
             $user !== null => ['url' => route('travels.index'), 'label' => 'Volver a mi panel'],

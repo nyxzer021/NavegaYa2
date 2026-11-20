@@ -13,7 +13,7 @@ class EnsureUserHasRole
         $roles = preg_split('/[|,]/', $role, -1, PREG_SPLIT_NO_EMPTY);
         $user = $request->user();
         abort_unless($user && $user->roles()->whereIn('code', $roles)->exists(), 403);
-        if (array_intersect($roles, ['company_admin', 'company_counter'])) {
+        if (array_intersect($roles, ['company_admin', 'company_counter', 'company_operator', 'company_finance'])) {
             $isCompanyAdmin = $user->roles()->where('code', 'company_admin')->exists();
             $statuses = $isCompanyAdmin ? ['active', 'pending'] : ['active'];
             abort_unless($user->organizations()->whereIn('organization_user.status', $statuses)->whereIn('organizations.status', $statuses)->exists(), 403);

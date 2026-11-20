@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\CompanyPermissions;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,54 +15,25 @@ class EnsureCompanyPortalProfile
      *
      * @var list<string>
      */
-    public const SELLER_ROUTES = [
-        'company.pos.index',
-        'company.pos.store',
-        'company.pos.void',
-        'company.parcels.index',
-        'company.parcels.store',
-        'company.parcels.assign',
-        'company.parcels.board',
-        'company.parcels.deliver',
-        'company.parcels.guide',
-        'company.freight.index',
-        'company.sales.index',
-        'company.sales.export',
-        'company.cash-close.index',
-        'company.cash-close.open',
-        'company.cash-close.close',
-        'company.cash-close.print',
-        'company.cash-close.export',
-    ];
+    public const SELLER_ROUTES = CompanyPermissions::SELLER_ROUTES;
 
     /**
      * El vendedor de una agencia solo vende los pasajes de sus lotes.
      *
      * @var list<string>
      */
-    public const AGENCY_ROUTES = [
-        'company.pos.index',
-        'company.pos.store',
-        'company.pos.void',
-        'company.sales.index',
-        'company.sales.export',
-        'company.agency-lots.index',
-    ];
+    public const AGENCY_ROUTES = CompanyPermissions::AGENCY_ROUTES;
 
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if ($user === null || $user->roles()->where('code', 'company_admin')->exists()) {
+        $profile = $user === null ? null : CompanyPermissions::profile($user);
+        if ($user === null || $profile === null || $profile === 'admin') {
             return $next($request);
         }
 
-        if (! $user->roles()->where('code', 'company_counter')->exists()) {
-            return $next($request);
-        }
-
-        $allowed = $user->agency_id ? self::AGENCY_ROUTES : self::SELLER_ROUTES;
         $name = $request->route()?->getName();
-        abort_unless(is_string($name) && in_array($name, $allowed, true), 403);
+        abort_unless(is_string($name) && CompanyPermissions::allows($user, $name), 403);
 
         return $next($request);
     }

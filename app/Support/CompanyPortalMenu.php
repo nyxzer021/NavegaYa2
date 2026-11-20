@@ -32,9 +32,13 @@ class CompanyPortalMenu
             return __('company_portal.role.agency');
         }
 
-        return $this->isAdmin()
-            ? __('company_portal.role.admin')
-            : __('company_portal.role.counter');
+        return match (CompanyPermissions::profile($this->user)) {
+            'admin' => __('company_portal.role.admin'),
+            'agency' => __('company_portal.role.agency'),
+            'operator' => __('company_portal.role.operator'),
+            'finance' => __('company_portal.role.finance'),
+            default => __('company_portal.role.counter'),
+        };
     }
 
     public function lead(): string
@@ -61,19 +65,11 @@ class CompanyPortalMenu
     }
 
     /**
-     * Perfiles de la etapa 6. Hoy solo se usan admin y seller.
-     *
      * @return array<string, list<string>>
      */
     public function profiles(): array
     {
-        return [
-            'admin' => ['*'],
-            'seller' => ['pos', 'parcels', 'sales', 'cash_close'],
-            'agency' => ['pos', 'sales', 'lots'],
-            'operator' => ['departures', 'boarding', 'fleet', 'crew', 'incidents'],
-            'finance' => ['sales', 'collections', 'refunds', 'agency_commissions', 'receipts', 'reports'],
-        ];
+        return CompanyPermissions::menuKeys();
     }
 
     public function modalityLabel(): string
@@ -141,7 +137,7 @@ class CompanyPortalMenu
      */
     public function sections(): array
     {
-        $profile = $this->isAdmin() ? 'admin' : ($this->user->agency_id ? 'agency' : 'seller');
+        $profile = CompanyPermissions::profile($this->user) ?? 'seller';
         $allowed = $this->profiles()[$profile];
         $sections = [];
 
@@ -226,51 +222,51 @@ class CompanyPortalMenu
      */
     private function catalog(): array
     {
-        $home = '#BA7517';
-        $company = '#185FA5';
-        $channels = '#D85A30';
-        $finance = '#3B6D11';
-        $operation = '#0F6E56';
-        $users = '#534AB7';
-        $content = '#993556';
-        $help = '#5F5E5A';
-
-        return [
-            $this->row(null, 'home', 'company.dashboard', ['company.dashboard'], $home, false),
-            $this->row('company', 'company_details', 'company.details.index', ['company.details.*'], $company, false),
-            $this->row('company', 'branches', 'company.branches.index', ['company.branches.*'], $company, false),
-            $this->row('company', 'online_payments', 'company.online-payments.index', ['company.online-payments.*'], $company, false),
-            $this->row('operation', 'fleet', 'company.fleet.index', ['company.fleet.*', 'company.vessels.*', 'company.aircraft.*'], $operation, true),
-            $this->row('operation', 'routes', 'company.routes.index', ['company.routes.*'], $operation, true),
-            $this->row('operation', 'departures', 'company.departures.index', ['company.departures.index', 'company.departures.create', 'company.departures.edit', 'company.departures.store', 'company.departures.update', 'company.departures.status', 'company.departures.contingency'], $operation, true),
-            $this->row('operation', 'fares', 'company.fares.index', ['company.fares.*'], $operation, true),
-            $this->row('operation', 'boarding', 'company.counter.index', ['company.counter.*', 'company.boarding.*', 'company.departures.manifest'], $operation, true),
-            $this->row('operation', 'crew', 'company.crew.index', ['company.crew.*'], $operation, true),
-            $this->row('operation', 'incidents', 'company.incidents.index', ['company.incidents.*'], $operation, true),
-            $this->row('channels', 'pos', 'company.pos.index', ['company.pos.*'], $channels, true),
-            $this->row('channels', 'agencies', 'company.agencies.index', ['company.agencies.*'], $channels, true),
-            $this->row('channels', 'parcels', 'company.parcels.index', ['company.parcels.*', 'company.freight.*'], '#d97706', true),
-            $this->row('channels', 'cash_close', 'company.cash-close.index', ['company.cash-close.*'], $channels, true),
-            $this->row('finance', 'sales', 'company.sales.index', ['company.sales.*', 'company.commissions.*'], $finance, true),
-            $this->row('finance', 'lots', 'company.agency-lots.index', ['company.agency-lots.*'], '#6d28d9', true),
-            $this->row('finance', 'collections', 'company.collections.index', ['company.collections.*'], $finance, true),
-            $this->row('finance', 'refunds', 'company.refunds.index', ['company.refunds.*'], $finance, true),
-            $this->row('finance', 'agency_commissions', 'company.agency-commissions.index', ['company.agency-commissions.*'], $finance, true),
-            $this->row('finance', 'receipts', 'company.receipts.index', ['company.receipts.*'], $finance, true),
-            $this->row('finance', 'reports', 'company.reports.index', ['company.reports.*'], $finance, true),
-            $this->row('content', 'page', 'company.profile.edit', ['company.profile.*'], $content, false),
-            $this->row('content', 'page_sections', 'company.page-sections.index', ['company.page-sections.*'], $content, false),
-            $this->row('content', 'gallery', 'company.gallery.index', ['company.gallery.*'], $content, false),
-            $this->row('content', 'policies', 'company.policies.index', ['company.policies.*'], $content, false),
-            $this->row('content', 'appearance', 'company.appearance.index', ['company.appearance.*'], $content, false),
-            $this->row('content', 'advertising', 'company.advertising.index', ['company.advertising.*'], $content, false),
-            $this->row('users', 'team', 'company.staff.index', ['company.staff.*'], $users, false),
-            $this->row('users', 'roles', 'company.roles.index', ['company.roles.*'], $users, false),
-            $this->row('users', 'audit', 'company.audit.index', ['company.audit.*'], $users, false),
-            $this->row('help', 'messages', 'messages.index', ['messages.*'], $help, false),
-            $this->row('help', 'support', 'support.index', ['support.*'], $help, false),
-            $this->row('help', 'whatsapp', 'company.whatsapp.index', ['company.whatsapp.*'], $help, false),
+        $colors = [
+            'home' => '#BA7517',
+            'company_details' => '#185FA5',
+            'branches' => '#185FA5',
+            'online_payments' => '#185FA5',
+            'fleet' => '#0F6E56',
+            'routes' => '#0F6E56',
+            'departures' => '#0F6E56',
+            'fares' => '#0F6E56',
+            'boarding' => '#0F6E56',
+            'crew' => '#0F6E56',
+            'incidents' => '#0F6E56',
+            'pos' => '#D85A30',
+            'agencies' => '#D85A30',
+            'parcels' => '#d97706',
+            'cash_close' => '#D85A30',
+            'sales' => '#3B6D11',
+            'lots' => '#6d28d9',
+            'collections' => '#3B6D11',
+            'refunds' => '#3B6D11',
+            'agency_commissions' => '#3B6D11',
+            'receipts' => '#3B6D11',
+            'reports' => '#3B6D11',
+            'page' => '#993556',
+            'page_sections' => '#993556',
+            'gallery' => '#993556',
+            'policies' => '#993556',
+            'appearance' => '#993556',
+            'advertising' => '#993556',
+            'team' => '#534AB7',
+            'roles' => '#534AB7',
+            'audit' => '#534AB7',
+            'messages' => '#5F5E5A',
+            'support' => '#5F5E5A',
+            'whatsapp' => '#5F5E5A',
         ];
+        $rows = [];
+        foreach (CompanyPermissions::modules() as $module) {
+            if (! $module['visible']) {
+                continue;
+            }
+            $rows[] = $this->row($module['group'], $module['key'], $module['route'], $module['patterns'], $colors[$module['key']], $module['needs_active']);
+        }
+
+        return $rows;
     }
 
     /**

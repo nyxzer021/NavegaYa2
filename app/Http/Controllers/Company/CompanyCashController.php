@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Services\CashDesk;
 use App\Support\AdminScope;
+use App\Support\CompanyPermissions;
 use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,8 @@ class CompanyCashController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+        $oversight = CompanyPermissions::viewsAllCash($user);
+        $operate = CompanyPermissions::operatesCash($user);
         $organization = $this->organization($request);
         $day = $this->day($request);
         [$start, $end] = DepartureSchedule::dayBounds($day);
@@ -34,7 +37,7 @@ class CompanyCashController extends Controller
         $open = CashSession::query()
             ->where('organization_id', $organization->id)
             ->whereNull('closed_at')
-            ->when(! $user->isCompanyAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->when(! $oversight, fn ($query) => $query->where('user_id', $user->id))
             ->with(['user', 'site'])
             ->orderBy('opened_at')
             ->get();
@@ -42,9 +45,9 @@ class CompanyCashController extends Controller
             ->where('organization_id', $organization->id)
             ->whereNotNull('closed_at')
             ->whereBetween('opened_at', [$start, $end])
-            ->when(! $user->isCompanyAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->when(! $oversight, fn ($query) => $query->where('user_id', $user->id))
             ->when($request->filled('sede'), fn ($query) => $query->where('organization_site_id', $request->integer('sede')))
-            ->when($request->filled('vendedor') && $user->isCompanyAdmin(), fn ($query) => $query->where('user_id', $request->integer('vendedor')))
+            ->when($request->filled('vendedor') && $oversight, fn ($query) => $query->where('user_id', $request->integer('vendedor')))
             ->with(['user', 'site'])
             ->orderBy('opened_at')
             ->get();
@@ -61,21 +64,23 @@ class CompanyCashController extends Controller
             'closedSessions' => $closed,
             'summaries' => $summaries,
             'receivable' => $this->rows($this->desk->receivable($organization->id)),
-            'loose' => $user->isCompanyAdmin() ? $this->loose($organization->id, $start, $end) : collect(),
+            'loose' => $oversight ? $this->loose($organization->id, $start, $end) : collect(),
             'sites' => $sites,
             'availableSites' => $available,
-            'canOpen' => $sites->isEmpty() ? $open->where('user_id', $user->id)->isEmpty() : $available->isNotEmpty(),
-            'sellers' => $user->isCompanyAdmin()
+            'canOpen' => $operate && ($sites->isEmpty() ? $open->where('user_id', $user->id)->isEmpty() : $available->isNotEmpty()),
+            'canOperate' => $operate,
+            'sellers' => $oversight
                 ? User::query()->whereHas('organizations', fn ($query) => $query->where('organizations.id', $organization->id))->orderBy('name')->get(['users.id', 'users.name'])
                 : collect(),
             'day' => $day->timezone(DepartureSchedule::ZONE)->toDateString(),
-            'admin' => $user->isCompanyAdmin(),
-            'daily' => $user->isCompanyAdmin() ? $this->daily($open, $closed, $summaries, $start, $end) : null,
+            'admin' => $oversight,
+            'daily' => $oversight ? $this->daily($open, $closed, $summaries, $start, $end) : null,
         ]);
     }
 
     public function open(Request $request): RedirectResponse
     {
+        abort_unless(CompanyPermissions::operatesCash($request->user()), 403);
         $organization = $this->organization($request);
         $data = $request->validate([
             'opening_float' => ['required', 'numeric', 'min:0'],
@@ -94,6 +99,7 @@ class CompanyCashController extends Controller
 
     public function close(Request $request, CashSession $cashSession): RedirectResponse
     {
+        abort_unless(CompanyPermissions::operatesCash($request->user()), 403);
         $this->organization($request);
         $data = $request->validate([
             'counted_cash' => ['required', 'numeric', 'min:0'],
@@ -132,7 +138,7 @@ class CompanyCashController extends Controller
         $sessions = CashSession::query()
             ->where('organization_id', $organization->id)
             ->whereBetween('opened_at', [$start, $end])
-            ->when(! $user->isCompanyAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->when(! CompanyPermissions::viewsAllCash($user), fn ($query) => $query->where('user_id', $user->id))
             ->with(['user', 'site', 'payments.collector', 'payments.reservation.soldBy', 'payments.cargoShipment'])
             ->orderBy('opened_at')
             ->get();

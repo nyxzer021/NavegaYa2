@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\CompanyFleetController as BaseCompanyFleetController;
+use App\Support\CompanyPermissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -39,6 +40,6 @@ class CompanyFleetController extends BaseCompanyFleetController
 
     private function authorizeManager(): void
     {
-        abort_unless(auth()->user()->roles()->where('code', 'company_admin')->exists(), 403);
+        abort_unless(CompanyPermissions::allows(auth()->user(), request()->route()?->getName()), 403);
     }
 }

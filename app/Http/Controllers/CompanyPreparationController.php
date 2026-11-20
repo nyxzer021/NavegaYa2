@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CompanyPermissions;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -13,7 +14,7 @@ class CompanyPreparationController extends Controller
     private const PAGES = [
         'collections', 'refunds', 'payments', 'company_details', 'branches', 'agencies',
         'parcels', 'freight', 'cash_close', 'agency_commissions', 'receipts', 'reports',
-        'roles', 'audit', 'page_sections',
+        'audit', 'page_sections',
         'gallery', 'policies', 'appearance', 'whatsapp',
     ];
 
@@ -21,9 +22,7 @@ class CompanyPreparationController extends Controller
     {
         abort_unless(in_array($page, self::PAGES, true), 404);
 
-        $isAdmin = $request->user()->roles()->where('code', 'company_admin')->exists();
-        $isCounter = $request->user()->roles()->where('code', 'company_counter')->exists();
-        abort_unless($isAdmin || ($isCounter && in_array($page, ['cash_close', 'parcels', 'freight'], true)), 403);
+        abort_unless(CompanyPermissions::allows($request->user(), $request->route()?->getName()), 403);
 
         $organization = $request->user()->organizations()
             ->where('organizations.type', 'transport_company')

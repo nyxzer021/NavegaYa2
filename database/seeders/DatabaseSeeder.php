@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             ['code' => 'super_admin', 'name' => 'Administrador principal', 'description' => 'Gestiona toda la plataforma NavegaYA.'],
             ['code' => 'company_admin', 'name' => 'Administrador de empresa', 'description' => 'Gestiona la empresa de transporte, flota, rutas y ventas.'],
             ['code' => 'company_counter', 'name' => 'Counter / despachador', 'description' => 'Atiende embarque, pasajeros y carga únicamente para su empresa.'],
+            ['code' => 'company_operator', 'name' => 'Operador', 'description' => 'Programa salidas, embarca y cuida la flota. No ve dinero.'],
+            ['code' => 'company_finance', 'name' => 'Finanzas', 'description' => 'Revisa ventas, cobros y cajas. No abre, cierra ni anula.'],
             ['code' => 'company_seller', 'name' => 'Vendedor de empresa', 'description' => 'Registra ventas presenciales de su empresa.'],
             ['code' => 'boarding_agent', 'name' => 'Agente de embarque', 'description' => 'Valida boletos QR durante el embarque.'],
             ['code' => 'agency_agent', 'name' => 'Agente de agencia', 'description' => 'Vende pasajes autorizados sin el cargo web de NavegaYA.'],

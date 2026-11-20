@@ -44,6 +44,8 @@ class AuthenticatedSessionController extends Controller
         $destination = match (true) {
             $roles->contains('company_counter') => route('company.pos.index', absolute: false),
             $roles->contains('company_admin') => route('company.dashboard', absolute: false),
+            $roles->contains('company_operator') => route('company.departures.index', absolute: false),
+            $roles->contains('company_finance') => route('company.sales.index', absolute: false),
             $roles->contains('marketplace_admin') => route('marketplace.dashboard', absolute: false),
             $roles->intersect(['customer', 'traveler', 'passenger'])->isNotEmpty() => route('travels.index', absolute: false),
             $roles->intersect(['super_admin', 'admin'])->isNotEmpty() => route('admin.dashboard', absolute: false),

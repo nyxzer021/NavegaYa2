@@ -15,6 +15,7 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\CompanyPermissions;
 use App\Support\CrewRoster;
 use App\Support\DepartureSchedule;
 use App\Support\FleetPlan;
@@ -369,7 +370,7 @@ class AdminTransportRouteController extends Controller
 
     private function authorizeCompanyAdmin(): void
     {
-        abort_unless(auth()->user()?->roles()->where('code', 'company_admin')->exists(), 403);
+        abort_unless(CompanyPermissions::allows(auth()->user(), request()->route()?->getName()), 403);
         $organizationId = AdminScope::organizationId(auth()->user());
         abort_unless($organizationId, 403);
         abort_unless(Organization::query()->whereKey($organizationId)->where('status', 'active')->exists(), 403, 'La empresa debe estar aprobada para operar salidas.');

@@ -11,6 +11,7 @@ use App\Models\RouteDeparture;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\CompanyPermissions;
 use App\Support\CrewRoster;
 use App\Support\DepartureSchedule;
 use App\Support\FleetPlan;
@@ -323,7 +324,7 @@ class CompanyDepartureController extends BaseCompanyDepartureController
 
     private function authorizeManager(): void
     {
-        abort_unless(auth()->user()->roles()->where('code', 'company_admin')->exists(), 403);
+        abort_unless(CompanyPermissions::allows(auth()->user(), request()->route()?->getName()), 403);
     }
 
     private function durationMinutes(?string $duration): ?int

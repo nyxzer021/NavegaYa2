@@ -8,6 +8,7 @@ use App\Models\OrganizationSite;
 use App\Models\Payment;
 use App\Models\User;
 use App\Support\AdminScope;
+use App\Support\CompanyPermissions;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ class CashDesk
 {
     public function open(User $user, int $organizationId, ?int $siteId, float $float): CashSession
     {
+        abort_unless(CompanyPermissions::operatesCash($user), 403);
         if ($this->cents($float) < 0) {
             throw ValidationException::withMessages(['opening_float' => 'El fondo inicial no puede ser negativo.']);
         }
@@ -74,6 +76,7 @@ class CashDesk
 
     public function close(User $user, CashSession $session, float $counted, ?string $note): CashSession
     {
+        abort_unless(CompanyPermissions::operatesCash($user), 403);
         if ($this->cents($counted) < 0) {
             throw ValidationException::withMessages(['counted_cash' => 'El efectivo contado no puede ser negativo.']);
         }
@@ -240,7 +243,7 @@ class CashDesk
     public function assertCanTouch(User $user, CashSession $session): void
     {
         abort_unless((int) $session->organization_id === (int) AdminScope::organizationId($user), 403);
-        if ((int) $session->user_id !== (int) $user->id && ! $user->isCompanyAdmin()) {
+        if ((int) $session->user_id !== (int) $user->id && ! CompanyPermissions::viewsAllCash($user)) {
             abort(403);
         }
     }
