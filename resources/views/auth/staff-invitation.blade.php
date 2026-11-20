@@ -15,6 +15,12 @@
                 <input class="mt-1 h-10 w-full rounded-lg border px-3 text-sm" type="password" name="password_confirmation" required minlength="8">
             </label>
         @endunless
+        @if($existing && (int) auth()->id() !== (int) $existing->id)
+            <label class="block text-sm font-semibold">{{ __('staff.current_password') }}
+                <input class="mt-1 h-10 w-full rounded-lg border px-3 text-sm" type="password" name="current_password" required autocomplete="current-password">
+            </label>
+            <p class="text-sm">{{ __('staff.current_password_help') }}</p>
+        @endif
         <button class="min-h-11 rounded-lg px-5 py-3 text-sm font-bold text-white" style="background: var(--ny-primary-deep)" type="submit">{{ $existing ? __('staff.join') : __('staff.create_password') }}</button>
         @if($errors->any())<p class="text-sm text-red-700">{{ $errors->first() }}</p>@endif
     </form>

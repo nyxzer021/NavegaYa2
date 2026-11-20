@@ -12,6 +12,7 @@ use App\Notifications\StaffInvitationNotice;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -99,6 +100,7 @@ class CompanyTeam
                 if (self::hasCompanyRole($existing)) {
                     throw ValidationException::withMessages(['email' => __('staff.other_company')]);
                 }
+                self::assertOwnsAccount($request, $existing);
                 $existing->forceFill([
                     'email_verified_at' => $existing->email_verified_at ?? now(),
                     'organization_site_id' => $locked->organization_site_id,
@@ -110,6 +112,21 @@ class CompanyTeam
 
             return $user;
         });
+    }
+
+    /**
+     * El enlace lo ve también el administrador: para unir una cuenta que ya existe,
+     * quien acepta tiene que ser su dueño (sesión iniciada con ella o su contraseña).
+     */
+    private static function assertOwnsAccount(Request $request, User $existing): void
+    {
+        if ((int) $request->user()?->id === (int) $existing->id) {
+            return;
+        }
+        $password = (string) $request->input('current_password', '');
+        if ($password === '' || ! Hash::check($password, (string) $existing->password)) {
+            throw ValidationException::withMessages(['current_password' => __('staff.prove_owner')]);
+        }
     }
 
     public static function change(Request $request, User $member): void

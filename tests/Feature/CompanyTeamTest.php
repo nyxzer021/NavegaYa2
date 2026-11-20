@@ -82,14 +82,54 @@ class CompanyTeamTest extends TestCase
 
         $this->get(route('staff.invitation', $invitation->token))
             ->assertOk()
-            ->assertDontSee('name="password"', false);
+            ->assertDontSee('name="password"', false)
+            ->assertSee('name="current_password"', false);
         $this->post(route('staff.invitation.store', $invitation->token))
+            ->assertSessionHasErrors('current_password');
+        $this->assertNotSame($passenger->id, auth()->id());
+        $this->assertNull(CompanyTeam::memberProfile($passenger, $organization->id));
+        $this->post(route('staff.invitation.store', $invitation->token), ['current_password' => 'otra-clave'])
+            ->assertSessionHasErrors('current_password');
+        $this->assertNotSame($passenger->id, auth()->id());
+
+        $this->post(route('staff.invitation.store', $invitation->token), ['current_password' => 'clave-de-pasajero'])
             ->assertRedirect(route('company.sales.index'));
+        $this->assertAuthenticatedAs($passenger);
 
         $passenger->refresh();
         $this->assertTrue(Hash::check('clave-de-pasajero', $passenger->password));
         $this->assertSame('finance', CompanyTeam::memberProfile($passenger, $organization->id));
         $this->actingAs($passenger)->post(route('company.cash-close.open'), ['opening_float' => 10])->assertForbidden();
+    }
+
+    public function test_the_administrator_cannot_take_over_an_existing_account_with_the_link(): void
+    {
+        [$admin] = $this->company();
+        User::factory()->create(['email' => 'victima@test.pe', 'password' => 'clave-privada']);
+
+        $this->actingAs($admin)->post(route('company.staff.store'), [
+            'name' => 'Victima', 'email' => 'victima@test.pe', 'profile' => 'admin',
+        ])->assertRedirect();
+        $invitation = StaffInvitation::query()->firstOrFail();
+
+        $this->actingAs($admin)->post(route('staff.invitation.store', $invitation->token))
+            ->assertSessionHasErrors('current_password');
+        $this->assertAuthenticatedAs($admin);
+        $this->assertNull($invitation->refresh()->accepted_at);
+    }
+
+    public function test_an_account_already_signed_in_joins_without_typing_its_password(): void
+    {
+        [$admin, $organization] = $this->company();
+        $passenger = User::factory()->create(['email' => 'google.equipo@test.pe']);
+        $this->actingAs($admin)->post(route('company.staff.store'), [
+            'name' => 'Google Equipo', 'email' => 'google.equipo@test.pe', 'profile' => 'operator',
+        ])->assertRedirect();
+        $invitation = StaffInvitation::query()->firstOrFail();
+
+        $this->actingAs($passenger)->post(route('staff.invitation.store', $invitation->token))
+            ->assertRedirect(route('company.departures.index'));
+        $this->assertSame('operator', CompanyTeam::memberProfile($passenger, $organization->id));
     }
 
     public function test_an_expired_or_used_link_does_not_work(): void
