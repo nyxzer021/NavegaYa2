@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Services\CashDesk;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\CompanyPermissions;
 use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
@@ -89,10 +90,15 @@ class CompanyCashController extends Controller
             'opening_float.required' => 'Indica el fondo inicial.',
         ]);
         try {
-            $this->desk->open($request->user(), $organization->id, $data['site_id'] ?? null, (float) $data['opening_float']);
+            $session = $this->desk->open($request->user(), $organization->id, $data['site_id'] ?? null, (float) $data['opening_float']);
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         }
+        $session->load('site');
+        AuditRecorder::record($request, 'cash.opened', $session, [
+            'float' => (string) $session->opening_float,
+            'site' => $session->site?->name,
+        ]);
 
         return redirect()->route('company.cash-close.index')->with('success', __('cash.opened'));
     }
@@ -108,10 +114,15 @@ class CompanyCashController extends Controller
             'counted_cash.required' => 'Indica el efectivo contado.',
         ]);
         try {
-            $this->desk->close($request->user(), $cashSession, (float) $data['counted_cash'], $data['closing_note'] ?? null);
+            $session = $this->desk->close($request->user(), $cashSession, (float) $data['counted_cash'], $data['closing_note'] ?? null);
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         }
+        AuditRecorder::record($request, 'cash.closed', $session, [
+            'expected' => (string) $session->expected_cash,
+            'counted' => (string) $session->counted_cash,
+            'difference' => (string) $session->difference,
+        ]);
 
         return redirect()->route('company.cash-close.index')->with('success', __('cash.closed'));
     }

@@ -72,7 +72,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function safe(array $values): array
     {
-        $sensitive = ['password', 'remember_token', 'token', 'secret', 'api_key', 'cvv', 'card_number'];
+        $sensitive = ['password', 'remember_token', 'token', 'secret', 'api_key', 'cvv', 'card_number', 'bank_account', 'bank_cci'];
 
         return collect($values)->reject(fn (mixed $value, string $key) => collect($sensitive)->contains(fn (string $word) => str_contains(strtolower($key), $word)))->all();
     }

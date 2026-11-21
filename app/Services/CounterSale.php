@@ -211,6 +211,8 @@ class CounterSale
                 'method' => $locked->payment_method,
                 'amount' => (string) $locked->total_amount,
                 'seats' => $releasedSeats,
+                'code' => $locked->code,
+                'channel' => $locked->sales_channel,
             ]);
         });
     }

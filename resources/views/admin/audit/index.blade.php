@@ -9,10 +9,11 @@
         <h1 class="mt-2 text-2xl font-black">Historial completo de operaciones</h1>
         <p class="mt-2 max-w-3xl text-xs leading-6 text-emerald-100">Registra altas, modificaciones y eliminaciones, junto con el responsable, la fecha, la ruta del sistema y los valores anteriores y nuevos. Las credenciales y tokens nunca se almacenan en este historial.</p>
     </section>
-    <form method="GET" class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_220px_auto]">
+    <form method="GET" class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_220px_220px_auto]">
         <input name="search" value="{{$search}}" placeholder="Buscar responsable por nombre o correo" class="rounded-xl border-slate-200 bg-slate-50 text-xs">
         <select name="event" class="rounded-xl border-slate-200 bg-slate-50 text-xs"><option value="">Todas las acciones</option>@foreach(\App\Support\PanelLabel::events() as $value=>$label)<option value="{{$value}}" @selected($event===$value)>{{$label}}</option>@endforeach</select>
         <select name="model" class="rounded-xl border-slate-200 bg-slate-50 text-xs"><option value="">Todos los módulos</option>@foreach($models as $availableModel)<option value="{{$availableModel}}" @selected($model===$availableModel)>{{ \App\Support\PanelLabel::record($availableModel) }}</option>@endforeach</select>
+        <select name="organization" class="rounded-xl border-slate-200 bg-slate-50 text-xs"><option value="">{{ __('audit.all_companies') }}</option>@foreach($organizations as $company)<option value="{{ $company->id }}" @selected((string) $organizationId === (string) $company->id)>{{ $company->commercial_name ?: $company->legal_name }}</option>@endforeach</select>
         <button class="rounded-xl bg-emerald-950 px-5 py-2.5 text-xs font-black text-white">Aplicar filtros</button>
     </form>
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

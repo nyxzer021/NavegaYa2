@@ -195,7 +195,7 @@ class CompanyPermissions
             'seller' => ['pos', 'parcels', 'sales', 'cash_close'],
             'agency' => ['pos', 'sales', 'lots'],
             'operator' => ['departures', 'boarding', 'fleet', 'crew', 'incidents'],
-            'finance' => ['sales', 'collections', 'refunds', 'agency_commissions', 'receipts', 'reports', 'cash_close'],
+            'finance' => ['sales', 'collections', 'refunds', 'agency_commissions', 'receipts', 'reports', 'cash_close', 'audit'],
         ];
     }
 

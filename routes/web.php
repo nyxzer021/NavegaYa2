@@ -51,6 +51,7 @@ use App\Http\Controllers\CargoTrackingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Company\CompanyAdvertisingController;
 use App\Http\Controllers\Company\CompanyAgencyController;
+use App\Http\Controllers\Company\CompanyAuditController;
 use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyCargoController;
 use App\Http\Controllers\Company\CompanyCashController;
@@ -218,7 +219,8 @@ Route::middleware(['auth', 'role:company_admin|company_counter|company_operator|
     Route::post('/descuentos', [CompanyFareController::class, 'storeDiscount'])->name('discounts.store');
     Route::delete('/descuentos/{discount}', [CompanyFareController::class, 'destroyDiscount'])->name('discounts.destroy');
     Route::get('/perfiles', [CompanyRolesController::class, 'index'])->name('roles.index');
-    Route::get('/auditoria', [CompanyPreparationController::class, 'show'])->defaults('page', 'audit')->name('audit.index');
+    Route::get('/auditoria.csv', [CompanyAuditController::class, 'export'])->name('audit.export');
+    Route::get('/auditoria', [CompanyAuditController::class, 'index'])->name('audit.index');
     Route::get('/secciones', [CompanyContentController::class, 'sections'])->name('page-sections.index');
     Route::patch('/secciones', [CompanyContentController::class, 'updateSections'])->name('page-sections.update');
     Route::get('/galeria', [CompanyContentController::class, 'gallery'])->name('gallery.index');

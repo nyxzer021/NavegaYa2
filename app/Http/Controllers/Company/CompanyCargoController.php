@@ -10,6 +10,7 @@ use App\Models\OrganizationSite;
 use App\Models\RouteDeparture;
 use App\Services\CargoDesk;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\CargoGuideQr;
 use App\Support\DepartureSchedule;
 use Illuminate\Database\Eloquent\Collection;
@@ -131,10 +132,14 @@ class CompanyCargoController extends Controller
             'collector_document.required' => 'Indica el documento de quien recoge.',
         ]);
         try {
-            $desk->deliver($request->user(), $shipment, $data);
+            $shipment = $desk->deliver($request->user(), $shipment, $data);
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         }
+        AuditRecorder::record($request, 'parcel.delivered', $shipment, [
+            'code' => $shipment->code,
+            'collector' => $shipment->collector_name ?: $shipment->collector_document,
+        ]);
 
         return back()->with('success', __('cargo.delivered'));
     }

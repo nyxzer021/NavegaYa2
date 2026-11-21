@@ -15,6 +15,7 @@ use App\Services\AgencyLotDesk;
 use App\Services\AgencySale;
 use App\Services\CounterSale;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\VesselLayout;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -168,7 +169,7 @@ class CompanyAgencyController extends Controller
         }
 
         try {
-            $desk->assign(
+            $lot = $desk->assign(
                 $agency,
                 $departure,
                 array_map('intval', $data['seats'] ?? []),
@@ -180,6 +181,11 @@ class CompanyAgencyController extends Controller
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         }
+        AuditRecorder::record($request, 'lot.created', $lot, [
+            'agency' => $agency->name,
+            'price' => (string) $lot->unit_price,
+            'payment' => $lot->payment_status,
+        ]);
 
         return back()->with('success', __('agencies.lot_created'));
     }
@@ -188,7 +194,13 @@ class CompanyAgencyController extends Controller
     {
         $this->owned($request, $lot->agency);
         $data = $request->validate(['payment_status' => ['required', 'in:pending,paid']]);
+        $wasPaid = $lot->payment_status === 'paid';
         $lot->update(['payment_status' => $data['payment_status']]);
+        if ($data['payment_status'] === 'paid' && ! $wasPaid) {
+            AuditRecorder::record($request, 'lot.paid', $lot, [
+                'agency' => $lot->agency->name,
+            ]);
+        }
 
         return back()->with('success', __('agencies.payment_saved'));
     }
@@ -206,6 +218,10 @@ class CompanyAgencyController extends Controller
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         }
+        AuditRecorder::record($request, 'lot.released', $lot, [
+            'agency' => $lot->agency->name,
+            'reason' => $data['note'],
+        ]);
 
         return back()->with('success', __('agencies.released_done'));
     }

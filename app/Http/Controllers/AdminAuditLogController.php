@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -22,9 +23,15 @@ class AdminAuditLogController extends Controller
         if ($search = trim((string) $request->query('search'))) {
             $query->whereHas('user', fn ($users) => $users->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
         }
+        $organizationId = $request->integer('organization');
+        if ($organizationId > 0) {
+            $query->where('organization_id', $organizationId);
+        }
 
         return view('admin.audit.index', [
             'logs' => $query->paginate(40)->withQueryString(), 'event' => $event, 'model' => $model ?? '', 'search' => $search ?? '',
+            'organizationId' => $organizationId > 0 ? $organizationId : '',
+            'organizations' => Organization::query()->where('type', 'transport_company')->orderBy('legal_name')->get(['id', 'legal_name', 'commercial_name']),
             'models' => AuditLog::query()->distinct()->orderBy('subject_type')->pluck('subject_type')->map(fn ($class) => class_basename($class)),
         ]);
     }

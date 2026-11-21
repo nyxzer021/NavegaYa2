@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\RouteDeparture;
 use App\Models\SupportTicket;
+use App\Support\AuditRecorder;
 use App\Support\CompanyBase;
 use App\Support\DepartureSchedule;
 use App\Support\FleetMaintenance;
@@ -317,6 +318,9 @@ class CompanyDashboardController extends Controller
         }
         unset($data['logo'], $data['cover']);
         $organization->update($data);
+        AuditRecorder::record($request, 'profile.updated', $organization, [
+            'name' => $organization->commercial_name ?: $organization->legal_name,
+        ]);
 
         return back()->with('success', $request->hasFile('logo') || $request->hasFile('cover') ? 'Perfil actualizado. Las nuevas imágenes están pendientes de revisión.' : 'Tu perfil público se actualizó correctamente.');
     }
@@ -336,7 +340,11 @@ class CompanyDashboardController extends Controller
             'bank_account' => ['required', 'string', 'max:40'],
             'bank_cci' => ['nullable', 'regex:/^[0-9]{20}$/'],
         ]);
-        $this->organization()->update($data);
+        $organization = $this->organization();
+        $organization->update($data);
+        AuditRecorder::record($request, 'bank.updated', $organization, [
+            'bank' => $data['bank_name'],
+        ]);
 
         return back()->with('success', 'Cuenta bancaria actualizada de forma segura.');
     }

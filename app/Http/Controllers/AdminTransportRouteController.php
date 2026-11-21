@@ -15,6 +15,8 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
+use App\Support\CompanyAudit;
 use App\Support\CompanyPermissions;
 use App\Support\CrewRoster;
 use App\Support\DepartureSchedule;
@@ -204,6 +206,12 @@ class AdminTransportRouteController extends Controller
             throw ValidationException::withMessages(['status' => CrewRoster::BOARDING_BLOCK]);
         }
         $departure->update($data + ['status_changed_by_user_id' => $request->user()->id, 'status_changed_at' => now()]);
+        if ($data['status'] === 'cancelled') {
+            AuditRecorder::record($request, 'departure.cancelled', $departure, [
+                'route' => CompanyAudit::routeLabel($departure),
+                'when' => DepartureSchedule::show($departure->departure_at),
+            ]);
+        }
 
         return back()->with('success', 'Estado de la salida actualizado.');
     }
@@ -269,9 +277,22 @@ class AdminTransportRouteController extends Controller
         }
 
         $departure->update($changes);
+        $fresh = $departure->fresh();
+        if ($data['action'] === 'cancel') {
+            AuditRecorder::record($request, 'departure.cancelled', $fresh, [
+                'route' => CompanyAudit::routeLabel($fresh),
+                'when' => DepartureSchedule::show($fresh->departure_at),
+                'reason' => $data['reason'],
+            ]);
+        } elseif ($data['action'] === 'reschedule') {
+            AuditRecorder::record($request, 'departure.rescheduled', $fresh, [
+                'route' => CompanyAudit::routeLabel($fresh),
+                'when' => DepartureSchedule::show($fresh->departure_at),
+                'reason' => $data['reason'],
+            ]);
+        }
         $links = [];
         if (in_array($data['action'], ['delay', 'reschedule', 'cancel'], true)) {
-            $fresh = $departure->fresh();
             $change = $data['action'] === 'cancel'
                 ? 'La salida fue cancelada'
                 : 'La salida quedó para '.DepartureSchedule::label($fresh->departure_at);

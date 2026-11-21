@@ -9,6 +9,7 @@ use App\Models\Organization;
 use App\Models\RouteFare;
 use App\Models\TransportRoute;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\BaggageAllowance;
 use App\Support\FareTable;
 use Illuminate\Http\RedirectResponse;
@@ -69,7 +70,11 @@ class CompanyFareController extends Controller
             'ends_on' => $data['ends_on'] ?? null,
         ];
         FareTable::guardOverlap($attributes);
-        RouteFare::create($attributes);
+        $fare = RouteFare::create($attributes);
+        AuditRecorder::record($request, 'fare.saved', $fare, [
+            'amount' => (string) $fare->amount,
+            'passenger' => $fare->passenger_type,
+        ]);
 
         return redirect()->route('company.fares.index')->with('success', 'Tarifa guardada.');
     }
@@ -78,6 +83,9 @@ class CompanyFareController extends Controller
     {
         $organization = $this->organization();
         abort_unless((int) $routeFare->organization_id === (int) $organization->id, 404);
+        AuditRecorder::record(request(), 'fare.removed', $routeFare, [
+            'amount' => (string) $routeFare->amount,
+        ]);
         $routeFare->delete();
 
         return redirect()->route('company.fares.index')->with('success', 'Tarifa eliminada.');
@@ -102,7 +110,7 @@ class CompanyFareController extends Controller
         if ($data['kind'] === 'percent' && (float) $data['value'] > 100) {
             return back()->withInput()->withErrors(['value' => 'El porcentaje no puede pasar de 100.']);
         }
-        DB::transaction(function () use ($organization, $data, $request): void {
+        $discount = DB::transaction(function () use ($organization, $data, $request): Discount {
             $discount = Discount::create([
                 'organization_id' => $organization->id,
                 'name' => $data['name'],
@@ -126,7 +134,12 @@ class CompanyFareController extends Controller
                     'air_route_id' => $airId,
                 ]);
             }
+
+            return $discount;
         });
+        AuditRecorder::record($request, 'discount.saved', $discount, [
+            'name' => $discount->name,
+        ]);
 
         return redirect()->route('company.fares.index')->with('success', 'Descuento guardado.');
     }
@@ -135,6 +148,9 @@ class CompanyFareController extends Controller
     {
         $organization = $this->organization();
         abort_unless((int) $discount->organization_id === (int) $organization->id, 404);
+        AuditRecorder::record(request(), 'discount.removed', $discount, [
+            'name' => $discount->name,
+        ]);
         $discount->delete();
 
         return redirect()->route('company.fares.index')->with('success', 'Descuento eliminado.');

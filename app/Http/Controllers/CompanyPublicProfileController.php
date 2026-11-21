@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationBanner;
 use App\Models\OrganizationPhoto;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\CompanyPublicPresentation;
 use App\Support\StoredFiles;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,9 @@ class CompanyPublicProfileController extends Controller
             unset($data[$key]);
         }
         $organization->update($data);
+        AuditRecorder::record($request, 'profile.updated', $organization, [
+            'name' => $organization->commercial_name ?: $organization->legal_name,
+        ]);
 
         return back()->with('success', 'La ficha pública quedó actualizada.');
     }

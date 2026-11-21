@@ -14,6 +14,7 @@ use App\Models\RouteDepartureSeatHold;
 use App\Services\AgencySale;
 use App\Services\CounterSale;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\BaggageAllowance;
 use App\Support\DepartureSchedule;
 use App\Support\FareTable;
@@ -160,8 +161,17 @@ class CompanyPosController extends Controller
             return back()->withInput()->withErrors($exception->errors());
         }
 
+        $reservation = $sale['reservation'];
+        AuditRecorder::record($request, $agency ? 'sale.agency' : 'sale.counter', $reservation, [
+            'code' => $reservation->code,
+            'amount' => (string) $reservation->total_amount,
+            'passenger' => $reservation->contact_name,
+            'agency' => $agency?->name,
+            'channel' => $agency ? 'agency' : 'counter',
+        ]);
+
         return redirect()
-            ->route('tickets.show', $sale['reservation']->code)
+            ->route('tickets.show', $reservation->code)
             ->with('success', __('pos.sold'))
             ->with('cargo_offer', $agency || ! $sale['cargo'] ? null : route('company.parcels.index', array_filter([
                 'remitente' => trim($data['first_name'].' '.$data['last_name']),

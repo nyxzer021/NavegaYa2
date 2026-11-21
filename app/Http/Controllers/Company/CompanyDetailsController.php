@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\OrganizationDocument;
 use App\Models\Port;
 use App\Support\AdminScope;
+use App\Support\AuditRecorder;
 use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +88,9 @@ class CompanyDetailsController extends Controller
             $fields['short_code'] = $data['short_code'] ?? null;
         }
         $organization->update($fields);
+        AuditRecorder::record($request, 'details.updated', $organization, [
+            'name' => $organization->commercial_name ?: $organization->legal_name,
+        ]);
 
         $this->storeDocument($request, $organization, 'ruc_document', 'ruc', $data['ruc_expires_on'] ?? null, $data['ruc_reference'] ?? null);
         $this->storeDocument($request, $organization, 'representative_document', 'representative', $data['representative_expires_on'] ?? null, $data['representative_reference'] ?? null);
