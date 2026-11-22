@@ -169,6 +169,25 @@ class CompanyRefundTest extends TestCase
         $this->assertSame(0, TicketRefund::query()->where('reservation_id', $boarded->reservation_id)->count());
     }
 
+    public function test_an_agency_cash_sale_is_refunded_by_the_agency_without_touching_the_company_drawer(): void
+    {
+        [$admin, $organization] = $this->company('Agencia Caja SAC', '20672000009');
+        $departure = $this->departure($organization);
+        $sale = $this->sale($departure, 'BOL-AGE', 'Ana Agencia', '80.00', '0.00', '80.00', '80.00', 'agency', 'cash');
+        $this->actingAs($admin)->post(route('company.refunds.store'), [
+            'code' => 'BOL-AGE', 'amount' => '80.00', 'reason' => 'El pasajero se arrepintió',
+        ])->assertRedirect();
+        $refund = TicketRefund::query()->firstOrFail();
+        $this->actingAs($admin)->post(route('company.refunds.approve', $refund))->assertRedirect();
+
+        $this->actingAs($admin)->post(route('company.refunds.pay', $refund))->assertSessionHasNoErrors();
+
+        $this->assertSame('paid', $refund->fresh()->status);
+        $this->assertNull($refund->fresh()->cash_payment_id);
+        $this->assertDatabaseMissing('payments', ['reservation_id' => $sale->reservation_id, 'amount' => '-80.00']);
+        $this->assertSame(0, CashSession::query()->count());
+    }
+
     public function test_another_company_and_the_seller_cannot_touch_a_refund(): void
     {
         [$admin, $organization] = $this->company('Visible SAC', '20672000004');

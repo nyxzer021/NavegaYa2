@@ -38,6 +38,8 @@ class TicketRefunds
         }
 
         return DB::transaction(function () use ($request, $reservation, $payment, $organization, $source, $cause, $quote, $reason): TicketRefund {
+            // Bloquea el pago: dos pedidos a la vez no pueden abrir dos devoluciones del mismo boleto.
+            Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
             $this->assertNoOpen($payment->id);
             $refund = TicketRefund::query()->create([
                 'organization_id' => $organization->id,
@@ -155,7 +157,10 @@ class TicketRefunds
             $method = (string) $locked->payment?->method;
             $cashId = null;
             $operationNumber = null;
-            if ($method === 'cash') {
+            if ($locked->reservation?->sales_channel === 'agency') {
+                // El dinero lo cobró la agencia: la devuelve ella y la caja de la empresa no se mueve.
+                $operationNumber = trim((string) $operation) ?: null;
+            } elseif ($method === 'cash') {
                 $cashId = $this->cash->refundCash($user, $locked->payment, (string) $locked->amount, $locked->reason ?: $locked->explanation)->id;
             } else {
                 $operationNumber = trim((string) $operation);
