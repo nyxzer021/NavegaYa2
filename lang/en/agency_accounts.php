@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'use_payments' => 'Record the lot payment, with amount and operation number, in Agency accounts.',
+    'see_account' => 'See lot account',
     'lead' => 'What each agency owes for its seat lots. These payments do not enter the seller cash drawer.',
     'amount' => 'Lot amount',
     'received' => 'Payments received',

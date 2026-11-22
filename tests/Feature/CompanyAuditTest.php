@@ -64,7 +64,9 @@ class CompanyAuditTest extends TestCase
             'departure_id' => $departure->id, 'seats' => [$agencySeat->id], 'unit_price' => 80, 'payment_status' => 'pending',
         ])->assertRedirect();
         $lot = $agency->lots()->firstOrFail();
-        $this->actingAs($admin)->patch(route('company.agencies.lots.pay', $lot), ['payment_status' => 'paid'])->assertRedirect();
+        $this->actingAs($admin)->post(route('company.agency-commissions.payments.store', $lot), [
+            'amount' => '80.00', 'paid_on' => now()->toDateString(), 'method' => 'Transferencia', 'operation_number' => 'OP-LOTE',
+        ])->assertRedirect()->assertSessionHasNoErrors();
         $this->actingAs($agencySeller)->post(route('company.pos.store'), [
             'departure_id' => $departure->id, 'seat_id' => $agencySeat->id, 'first_name' => 'Luis', 'last_name' => 'Pinedo',
             'document_type' => 'DNI', 'document_number' => '87654321', 'passenger_type' => 'adult',
@@ -122,7 +124,7 @@ class CompanyAuditTest extends TestCase
 
         $events = [
             'sale.counter', 'sale.agency', 'counter_sale_voided', 'cash.opened', 'cash.closed',
-            'parcel.delivered', 'lot.created', 'lot.paid', 'lot.released', 'fare.saved', 'fare.removed',
+            'parcel.delivered', 'lot.created', 'lot_payment.recorded', 'lot.released', 'fare.saved', 'fare.removed',
             'discount.saved', 'discount.removed', 'departure.cancelled', 'departure.rescheduled',
             'staff.invited', 'profile.updated', 'details.updated', 'bank.updated',
         ];

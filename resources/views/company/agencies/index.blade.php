@@ -138,14 +138,10 @@
       <li><span class="ny-agency-pill" style="--c: var(--ny-tone-violet)"><x-ui.icon name="lots" /></span>{{ __('agencies.free') }} <b>{{ $tally['free'] }}</b></li>
       <li><span class="ny-agency-pill" style="--c: var(--ny-tone-sun)"><x-ui.icon name="check" /></span>{{ __('agencies.released') }} <b>{{ $tally['released'] }}</b></li>
      </ul>
-     <form method="POST" action="{{ route('company.agencies.lots.pay', $lot) }}">
-      @csrf @method('PATCH')
-      <input type="hidden" name="payment_status" value="{{ $lot->payment_status === 'paid' ? 'pending' : 'paid' }}">
-      <button @class(['ny-agency-badge', 'is-paid' => $lot->payment_status === 'paid', 'is-pending' => $lot->payment_status !== 'paid']) type="submit">
-       <x-ui.icon :name="$lot->payment_status === 'paid' ? 'check' : 'cash'" />
-       {{ $lot->payment_status === 'paid' ? __('agencies.paid') : __('agencies.pending') }}
-      </button>
-     </form>
+     <a class="ny-agency-badge is-pending" href="{{ route('company.agency-commissions.index') }}">
+      <x-ui.icon name="cash" />
+      {{ __('agency_accounts.see_account') }}
+     </a>
      @if($lot->holds->isNotEmpty())
       <form method="POST" action="{{ route('company.agencies.lots.release', $lot) }}" class="ny-agency-form">
        @csrf

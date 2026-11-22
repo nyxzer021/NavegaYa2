@@ -175,7 +175,7 @@ class CompanyAgencyController extends Controller
                 array_map('intval', $data['seats'] ?? []),
                 (int) ($data['hammocks'] ?? 0),
                 number_format((float) $data['unit_price'], 2, '.', ''),
-                $data['payment_status'],
+                'pending',
                 $data['note'] ?? null,
             );
         } catch (ValidationException $exception) {
@@ -190,19 +190,15 @@ class CompanyAgencyController extends Controller
         return back()->with('success', __('agencies.lot_created'));
     }
 
+    /**
+     * El pago de un lote se registra con monto y operación en Cuentas de agencias.
+     * Este botón antiguo ya no marca pagado sin registrar el dinero.
+     */
     public function pay(Request $request, AgencyLot $lot): RedirectResponse
     {
         $this->owned($request, $lot->agency);
-        $data = $request->validate(['payment_status' => ['required', 'in:pending,paid']]);
-        $wasPaid = $lot->payment_status === 'paid';
-        $lot->update(['payment_status' => $data['payment_status']]);
-        if ($data['payment_status'] === 'paid' && ! $wasPaid) {
-            AuditRecorder::record($request, 'lot.paid', $lot, [
-                'agency' => $lot->agency->name,
-            ]);
-        }
 
-        return back()->with('success', __('agencies.payment_saved'));
+        return redirect()->route('company.agency-commissions.index')->with('success', __('agency_accounts.use_payments'));
     }
 
     public function release(Request $request, AgencyLot $lot, AgencyLotDesk $desk): RedirectResponse

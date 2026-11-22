@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'use_payments' => 'Registra el pago del lote, con monto y número de operación, en Cuentas de agencias.',
+    'see_account' => 'Ver cuenta del lote',
     'lead' => 'Lo que cada agencia debe por sus lotes. Estos pagos no entran en la caja del vendedor.',
     'amount' => 'Monto de lotes',
     'received' => 'Pagos recibidos',

@@ -27,6 +27,24 @@ class CompanyAgencyAccountsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_the_old_lot_button_no_longer_marks_a_lot_paid_without_money(): void
+    {
+        [$admin, $organization] = $this->company('Boton SAC', '20673000009');
+        $departure = $this->departure($organization, now()->addDay());
+        $agency = Agency::query()->create([
+            'organization_id' => $organization->id, 'name' => 'Agencia Boton', 'ruc' => '20111000019',
+            'contact_name' => 'Luz', 'phone' => '065600119', 'status' => 'active',
+        ]);
+        $lot = AgencyLot::query()->create([
+            'agency_id' => $agency->id, 'route_departure_id' => $departure->id, 'unit_price' => '50.00', 'payment_status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)->patch(route('company.agencies.lots.pay', $lot), ['payment_status' => 'paid'])
+            ->assertRedirect(route('company.agency-commissions.index'));
+
+        $this->assertSame('pending', $lot->fresh()->payment_status);
+    }
+
     public function test_partial_payments_follow_the_balance_and_a_void_returns_it(): void
     {
         [$admin, $organization] = $this->company('Cuentas SAC', '20673000001');
