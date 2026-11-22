@@ -86,7 +86,7 @@ class CompanyProfileAccessTest extends TestCase
             ->assertSee('Cierre de caja')
             ->assertSee('Cobros y conciliación')
             ->assertSee('Reembolsos')
-            ->assertSee('Comisiones de agencias')
+            ->assertSee('Cuentas de agencias')
             ->assertSee('Comprobantes')
             ->assertSee('Reportes')
             ->assertDontSee('Punto de venta')

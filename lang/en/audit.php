@@ -53,6 +53,8 @@ return [
     'lot_created' => ':who created a lot for :agency at :amount per seat, :payment.',
     'lot_paid' => ':who marked the lot of :agency as paid.',
     'lot_released' => ':who released seats from the lot of :agency',
+    'lot_payment' => ':who recorded a payment from :agency of :amount, operation :operation.',
+    'lot_payment_voided' => ':who voided the payment from :agency of :amount',
     'fare_saved' => ':who saved a :passenger fare of :amount.',
     'fare_removed' => ':who removed a fare of :amount.',
     'discount_saved' => ':who saved the discount :name.',

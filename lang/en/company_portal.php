@@ -62,7 +62,7 @@ return [
         'lots' => 'My lots',
         'collections' => 'Collections and reconciliation',
         'refunds' => 'Refunds',
-        'agency_commissions' => 'Agency commissions',
+        'agency_commissions' => 'Agency accounts',
         'receipts' => 'Receipts',
         'reports' => 'Reports',
         'fleet' => 'Fleet',

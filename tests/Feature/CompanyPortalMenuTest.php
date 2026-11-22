@@ -23,7 +23,7 @@ class CompanyPortalMenuTest extends TestCase
                 'Mi empresa', 'Datos de la empresa', 'Sedes y terminales', 'Pagos en línea',
                 'Operación', 'Flota', 'Rutas', 'Programación de salidas', 'Tarifas y descuentos', 'Embarque y manifiestos', 'Tripulación', 'Incidencias',
                 'Canales de venta', 'Punto de venta', 'Agencias autorizadas', 'Encomiendas y carga', 'Cierre de caja',
-                'Ventas y finanzas', 'Historial de ventas', 'Cobros y conciliación', 'Reembolsos', 'Comisiones de agencias', 'Comprobantes', 'Reportes',
+                'Ventas y finanzas', 'Historial de ventas', 'Cobros y conciliación', 'Reembolsos', 'Cuentas de agencias', 'Comprobantes', 'Reportes',
                 'Contenido', 'Página de la empresa', 'Secciones de la página', 'Galería y opiniones', 'Políticas de viaje', 'Apariencia', 'Campañas publicitarias',
                 'Usuarios y privilegios', 'Usuarios', 'Perfiles y permisos', 'Auditoría',
                 'Ayuda', 'Mensajes con NavegaYA', 'Soporte', 'WhatsApp de atención',

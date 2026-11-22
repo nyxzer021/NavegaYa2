@@ -36,4 +36,9 @@ class AgencyLot extends Model
     {
         return $this->hasMany(AgencyLotRelease::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(AgencyLotPayment::class);
+    }
 }
