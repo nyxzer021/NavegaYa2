@@ -134,6 +134,25 @@ class CompanyCollectionsTest extends TestCase
             ->assertSee('BOL-OCT');
     }
 
+    public function test_a_credit_for_navega_ya_is_discounted_before_paying_the_company_again(): void
+    {
+        [$admin, $organization] = $this->company('Credito SAC', '20671000009');
+        $departure = $this->departure($organization);
+        $first = $this->webSale($departure, 'BOL-CR1', 'Primera', '80.00', '0.00', '6.40', '80.00', '86.40', 'web', Carbon::parse('2026-10-15 12:00:00', 'America/Lima'));
+        $super = $this->superAdmin();
+        $this->actingAs($super)->post(route('admin.commissions.payouts.store', $organization), [
+            'paid_on' => '2026-10-20', 'amount' => '80.00', 'method' => 'Transferencia', 'operation_number' => 'OP-CR1',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->travelTo(Carbon::parse('2026-11-10 15:00:00', 'America/Lima'));
+        $this->refund($admin, $first);
+        $this->webSale($departure, 'BOL-CR2', 'Segunda', '80.00', '0.00', '6.40', '80.00', '86.40', 'web', Carbon::parse('2026-11-10 14:00:00', 'America/Lima'));
+
+        $this->actingAs($super)->post(route('admin.commissions.payouts.store', $organization), [
+            'paid_on' => '2026-11-10', 'amount' => '80.00', 'method' => 'Transferencia', 'operation_number' => 'OP-CR2',
+        ])->assertSessionHasErrors('amount');
+        $this->assertDatabaseCount('operator_payouts', 1);
+    }
+
     public function test_another_company_and_the_seller_cannot_see_the_statement(): void
     {
         [$admin, $organization] = $this->company('Visible SAC', '20671000005');

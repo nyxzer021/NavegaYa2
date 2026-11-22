@@ -134,6 +134,10 @@ class CompanyCollections
             OperatorPayout::query()->where('organization_id', $organization->id)->lockForUpdate()->get();
             $refunds = WebFareRefund::query()->where('organization_id', $organization->id)->lockForUpdate()->get();
             $payouts = OperatorPayout::query()->where('organization_id', $organization->id)->where('status', 'paid')->with('items')->get();
+            // El saldo a favor de NavegaYA (devoluciones de boletos ya pagados) se descuenta antes de pagar.
+            if ($cents > $this->balance($sales, $refunds, $payouts, now()->addYear(), '2999-12-31')) {
+                throw ValidationException::withMessages(['amount' => __('collections.above_balance')]);
+            }
             $remaining = $cents;
             $allocations = [];
             foreach ($sales as $sale) {
