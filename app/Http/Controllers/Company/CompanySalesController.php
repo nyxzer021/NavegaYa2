@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Ticket;
 use App\Services\MarketplaceSales;
 use App\Support\AdminScope;
+use App\Support\CsvCell;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class CompanySalesController extends Controller
             fwrite($file, "\xEF\xBB\xBF");
             fputcsv($file, ['Boleto', 'Fecha', 'Pasajero', 'Documento', 'Tramo', 'Salida', 'Asiento', 'Canal', 'Monto PEN', 'Estado']);
             foreach ($tickets as $ticket) {
-                fputcsv($file, $this->ticketRow($ticket));
+                fputcsv($file, CsvCell::row($this->ticketRow($ticket)));
             }
             fclose($file);
         }, "ventas-{$from->toDateString()}-{$to->toDateString()}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);

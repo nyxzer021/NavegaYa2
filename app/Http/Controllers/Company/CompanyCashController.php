@@ -13,6 +13,7 @@ use App\Services\CashDesk;
 use App\Support\AdminScope;
 use App\Support\AuditRecorder;
 use App\Support\CompanyPermissions;
+use App\Support\CsvCell;
 use App\Support\DepartureSchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -164,9 +165,9 @@ class CompanyCashController extends Controller
                     ->filter(fn (Payment $payment): bool => in_array($payment->status, ['confirmed', 'voided'], true))
                     ->sortBy('id');
                 foreach ($payments as $payment) {
-                    fputcsv($out, $this->paymentRow($session, $payment));
+                    fputcsv($out, CsvCell::row($this->paymentRow($session, $payment)));
                 }
-                fputcsv($out, $this->summaryRow($session));
+                fputcsv($out, CsvCell::row($this->summaryRow($session)));
             }
             fclose($out);
         }, $name, ['Content-Type' => 'text/csv; charset=UTF-8']);

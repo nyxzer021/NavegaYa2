@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RouteDeparture;
 use App\Support\AdminScope;
+use App\Support\CsvCell;
 use App\Support\ManifestReport;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -42,7 +43,7 @@ class AdminManifestController extends Controller
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, "\xEF\xBB\xBF");
         foreach ($rows as $row) {
-            fputcsv($stream, $row, ';');
+            fputcsv($stream, CsvCell::row($row), ';');
         }
         rewind($stream);
         $csv = stream_get_contents($stream);

@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\CompanyAudit;
 use App\Support\CompanyTeam;
+use App\Support\CsvCell;
 use App\Support\DepartureSchedule;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,12 +55,12 @@ class CompanyAuditController extends Controller
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, [__('audit.csv_when'), __('audit.csv_who'), __('audit.csv_what'), __('audit.csv_ip')]);
             foreach ($logs as $log) {
-                fputcsv($out, [
+                fputcsv($out, CsvCell::row([
                     DepartureSchedule::show($log->created_at, 'Y-m-d H:i'),
                     $log->user?->name ?: __('audit.someone'),
                     CompanyAudit::present($log)['sentence'],
                     $log->ip_address ?: '',
-                ]);
+                ]));
             }
             fclose($out);
         }, $name, ['Content-Type' => 'text/csv; charset=UTF-8']);

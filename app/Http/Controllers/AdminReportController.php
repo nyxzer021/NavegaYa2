@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Services\MarketplaceSales;
 use App\Support\AdminScope;
+use App\Support\CsvCell;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -66,10 +67,10 @@ class AdminReportController extends Controller
             foreach ($rows as $row) {
                 $ticket = $row->ticket;
                 $details = $this->details($row);
-                fputcsv($file, [$row->reservation->code, $ticket?->code ?? 'Pendiente', $row->passenger_name,
+                fputcsv($file, CsvCell::row([$row->reservation->code, $ticket?->code ?? 'Pendiente', $row->passenger_name,
                     $row->document_number ?: 'Sin documento', $details['mode'], $details['route'], $details['departure_at']->format('Y-m-d H:i'),
                     $details['vehicle'], $details['seat'], $ticket?->status ?? 'Pendiente', $ticket?->boarding_token ?? '',
-                    $ticket ? route('tickets.qr', $ticket->code) : ''], ';');
+                    $ticket ? route('tickets.qr', $ticket->code) : '']), ';');
             }
             fclose($file);
         }, 'reporte-reservas-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
