@@ -45,6 +45,10 @@
             <label class="text-xs font-bold">Aéreo (kg)<input type="number" name="baggage_air_kg" min="0" value="{{ old('baggage_air_kg', $organization->baggage_air_kg) }}" class="mt-1 w-full rounded-lg border-slate-200" placeholder="{{ $baggage['air'] }}"></label>
             <label class="text-xs font-bold">Carga desde (kg)<input type="number" name="cargo_threshold_kg" min="0" value="{{ old('cargo_threshold_kg', $organization->cargo_threshold_kg) }}" class="mt-1 w-full rounded-lg border-slate-200" placeholder="{{ $baggage['cargo'] }}"></label>
         </div>
+        <label class="mt-3 block text-xs font-bold">{{ __('refunds.policy_percent') }}
+            <input type="number" name="refund_regret_percent" min="0" max="100" step="0.01" value="{{ old('refund_regret_percent', $organization->refund_regret_percent) }}" class="mt-1 w-full rounded-lg border-slate-200 sm:max-w-xs" placeholder="{{ __('refunds.policy_help') }}">
+            <span class="mt-1 block font-semibold text-slate-500">{{ __('refunds.policy_help') }}</span>
+        </label>
         @php
             $offersRiver = in_array($organization->modality ?: 'fluvial', ['fluvial', 'mixto'], true);
             $offersAir = in_array($organization->modality, ['aereo', 'mixto'], true);

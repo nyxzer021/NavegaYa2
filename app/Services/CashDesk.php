@@ -240,6 +240,56 @@ class CashDesk
         return true;
     }
 
+    public function refundCash(User $user, Payment $original, string $amount, string $reason): Payment
+    {
+        $original->loadMissing('reservation.departure.transportRoute', 'reservation.airDeparture.airRoute');
+        $organizationId = (int) ($original->reservation?->departure?->transportRoute?->organization_id
+            ?? $original->reservation?->airDeparture?->airRoute?->organization_id
+            ?? 0);
+        abort_unless($organizationId > 0, 422);
+        $siteId = $original->organization_site_id ?: $original->reservation?->organization_site_id;
+        $open = $this->findOpen($user, $organizationId, $siteId);
+        if ($open === null) {
+            $open = CashSession::query()
+                ->where('user_id', $user->id)
+                ->where('organization_id', $organizationId)
+                ->whereNull('closed_at')
+                ->first();
+        }
+        if ($open === null) {
+            throw ValidationException::withMessages(['cash' => __('refunds.open_drawer')]);
+        }
+        $cents = $this->cents((float) $amount);
+        if ($cents < 1) {
+            throw ValidationException::withMessages(['amount' => __('refunds.amount_required')]);
+        }
+        if ($cents > $this->cents($this->expectedCash($open))) {
+            throw ValidationException::withMessages(['cash' => __('refunds.short_cash')]);
+        }
+        $soles = round($cents / 100, 2);
+
+        return Payment::query()->create([
+            'reservation_id' => $original->reservation_id,
+            'purpose' => $original->purpose ?: 'ticket',
+            'method' => 'cash',
+            'provider' => 'pos',
+            'provider_reference' => 'DEV-'.$original->id.'-'.Str::upper(Str::random(4)),
+            'amount' => round(-1 * $soles, 2),
+            'cash_tendered' => round(-1 * $soles, 2),
+            'cash_change' => 0,
+            'adjustment_note' => $reason,
+            'currency_code' => 'PEN',
+            'commission_rate' => 0,
+            'commission_amount' => 0,
+            'operator_net' => 0,
+            'status' => 'confirmed',
+            'paid_at' => now(),
+            'collected_by_user_id' => $user->id,
+            'organization_site_id' => $open->organization_site_id,
+            'cash_session_id' => $open->id,
+        ]);
+    }
+
     public function assertCanTouch(User $user, CashSession $session): void
     {
         abort_unless((int) $session->organization_id === (int) AdminScope::organizationId($user), 403);

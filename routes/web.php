@@ -60,6 +60,7 @@ use App\Http\Controllers\Company\CompanyDepartureController;
 use App\Http\Controllers\Company\CompanyDetailsController;
 use App\Http\Controllers\Company\CompanyFleetController;
 use App\Http\Controllers\Company\CompanyPosController;
+use App\Http\Controllers\Company\CompanyRefundController;
 use App\Http\Controllers\Company\CompanyRolesController;
 use App\Http\Controllers\Company\CompanySalesController;
 use App\Http\Controllers\Company\CompanySettlementController;
@@ -181,7 +182,11 @@ Route::middleware(['auth', 'role:company_admin|company_counter|company_operator|
     Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');
     Route::get('/cobros.csv', [CompanyCollectionsController::class, 'export'])->name('collections.export');
     Route::get('/cobros', [CompanyCollectionsController::class, 'index'])->name('collections.index');
-    Route::get('/reembolsos', [CompanyPreparationController::class, 'show'])->defaults('page', 'refunds')->name('refunds.index');
+    Route::get('/reembolsos', [CompanyRefundController::class, 'index'])->name('refunds.index');
+    Route::post('/reembolsos', [CompanyRefundController::class, 'store'])->name('refunds.store');
+    Route::post('/reembolsos/{ticketRefund}/aprobar', [CompanyRefundController::class, 'approve'])->name('refunds.approve');
+    Route::post('/reembolsos/{ticketRefund}/rechazar', [CompanyRefundController::class, 'reject'])->name('refunds.reject');
+    Route::post('/reembolsos/{ticketRefund}/pagar', [CompanyRefundController::class, 'pay'])->name('refunds.pay');
     Route::get('/pagos-en-linea', [CompanyPreparationController::class, 'show'])->defaults('page', 'payments')->name('online-payments.index');
     Route::get('/datos', [CompanyDetailsController::class, 'index'])->name('details.index');
     Route::patch('/datos', [CompanyDetailsController::class, 'update'])->name('details.update');
@@ -298,6 +303,7 @@ Route::post('/reserva/{code}/pago/culqi', [CulqiPaymentController::class, 'charg
 Route::post('/reserva/{code}/pago/culqi/orden', [CulqiPaymentController::class, 'order'])->name('payments.culqi.order');
 Route::post('/webhooks/culqi', [PaymentWebhookController::class, 'culqi'])->name('webhooks.culqi');
 Route::get('/reserva/{code}/boletos', [PaymentController::class, 'tickets'])->name('tickets.show');
+Route::post('/reserva/{code}/reembolso', [PaymentController::class, 'requestRefund'])->middleware('auth')->name('tickets.refund');
 Route::get('/boleto/{ticketCode}/qr', [PaymentController::class, 'qr'])->name('tickets.qr');
 Route::get('/boleto/{ticketCode}/pdf', [PaymentController::class, 'pdf'])->name('tickets.pdf');
 Route::get('/abordaje/verificar/{token}', [PaymentController::class, 'verify'])->name('tickets.verify');

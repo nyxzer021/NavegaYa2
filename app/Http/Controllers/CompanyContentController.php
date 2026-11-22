@@ -108,14 +108,19 @@ class CompanyContentController extends Controller
             'baggage_hold_kg' => ['nullable', 'integer', 'min:0', 'max:200'],
             'baggage_air_kg' => ['nullable', 'integer', 'min:0', 'max:100'],
             'cargo_threshold_kg' => ['nullable', 'integer', 'min:0', 'max:500'],
+            'refund_regret_percent' => ['nullable', 'numeric', 'between:0,100'],
         ]);
         TravelPolicy::publish($document, $data['body_html'], $data['summary'] ?? null, $request->user(), 'Publicada por la empresa');
-        $organization->update([
+        $fields = [
             'baggage_hand_kg' => $data['baggage_hand_kg'] ?? null,
             'baggage_hold_kg' => $data['baggage_hold_kg'] ?? null,
             'baggage_air_kg' => $data['baggage_air_kg'] ?? null,
             'cargo_threshold_kg' => $data['cargo_threshold_kg'] ?? null,
-        ]);
+        ];
+        if ($request->exists('refund_regret_percent')) {
+            $fields['refund_regret_percent'] = $data['refund_regret_percent'] ?? null;
+        }
+        $organization->update($fields);
 
         return back()->with('success', 'La política de viaje quedó publicada como una versión nueva.');
     }

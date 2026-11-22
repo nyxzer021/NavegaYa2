@@ -6,7 +6,7 @@
     <title>Boleto confirmado · NavegaYA</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body{margin:0;background:#f4f7f6;color:#173b33}.wrap{max-width:900px;margin:24px auto;padding:0 20px}.ticket{margin-top:15px;padding:24px;border:1px solid #dce8e3;border-radius:18px;background:#fff}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid span{display:block;color:#6b8179;font-size:12px}.qr{display:flex;gap:20px;align-items:center;margin-top:18px}.qr img{width:145px}.button{display:inline-block;margin-top:15px;margin-right:8px;padding:11px 15px;border-radius:10px;background:#f2b624;color:#173b33;font-weight:850;text-decoration:none}.review{margin-top:18px;padding:18px;border:1px solid #a7e6d1;border-radius:16px;background:#ecfdf5}.review p{margin:5px 0;color:#45675f;font-size:13px}.void{display:grid;gap:8px;margin-top:16px}.void input{min-height:44px;border:1px solid #dce8e3;border-radius:10px;padding:8px 12px;font-size:14px}.void button{min-height:44px;border:0;border-radius:10px;background:#b42336;color:#fff;font-weight:800}@media(max-width:640px){.grid{grid-template-columns:1fr}.qr{align-items:flex-start;flex-direction:column}}
+        body{margin:0;background:#f4f7f6;color:#173b33}.wrap{max-width:900px;margin:24px auto;padding:0 20px}.ticket{margin-top:15px;padding:24px;border:1px solid #dce8e3;border-radius:18px;background:#fff}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid span{display:block;color:#6b8179;font-size:12px}.qr{display:flex;gap:20px;align-items:center;margin-top:18px}.qr img{width:145px}.button{display:inline-block;margin-top:15px;margin-right:8px;padding:11px 15px;border-radius:10px;background:#f2b624;color:#173b33;font-weight:850;text-decoration:none}.review{margin-top:18px;padding:18px;border:1px solid #a7e6d1;border-radius:16px;background:#ecfdf5}.review p{margin:5px 0;color:#45675f;font-size:13px}.void{display:grid;gap:8px;margin-top:16px}.void input{min-height:44px;border:1px solid #dce8e3;border-radius:10px;padding:8px 12px;font-size:14px}.void button{min-height:44px;border:0;border-radius:10px;background:#b42336;color:#fff;font-weight:800}.ask{display:grid;gap:8px;margin-top:16px;padding:16px;border:1px solid #dce8e3;border-radius:16px;background:#fff}.ask p,.ask small{margin:0;font-size:14px}.ask input,.ask button{min-height:44px;border:1px solid #dce8e3;border-radius:10px;padding:8px 12px;font-size:14px}.ask button{border:0;background:#047857;color:#fff;font-weight:800}@media(max-width:640px){.grid{grid-template-columns:1fr}.qr{align-items:flex-start;flex-direction:column}}
     </style>
 </head>
 <body>
@@ -40,6 +40,24 @@
             @endif
         </article>
     @endforeach
+    @if($refundPanel)
+        <section class="ask">
+            <strong>{{ __('refunds.ask') }}</strong>
+            @if($refundPanel['boarded'])
+                <p>{{ __('refunds.boarded') }}</p>
+            @elseif($refundPanel['open'])
+                <p>{{ $refundPanel['open']->explanation }}</p>
+                <small>{{ __('refunds.status_'.$refundPanel['open']->status) }}</small>
+            @elseif($refundPanel['quote'])
+                <p>{{ $refundPanel['quote']['explanation'] }}</p>
+                <form method="POST" action="{{ route('tickets.refund', $reservation->code) }}">
+                    @csrf
+                    <label>{{ __('refunds.ask_reason') }}<input name="reason" required minlength="5" maxlength="500"></label>
+                    <button type="submit">{{ __('refunds.ask_submit') }}</button>
+                </form>
+            @endif
+        </section>
+    @endif
     @if($canVoid)
         <form class="void" method="POST" action="{{ route('company.pos.void', $reservation) }}">
             @csrf

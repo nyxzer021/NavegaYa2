@@ -14,6 +14,7 @@ use App\Models\RouteDeparture;
 use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
+use App\Services\TicketRefunds;
 use App\Support\AdminScope;
 use App\Support\AuditRecorder;
 use App\Support\CompanyAudit;
@@ -211,6 +212,7 @@ class AdminTransportRouteController extends Controller
                 'route' => CompanyAudit::routeLabel($departure),
                 'when' => DepartureSchedule::show($departure->departure_at),
             ]);
+            app(TicketRefunds::class)->fromCancellation($request, $departure);
         }
 
         return back()->with('success', 'Estado de la salida actualizado.');
@@ -284,6 +286,7 @@ class AdminTransportRouteController extends Controller
                 'when' => DepartureSchedule::show($fresh->departure_at),
                 'reason' => $data['reason'],
             ]);
+            app(TicketRefunds::class)->fromCancellation($request, $fresh);
         } elseif ($data['action'] === 'reschedule') {
             AuditRecorder::record($request, 'departure.rescheduled', $fresh, [
                 'route' => CompanyAudit::routeLabel($fresh),

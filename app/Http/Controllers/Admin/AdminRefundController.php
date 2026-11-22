@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\TicketRefund;
 use Illuminate\View\View;
 
 class AdminRefundController extends Controller
@@ -21,6 +22,10 @@ class AdminRefundController extends Controller
             'pendingCount' => Payment::whereIn('status', ['refund_requested', 'pending_refund'])->count(),
             'refundedTotal' => (float) Payment::where('status', 'refunded')->sum('amount'),
             'failedCount' => Payment::where('status', 'failed')->count(),
+            'ticketRefunds' => TicketRefund::query()
+                ->with(['organization', 'reservation'])
+                ->latest()
+                ->paginate(20, ['*'], 'solicitudes'),
         ]);
     }
 }

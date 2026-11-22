@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use App\Models\Reservation;
+use App\Models\ReservationSeat;
 use App\Models\Ticket;
+use App\Models\TicketRefund;
+use App\Models\User;
 use App\Services\AdvertisementInventoryService;
 use App\Services\BookingPaymentService;
 use App\Services\MarketplaceSales;
+use App\Services\TicketRefunds;
 use App\Support\AdminScope;
 use App\Support\BoardingQr;
+use App\Support\RefundRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -69,8 +75,20 @@ class PaymentController extends Controller
             && $reservation->status === 'confirmed'
             && ((int) $viewer->id === (int) $reservation->sold_by_user_id
                 || ($viewer->isCompanyAdmin() && (int) AdminScope::organizationId($viewer) === (int) $route->organization_id));
+        $refundPanel = $this->refundPanel($reservation);
 
-        return view('tickets.show', compact('reservation', 'isSandbox', 'destinationAds', 'destination', 'canVoid'));
+        return view('tickets.show', compact('reservation', 'isSandbox', 'destinationAds', 'destination', 'canVoid', 'refundPanel'));
+    }
+
+    public function requestRefund(Request $request, string $code, TicketRefunds $refunds): RedirectResponse
+    {
+        $reservation = $this->reservationOrFail($code);
+        abort_unless($this->ownsReservation($request->user(), $reservation), 403);
+        abort_unless($reservation->sales_channel === 'web' && $reservation->status === 'confirmed', 422);
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:500']]);
+        $refunds->request($request, $reservation, 'web_passenger', RefundRule::PASSENGER, null, $data['reason']);
+
+        return back()->with('success', __('refunds.requested'));
     }
 
     public function qr(string $ticketCode): Response
@@ -109,6 +127,50 @@ class PaymentController extends Controller
         $ticket = Ticket::where('boarding_token', $token)->with(['reservationSeat.reservation.departure.transportRoute.originPort', 'reservationSeat.reservation.departure.transportRoute.destinationPort', 'reservationSeat.reservation.departure.vessel', 'reservationSeat.reservation.airDeparture.airRoute', 'reservationSeat.reservation.airDeparture.aircraft', 'reservationSeat.seat', 'reservationSeat.aircraftSeat'])->firstOrFail();
 
         return view('tickets.verify', compact('ticket'));
+    }
+
+    /**
+     * @return array{open: ?TicketRefund, boarded: bool, quote: ?array<string, mixed>}|null
+     */
+    private function refundPanel(Reservation $reservation): ?array
+    {
+        if ($reservation->sales_channel !== 'web' || ! $this->ownsReservation(auth()->user(), $reservation)) {
+            return null;
+        }
+        $reservation->loadMissing('seats.ticket', 'payments', 'departure.transportRoute.organization', 'airDeparture.airRoute.organization');
+        $open = TicketRefund::query()
+            ->where('reservation_id', $reservation->id)
+            ->where('status', '!=', 'rejected')
+            ->latest()
+            ->first();
+        $boarded = $reservation->seats->contains(function (ReservationSeat $seat): bool {
+            return $seat->ticket?->status === 'boarded' || $seat->ticket?->boarded_at !== null;
+        });
+        $quote = null;
+        $payment = $reservation->payments->first(fn (Payment $row): bool => in_array($row->status, ['confirmed', 'succeeded'], true)
+            && ($row->purpose === null || $row->purpose === 'ticket')
+            && (float) $row->amount > 0);
+        if ($open === null && ! $boarded && $payment !== null) {
+            $organization = $reservation->departure?->transportRoute?->organization
+                ?? $reservation->airDeparture?->airRoute?->organization;
+            $percent = $organization?->refund_regret_percent !== null ? (string) $organization->refund_regret_percent : null;
+            $quote = app(RefundRule::class)->quote($payment, RefundRule::PASSENGER, $percent, null);
+        }
+
+        return ['open' => $open, 'boarded' => $boarded, 'quote' => $quote];
+    }
+
+    private function ownsReservation(?User $user, Reservation $reservation): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        if ($reservation->user_id) {
+            return (int) $user->id === (int) $reservation->user_id;
+        }
+
+        return filled($reservation->contact_email)
+            && strcasecmp((string) $reservation->contact_email, (string) $user->email) === 0;
     }
 
     private function reservationOrFail(string $code): Reservation

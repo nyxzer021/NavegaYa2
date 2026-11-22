@@ -28,6 +28,7 @@ class CompanyAudit
             'equipo' => ['staff.invited', 'staff.accepted', 'staff.resent', 'staff.cancelled', 'staff.profile', 'staff.suspended', 'staff.reactivated'],
             'ficha' => ['profile.updated', 'details.updated'],
             'cobros' => ['bank.updated', 'payout.recorded', 'payout.voided', 'web_refund.recorded'],
+            'reembolsos' => ['refund.requested', 'refund.approved', 'refund.rejected', 'refund.paid'],
         ];
     }
 
@@ -84,6 +85,7 @@ class CompanyAudit
                 'equipo' => 'team',
                 'ficha' => 'page',
                 'cobros' => 'online_payments',
+                'reembolsos' => 'refunds',
                 default => 'audit',
             },
             'tone' => match ($kind) {
@@ -96,6 +98,7 @@ class CompanyAudit
                 'equipo' => 'var(--ny-tone-violet)',
                 'ficha' => 'var(--ny-tone-leaf)',
                 'cobros' => 'var(--ny-tone-river-deep)',
+                'reembolsos' => 'var(--ny-tone-violet)',
                 default => 'var(--ny-primary)',
             },
         ];
@@ -151,6 +154,12 @@ class CompanyAudit
             'payout.recorded' => __('audit.payout_recorded', ['who' => $who, 'amount' => self::money($change['amount'] ?? 0), 'operation' => self::text($change, 'operation')]),
             'payout.voided' => __('audit.payout_voided', ['who' => $who, 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
             'web_refund.recorded' => __('audit.web_refund', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
+            'refund.requested' => ((float) ($change['amount'] ?? 0)) > 0
+                ? __('audit.refund_requested', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)])
+                : __('audit.refund_requested_open', ['who' => $who, 'code' => self::text($change, 'code')]),
+            'refund.approved' => __('audit.refund_approved', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
+            'refund.rejected' => __('audit.refund_rejected', ['who' => $who, 'code' => self::text($change, 'code')]).$reasonText,
+            'refund.paid' => __('audit.refund_paid', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
             default => __('audit.generic', ['who' => $who]),
         };
     }

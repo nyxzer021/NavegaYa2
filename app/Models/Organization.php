@@ -27,7 +27,7 @@ class Organization extends Model
         'bank_name', 'bank_account', 'bank_cci',
         'commission_starts_on', 'commission_ends_on', 'commission_notes', 'physical_sales_commission_rate',
         'verified_at', 'contact_verified_at', 'public_description', 'logo_path', 'cover_image_path', 'profile_content_status', 'public_presentation',
-        'public_primary_color', 'public_accent_color', 'baggage_hand_kg', 'baggage_hold_kg', 'baggage_air_kg', 'cargo_threshold_kg',
+        'public_primary_color', 'public_accent_color', 'baggage_hand_kg', 'baggage_hold_kg', 'baggage_air_kg', 'cargo_threshold_kg', 'refund_regret_percent',
     ];
 
     protected function casts(): array
@@ -45,6 +45,7 @@ class Organization extends Model
             'commission_starts_on' => 'date',
             'commission_ends_on' => 'date',
             'physical_sales_commission_rate' => 'decimal:2',
+            'refund_regret_percent' => 'decimal:2',
         ];
     }
 
