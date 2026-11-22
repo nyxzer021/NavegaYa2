@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'navegaya_fee' => 'El cargo de servicio web de NavegaYA (:amount) lo cobra y lo documenta NavegaYA. No forma parte de esta constancia.',
     'lead' => 'Boletos, guías y constancias de pago de cada venta. NavegaYA todavía no emite boletas ni facturas electrónicas.',
     'not_sunat' => 'No es un comprobante electrónico SUNAT',
     'no_provider' => 'Sin proveedor de facturación electrónica: no se emitió boleta ni factura.',

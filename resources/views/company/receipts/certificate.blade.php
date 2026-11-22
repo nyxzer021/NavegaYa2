@@ -33,6 +33,11 @@
         <tr>
             <td colspan="3"><span class="label">{{ __('receipts.amount') }}</span><div class="amount">{{ $amount }}</div></td>
         </tr>
+        @if($fee)
+        <tr>
+            <td colspan="3" class="note">{{ $fee }}</td>
+        </tr>
+        @endif
     </table>
 </body>
 </html>

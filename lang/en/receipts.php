@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'navegaya_fee' => 'The NavegaYA web service fee (:amount) is charged and documented by NavegaYA. It is not part of this certificate.',
     'lead' => 'Tickets, parcel guides and payment certificates for each sale. NavegaYA does not issue electronic invoices yet.',
     'not_sunat' => 'This is not a SUNAT electronic receipt',
     'no_provider' => 'No electronic invoicing provider: no invoice was issued.',

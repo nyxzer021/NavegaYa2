@@ -18,6 +18,7 @@ use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Models\VesselSeat;
+use App\Services\BookingPaymentService;
 use App\Services\CashDesk;
 use App\Services\NullElectronicInvoicing;
 use App\Services\PaymentReceipts;
@@ -206,6 +207,35 @@ class CompanyReceiptsTest extends TestCase
             'number' => sprintf('CP-%d-999999', $year),
             'issued_at' => now(),
         ]);
+    }
+
+    public function test_a_web_certificate_shows_the_company_fare_without_the_navega_ya_fee(): void
+    {
+        [$admin, $organization] = $this->company('Web SAC', '20674000009');
+        $organization->update(['commission_rate' => 8]);
+        $departure = $this->departure($organization);
+        $seat = $this->seat($departure, '1A', 1);
+        $reservation = Reservation::query()->create([
+            'route_departure_id' => $departure->id, 'code' => 'WEB-REC', 'contact_name' => 'Ana Web',
+            'contact_email' => 'ana.web@viajero.test', 'contact_phone' => '965000111', 'contact_document' => '44556677',
+            'base_amount' => 95, 'discount_amount' => 0, 'total_amount' => 95,
+            'status' => 'pending_payment', 'sales_channel' => 'web', 'expires_at' => now()->addMinutes(10),
+        ]);
+        $reservation->seats()->create([
+            'route_departure_id' => $departure->id, 'vessel_seat_id' => $seat->id, 'passenger_name' => 'Ana Web',
+            'document_type' => 'DNI', 'document_number' => '44556677', 'passenger_type' => 'adult',
+        ]);
+        app(BookingPaymentService::class)->confirm($reservation, [
+            'method' => 'card', 'provider' => 'test', 'provider_reference' => 'WEB-REC-1',
+        ]);
+        $payment = Payment::query()->where('reservation_id', $reservation->id)->firstOrFail();
+        $this->assertSame('102.60', (string) $payment->amount);
+
+        $receipt = PaymentReceipt::query()->where('payment_id', $payment->id)->firstOrFail();
+        $certificate = app(PaymentReceipts::class)->certificate($receipt);
+
+        $this->assertSame('S/ 95.00', $certificate['amount']);
+        $this->assertStringContainsString('S/ 7.60', (string) $certificate['fee']);
     }
 
     public function test_a_company_cannot_open_another_companys_certificate(): void

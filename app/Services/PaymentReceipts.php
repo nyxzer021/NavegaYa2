@@ -138,6 +138,7 @@ class PaymentReceipts
             'document' => $row['document'],
             'address' => $row['address'],
             'amount' => $this->soles($row['amount_cents']),
+            'fee' => $row['fee_cents'] > 0 ? __('receipts.navegaya_fee', ['amount' => $this->soles($row['fee_cents'])]) : null,
             'kind' => $row['kind_label'],
             'reference' => $row['reference'],
             'disclaimer' => __('receipts.not_sunat'),
@@ -252,7 +253,8 @@ class PaymentReceipts
                 'refunded' => 'var(--ny-tone-violet)',
                 default => 'var(--ny-tone-leaf)',
             },
-            'amount_cents' => (int) round(((float) $payment->amount) * 100),
+            'amount_cents' => $this->companyCents($payment),
+            'fee_cents' => $this->feeCents($payment),
             'invoice' => $invoice,
             'tickets' => $tickets,
             'shipment_id' => $cargo?->id,
@@ -267,7 +269,20 @@ class PaymentReceipts
 
     private function sumCents(Builder $query): int
     {
-        return (int) $query->pluck('amount')->sum(fn (mixed $amount): int => (int) round(((float) $amount) * 100));
+        return (int) $query->get(['amount', 'commission_amount'])->sum(fn (Payment $payment): int => $this->companyCents($payment));
+    }
+
+    /**
+     * Lo que cobró la empresa. En la venta web el cargo de servicio es de NavegaYA y no va en la constancia de la empresa.
+     */
+    private function companyCents(Payment $payment): int
+    {
+        return (int) round(((float) $payment->amount) * 100) - $this->feeCents($payment);
+    }
+
+    private function feeCents(Payment $payment): int
+    {
+        return max(0, (int) round(((float) ($payment->commission_amount ?? 0)) * 100));
     }
 
     private function boundary(string $value, bool $end): ?Carbon
