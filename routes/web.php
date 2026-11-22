@@ -55,6 +55,7 @@ use App\Http\Controllers\Company\CompanyAuditController;
 use App\Http\Controllers\Company\CompanyBoardingController;
 use App\Http\Controllers\Company\CompanyCargoController;
 use App\Http\Controllers\Company\CompanyCashController;
+use App\Http\Controllers\Company\CompanyCollectionsController;
 use App\Http\Controllers\Company\CompanyDepartureController;
 use App\Http\Controllers\Company\CompanyDetailsController;
 use App\Http\Controllers\Company\CompanyFleetController;
@@ -178,7 +179,8 @@ Route::middleware(['auth', 'role:company_admin|company_counter|company_operator|
     Route::patch('/flota/operacion', [CompanyFleetController::class, 'updateTransport'])->name('fleet.transport.update');
     Route::get('/personal', [CompanyPortalStaffController::class, 'index'])->name('staff.index');
     Route::get('/comisiones', [CompanySettlementController::class, 'index'])->name('commissions.index');
-    Route::get('/cobros', [CompanyPreparationController::class, 'show'])->defaults('page', 'collections')->name('collections.index');
+    Route::get('/cobros.csv', [CompanyCollectionsController::class, 'export'])->name('collections.export');
+    Route::get('/cobros', [CompanyCollectionsController::class, 'index'])->name('collections.index');
     Route::get('/reembolsos', [CompanyPreparationController::class, 'show'])->defaults('page', 'refunds')->name('refunds.index');
     Route::get('/pagos-en-linea', [CompanyPreparationController::class, 'show'])->defaults('page', 'payments')->name('online-payments.index');
     Route::get('/datos', [CompanyDetailsController::class, 'index'])->name('details.index');
@@ -393,6 +395,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::get('/comisiones-facturacion', [AdminSettlementController::class, 'index'])->name('commissions.index');
     Route::post('/comisiones-facturacion/{organization}/cobros', [AdminSettlementController::class, 'recordCollection'])->name('commissions.store');
     Route::post('/comisiones-facturacion/{organization}/anulaciones', [AdminSettlementController::class, 'voidLegacy'])->name('commissions.void');
+    Route::post('/comisiones-facturacion/{organization}/pagos', [AdminSettlementController::class, 'storePayout'])->name('commissions.payouts.store');
+    Route::post('/comisiones-facturacion/pagos/{payout}/anular', [AdminSettlementController::class, 'voidPayout'])->name('commissions.payouts.void');
     Route::get('/liquidaciones', fn () => redirect()->route('admin.commissions.index'))->name('settlements.index');
     Route::get('/ventas-globales', [AdminSalesController::class, 'index'])->name('sales.index');
     Route::get('/tours-experiencias', [AdminTourController::class, 'index'])->name('tours.index');

@@ -27,7 +27,7 @@ class CompanyAudit
             'salidas' => ['departure.cancelled', 'departure.rescheduled'],
             'equipo' => ['staff.invited', 'staff.accepted', 'staff.resent', 'staff.cancelled', 'staff.profile', 'staff.suspended', 'staff.reactivated'],
             'ficha' => ['profile.updated', 'details.updated'],
-            'cobros' => ['bank.updated'],
+            'cobros' => ['bank.updated', 'payout.recorded', 'payout.voided', 'web_refund.recorded'],
         ];
     }
 
@@ -148,6 +148,9 @@ class CompanyAudit
             'profile.updated' => __('audit.profile_updated', ['who' => $who, 'name' => self::text($change, 'name')]),
             'details.updated' => __('audit.details_updated', ['who' => $who, 'name' => self::text($change, 'name')]),
             'bank.updated' => __('audit.bank_updated', ['who' => $who, 'bank' => self::text($change, 'bank')]),
+            'payout.recorded' => __('audit.payout_recorded', ['who' => $who, 'amount' => self::money($change['amount'] ?? 0), 'operation' => self::text($change, 'operation')]),
+            'payout.voided' => __('audit.payout_voided', ['who' => $who, 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
+            'web_refund.recorded' => __('audit.web_refund', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
             default => __('audit.generic', ['who' => $who]),
         };
     }

@@ -11,12 +11,12 @@ class AuditRecorder
     /**
      * @param  array<string, mixed>  $changes
      */
-    public static function record(Request $request, string $event, Model $subject, array $changes): void
+    public static function record(Request $request, string $event, Model $subject, array $changes, ?int $organizationId = null): void
     {
         $actor = $request->user();
         AuditLog::create([
             'user_id' => $actor?->id,
-            'organization_id' => $actor === null ? null : AdminScope::organizationId($actor),
+            'organization_id' => $organizationId ?? ($actor === null ? null : AdminScope::organizationId($actor)),
             'event' => $event,
             'subject_type' => $subject->getMorphClass(),
             'subject_id' => $subject->getKey(),

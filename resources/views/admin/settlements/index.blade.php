@@ -77,6 +77,52 @@
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <header class="border-b border-slate-100 px-5 py-4">
+            <h2 class="font-black text-slate-900">{{ __('collections.admin_title') }}</h2>
+            <p class="mt-1 text-xs text-slate-500">{{ __('collections.admin_text') }}</p>
+        </header>
+        <form method="POST" action="{{ route('admin.commissions.payouts.store', $organizations->first() ?? 0) }}" class="grid gap-3 border-b border-slate-100 p-5 md:grid-cols-6" id="payout-form">
+            @csrf
+            <label class="text-xs font-bold text-slate-600 md:col-span-2">Empresa
+                <select name="organization_id" required class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm" onchange="this.form.action='{{ url('/admin/comisiones-facturacion') }}/'+this.value+'/pagos'">
+                    @foreach($organizations as $company)
+                        <option value="{{ $company->id }}">{{ $company->commercial_name ?: $company->legal_name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="text-xs font-bold text-slate-600">{{ __('collections.paid_on') }}<input type="date" name="paid_on" required value="{{ now()->timezone('America/Lima')->toDateString() }}" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">{{ __('collections.amount') }}<input type="number" name="amount" required min="0.01" step="0.01" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">{{ __('collections.method') }}<input name="method" required maxlength="40" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600">{{ __('collections.operation') }}<input name="operation_number" required maxlength="80" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm"></label>
+            <label class="text-xs font-bold text-slate-600 md:col-span-4">{{ __('collections.note') }}<input name="note" maxlength="500" class="mt-1 h-10 w-full rounded-lg border-slate-200 text-sm"></label>
+            <button class="h-10 self-end rounded-lg bg-[#062c21] px-4 text-xs font-black text-white">{{ __('collections.record') }}</button>
+        </form>
+        <div class="divide-y divide-slate-100">
+            @forelse($payouts as $payout)
+                <article class="flex flex-wrap items-start justify-between gap-3 px-5 py-4 text-sm">
+                    <div>
+                        <p class="font-bold text-slate-900">{{ $payout->organization?->commercial_name ?: $payout->organization?->legal_name }} · {{ $payout->method }} · {{ $payout->operation_number }}</p>
+                        <p class="text-xs text-slate-500">{{ $payout->paid_on?->format('d/m/Y') }} · S/ {{ number_format((float) $payout->amount, 2) }} · {{ $payout->status === 'voided' ? __('collections.state_voided') : __('collections.state_paid') }}</p>
+                        @foreach($payout->items as $item)
+                            <p class="text-xs text-slate-600">{{ $item->payment?->reservation?->code }} · S/ {{ number_format((float) $item->amount, 2) }}</p>
+                        @endforeach
+                        @if($payout->void_reason)<p class="text-xs text-rose-700">{{ $payout->void_reason }}</p>@endif
+                    </div>
+                    @if($payout->status === 'paid')
+                        <form method="POST" action="{{ route('admin.commissions.payouts.void', $payout) }}" class="flex items-center gap-2">
+                            @csrf
+                            <input name="reason" required minlength="5" maxlength="500" placeholder="{{ __('collections.void_reason') }}" class="h-10 w-56 rounded-lg border-slate-200 text-sm">
+                            <button class="h-10 rounded-lg border border-slate-300 px-3 text-xs font-bold text-slate-700">{{ __('collections.void') }}</button>
+                        </form>
+                    @endif
+                </article>
+            @empty
+                <p class="px-5 py-8 text-center text-sm text-slate-400">{{ __('collections.empty_payouts') }}</p>
+            @endforelse
+        </div>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <header class="border-b border-slate-100 px-5 py-4">
             <h2 class="font-black text-slate-900">Comisiones anteriores al cambio</h2>
             <p class="text-[10px] text-slate-400">Estos registros descontaban el porcentaje a la empresa. El importe no se borra. Una anulada deja de sumar.</p>
         </header>

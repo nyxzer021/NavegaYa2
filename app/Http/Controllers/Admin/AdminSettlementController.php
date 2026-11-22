@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\OperatorPayout;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Services\CompanyCollections;
 use App\Services\MarketplaceSales;
 use App\Support\AuditRecorder;
 use Carbon\Carbon;
@@ -58,6 +60,8 @@ class AdminSettlementController extends Controller
 
         return view('admin.settlements.index', [
             'summaries' => $summaries,
+            'organizations' => $organizations,
+            'payouts' => OperatorPayout::query()->with(['organization', 'items.payment.reservation'])->latest('paid_on')->latest('id')->limit(30)->get(),
             'from' => $filters['from'] ?? null,
             'to' => $filters['to'] ?? null,
             'webSales' => (float) $current->sum('amount'),
@@ -113,6 +117,48 @@ class AdminSettlementController extends Controller
         ]);
 
         return back()->with('success', 'Se marcó la comisión anterior como cobrada. Los importes guardados no cambiaron.');
+    }
+
+    public function storePayout(Request $request, Organization $organization, CompanyCollections $collections): RedirectResponse
+    {
+        abort_unless($organization->type === 'transport_company', 404);
+        $data = $request->validate([
+            'paid_on' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
+            'method' => ['required', 'string', 'max:40'],
+            'operation_number' => ['required', 'string', 'max:80'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ], [
+            'paid_on.required' => 'Indica la fecha del pago.',
+            'amount.required' => 'Indica el monto.',
+            'amount.min' => 'El monto tiene que ser mayor que cero.',
+            'method.required' => 'Indica el banco o el medio.',
+            'operation_number.required' => 'Indica el número de operación.',
+        ]);
+        $collections->recordPayout(
+            $request,
+            $organization,
+            $data['paid_on'],
+            number_format((float) $data['amount'], 2, '.', ''),
+            $data['method'],
+            $data['operation_number'],
+            $data['note'] ?? null,
+        );
+
+        return back()->with('success', 'El pago a la empresa quedó registrado. Los boletos incluidos ya no vuelven a sumarse.');
+    }
+
+    public function voidPayout(Request $request, OperatorPayout $payout, CompanyCollections $collections): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'reason.required' => 'Indica el motivo de la anulación.',
+            'reason.min' => 'El motivo debe tener al menos 5 caracteres.',
+        ]);
+        $collections->voidPayout($request, $payout, $data['reason']);
+
+        return back()->with('success', 'El pago quedó anulado. El saldo de la empresa volvió a incluir esos boletos.');
     }
 
     public function voidLegacy(Request $request, Organization $organization): RedirectResponse

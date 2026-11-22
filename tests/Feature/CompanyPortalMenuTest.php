@@ -36,7 +36,8 @@ class CompanyPortalMenuTest extends TestCase
         $this->actingAs($admin)->get(route('company.collections.index'))
             ->assertOk()
             ->assertSee('Cobros y conciliación')
-            ->assertSee('no mostramos un conteo');
+            ->assertSee('Saldo pendiente')
+            ->assertDontSee('no mostramos un conteo');
 
         $this->actingAs($admin)->get(route('company.refunds.index'))
             ->assertOk()
