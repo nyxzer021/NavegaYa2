@@ -34,7 +34,7 @@ class BookingPaymentService
                 }
             }
 
-            Payment::updateOrCreate(
+            $payment = Payment::updateOrCreate(
                 ['provider_reference' => $paymentData['provider_reference']],
                 [
                     'reservation_id' => $reservation->id,
@@ -60,6 +60,7 @@ class BookingPaymentService
                     ...$drawer,
                 ],
             );
+            app(PaymentReceipts::class)->issue($payment);
 
             $reservation->update([
                 'base_amount' => $quote['base_amount'],

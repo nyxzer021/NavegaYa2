@@ -380,6 +380,9 @@ table{width:100%;border-collapse:collapse}th{background:#f4f8f6;color:var(--ny-t
 .ny-pos-card h3{display:flex;align-items:center;gap:8px;font-size:16px}
 .ny-pos-card p,.ny-pos-help{margin:0;color:var(--ny-text-muted);font-size:14px}
 .ny-pos label{display:grid;gap:6px;color:var(--ny-text);font-size:12px;font-weight:800}
+.ny-pos label.ny-pos-check{display:flex;align-items:center;gap:8px;min-height:36px;font-size:14px;font-weight:700}
+.ny-pos label.ny-pos-check input{width:18px;height:18px;min-width:18px;min-height:18px;max-height:18px;flex:none;padding:0}
+@media(max-width:800px){.ny-pos label.ny-pos-check{min-height:44px}}
 .ny-pos label em{color:var(--ny-text-muted);font-style:normal;font-weight:700}
 .ny-pos input,.ny-pos select{width:100%;min-height:44px;border:1px solid var(--ny-border);border-radius:8px;background:var(--ny-surface);padding:10px 12px;color:var(--ny-text);font-size:14px;font-weight:700}
 .ny-pos small{color:var(--ny-text-muted);font-size:12px;font-weight:600}

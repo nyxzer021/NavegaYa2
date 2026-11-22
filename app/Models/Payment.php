@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\DiscountLedger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
 
 class Payment extends Model
@@ -77,6 +78,11 @@ class Payment extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(PaymentReceipt::class);
     }
 
     public function cargoShipment(): BelongsTo

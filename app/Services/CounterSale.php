@@ -18,6 +18,7 @@ use App\Support\BaggageAllowance;
 use App\Support\DepartureSchedule;
 use App\Support\DiscountLedger;
 use App\Support\FareTable;
+use App\Support\SaleBilling;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +102,7 @@ class CounterSale
                 'status' => 'pending_payment',
                 'sales_channel' => 'counter',
                 'expires_at' => null,
+                ...SaleBilling::attributes($data),
             ]);
             ReservationSeat::create([
                 'reservation_id' => $reservation->id,

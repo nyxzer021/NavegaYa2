@@ -18,6 +18,7 @@ use App\Support\AuditRecorder;
 use App\Support\BaggageAllowance;
 use App\Support\DepartureSchedule;
 use App\Support\FareTable;
+use App\Support\SaleBilling;
 use App\Support\VesselLayout;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -136,6 +137,7 @@ class CompanyPosController extends Controller
             'method' => ['required', 'in:cash,yape,card'],
             'cash_tendered' => ['required_if:method,cash', 'nullable', 'numeric', 'min:0'],
             'operation_number' => ['required_if:method,yape,card', 'nullable', 'string', 'max:40'],
+            ...SaleBilling::rules(),
         ];
         $agency = $this->agency($request, $organizationId);
         if ($agency) {
@@ -145,6 +147,7 @@ class CompanyPosController extends Controller
             'operation_number.required_if' => 'El número de operación es obligatorio.',
             'cash_tendered.required_if' => 'Indica el monto recibido.',
             'sale_price.required' => 'Indica el precio de venta.',
+            ...SaleBilling::messages(),
         ]);
 
         if (! $departure) {

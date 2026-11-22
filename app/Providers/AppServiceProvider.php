@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\ElectronicInvoicing;
 use App\Models\Advertisement;
 use App\Models\AuditLog;
 use App\Models\BusinessConversation;
 use App\Models\DestinationListing;
+use App\Services\NullElectronicInvoicing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -13,7 +15,10 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->bind(ElectronicInvoicing::class, NullElectronicInvoicing::class);
+    }
 
     public function boot(): void
     {

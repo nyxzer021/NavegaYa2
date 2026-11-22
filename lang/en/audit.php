@@ -55,6 +55,7 @@ return [
     'lot_released' => ':who released seats from the lot of :agency',
     'lot_payment' => ':who recorded a payment from :agency of :amount, operation :operation.',
     'lot_payment_voided' => ':who voided the payment from :agency of :amount',
+    'receipt_issued' => ':who issued certificate :number for :client at :amount.',
     'fare_saved' => ':who saved a :passenger fare of :amount.',
     'fare_removed' => ':who removed a fare of :amount.',
     'discount_saved' => ':who saved the discount :name.',

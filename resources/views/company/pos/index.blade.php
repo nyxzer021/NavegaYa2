@@ -189,6 +189,14 @@
     </div>
     <p class="ny-pos-note is-alert" x-cloak x-show="over">{{ __('pos.cargo_warn', ['kg' => $allowance['cargo']]) }} @if(! ($agency ?? null))<a :href="cargoHref">{{ __('pos.cargo_link') }}</a>@endif</p>
 
+    <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-violet)"><x-ui.icon name="receipts" /></span>{{ __('pos.needs_invoice') }}</h3>
+    <label class="ny-pos-check"><input type="checkbox" name="needs_invoice" value="1" x-model="invoice">{{ __('pos.needs_invoice') }}</label>
+    <div x-show="invoice" x-cloak>
+     <label>{{ __('pos.buyer_ruc') }}<input name="buyer_ruc" inputmode="numeric" maxlength="11" value="{{ old('buyer_ruc') }}" :required="invoice"></label>
+     <label>{{ __('pos.buyer_legal_name') }}<input name="buyer_legal_name" value="{{ old('buyer_legal_name') }}" :required="invoice"></label>
+     <label>{{ __('pos.buyer_address') }} <em>{{ __('pos.optional') }}</em><input name="buyer_address" value="{{ old('buyer_address') }}"></label>
+    </div>
+
     <h3><span class="ny-pos-pill" style="--c: var(--ny-tone-leaf)"><x-ui.icon name="cash" /></span>{{ __('pos.pay') }}</h3>
     <div class="ny-pos-pays">
      <label class="ny-pos-pay" style="--c: var(--ny-tone-leaf-deep)" :class="method === 'cash' && 'is-on'"><input type="radio" name="method" value="cash" x-model="method"><span class="ny-pos-pill"><x-ui.icon name="cash" /></span>{{ __('pos.cash') }}</label>
@@ -213,7 +221,7 @@
      prices: config.prices, discounts: config.discounts, cargoLimit: config.cargo, agency: config.agency, percent: Number(config.percent || 0),
      method: @js(old('method', 'cash')), passenger: @js(old('passenger_type', 'adult')), space: 'seat', seat: false,
      discountId: @js((string) old('discount_id', '')), tendered: @js(old('cash_tendered', '')), hand: @js((int) old('hand_kg', 0)), hold: @js((int) old('hold_kg', 0)),
-     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')), documentNumber: @js(old('document_number', '')), phone: @js(old('phone', '')), salePrice: @js(old('sale_price', '')), departureId: String(config.departure || ''), parcelBase: config.parcels,
+     firstName: @js(old('first_name', '')), lastName: @js(old('last_name', '')), documentNumber: @js(old('document_number', '')), phone: @js(old('phone', '')), salePrice: @js(old('sale_price', '')), invoice: @js((bool) old('needs_invoice')), departureId: String(config.departure || ''), parcelBase: config.parcels,
      get named() { return String(this.firstName).trim() !== '' && String(this.lastName).trim() !== ''; },
      get base() { const row = this.prices[this.space] || {}; return row[this.passenger] ?? null; },
      get range() {

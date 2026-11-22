@@ -238,7 +238,7 @@ class CargoDesk
         $method = (string) $data['method'];
         $tendered = $method === 'cash' ? round((float) $data['cash_tendered'], 2) : null;
         $change = $tendered === null ? null : round($tendered - $amount, 2);
-        Payment::query()->create([
+        $payment = Payment::query()->create([
             'cargo_shipment_id' => $shipment->id,
             'purpose' => 'cargo',
             'method' => $method,
@@ -258,6 +258,7 @@ class CargoDesk
             'organization_site_id' => $siteId,
             'cash_session_id' => $sessionId,
         ]);
+        app(PaymentReceipts::class)->issue($payment);
     }
 
     private function siteId(int $organizationId, mixed $siteId): ?int

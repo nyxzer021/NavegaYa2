@@ -55,6 +55,7 @@ return [
     'lot_released' => ':who liberó plazas del lote de :agency',
     'lot_payment' => ':who registró un pago de :agency por :amount, operación :operation.',
     'lot_payment_voided' => ':who anuló el pago de :agency por :amount',
+    'receipt_issued' => ':who emitió la constancia :number de :client por :amount.',
     'fare_saved' => ':who guardó una tarifa de :passenger por :amount.',
     'fare_removed' => ':who quitó una tarifa de :amount.',
     'discount_saved' => ':who guardó el descuento :name.',

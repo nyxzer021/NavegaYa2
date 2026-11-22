@@ -29,6 +29,7 @@ class CompanyAudit
             'ficha' => ['profile.updated', 'details.updated'],
             'cobros' => ['bank.updated', 'payout.recorded', 'payout.voided', 'web_refund.recorded'],
             'reembolsos' => ['refund.requested', 'refund.approved', 'refund.rejected', 'refund.paid'],
+            'comprobantes' => ['receipt.issued'],
         ];
     }
 
@@ -86,6 +87,7 @@ class CompanyAudit
                 'ficha' => 'page',
                 'cobros' => 'online_payments',
                 'reembolsos' => 'refunds',
+                'comprobantes' => 'receipts',
                 default => 'audit',
             },
             'tone' => match ($kind) {
@@ -99,6 +101,7 @@ class CompanyAudit
                 'ficha' => 'var(--ny-tone-leaf)',
                 'cobros' => 'var(--ny-tone-river-deep)',
                 'reembolsos' => 'var(--ny-tone-violet)',
+                'comprobantes' => 'var(--ny-tone-river)',
                 default => 'var(--ny-primary)',
             },
         ];
@@ -162,6 +165,7 @@ class CompanyAudit
             'refund.approved' => __('audit.refund_approved', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
             'refund.rejected' => __('audit.refund_rejected', ['who' => $who, 'code' => self::text($change, 'code')]).$reasonText,
             'refund.paid' => __('audit.refund_paid', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
+            'receipt.issued' => __('audit.receipt_issued', ['who' => $who, 'number' => self::text($change, 'number'), 'client' => self::text($change, 'client'), 'amount' => self::money($change['amount'] ?? 0)]),
             default => __('audit.generic', ['who' => $who]),
         };
     }

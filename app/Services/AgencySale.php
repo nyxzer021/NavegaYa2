@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\VesselSeat;
 use App\Support\BaggageAllowance;
 use App\Support\FareTable;
+use App\Support\SaleBilling;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -85,6 +86,7 @@ class AgencySale
                 'status' => 'pending_payment',
                 'sales_channel' => 'agency',
                 'expires_at' => null,
+                ...SaleBilling::attributes($data),
             ]);
             ReservationSeat::create([
                 'reservation_id' => $reservation->id,
