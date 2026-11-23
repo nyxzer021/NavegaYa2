@@ -28,7 +28,8 @@ class MarketplaceCommissionArchitectureTest extends TestCase
             ->get(route('admin.commissions.index'))
             ->assertOk()
             ->assertSee('Ingresos por cargo de servicio')
-            ->assertSee('Sin fondos de operadores en custodia')
+            ->assertSee('NavegaYA guarda el pasaje web hasta pagarlo a la empresa.')
+            ->assertDontSee('Sin fondos de operadores en custodia')
             ->assertDontSee('Registrar transferencia');
     }
 

@@ -10,6 +10,7 @@ use App\Services\BookingPaymentService;
 use App\Services\CulqiException;
 use App\Services\CulqiGateway;
 use App\Services\SubscriptionPaymentService;
+use App\Support\PaymentConnections;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,7 @@ class PaymentWebhookController extends Controller
 {
     public function culqi(Request $request, CulqiGateway $culqi, BookingPaymentService $payments, SubscriptionPaymentService $subscriptionPayments): JsonResponse
     {
+        PaymentConnections::rememberCulqi();
         $raw = $request->getContent();
         if (! $culqi->signatureValid($raw, $request)) {
             Log::warning('Webhook de Culqi rechazado.', ['motivo' => 'firma']);

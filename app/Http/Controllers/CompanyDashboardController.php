@@ -340,12 +340,15 @@ class CompanyDashboardController extends Controller
             'bank_account' => ['required', 'string', 'max:40'],
             'bank_cci' => ['nullable', 'regex:/^[0-9]{20}$/'],
         ]);
+        if (! filled($data['bank_cci'] ?? null)) {
+            unset($data['bank_cci']);
+        }
         $organization = $this->organization();
         $organization->update($data);
         AuditRecorder::record($request, 'bank.updated', $organization, [
             'bank' => $data['bank_name'],
         ]);
 
-        return back()->with('success', 'Cuenta bancaria actualizada de forma segura.');
+        return back()->with('success', __('online_payments.saved'));
     }
 }

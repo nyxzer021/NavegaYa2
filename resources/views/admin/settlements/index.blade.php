@@ -15,9 +15,9 @@
             <div>
                 <span class="text-[10px] font-black uppercase tracking-[.16em] text-emerald-300">Modelo marketplace</span>
                 <h2 class="mt-1 text-2xl font-black">Cargo de servicio pagado por el viajero</h2>
-                <p class="mt-1 max-w-3xl text-xs leading-relaxed text-emerald-100/70">En la web el pasajero paga la tarifa más el porcentaje del convenio de esa empresa. La empresa recibe el 100% de su tarifa. NavegaYA solo registra ese cargo. La venta en terminal no lo suma.</p>
+                <p class="mt-1 max-w-3xl text-sm leading-relaxed text-emerald-100/70">{{ __('connections.holds_intro') }}</p>
             </div>
-            <span class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-black text-emerald-200">Sin fondos de operadores en custodia</span>
+            <span class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-black text-emerald-200">{{ __('connections.holds_fare') }}</span>
         </div>
     </section>
 

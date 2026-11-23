@@ -12,7 +12,7 @@ class CompanyPreparationController extends Controller
      * @var list<string>
      */
     private const PAGES = [
-        'collections', 'refunds', 'payments', 'company_details', 'branches', 'agencies',
+        'collections', 'refunds', 'company_details', 'branches', 'agencies',
         'parcels', 'freight', 'cash_close', 'agency_commissions', 'receipts', 'reports',
         'audit', 'page_sections',
         'gallery', 'policies', 'appearance', 'whatsapp',

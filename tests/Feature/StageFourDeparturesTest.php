@@ -121,12 +121,12 @@ class StageFourDeparturesTest extends TestCase
             'schedule_kind' => 'series',
             'master_route_id' => $master->id,
             'vessel_id' => $vessel->id,
-            'departure_date' => '2026-11-16',
+            'departure_date' => '2026-12-07',
             'departure_time' => '08:00',
             'fare' => '80',
             'weekdays' => [1],
-            'starts_on' => '2026-11-16',
-            'ends_on' => '2026-11-23',
+            'starts_on' => '2026-12-07',
+            'ends_on' => '2026-12-14',
         ])->assertRedirect();
 
         $sold = RouteDeparture::query()->orderBy('departure_at')->first();
@@ -157,12 +157,12 @@ class StageFourDeparturesTest extends TestCase
             'schedule_kind' => 'series',
             'master_route_id' => $master->id,
             'vessel_id' => $vessel->id,
-            'departure_date' => '2026-11-16',
+            'departure_date' => '2026-12-07',
             'departure_time' => '08:00',
             'fare' => '80',
             'weekdays' => [1],
-            'starts_on' => '2026-11-16',
-            'ends_on' => '2026-11-23',
+            'starts_on' => '2026-12-07',
+            'ends_on' => '2026-12-14',
         ])->assertRedirect();
         $sold = RouteDeparture::query()->orderBy('departure_at')->first();
         $kept = $sold->departure_at->format('Y-m-d H:i:s');
@@ -180,12 +180,12 @@ class StageFourDeparturesTest extends TestCase
         $this->actingAs($admin)->patch(route('company.departures.series.update', $sold->departure_series_id), [
             'master_route_id' => $master->id,
             'vessel_id' => $vessel->id,
-            'departure_date' => '2026-11-16',
+            'departure_date' => '2026-12-07',
             'departure_time' => '10:00',
             'fare' => '90',
             'weekdays' => [1],
-            'starts_on' => '2026-11-16',
-            'ends_on' => '2026-11-23',
+            'starts_on' => '2026-12-07',
+            'ends_on' => '2026-12-14',
         ])->assertRedirect();
 
         $this->assertSame($kept, $sold->fresh()->departure_at->format('Y-m-d H:i:s'));

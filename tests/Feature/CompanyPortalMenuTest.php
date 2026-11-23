@@ -46,7 +46,7 @@ class CompanyPortalMenuTest extends TestCase
         $this->actingAs($admin)->get(route('company.online-payments.index'))
             ->assertOk()
             ->assertSee('Pagos en línea')
-            ->assertSee('Mercado Pago');
+            ->assertSee('NavegaYA cobra en la web el pasaje más el cargo de servicio.');
     }
 
     public function test_counter_cannot_open_finance_preparation_pages(): void

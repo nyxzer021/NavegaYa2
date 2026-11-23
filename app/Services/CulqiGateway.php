@@ -70,6 +70,19 @@ class CulqiGateway
         return $this->decode($this->send('post', '/orders', $body, false));
     }
 
+    public function probe(): void
+    {
+        if (! (bool) config('services.culqi.enabled') || ! filled(config('services.culqi.secret_key'))) {
+            throw new CulqiException(__('connections.culqi_off'));
+        }
+        $response = $this->send('get', '/charges?limit=1', null, true);
+        if ($response->successful()) {
+            return;
+        }
+        $message = $response->json('user_message');
+        throw new CulqiException(is_string($message) && $message !== '' ? mb_substr($message, 0, 180) : __('connections.probe_failed'));
+    }
+
     /**
      * @return array<string, mixed>
      */
