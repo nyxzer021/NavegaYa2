@@ -11,7 +11,7 @@ class AdminPreparationController extends Controller
      * @var list<string>
      */
     private const PAGES = [
-        'agencies', 'reconciliation', 'base_policies',
+        'agencies', 'base_policies',
     ];
 
     public function show(string $page): View

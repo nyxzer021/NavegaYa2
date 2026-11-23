@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\AdminIncidentController;
 use App\Http\Controllers\Admin\AdminItineraryController;
 use App\Http\Controllers\Admin\AdminModerationController;
 use App\Http\Controllers\Admin\AdminPaymentConnectionController;
-use App\Http\Controllers\Admin\AdminPreparationController;
+use App\Http\Controllers\Admin\AdminReconciliationController;
 use App\Http\Controllers\Admin\AdminRefundController;
 use App\Http\Controllers\Admin\AdminRequestInboxController;
 use App\Http\Controllers\Admin\AdminSalesController;
@@ -368,7 +368,13 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::post('/agencias-autorizadas/{agency}/reactivar', [AdminAgencyController::class, 'reactivate'])->name('agencies.reactivate');
     Route::get('/conexiones-de-pago', [AdminPaymentConnectionController::class, 'index'])->name('payment-connections.index');
     Route::post('/conexiones-de-pago/probar', [AdminPaymentConnectionController::class, 'probe'])->name('payment-connections.probe');
-    Route::get('/cobros-conciliacion', [AdminPreparationController::class, 'show'])->defaults('page', 'reconciliation')->name('reconciliation.index');
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/cobros-conciliacion', [AdminReconciliationController::class, 'index'])->name('reconciliation.index');
+        Route::post('/cobros-conciliacion', [AdminReconciliationController::class, 'import'])->name('reconciliation.import');
+        Route::post('/cobros-conciliacion/culqi', [AdminReconciliationController::class, 'fetch'])->name('reconciliation.fetch');
+        Route::post('/cobros-conciliacion/revisar', [AdminReconciliationController::class, 'review'])->name('reconciliation.review');
+        Route::get('/cobros-conciliacion.csv', [AdminReconciliationController::class, 'export'])->name('reconciliation.export');
+    });
     Route::get('/politicas-base', [AdminContentPolicyController::class, 'base'])->name('base-policies.index');
     Route::post('/politicas-base', [AdminContentPolicyController::class, 'updateBase'])->name('base-policies.update');
     Route::get('/politicas-de-empresas', [AdminContentPolicyController::class, 'companies'])->name('company-policies.index');

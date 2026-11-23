@@ -9,6 +9,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
 class CulqiGateway
@@ -81,6 +82,48 @@ class CulqiGateway
         }
         $message = $response->json('user_message');
         throw new CulqiException(is_string($message) && $message !== '' ? mb_substr($message, 0, 180) : __('connections.probe_failed'));
+    }
+
+    /**
+     * Lee cargos del mes. No conserva tarjeta, correo ni el cuerpo completo.
+     *
+     * @return list<array{id: string, amount: string, date: string, fee: ?string}>
+     */
+    public function listCharges(string $from, string $to): array
+    {
+        if (! (bool) config('services.culqi.enabled') || ! filled(config('services.culqi.secret_key'))) {
+            throw new CulqiException(__('connections.culqi_off'));
+        }
+        $rows = [];
+        $before = null;
+        for ($page = 0; $page < 5; $page++) {
+            $query = array_filter([
+                'limit' => 100,
+                'creation_date_from' => Carbon::parse($from, 'America/Lima')->startOfDay()->timestamp,
+                'creation_date_to' => Carbon::parse($to, 'America/Lima')->endOfDay()->timestamp,
+                'before' => $before,
+            ], fn (mixed $value): bool => $value !== null && $value !== '');
+            $response = $this->send('get', '/charges?'.http_build_query($query), null, true);
+            if (! $response->successful()) {
+                $message = $response->json('user_message');
+                throw new CulqiException(is_string($message) && $message !== '' ? mb_substr($message, 0, 180) : __('reconciliation.fetch_failed'));
+            }
+            $json = $response->json();
+            $data = is_array($json) && is_array($json['data'] ?? null) ? $json['data'] : [];
+            foreach ($data as $charge) {
+                $row = $this->chargeRow(is_array($charge) ? $charge : [], $from, $to);
+                if ($row !== null) {
+                    $rows[] = $row;
+                }
+            }
+            $cursor = is_array($json) ? ($json['paging']['cursors']['before'] ?? null) : null;
+            if (! is_string($cursor) || preg_match('/^[A-Za-z0-9_\-=]{1,80}$/', $cursor) !== 1 || $data === []) {
+                break;
+            }
+            $before = $cursor;
+        }
+
+        return $rows;
     }
 
     /**
@@ -246,6 +289,47 @@ class CulqiGateway
         }
 
         return $json;
+    }
+
+    /**
+     * @param  array<string, mixed>  $charge
+     * @return array{id: string, amount: string, date: string, fee: ?string}|null
+     */
+    private function chargeRow(array $charge, string $from, string $to): ?array
+    {
+        $id = $charge['id'] ?? null;
+        $cents = $charge['amount'] ?? null;
+        $created = $charge['creation_date'] ?? null;
+        if (! is_string($id) || preg_match('/^chr_[A-Za-z0-9_]+$/', $id) !== 1) {
+            return null;
+        }
+        if (! is_int($cents) && ! (is_string($cents) && preg_match('/^\d+$/', $cents) === 1)) {
+            return null;
+        }
+        if (! is_int($created) && ! (is_string($created) && preg_match('/^\d+$/', $created) === 1)) {
+            return null;
+        }
+        $date = Carbon::createFromTimestamp((int) $created, 'America/Lima')->toDateString();
+        if ($date < $from || $date > $to) {
+            return null;
+        }
+        $fee = null;
+        $totalFee = $charge['total_fee'] ?? null;
+        if (is_int($totalFee) || (is_string($totalFee) && preg_match('/^\d+$/', $totalFee) === 1)) {
+            $fee = $this->decimalFromCents((int) $totalFee);
+        }
+
+        return [
+            'id' => $id,
+            'amount' => $this->decimalFromCents((int) $cents),
+            'date' => $date,
+            'fee' => $fee,
+        ];
+    }
+
+    private function decimalFromCents(int $cents): string
+    {
+        return intdiv($cents, 100).'.'.str_pad((string) ($cents % 100), 2, '0', STR_PAD_LEFT);
     }
 
     private function guardId(string $id, string $prefix): void
