@@ -70,7 +70,7 @@ class SubscriptionPaymentService
         return DB::transaction(function () use ($subscription, $newPlan, $paymentData): Subscription {
             $subscription = Subscription::query()->lockForUpdate()->findOrFail($subscription->id);
             $existingPayment = Payment::query()->where('provider_reference', $paymentData['provider_reference'])->first();
-            if ($existingPayment?->status === 'confirmed') {
+            if (in_array($existingPayment?->status, ['confirmed', 'refunded', 'voided'], true)) {
                 return $subscription->refresh();
             }
 
@@ -113,7 +113,7 @@ class SubscriptionPaymentService
             $subscription = Subscription::query()->lockForUpdate()->findOrFail($subscription->id);
             $existingPayment = Payment::query()->where('provider_reference', $paymentData['provider_reference'])->first();
 
-            if ($existingPayment?->status === 'confirmed') {
+            if (in_array($existingPayment?->status, ['confirmed', 'refunded', 'voided'], true)) {
                 return $subscription->refresh();
             }
 

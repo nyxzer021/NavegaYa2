@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
+use App\Services\CulqiException;
+use App\Services\CulqiGateway;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -19,6 +20,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
     {
         $subscription = $this->subscriptionFor($request);
         $payments = app(SubscriptionPaymentService::class);
+        $culqi = app(CulqiGateway::class);
         $upgradePlan = $request->filled('plan') ? SubscriptionPlan::where('is_active', true)->findOrFail($request->integer('plan')) : null;
         $upgradeQuote = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan) : null;
 
@@ -26,7 +28,8 @@ class MarketplaceSubscriptionPaymentController extends Controller
             'subscription' => $subscription,
             'organization' => $subscription->organization,
             'sandboxEnabled' => config('payments.sandbox_enabled'),
-            'culqiEnabled' => config('services.culqi.enabled'),
+            'culqiEnabled' => $culqi->ready(),
+            'culqiTestMode' => $culqi->testMode(),
             'upgradePlan' => $upgradePlan,
             'upgradeQuote' => $upgradeQuote,
             'renewalPlan' => $payments->renewalPlan($subscription),
@@ -74,49 +77,59 @@ class MarketplaceSubscriptionPaymentController extends Controller
             ->with('success', 'Se canceló el cambio de plan programado.');
     }
 
-    public function charge(Request $request, SubscriptionPaymentService $payments): JsonResponse
+    public function charge(Request $request, SubscriptionPaymentService $payments, CulqiGateway $culqi): JsonResponse
     {
-        abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
-        $data = $request->validate(['source_id' => ['required', 'string', 'max:120'], 'plan_id' => ['nullable', 'exists:subscription_plans,id']]);
+        abort_unless($culqi->ready(), 503, __('payments.culqi_off'));
+        $data = $request->validate([
+            'source_id' => ['required', 'string', 'max:80', 'regex:/^[A-Za-z0-9_]+$/'],
+            'plan_id' => ['nullable', 'exists:subscription_plans,id'],
+            'amount' => ['sometimes', 'integer'],
+        ]);
         $subscription = $this->subscriptionFor($request);
         $upgradePlan = ! empty($data['plan_id']) ? SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']) : null;
         $amount = $upgradePlan ? $payments->upgradeQuote($subscription, $upgradePlan)['amount'] : $payments->renewalAmount($subscription);
         abort_if(! $upgradePlan && $subscription->status === 'active' && $subscription->ends_on?->isFuture(), 422, 'Tu plan ya está activo.');
+        $cents = $this->amountInCents($amount);
+        if (array_key_exists('amount', $data) && (int) $data['amount'] !== $cents) {
+            return response()->json(['message' => __('payments.amount_rejected')], 422);
+        }
 
         $organization = $subscription->organization;
-        $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
-            ->post(rtrim(config('services.culqi.api_url'), '/').'/charges', [
-                'amount' => $this->amountInCents($amount),
+        try {
+            $charge = $culqi->createCharge([
+                'amount' => $cents,
                 'currency_code' => $upgradePlan?->currency ?? $payments->renewalPlan($subscription)->currency,
                 'email' => $organization->email,
                 'source_id' => $data['source_id'],
                 'capture' => true,
-                'description' => "Suscripción NavegaYA {$organization->commercial_name}",
+                'description' => 'Suscripción NavegaYA '.$organization->commercial_name,
                 'metadata' => ['payment_purpose' => $upgradePlan ? 'subscription_upgrade' : 'subscription', 'subscription_id' => (string) $subscription->id, 'upgrade_plan_id' => (string) ($upgradePlan?->id ?? ''), 'months' => '1'],
             ]);
-
-        if ($response->failed()) {
-            return response()->json(['message' => $response->json('user_message') ?? $response->json('merchant_message') ?? 'Culqi no pudo procesar el pago.'], 422);
+        } catch (CulqiException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         }
+        if (($charge['object'] ?? null) !== 'charge' || ($charge['state'] ?? null) !== 'Exitosa' || (int) ($charge['amount'] ?? 0) !== $cents) {
+            if (is_string($charge['id'] ?? null) && str_starts_with($charge['id'], 'chr_') && (int) ($charge['amount'] ?? 0) !== $cents) {
+                $culqi->refund($charge['id'], (int) $charge['amount'], 'solicitud_comprador');
+            }
 
-        $charge = $response->json();
-        abort_unless(($charge['object'] ?? null) === 'charge' && ($charge['state'] ?? null) === 'Exitosa', 422);
-        abort_unless((int) ($charge['amount'] ?? 0) === $this->amountInCents($amount), 422);
+            return response()->json(['message' => __('payments.culqi_rejected')], 422);
+        }
 
         $paymentData = [
             'method' => str_starts_with($data['source_id'], 'ype_') ? 'yape' : 'card',
             'provider' => 'culqi',
             'provider_reference' => $charge['id'],
-            'provider_payload' => $charge,
+            'provider_payload' => $culqi->safePayload($charge),
         ];
         $upgradePlan ? $payments->confirmUpgrade($subscription, $upgradePlan, $paymentData) : $payments->confirm($subscription, $paymentData);
 
         return response()->json(['redirect' => route('marketplace.dashboard', ['tab' => 'plan'])]);
     }
 
-    public function order(Request $request, SubscriptionPaymentService $payments): JsonResponse
+    public function order(Request $request, SubscriptionPaymentService $payments, CulqiGateway $culqi): JsonResponse
     {
-        abort_unless(config('services.culqi.enabled') && config('services.culqi.secret_key'), 503);
+        abort_unless($culqi->ready(), 503, __('payments.culqi_off'));
         $subscription = $this->subscriptionFor($request);
         $data = $request->validate(['plan_id' => ['nullable', 'exists:subscription_plans,id']]);
         $upgradePlan = ! empty($data['plan_id']) ? SubscriptionPlan::where('is_active', true)->findOrFail($data['plan_id']) : null;
@@ -126,11 +139,12 @@ class MarketplaceSubscriptionPaymentController extends Controller
         $reference = 'SUB-'.$subscription->id.'-'.now()->format('YmdHis');
         $names = preg_split('/\s+/', trim((string) $organization->contact_name), 2);
 
-        $response = Http::withToken(config('services.culqi.secret_key'))->acceptJson()->asJson()->timeout(20)
-            ->post(rtrim(config('services.culqi.api_url'), '/').'/orders', [
-                'amount' => $this->amountInCents($amount),
+        $cents = $this->amountInCents($amount);
+        try {
+            $order = $culqi->createOrder([
+                'amount' => $cents,
                 'currency_code' => $upgradePlan?->currency ?? $payments->renewalPlan($subscription)->currency,
-                'description' => "Suscripción NavegaYA {$organization->commercial_name}",
+                'description' => 'Suscripción NavegaYA '.$organization->commercial_name,
                 'order_number' => $reference,
                 'client_details' => [
                     'first_name' => $names[0] ?? 'Cliente',
@@ -142,13 +156,12 @@ class MarketplaceSubscriptionPaymentController extends Controller
                 'confirm' => true,
                 'metadata' => ['payment_purpose' => $upgradePlan ? 'subscription_upgrade' : 'subscription', 'subscription_id' => (string) $subscription->id, 'upgrade_plan_id' => (string) ($upgradePlan?->id ?? ''), 'months' => '1'],
             ]);
-
-        if ($response->failed()) {
-            return response()->json(['message' => $response->json('user_message') ?? $response->json('merchant_message') ?? 'No se pudo generar el código PagoEfectivo.'], 422);
+        } catch (CulqiException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         }
-
-        $order = $response->json();
-        abort_unless(($order['object'] ?? null) === 'order' && filled($order['id'] ?? null), 422);
+        if (($order['object'] ?? null) !== 'order' || blank($order['id'] ?? null) || (int) ($order['amount'] ?? 0) !== $cents) {
+            return response()->json(['message' => __('payments.order_failed')], 422);
+        }
         Payment::updateOrCreate(['provider_reference' => $order['id']], [
             'reservation_id' => null,
             'subscription_id' => $subscription->id,
@@ -158,7 +171,7 @@ class MarketplaceSubscriptionPaymentController extends Controller
             'amount' => $amount,
             'currency_code' => $upgradePlan?->currency ?? $payments->renewalPlan($subscription)->currency,
             'status' => 'pending',
-            'provider_payload' => $order,
+            'provider_payload' => $culqi->safePayload($order),
         ]);
 
         return response()->json(['order_id' => $order['id'], 'payment_code' => $order['payment_code'] ?? null]);

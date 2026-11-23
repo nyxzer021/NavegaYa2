@@ -22,6 +22,13 @@ class BookingPaymentService
             if ($reservation->status === 'confirmed') {
                 return $reservation;
             }
+            $reference = (string) ($paymentData['provider_reference'] ?? '');
+            if ($reference !== '') {
+                $existing = Payment::query()->where('provider_reference', $reference)->lockForUpdate()->first();
+                if ($existing && in_array($existing->status, ['refunded', 'voided', 'review_required'], true)) {
+                    abort(422, __('payments.charge_returned'));
+                }
+            }
             abort_unless($reservation->status === 'pending_payment' && ! $reservation->expires_at?->isPast(), 422);
 
             $reservation->loadMissing(['departure.transportRoute.organization', 'airDeparture.airRoute.organization', 'seats']);

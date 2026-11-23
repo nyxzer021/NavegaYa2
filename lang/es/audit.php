@@ -56,6 +56,8 @@ return [
     'lot_payment' => ':who registró un pago de :agency por :amount, operación :operation.',
     'lot_payment_voided' => ':who anuló el pago de :agency por :amount',
     'receipt_issued' => ':who emitió la constancia :number de :client por :amount.',
+    'culqi_confirmed' => ':who confirmó el cobro web de la reserva :code por :amount.',
+    'culqi_returned' => ':who devolvió el cargo de la reserva :code por :amount',
     'fare_saved' => ':who guardó una tarifa de :passenger por :amount.',
     'fare_removed' => ':who quitó una tarifa de :amount.',
     'discount_saved' => ':who guardó el descuento :name.',

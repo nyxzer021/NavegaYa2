@@ -10,6 +10,7 @@ use App\Models\TicketRefund;
 use App\Models\User;
 use App\Services\AdvertisementInventoryService;
 use App\Services\BookingPaymentService;
+use App\Services\CulqiGateway;
 use App\Services\MarketplaceSales;
 use App\Services\TicketRefunds;
 use App\Support\AdminScope;
@@ -28,10 +29,12 @@ class PaymentController extends Controller
     {
         $reservation = $this->reservationOrFail($code);
         $sandboxEnabled = config('payments.sandbox_enabled');
-        $culqiEnabled = config('services.culqi.enabled');
+        $culqi = app(CulqiGateway::class);
+        $culqiEnabled = $culqi->ready();
+        $culqiTestMode = $culqi->testMode();
         $quote = $sales->quote($reservation);
 
-        return view('payments.show', compact('reservation', 'sandboxEnabled', 'culqiEnabled', 'quote'));
+        return view('payments.show', compact('reservation', 'sandboxEnabled', 'culqiEnabled', 'culqiTestMode', 'quote'));
     }
 
     public function sandboxConfirm(Request $request, string $code, BookingPaymentService $payments): RedirectResponse

@@ -27,7 +27,7 @@ class CompanyAudit
             'salidas' => ['departure.cancelled', 'departure.rescheduled'],
             'equipo' => ['staff.invited', 'staff.accepted', 'staff.resent', 'staff.cancelled', 'staff.profile', 'staff.suspended', 'staff.reactivated'],
             'ficha' => ['profile.updated', 'details.updated'],
-            'cobros' => ['bank.updated', 'payout.recorded', 'payout.voided', 'web_refund.recorded'],
+            'cobros' => ['bank.updated', 'payout.recorded', 'payout.voided', 'web_refund.recorded', 'culqi.confirmed', 'culqi.returned'],
             'reembolsos' => ['refund.requested', 'refund.approved', 'refund.rejected', 'refund.paid'],
             'comprobantes' => ['receipt.issued'],
         ];
@@ -159,6 +159,8 @@ class CompanyAudit
             'payout.recorded' => __('audit.payout_recorded', ['who' => $who, 'amount' => self::money($change['amount'] ?? 0), 'operation' => self::text($change, 'operation')]),
             'payout.voided' => __('audit.payout_voided', ['who' => $who, 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
             'web_refund.recorded' => __('audit.web_refund', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
+            'culqi.confirmed' => __('audit.culqi_confirmed', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
+            'culqi.returned' => __('audit.culqi_returned', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]).$reasonText,
             'refund.requested' => ((float) ($change['amount'] ?? 0)) > 0
                 ? __('audit.refund_requested', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)])
                 : __('audit.refund_requested_open', ['who' => $who, 'code' => self::text($change, 'code')]),
