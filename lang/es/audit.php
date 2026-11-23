@@ -82,6 +82,7 @@ return [
     'refund_approved' => ':who aprobó la devolución del boleto :code por :amount.',
     'refund_rejected' => ':who rechazó la devolución del boleto :code',
     'refund_paid' => ':who pagó la devolución del boleto :code por :amount.',
+    'refund_card' => ':who reembolsó a la tarjeta la devolución del boleto :code por :amount. Reembolso :operation.',
     'generic' => ':who registró un cambio en la empresa.',
     'company_filter' => 'Empresa',
     'all_companies' => 'Todas las empresas',

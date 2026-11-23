@@ -28,7 +28,7 @@ class CompanyAudit
             'equipo' => ['staff.invited', 'staff.accepted', 'staff.resent', 'staff.cancelled', 'staff.profile', 'staff.suspended', 'staff.reactivated'],
             'ficha' => ['profile.updated', 'details.updated'],
             'cobros' => ['bank.updated', 'payout.recorded', 'payout.voided', 'web_refund.recorded', 'culqi.confirmed', 'culqi.returned'],
-            'reembolsos' => ['refund.requested', 'refund.approved', 'refund.rejected', 'refund.paid'],
+            'reembolsos' => ['refund.requested', 'refund.approved', 'refund.rejected', 'refund.paid', 'refund.card'],
             'comprobantes' => ['receipt.issued'],
         ];
     }
@@ -167,6 +167,7 @@ class CompanyAudit
             'refund.approved' => __('audit.refund_approved', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
             'refund.rejected' => __('audit.refund_rejected', ['who' => $who, 'code' => self::text($change, 'code')]).$reasonText,
             'refund.paid' => __('audit.refund_paid', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0)]),
+            'refund.card' => __('audit.refund_card', ['who' => $who, 'code' => self::text($change, 'code'), 'amount' => self::money($change['amount'] ?? 0), 'operation' => self::text($change, 'operation')]),
             'receipt.issued' => __('audit.receipt_issued', ['who' => $who, 'number' => self::text($change, 'number'), 'client' => self::text($change, 'client'), 'amount' => self::money($change['amount'] ?? 0)]),
             default => __('audit.generic', ['who' => $who]),
         };

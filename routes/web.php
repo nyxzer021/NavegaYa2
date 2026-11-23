@@ -441,6 +441,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/suscripciones-publicitarias/planes/{plan}', [AdminAdvertisingSubscriptionController::class, 'updatePlan'])->name('advertising-subscriptions.plans.update');
     Route::patch('/suscripciones-publicitarias/excepciones/{payment}', [AdminAdvertisingSubscriptionController::class, 'resolvePaymentException'])->name('advertising-subscriptions.exceptions.resolve');
     Route::get('/reembolsos-soporte', [AdminRefundController::class, 'index'])->name('refunds.index');
+    Route::post('/reembolsos-soporte/{ticketRefund}/tarjeta', [AdminRefundController::class, 'refundToCard'])->middleware('role:super_admin')->name('refunds.card');
+    Route::post('/reembolsos-soporte/{ticketRefund}/otro-medio', [AdminRefundController::class, 'payByOtherMeans'])->middleware('role:super_admin')->name('refunds.manual');
     Route::get('/configuracion', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [AdminSettingsController::class, 'update'])->name('settings.update');
     Route::get('/menu-paginas', [AdminNavigationController::class, 'index'])->name('navigation.index');

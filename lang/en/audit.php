@@ -82,6 +82,7 @@ return [
     'refund_approved' => ':who approved the refund of ticket :code for :amount.',
     'refund_rejected' => ':who rejected the refund of ticket :code',
     'refund_paid' => ':who paid the refund of ticket :code for :amount.',
+    'refund_card' => ':who refunded ticket :code to the card for :amount. Refund :operation.',
     'generic' => ':who recorded a change in the company.',
     'company_filter' => 'Company',
     'all_companies' => 'All companies',

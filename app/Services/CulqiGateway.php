@@ -92,24 +92,35 @@ class CulqiGateway
 
     public function refund(string $chargeId, int $cents, string $reason): bool
     {
+        try {
+            $this->issueRefund($chargeId, $cents, $reason);
+
+            return true;
+        } catch (CulqiException) {
+            return false;
+        }
+    }
+
+    public function issueRefund(string $chargeId, int $cents, string $reason): string
+    {
         $this->guardId($chargeId, 'chr_');
         if ($cents < 1) {
-            return false;
+            throw new CulqiException(__('refunds.card_failed'));
         }
         if (! in_array($reason, ['duplicado', 'fraudulento', 'solicitud_comprador'], true)) {
             $reason = 'solicitud_comprador';
         }
-        try {
-            $response = $this->send('post', '/refunds', [
-                'amount' => $cents,
-                'charge_id' => $chargeId,
-                'reason' => $reason,
-            ], false);
-        } catch (CulqiException) {
-            return false;
+        $refund = $this->decode($this->send('post', '/refunds', [
+            'amount' => $cents,
+            'charge_id' => $chargeId,
+            'reason' => $reason,
+        ], false));
+        $id = $refund['id'] ?? null;
+        if (! is_string($id) || preg_match('/^ref_[A-Za-z0-9_]+$/', $id) !== 1) {
+            throw new CulqiException(__('refunds.card_failed'));
         }
 
-        return $response->successful();
+        return $id;
     }
 
     /**

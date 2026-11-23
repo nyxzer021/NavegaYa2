@@ -10,7 +10,7 @@ class TicketRefund extends Model
     protected $fillable = [
         'organization_id', 'reservation_id', 'payment_id', 'source', 'cause', 'status',
         'fare_amount', 'fee_amount', 'amount', 'policy_percent', 'explanation', 'reason',
-        'rejection_reason', 'operation_number', 'web_fare_refund_id', 'cash_payment_id',
+        'rejection_reason', 'operation_number', 'provider_refund_id', 'web_fare_refund_id', 'cash_payment_id',
         'requested_by_user_id', 'decided_by_user_id', 'decided_at', 'paid_at',
     ];
 

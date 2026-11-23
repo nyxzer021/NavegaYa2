@@ -22,6 +22,7 @@ class TicketRefunds
         private readonly RefundRule $rule,
         private readonly CompanyCollections $collections,
         private readonly CashDesk $cash,
+        private readonly CulqiGateway $culqi,
     ) {}
 
     public function request(Request $request, Reservation $reservation, string $source, string $cause, ?string $amount, ?string $reason): TicketRefund
@@ -183,6 +184,62 @@ class TicketRefunds
         });
     }
 
+    public function refundToCard(Request $request, TicketRefund $refund): void
+    {
+        $this->assertSuperAdmin($request);
+        if (! filled(config('services.culqi.secret_key')) || ! config('services.culqi.enabled')) {
+            throw ValidationException::withMessages(['refund' => __('refunds.card_off')]);
+        }
+        DB::transaction(function () use ($request, $refund): void {
+            $locked = $this->approvedWeb($refund);
+            $payment = Payment::query()->whereKey($locked->payment_id)->lockForUpdate()->firstOrFail();
+            $chargeId = (string) $payment->provider_reference;
+            if ($payment->provider !== 'culqi' || preg_match('/^chr_[A-Za-z0-9_]+$/', $chargeId) !== 1) {
+                throw ValidationException::withMessages(['refund' => __('refunds.not_card')]);
+            }
+            $cents = $this->collections->cents((string) $locked->amount);
+            $this->assertWithinCharge($payment, $chargeId, $cents);
+            try {
+                $refundId = $this->culqi->issueRefund($chargeId, $cents, 'solicitud_comprador');
+            } catch (CulqiException $exception) {
+                throw ValidationException::withMessages(['refund' => $exception->getMessage()]);
+            }
+            $locked->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'provider_refund_id' => $refundId,
+            ]);
+            AuditRecorder::record($request, 'refund.card', $locked, [
+                'code' => $locked->reservation?->code,
+                'amount' => (string) $locked->amount,
+                'operation' => $refundId,
+                'reason' => $chargeId,
+            ], $locked->organization_id);
+        });
+    }
+
+    public function payByOtherMeans(Request $request, TicketRefund $refund, string $operation): void
+    {
+        $this->assertSuperAdmin($request);
+        $operation = trim($operation);
+        if ($operation === '') {
+            throw ValidationException::withMessages(['operation_number' => __('refunds.operation_required')]);
+        }
+        DB::transaction(function () use ($request, $refund, $operation): void {
+            $locked = $this->approvedWeb($refund);
+            $locked->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'operation_number' => $operation,
+            ]);
+            AuditRecorder::record($request, 'refund.paid', $locked, [
+                'code' => $locked->reservation?->code,
+                'amount' => (string) $locked->amount,
+                'reason' => $operation,
+            ], $locked->organization_id);
+        });
+    }
+
     public function fromCancellation(Request $request, RouteDeparture $departure): void
     {
         $reservations = Reservation::query()
@@ -265,6 +322,41 @@ class TicketRefunds
         }
 
         return $organization;
+    }
+
+    private function approvedWeb(TicketRefund $refund): TicketRefund
+    {
+        $locked = TicketRefund::query()->whereKey($refund->id)->lockForUpdate()->firstOrFail();
+        if ($locked->status !== 'approved' || filled($locked->provider_refund_id)) {
+            throw ValidationException::withMessages(['refund' => __('refunds.not_approved')]);
+        }
+        $locked->load('reservation');
+        if ($locked->reservation?->sales_channel !== 'web') {
+            throw ValidationException::withMessages(['refund' => __('refunds.web_only')]);
+        }
+
+        return $locked;
+    }
+
+    private function assertWithinCharge(Payment $payment, string $chargeId, int $cents): void
+    {
+        $charged = $this->collections->cents((string) $payment->amount);
+        $already = (int) TicketRefund::query()
+            ->where('status', 'paid')
+            ->whereHas('payment', fn ($query) => $query->where('provider_reference', $chargeId))
+            ->get()
+            ->sum(fn (TicketRefund $row): int => $this->collections->cents((string) $row->amount));
+        if ($payment->status === 'refunded') {
+            $already = max($already, $charged);
+        }
+        if ($cents < 1 || $cents > $charged - $already) {
+            throw ValidationException::withMessages(['refund' => __('refunds.above_charge')]);
+        }
+    }
+
+    private function assertSuperAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->roles()->where('code', 'super_admin')->exists() === true, 403);
     }
 
     private function policyPercent(Organization $organization): ?string
