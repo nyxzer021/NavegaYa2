@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Services\CulqiException;
 use App\Services\CulqiGateway;
 use App\Services\CulqiReconciliation;
+use App\Services\MercadoPagoException;
+use App\Services\MercadoPagoGateway;
 use App\Support\CsvCell;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,9 +44,19 @@ class AdminReconciliationController extends Controller
             : __('reconciliation.imported', ['created' => $result['created'], 'existing' => $result['existing']]));
     }
 
-    public function fetch(Request $request, CulqiGateway $culqi): RedirectResponse
+    public function fetch(Request $request, CulqiGateway $culqi, MercadoPagoGateway $mercadoPago): RedirectResponse
     {
         $month = $this->month($request);
+        if ($request->string('provider')->toString() === 'mercadopago') {
+            try {
+                $movements = $mercadoPago->listMovements($month.'-01', $this->monthEnd($month));
+            } catch (MercadoPagoException $exception) {
+                return back()->with('error', $exception->getMessage());
+            }
+            $result = $this->reconciliation->importMovements($movements, $this->user($request), $request);
+
+            return back()->with('status', __('reconciliation.fetched', ['created' => $result['created'], 'existing' => $result['existing']]));
+        }
         try {
             $charges = $culqi->listCharges($month.'-01', $this->monthEnd($month));
         } catch (CulqiException $exception) {
@@ -59,7 +71,7 @@ class AdminReconciliationController extends Controller
     {
         $data = $request->validate([
             'mes' => ['required', 'regex:/^\d{4}-\d{2}$/'],
-            'difference_key' => ['required', 'regex:/^(culqi_charge|local_charge|amount|culqi_refund|local_refund):(chr_|ref_)[A-Za-z0-9_]+$/'],
+            'difference_key' => ['required', 'regex:/^(culqi_charge|local_charge|mp_charge|mp_local_charge|amount|culqi_refund|local_refund|mp_refund|mp_local_refund):(chr_|ref_|mp_|mpr_)[A-Za-z0-9_]+$/'],
             'note' => ['required', 'string', 'max:500'],
         ]);
         $this->reconciliation->review($request, $data['mes'], $data['difference_key'], trim($data['note']));

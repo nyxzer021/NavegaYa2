@@ -60,6 +60,7 @@ return [
     'other_means' => 'Paid by another means',
     'card_done' => 'The refund was sent to the card.',
     'card_failed' => 'Culqi could not refund the card. The refund is still pending.',
+    'mp_failed' => 'Mercado Pago could not refund the card. The refund is still pending.',
     'card_off' => 'Card refunds are off. Record the operation number.',
     'not_card' => 'This charge cannot be refunded to the card. Record the operation number.',
     'above_charge' => 'The refund cannot exceed what that charge collected.',

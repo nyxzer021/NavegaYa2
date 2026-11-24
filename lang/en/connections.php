@@ -24,8 +24,10 @@ return [
     'probe_ok' => 'The connection answered. No charge was created.',
     'probe_failed' => 'The connection could not be read. No charge was created.',
     'culqi_off' => 'Culqi is off or the secret key is missing. The provider was not called.',
-    'provider_off' => 'Mercado Pago is off. It is not activated in this stage.',
+    'provider_off' => 'That provider is not available.',
+    'mp_off' => 'Mercado Pago is off or the token is missing. The provider was not called.',
     'mp_detail' => 'Mercado Pago stays off. There are no keys and no call to the provider.',
+    'access_token' => 'Access token',
     'holds_fare' => 'NavegaYA holds the web fare until it pays the company.',
     'holds_intro' => 'On the web the passenger pays the fare plus the service fee. NavegaYA collects both and holds the fare until it pays the company. Dock and agency sales have no fee.',
 ];

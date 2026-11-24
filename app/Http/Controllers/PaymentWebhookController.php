@@ -9,6 +9,9 @@ use App\Models\SubscriptionPlan;
 use App\Services\BookingPaymentService;
 use App\Services\CulqiException;
 use App\Services\CulqiGateway;
+use App\Services\MercadoPagoCheckout;
+use App\Services\MercadoPagoException;
+use App\Services\MercadoPagoGateway;
 use App\Services\SubscriptionPaymentService;
 use App\Support\PaymentConnections;
 use Illuminate\Http\JsonResponse;
@@ -64,6 +67,36 @@ class PaymentWebhookController extends Controller
         }
 
         return $this->confirmTicket($verified, $chargeId, $eventId, $culqi, $payments);
+    }
+
+    public function mercadopago(Request $request, MercadoPagoGateway $mercadoPago, MercadoPagoCheckout $checkout): JsonResponse
+    {
+        PaymentConnections::rememberMercadoPago();
+        if (! $mercadoPago->signatureValid($request)) {
+            Log::warning('Webhook de Mercado Pago rechazado.', ['motivo' => 'firma']);
+
+            return response()->json(['message' => 'Firma inválida.'], 401);
+        }
+        if (! $mercadoPago->ready()) {
+            return response()->json(['received' => true]);
+        }
+        $type = (string) $request->query('type', '');
+        if ($type !== 'payment') {
+            Log::info('Webhook de Mercado Pago ignorado.', ['tipo' => $type]);
+
+            return response()->json(['received' => true]);
+        }
+        $paymentId = $mercadoPago->notificationId($request);
+        if ($paymentId === null) {
+            return response()->json(['message' => 'Cuerpo inválido.'], 400);
+        }
+        try {
+            $result = $checkout->settle($paymentId, (string) $request->header('x-request-id'));
+        } catch (MercadoPagoException) {
+            return response()->json(['message' => __('payments.mp_unreachable')], 503);
+        }
+
+        return response()->json(['received' => true, 'duplicate' => $result === 'duplicate']);
     }
 
     /**

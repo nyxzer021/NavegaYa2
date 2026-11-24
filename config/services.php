@@ -46,6 +46,16 @@ return [
         'api_url' => env('CULQI_API_URL', 'https://api.culqi.com/v2'),
     ],
 
+    // Apagado hasta que el entorno traiga el token. La cadena "false" sigue apagada.
+    'mercadopago' => [
+        'enabled' => env('MERCADOPAGO_ENABLED', false),
+        'environment' => env('MERCADOPAGO_ENVIRONMENT', 'test'),
+        'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
+        'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+        'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'),
+        'api_url' => env('MERCADOPAGO_API_URL', 'https://api.mercadopago.com'),
+    ],
+
     'google' => [
         'enabled' => (bool) env('GOOGLE_LOGIN_ENABLED', false),
         'client_id' => env('GOOGLE_CLIENT_ID'),

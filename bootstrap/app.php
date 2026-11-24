@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust its proxy headers so URLs, Vite assets and redirects use HTTPS.
         $middleware->trustProxies(at: '*');
 
-        $middleware->validateCsrfTokens(except: ['webhooks/culqi']);
+        $middleware->validateCsrfTokens(except: ['webhooks/culqi', 'webhooks/mercadopago']);
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'permission' => EnsureUserHasPermission::class,

@@ -86,6 +86,12 @@
             <input type="hidden" name="mes" value="{{ $month }}">
             <button type="submit">{{ __('reconciliation.fetch') }}</button>
         </form>
+        <form method="POST" action="{{ route('admin.reconciliation.fetch') }}">
+            @csrf
+            <input type="hidden" name="mes" value="{{ $month }}">
+            <input type="hidden" name="provider" value="mercadopago">
+            <button type="submit">{{ __('reconciliation.fetch_mp') }}</button>
+        </form>
     </section>
 
     <section>

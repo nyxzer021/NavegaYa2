@@ -25,7 +25,11 @@
                 @php
                     $webWaiting = $ticketRefund->status === 'approved' && $ticketRefund->reservation?->sales_channel === 'web';
                     $chargeId = (string) $ticketRefund->payment?->provider_reference;
-                    $canCard = $canRefundToCard && $webWaiting && $culqiRefundsOpen && $ticketRefund->payment?->provider === 'culqi' && preg_match('/^chr_[A-Za-z0-9_]+$/', $chargeId) === 1;
+                    $provider = $ticketRefund->payment?->provider;
+                    $canCard = $canRefundToCard && $webWaiting && (
+                        ($culqiRefundsOpen && $provider === 'culqi' && preg_match('/^chr_[A-Za-z0-9_]+$/', $chargeId) === 1)
+                        || ($mercadoPagoRefundsOpen && $provider === 'mercadopago' && preg_match('/^mp_\d{1,20}$/', $chargeId) === 1)
+                    );
                 @endphp
                 <article class="grid gap-3 border-b border-slate-100 py-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto]">
                     <div>
@@ -45,7 +49,7 @@
                                         @csrf
                                         <button class="ny-button" type="submit">{{ __('refunds.card_button') }}</button>
                                     </form>
-                                @elseif(! $culqiRefundsOpen && $ticketRefund->payment?->provider === 'culqi')
+                                @elseif((! $culqiRefundsOpen && $provider === 'culqi') || (! $mercadoPagoRefundsOpen && $provider === 'mercadopago'))
                                     <p class="text-xs font-bold" style="color: var(--ny-warning)">{{ __('refunds.card_off') }}</p>
                                 @endif
                                 <form class="flex flex-col gap-2 sm:flex-row" method="POST" action="{{ route('admin.refunds.manual', $ticketRefund) }}">

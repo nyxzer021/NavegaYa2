@@ -43,7 +43,9 @@ class PaymentConnectionTest extends TestCase
             ->assertSee('Presente ····3KX8')
             ->assertSee(route('webhooks.culqi'))
             ->assertSee('Aún no llega ninguno.')
-            ->assertSee('Mercado Pago queda apagado')
+            ->assertSee('Mercado Pago')
+            ->assertSee('Apagado')
+            ->assertSee(route('webhooks.mercadopago'))
             ->assertDontSee('pk_demo_ABCD9ZQ4')
             ->assertDontSee('secret_demo_77LM')
             ->assertDontSee('whsec_demo_3KX8');
@@ -85,7 +87,7 @@ class PaymentConnectionTest extends TestCase
 
         $this->post(route('admin.payment-connections.probe'), ['provider' => 'mercadopago'])
             ->assertRedirect()
-            ->assertSessionHas('probe_error', 'Mercado Pago está apagado. No se activa en esta etapa.');
+            ->assertSessionHas('probe_error', 'Mercado Pago está apagado o le falta el token. No se llamó al proveedor.');
         Http::assertNothingSent();
 
         config([

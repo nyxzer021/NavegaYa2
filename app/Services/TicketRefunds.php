@@ -23,6 +23,7 @@ class TicketRefunds
         private readonly CompanyCollections $collections,
         private readonly CashDesk $cash,
         private readonly CulqiGateway $culqi,
+        private readonly MercadoPagoGateway $mercadoPago,
     ) {}
 
     public function request(Request $request, Reservation $reservation, string $source, string $cause, ?string $amount, ?string $reason): TicketRefund
@@ -187,21 +188,15 @@ class TicketRefunds
     public function refundToCard(Request $request, TicketRefund $refund): void
     {
         $this->assertSuperAdmin($request);
-        if (! filled(config('services.culqi.secret_key')) || ! config('services.culqi.enabled')) {
-            throw ValidationException::withMessages(['refund' => __('refunds.card_off')]);
-        }
         DB::transaction(function () use ($request, $refund): void {
             $locked = $this->approvedWeb($refund);
             $payment = Payment::query()->whereKey($locked->payment_id)->lockForUpdate()->firstOrFail();
             $chargeId = (string) $payment->provider_reference;
-            if ($payment->provider !== 'culqi' || preg_match('/^chr_[A-Za-z0-9_]+$/', $chargeId) !== 1) {
-                throw ValidationException::withMessages(['refund' => __('refunds.not_card')]);
-            }
             $cents = $this->collections->cents((string) $locked->amount);
             $this->assertWithinCharge($payment, $chargeId, $cents);
             try {
-                $refundId = $this->culqi->issueRefund($chargeId, $cents, 'solicitud_comprador');
-            } catch (CulqiException $exception) {
+                $refundId = $this->providerRefund($payment, $chargeId, $cents);
+            } catch (CulqiException|MercadoPagoException $exception) {
                 throw ValidationException::withMessages(['refund' => $exception->getMessage()]);
             }
             $locked->update([
@@ -336,6 +331,26 @@ class TicketRefunds
         }
 
         return $locked;
+    }
+
+    private function providerRefund(Payment $payment, string $chargeId, int $cents): string
+    {
+        if ($payment->provider === 'culqi' && preg_match('/^chr_[A-Za-z0-9_]+$/', $chargeId) === 1) {
+            if (! filled(config('services.culqi.secret_key')) || ! config('services.culqi.enabled')) {
+                throw ValidationException::withMessages(['refund' => __('refunds.card_off')]);
+            }
+
+            return $this->culqi->issueRefund($chargeId, $cents, 'solicitud_comprador');
+        }
+        if ($payment->provider === 'mercadopago' && preg_match('/^mp_\d{1,20}$/', $chargeId) === 1) {
+            if (! $this->mercadoPago->ready()) {
+                throw ValidationException::withMessages(['refund' => __('refunds.card_off')]);
+            }
+
+            return $this->mercadoPago->issueRefund($chargeId, $cents);
+        }
+
+        throw ValidationException::withMessages(['refund' => __('refunds.not_card')]);
     }
 
     private function assertWithinCharge(Payment $payment, string $chargeId, int $cents): void

@@ -77,9 +77,41 @@
     <section class="ny-pay-card">
         <div class="ny-pay-head">
             <strong>{{ __('connections.mercadopago') }}</strong>
-            <span class="ny-pay-badge" style="--c: var(--ny-text-muted)">{{ __('connections.off') }}</span>
+            <span class="ny-pay-badge" style="--c: {{ $mercadoPago['enabled'] ? 'var(--ny-success)' : 'var(--ny-text-muted)' }}">{{ $mercadoPago['enabled'] ? __('connections.on') : __('connections.off') }}</span>
         </div>
-        <p class="ny-pay-note">{{ __('connections.mp_detail') }}</p>
+        <div class="ny-pay-row"><span class="ny-pay-k">{{ __('connections.environment') }}</span><span>{{ $mercadoPago['test'] ? __('connections.test') : __('connections.production') }}</span></div>
+        @foreach ([
+            ['connections.public', $mercadoPago['public_present'], $mercadoPago['public_tail']],
+            ['connections.access_token', $mercadoPago['secret_present'], $mercadoPago['secret_tail']],
+            ['connections.webhook_secret', $mercadoPago['webhook_present'], $mercadoPago['webhook_tail']],
+        ] as [$label, $present, $tail])
+            <div class="ny-pay-row">
+                <span class="ny-pay-k">{{ __($label) }}</span>
+                <span>
+                    @if ($present && $tail)
+                        {{ __('connections.masked', ['tail' => $tail]) }}
+                    @elseif ($present)
+                        {{ __('connections.present') }}
+                    @else
+                        {{ __('connections.absent') }}
+                    @endif
+                </span>
+            </div>
+        @endforeach
+        <label class="ny-pay-k" for="mp-webhook">{{ __('connections.webhook_url') }}</label>
+        <div class="ny-pay-url">
+            <input id="mp-webhook" type="text" readonly value="{{ $mercadoPagoWebhookUrl }}">
+            <button type="button" data-copy="mp-webhook">{{ __('connections.copy') }}</button>
+        </div>
+        <div class="ny-pay-row">
+            <span class="ny-pay-k">{{ __('connections.last') }}</span>
+            <span>{{ $lastMercadoPagoWebhook ?: __('connections.never') }}</span>
+        </div>
+        <form method="POST" action="{{ route('admin.payment-connections.probe') }}">
+            @csrf
+            <input type="hidden" name="provider" value="mercadopago">
+            <button type="submit">{{ __('connections.probe') }}</button>
+        </form>
     </section>
 </div>
 <script>

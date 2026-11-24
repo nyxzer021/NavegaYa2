@@ -60,6 +60,7 @@ return [
     'other_means' => 'Pagado por otro medio',
     'card_done' => 'El reembolso quedó en la tarjeta.',
     'card_failed' => 'Culqi no pudo reembolsar la tarjeta. La devolución sigue pendiente.',
+    'mp_failed' => 'Mercado Pago no pudo reembolsar la tarjeta. La devolución sigue pendiente.',
     'card_off' => 'El reembolso a la tarjeta está apagado. Anota el número de operación.',
     'not_card' => 'Este cargo no se puede reembolsar a la tarjeta. Anota el número de operación.',
     'above_charge' => 'No se puede reembolsar más de lo cobrado en ese cargo.',

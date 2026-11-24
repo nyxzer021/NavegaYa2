@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\CulqiException;
 use App\Services\CulqiGateway;
+use App\Services\MercadoPagoException;
+use App\Services\MercadoPagoGateway;
 use App\Support\PaymentConnections;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,13 +18,25 @@ class AdminPaymentConnectionController extends Controller
     {
         return view('admin.payment-connections.index', [
             'culqi' => $this->culqi(),
+            'mercadoPago' => $this->mercadoPago(),
             'webhookUrl' => route('webhooks.culqi'),
+            'mercadoPagoWebhookUrl' => route('webhooks.mercadopago'),
             'lastWebhook' => PaymentConnections::lastCulqiWebhook()?->timezone('America/Lima')->format('Y-m-d H:i'),
+            'lastMercadoPagoWebhook' => PaymentConnections::lastMercadoPagoWebhook()?->timezone('America/Lima')->format('Y-m-d H:i'),
         ]);
     }
 
-    public function probe(Request $request, CulqiGateway $culqi): RedirectResponse
+    public function probe(Request $request, CulqiGateway $culqi, MercadoPagoGateway $mercadoPago): RedirectResponse
     {
+        if ($request->string('provider')->toString() === 'mercadopago') {
+            try {
+                $mercadoPago->probe();
+            } catch (MercadoPagoException $exception) {
+                return back()->with('probe_error', $exception->getMessage());
+            }
+
+            return back()->with('probe_ok', __('connections.probe_ok'));
+        }
         if ($request->string('provider')->toString() !== 'culqi') {
             return back()->with('probe_error', __('connections.provider_off'));
         }
@@ -52,6 +66,23 @@ class AdminPaymentConnectionController extends Controller
             'secret_tail' => PaymentConnections::tail((string) config('services.culqi.secret_key')),
             'webhook_present' => filled(config('services.culqi.webhook_secret')),
             'webhook_tail' => PaymentConnections::tail((string) config('services.culqi.webhook_secret')),
+        ];
+    }
+
+    /**
+     * @return array{enabled: bool, test: bool, public_present: bool, public_tail: ?string, secret_present: bool, secret_tail: ?string, webhook_present: bool, webhook_tail: ?string}
+     */
+    private function mercadoPago(): array
+    {
+        return [
+            'enabled' => filter_var(config('services.mercadopago.enabled'), FILTER_VALIDATE_BOOLEAN),
+            'test' => (string) config('services.mercadopago.environment') !== 'production',
+            'public_present' => filled(config('services.mercadopago.public_key')),
+            'public_tail' => PaymentConnections::tail((string) config('services.mercadopago.public_key')),
+            'secret_present' => filled(config('services.mercadopago.access_token')),
+            'secret_tail' => PaymentConnections::tail((string) config('services.mercadopago.access_token')),
+            'webhook_present' => filled(config('services.mercadopago.webhook_secret')),
+            'webhook_tail' => PaymentConnections::tail((string) config('services.mercadopago.webhook_secret')),
         ];
     }
 }

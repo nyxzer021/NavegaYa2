@@ -54,22 +54,53 @@ class CulqiReconciliation
     }
 
     /**
+     * @param  list<array{kind: string, id: string, amount: string, date: string, fee: ?string, net: ?string}>  $movements
+     * @return array{created: int, existing: int, duplicate_file: bool}
+     */
+    public function importMovements(array $movements, User $user, Request $request): array
+    {
+        $rows = [];
+        foreach ($movements as $movement) {
+            if (! in_array($movement['kind'], ['charge', 'refund'], true)) {
+                continue;
+            }
+            $rows[] = [
+                'kind' => $movement['kind'],
+                'reference' => $movement['id'],
+                'date' => $movement['date'],
+                'amount' => $movement['amount'],
+                'fee' => $movement['fee'],
+                'net' => $movement['net'],
+            ];
+        }
+
+        return $this->store($rows, 'api', null, null, $user, $request);
+    }
+
+    /**
      * @return array{month: string, summary: array<string, string>, days: list<array<string, string>>, differences: list<array<string, mixed>>}
      */
     public function month(string $month): array
     {
         [$start, $end] = $this->bounds($month);
         $payments = Payment::query()
-            ->where('provider', 'culqi')
-            ->where('provider_reference', 'like', 'chr_%')
             ->whereIn('status', ['confirmed', 'refunded', 'succeeded'])
             ->whereBetween('paid_at', [$start, $end])
+            ->where(function ($query): void {
+                $query->where(function ($culqi): void {
+                    $culqi->where('provider', 'culqi')->where('provider_reference', 'like', 'chr_%');
+                })->orWhere(function ($mercadoPago): void {
+                    $mercadoPago->where('provider', 'mercadopago')
+                        ->where('provider_reference', 'like', 'mp_%')
+                        ->where('provider_reference', 'not like', 'mpr_%');
+                });
+            })
             ->get();
         $refunds = TicketRefund::query()
             ->where('status', 'paid')
             ->whereNotNull('provider_refund_id')
             ->whereBetween('paid_at', [$start, $end])
-            ->whereHas('payment', fn ($query) => $query->where('provider', 'culqi'))
+            ->whereHas('payment', fn ($query) => $query->whereIn('provider', ['culqi', 'mercadopago']))
             ->get();
         $lines = CulqiSettlementLine::query()
             ->whereBetween('occurred_on', [$start->toDateString(), $end->toDateString()])
@@ -97,27 +128,27 @@ class CulqiReconciliation
         foreach ($culqiCharges as $reference => $line) {
             $payment = $localCharges[$reference] ?? null;
             if ($payment === null) {
-                $differences[] = $this->difference('culqi_charge', $reference, $line->occurred_on->toDateString(), (string) $line->amount, null);
+                $differences[] = $this->difference($this->providerKind($reference, 'culqi_charge', 'mp_charge'), $reference, $line->occurred_on->toDateString(), (string) $line->amount, null);
             } elseif ($this->cents($payment->amount) !== $this->cents($line->amount)) {
                 $differences[] = $this->difference('amount', $reference, $line->occurred_on->toDateString(), (string) $line->amount, (string) $payment->amount);
             }
         }
         foreach ($localCharges as $reference => $payment) {
             if (! isset($culqiCharges[$reference])) {
-                $differences[] = $this->difference('local_charge', $reference, $payment->paid_at->timezone('America/Lima')->toDateString(), null, (string) $payment->amount);
+                $differences[] = $this->difference($this->providerKind($reference, 'local_charge', 'mp_local_charge'), $reference, $payment->paid_at->timezone('America/Lima')->toDateString(), null, (string) $payment->amount);
             }
         }
         foreach ($culqiRefunds as $reference => $line) {
             $refund = $localRefunds[$reference] ?? null;
             if ($refund === null) {
-                $differences[] = $this->difference('culqi_refund', $reference, $line->occurred_on->toDateString(), (string) $line->amount, null);
+                $differences[] = $this->difference($this->providerKind($reference, 'culqi_refund', 'mp_refund'), $reference, $line->occurred_on->toDateString(), (string) $line->amount, null);
             } elseif ($this->cents($refund->amount) !== $this->cents($line->amount)) {
                 $differences[] = $this->difference('amount', $reference, $line->occurred_on->toDateString(), (string) $line->amount, (string) $refund->amount);
             }
         }
         foreach ($localRefunds as $reference => $refund) {
             if (! isset($culqiRefunds[$reference])) {
-                $differences[] = $this->difference('local_refund', $reference, $refund->paid_at->timezone('America/Lima')->toDateString(), null, (string) $refund->amount);
+                $differences[] = $this->difference($this->providerKind($reference, 'local_refund', 'mp_local_refund'), $reference, $refund->paid_at->timezone('America/Lima')->toDateString(), null, (string) $refund->amount);
             }
         }
 
@@ -253,7 +284,7 @@ class CulqiReconciliation
             return trim((string) ($cells[$index] ?? ''));
         };
         $reference = $value('id');
-        if (preg_match('/^(chr_|ref_)[A-Za-z0-9_]+$/', $reference) !== 1) {
+        if (preg_match('/^(chr_|ref_|mp_|mpr_)[A-Za-z0-9_]+$/', $reference) !== 1) {
             throw new \InvalidArgumentException('id');
         }
         $kind = match (Str::ascii(mb_strtolower($value('tipo')))) {
@@ -261,7 +292,9 @@ class CulqiReconciliation
             'reembolso', 'devolucion', 'refund' => 'refund',
             default => throw new \InvalidArgumentException('tipo'),
         };
-        if (($kind === 'charge' && ! str_starts_with($reference, 'chr_')) || ($kind === 'refund' && ! str_starts_with($reference, 'ref_'))) {
+        $chargeId = str_starts_with($reference, 'chr_') || str_starts_with($reference, 'mp_');
+        $refundId = str_starts_with($reference, 'ref_') || str_starts_with($reference, 'mpr_');
+        if (($kind === 'charge' && ! $chargeId) || ($kind === 'refund' && ! $refundId)) {
             throw new \InvalidArgumentException('kind');
         }
 
@@ -461,6 +494,11 @@ class CulqiReconciliation
         $start = Carbon::createFromFormat('Y-m-d', $month.'-01', 'America/Lima')->startOfMonth();
 
         return [$start->clone()->utc(), $start->clone()->endOfMonth()->utc()];
+    }
+
+    private function providerKind(string $reference, string $culqiKind, string $mercadoPagoKind): string
+    {
+        return str_starts_with($reference, 'mp') ? $mercadoPagoKind : $culqiKind;
     }
 
     private function cents(mixed $amount): int

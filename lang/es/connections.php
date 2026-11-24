@@ -24,8 +24,10 @@ return [
     'probe_ok' => 'La conexión respondió. No se creó ningún cobro.',
     'probe_failed' => 'No se pudo leer la conexión. No se creó ningún cobro.',
     'culqi_off' => 'Culqi está apagado o le falta la clave secreta. No se llamó al proveedor.',
-    'provider_off' => 'Mercado Pago está apagado. No se activa en esta etapa.',
+    'provider_off' => 'Ese proveedor no está disponible.',
+    'mp_off' => 'Mercado Pago está apagado o le falta el token. No se llamó al proveedor.',
     'mp_detail' => 'Mercado Pago queda apagado. No hay claves ni llamada al proveedor.',
+    'access_token' => 'Token de acceso',
     'holds_fare' => 'NavegaYA guarda el pasaje web hasta pagarlo a la empresa.',
     'holds_intro' => 'En la web el pasajero paga el pasaje más el cargo de servicio. NavegaYA cobra todo y guarda el pasaje hasta pagarlo a la empresa. En el muelle y en la agencia no hay cargo.',
 ];

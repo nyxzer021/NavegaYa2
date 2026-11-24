@@ -31,6 +31,7 @@ class AdminRefundController extends Controller
                 ->paginate(20, ['*'], 'solicitudes'),
             'canRefundToCard' => $request->user()?->roles()->where('code', 'super_admin')->exists() === true,
             'culqiRefundsOpen' => (bool) config('services.culqi.enabled') && filled(config('services.culqi.secret_key')),
+            'mercadoPagoRefundsOpen' => filter_var(config('services.mercadopago.enabled'), FILTER_VALIDATE_BOOLEAN) && filled(config('services.mercadopago.access_token')),
         ]);
     }
 

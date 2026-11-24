@@ -90,6 +90,7 @@ use App\Http\Controllers\GuideController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MarketplaceBusinessController;
 use App\Http\Controllers\MarketplaceSubscriptionPaymentController;
+use App\Http\Controllers\MercadoPagoPaymentController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ProfileController;
@@ -317,7 +318,10 @@ Route::get('/reserva/{code}/pago', [PaymentController::class, 'show'])->name('pa
 Route::post('/reserva/{code}/pago/prueba', [PaymentController::class, 'sandboxConfirm'])->name('payments.sandbox-confirm');
 Route::post('/reserva/{code}/pago/culqi', [CulqiPaymentController::class, 'charge'])->name('payments.culqi.charge');
 Route::post('/reserva/{code}/pago/culqi/orden', [CulqiPaymentController::class, 'order'])->name('payments.culqi.order');
+Route::post('/reserva/{code}/pago/mercadopago', [MercadoPagoPaymentController::class, 'start'])->name('payments.mercadopago.start');
+Route::get('/reserva/{code}/pago/mercadopago/retorno', [MercadoPagoPaymentController::class, 'returned'])->name('payments.mercadopago.return');
 Route::post('/webhooks/culqi', [PaymentWebhookController::class, 'culqi'])->name('webhooks.culqi');
+Route::post('/webhooks/mercadopago', [PaymentWebhookController::class, 'mercadopago'])->name('webhooks.mercadopago');
 Route::get('/reserva/{code}/boletos', [PaymentController::class, 'tickets'])->name('tickets.show');
 Route::post('/reserva/{code}/reembolso', [PaymentController::class, 'requestRefund'])->middleware('auth')->name('tickets.refund');
 Route::get('/boleto/{ticketCode}/qr', [PaymentController::class, 'qr'])->name('tickets.qr');

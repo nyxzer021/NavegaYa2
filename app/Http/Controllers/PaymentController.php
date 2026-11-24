@@ -12,6 +12,7 @@ use App\Services\AdvertisementInventoryService;
 use App\Services\BookingPaymentService;
 use App\Services\CulqiGateway;
 use App\Services\MarketplaceSales;
+use App\Services\MercadoPagoGateway;
 use App\Services\TicketRefunds;
 use App\Support\AdminScope;
 use App\Support\BoardingQr;
@@ -32,9 +33,12 @@ class PaymentController extends Controller
         $culqi = app(CulqiGateway::class);
         $culqiEnabled = $culqi->ready();
         $culqiTestMode = $culqi->testMode();
+        $mercadoPago = app(MercadoPagoGateway::class);
+        $mercadoPagoEnabled = $mercadoPago->ready();
+        $mercadoPagoTestMode = $mercadoPago->testMode();
         $quote = $sales->quote($reservation);
 
-        return view('payments.show', compact('reservation', 'sandboxEnabled', 'culqiEnabled', 'culqiTestMode', 'quote'));
+        return view('payments.show', compact('reservation', 'sandboxEnabled', 'culqiEnabled', 'culqiTestMode', 'mercadoPagoEnabled', 'mercadoPagoTestMode', 'quote'));
     }
 
     public function sandboxConfirm(Request $request, string $code, BookingPaymentService $payments): RedirectResponse

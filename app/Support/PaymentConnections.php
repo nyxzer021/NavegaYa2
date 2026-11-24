@@ -10,6 +10,8 @@ class PaymentConnections
 {
     public const CULQI_RECEIVED = 'culqi.webhook_received_at';
 
+    public const MERCADOPAGO_RECEIVED = 'mercadopago.webhook_received_at';
+
     public static function rememberCulqi(): void
     {
         Cache::forever(self::CULQI_RECEIVED, now()->toIso8601String());
@@ -20,6 +22,25 @@ class PaymentConnections
         $cached = self::moment(Cache::get(self::CULQI_RECEIVED));
         $stored = self::moment(Payment::query()
             ->where('provider', 'culqi')
+            ->whereNotNull('webhook_event_id')
+            ->max('updated_at'));
+        if ($cached && $stored) {
+            return $cached->greaterThan($stored) ? $cached : $stored;
+        }
+
+        return $cached ?? $stored;
+    }
+
+    public static function rememberMercadoPago(): void
+    {
+        Cache::forever(self::MERCADOPAGO_RECEIVED, now()->toIso8601String());
+    }
+
+    public static function lastMercadoPagoWebhook(): ?Carbon
+    {
+        $cached = self::moment(Cache::get(self::MERCADOPAGO_RECEIVED));
+        $stored = self::moment(Payment::query()
+            ->where('provider', 'mercadopago')
             ->whereNotNull('webhook_event_id')
             ->max('updated_at'));
         if ($cached && $stored) {
