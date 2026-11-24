@@ -159,7 +159,7 @@ class CompanyCashController extends Controller
         return response()->streamDownload(function () use ($sessions): void {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Turno', 'Abierto', 'Cerrado', 'Sede', 'Vendedor', 'Referencia', 'Propósito', 'Método', 'Monto', 'Efectivo neto', 'Operación', 'Estado', 'Nota de ajuste', 'Fondo', 'Esperado', 'Contado', 'Diferencia', 'Nota de cierre']);
+            fputcsv($out, CsvCell::row(['Turno', 'Abierto', 'Cerrado', 'Sede', 'Vendedor', 'Referencia', 'Propósito', 'Método', 'Monto', 'Efectivo neto', 'Operación', 'Estado', 'Nota de ajuste', 'Fondo', 'Esperado', 'Contado', 'Diferencia', 'Nota de cierre']));
             foreach ($sessions as $session) {
                 $payments = $session->payments
                     ->filter(fn (Payment $payment): bool => in_array($payment->status, ['confirmed', 'voided'], true))

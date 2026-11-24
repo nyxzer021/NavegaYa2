@@ -53,7 +53,7 @@ class CompanyAuditController extends Controller
         return response()->streamDownload(function () use ($logs): void {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, [__('audit.csv_when'), __('audit.csv_who'), __('audit.csv_what'), __('audit.csv_ip')]);
+            fputcsv($out, CsvCell::row([__('audit.csv_when'), __('audit.csv_who'), __('audit.csv_what'), __('audit.csv_ip')]));
             foreach ($logs as $log) {
                 fputcsv($out, CsvCell::row([
                     DepartureSchedule::show($log->created_at, 'Y-m-d H:i'),

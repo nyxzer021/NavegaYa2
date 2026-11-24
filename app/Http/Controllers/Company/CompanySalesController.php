@@ -45,7 +45,7 @@ class CompanySalesController extends Controller
         return response()->streamDownload(function () use ($tickets): void {
             $file = fopen('php://output', 'w');
             fwrite($file, "\xEF\xBB\xBF");
-            fputcsv($file, ['Boleto', 'Fecha', 'Pasajero', 'Documento', 'Tramo', 'Salida', 'Asiento', 'Canal', 'Monto PEN', 'Estado']);
+            fputcsv($file, CsvCell::row(['Boleto', 'Fecha', 'Pasajero', 'Documento', 'Tramo', 'Salida', 'Asiento', 'Canal', 'Monto PEN', 'Estado']));
             foreach ($tickets as $ticket) {
                 fputcsv($file, CsvCell::row($this->ticketRow($ticket)));
             }

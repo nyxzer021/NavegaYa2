@@ -63,7 +63,7 @@ class AdminReportController extends Controller
 
         return response()->streamDownload(function () use ($rows) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Reserva', 'Boleto', 'Pasajero', 'DNI/documento', 'Modalidad', 'Ruta', 'Fecha y hora de salida', 'Unidad', 'Asiento', 'Estado de abordaje', 'Token QR', 'Enlace QR'], ';');
+            fputcsv($file, CsvCell::row(['Reserva', 'Boleto', 'Pasajero', 'DNI/documento', 'Modalidad', 'Ruta', 'Fecha y hora de salida', 'Unidad', 'Asiento', 'Estado de abordaje', 'Token QR', 'Enlace QR']), ';');
             foreach ($rows as $row) {
                 $ticket = $row->ticket;
                 $details = $this->details($row);

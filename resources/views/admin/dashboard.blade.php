@@ -345,7 +345,7 @@ window.dashboardData = {
     advertisingPipeline: @json($advertisingPipeline), subscriptionRevenue: @json($subscriptionRevenueSeries), subscriptionClients: @json($subscriptionClientSeries)
 };
 @php
-    $dashboardSummary = [
+    $dashboardSummary = array_map(fn (array $row): array => \App\Support\CsvCell::row($row), [
         ['Indicador', 'Valor'],
         ['Período', $from->format('d/m/Y').' - '.$to->format('d/m/Y')],
         ['Ventas procesadas', $grossSales],
@@ -360,7 +360,7 @@ window.dashboardData = {
         ['Anunciantes activos', $activeAdvertisersCount],
         ['Campañas publicitarias activas', $activeCampaignsCount],
         ['Ingreso mensual por publicidad', $monthlyAdvertisingRevenue],
-    ];
+    ]);
 @endphp
 window.dashboardSummary = @json($dashboardSummary);
 window.downloadDashboardCsv = function () { const csv = window.dashboardSummary.map(row => row.map(value => '"'+String(value).replaceAll('"','""')+'"').join(';')).join('\n'); const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='navegaya-resumen-{{ $from->format('Ymd') }}-{{ $to->format('Ymd') }}.csv'; a.click(); URL.revokeObjectURL(a.href); };

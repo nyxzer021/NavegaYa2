@@ -14,6 +14,7 @@ use App\Models\TransportRoute;
 use App\Models\User;
 use App\Models\Vessel;
 use App\Models\VesselSeat;
+use App\Services\BookingPaymentService;
 use App\Support\DepartureSchedule;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -22,8 +23,8 @@ class LocalReviewDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment('local')) {
-            throw new RuntimeException('LocalReviewDemoSeeder solo puede correr cuando APP_ENV=local.');
+        if (app()->environment('production') || ! app()->environment('local')) {
+            throw new RuntimeException('LocalReviewDemoSeeder no puede correr en producción. Solo está permitido cuando APP_ENV=local.');
         }
 
         $company = Organization::query()->where('email', 'revision-visual@navegaya.test')->first()
@@ -136,10 +137,12 @@ class LocalReviewDemoSeeder extends Seeder
                         'contact_name' => $name,
                         'contact_email' => $traveler->email,
                         'contact_phone' => '999000111',
+                        'base_amount' => 80,
+                        'discount_amount' => 0,
                         'total_amount' => 80,
-                        'status' => 'confirmed',
+                        'status' => 'pending_payment',
                         'sales_channel' => 'web',
-                        'paid_at' => now(),
+                        'expires_at' => now()->addHours(2),
                     ]
                 );
                 $seat = VesselSeat::query()->where('vessel_id', $vessel->id)->where('code', $seatCode)->first();
@@ -153,6 +156,14 @@ class LocalReviewDemoSeeder extends Seeder
                             'document_number' => $document,
                         ]
                     );
+                }
+                if ($seat && $reservation->status === 'pending_payment') {
+                    app(BookingPaymentService::class)->confirm($reservation, [
+                        'method' => 'card',
+                        'provider' => 'sandbox',
+                        'provider_reference' => $code,
+                        'provider_payload' => ['mode' => 'local_review'],
+                    ]);
                 }
             }
         }
