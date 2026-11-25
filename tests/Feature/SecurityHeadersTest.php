@@ -20,6 +20,7 @@ class SecurityHeadersTest extends TestCase
         $policy = (string) $this->get(route('home'))->assertOk()->headers->get('Content-Security-Policy');
 
         $this->assertStringContainsString("script-src 'self' 'unsafe-inline' 'unsafe-eval'", $policy);
+        $this->assertStringContainsString('https://fonts.gstatic.com', $policy);
         $this->assertStringContainsString("object-src 'none'", $policy);
         $this->assertStringContainsString("frame-ancestors 'none'", $policy);
     }
