@@ -242,6 +242,7 @@ class CompanyPortalMenu
             'lots' => '#6d28d9',
             'collections' => '#3B6D11',
             'refunds' => '#3B6D11',
+            'claims' => '#3B6D11',
             'agency_commissions' => '#3B6D11',
             'receipts' => '#3B6D11',
             'reports' => '#3B6D11',

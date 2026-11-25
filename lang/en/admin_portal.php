@@ -12,6 +12,7 @@ return [
         'cargo' => 'Parcels and freight',
         'reconciliation' => 'Collections and reconciliation',
         'refunds' => 'Refunds and payment incidents',
+        'claims' => 'Complaints book',
         'service_income' => 'Service fee income',
         'reports' => 'Reports',
         'fleet' => 'Fleet pending review',

@@ -21,7 +21,7 @@ class AdminPanelSmokeTest extends TestCase
             'admin.ports.index', 'admin.master-routes.index', 'admin.itineraries.index', 'admin.business-categories.index',
             'admin.tourism-partners.index', 'admin.tours.index', 'admin.advertisements.index',
             'admin.advertising-subscriptions.index', 'admin.sales.index', 'admin.commissions.index', 'admin.cargo.index',
-            'admin.refunds.index', 'admin.moderation.index', 'admin.audit.index', 'admin.navigation.index',
+            'admin.refunds.index', 'admin.claims.index', 'admin.moderation.index', 'admin.audit.index', 'admin.navigation.index',
             'admin.users.index', 'admin.settings.index',
         ];
 

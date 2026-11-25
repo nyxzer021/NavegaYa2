@@ -195,7 +195,7 @@ class CompanyPermissions
             'seller' => ['pos', 'parcels', 'sales', 'cash_close'],
             'agency' => ['pos', 'sales', 'lots'],
             'operator' => ['departures', 'boarding', 'fleet', 'crew', 'incidents'],
-            'finance' => ['sales', 'collections', 'refunds', 'agency_commissions', 'receipts', 'reports', 'cash_close', 'audit'],
+            'finance' => ['sales', 'collections', 'refunds', 'claims', 'agency_commissions', 'receipts', 'reports', 'cash_close', 'audit'],
         ];
     }
 
@@ -228,6 +228,7 @@ class CompanyPermissions
             self::module('finance', 'lots', 'company.agency-lots.index', ['company.agency-lots.*'], true),
             self::module('finance', 'collections', 'company.collections.index', ['company.collections.*'], true),
             self::module('finance', 'refunds', 'company.refunds.index', ['company.refunds.*'], true),
+            self::module('finance', 'claims', 'company.claims.index', ['company.claims.*'], false),
             self::module('finance', 'agency_commissions', 'company.agency-commissions.index', ['company.agency-commissions.*'], true),
             self::module('finance', 'receipts', 'company.receipts.index', ['company.receipts.*'], true),
             self::module('finance', 'reports', 'company.reports.index', ['company.reports.*'], true),

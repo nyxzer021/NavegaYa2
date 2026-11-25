@@ -62,6 +62,7 @@ return [
         'lots' => 'Mis lotes',
         'collections' => 'Cobros y conciliación',
         'refunds' => 'Reembolsos',
+        'claims' => 'Libro de Reclamaciones',
         'agency_commissions' => 'Cuentas de agencias',
         'receipts' => 'Comprobantes',
         'reports' => 'Reportes',

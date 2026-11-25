@@ -17,6 +17,7 @@
             $item('cargo', route('admin.cargo.index'), request()->routeIs('admin.cargo.*'), '#D85A30', 'parcels'),
             $item('reconciliation', route('admin.reconciliation.index'), request()->routeIs('admin.reconciliation.*'), '#D85A30', 'collections'),
             $item('refunds', route('admin.refunds.index'), request()->routeIs('admin.refunds.*'), '#D85A30', 'refunds'),
+            $item('claims', route('admin.claims.index'), request()->routeIs('admin.claims.*'), '#D85A30', 'claims'),
             $item('service_income', route('admin.commissions.index'), request()->routeIs('admin.commissions.*', 'admin.settlements.*'), '#D85A30', 'service_fee'),
             $item('reports', route('admin.reports.index'), request()->routeIs('admin.reports.*'), '#D85A30', 'reports'),
         ]],

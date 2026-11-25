@@ -12,6 +12,7 @@ return [
         'cargo' => 'Encomiendas y carga',
         'reconciliation' => 'Cobros y conciliación',
         'refunds' => 'Reembolsos e incidencias de pago',
+        'claims' => 'Libro de Reclamaciones',
         'service_income' => 'Ingresos por cargo de servicio',
         'reports' => 'Reportes',
         'fleet' => 'Flota por validar',
