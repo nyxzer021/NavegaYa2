@@ -30,4 +30,21 @@ class AdminPanelSmokeTest extends TestCase
             $this->get(route($routeName))->assertSuccessful();
         }
     }
+
+    public function test_policy_moderation_and_report_pages_have_their_own_tab_title(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'super_admin'], ['name' => 'Super administrador']));
+        $this->actingAs($admin);
+
+        $expected = [
+            'admin.base-policies.index' => 'Políticas base · NavegaYA',
+            'admin.company-policies.index' => 'Políticas de empresas · NavegaYA',
+            'admin.content-moderation.index' => 'Contenido por moderar · NavegaYA',
+            'admin.reports.index' => 'Reportes · NavegaYA',
+        ];
+        foreach ($expected as $routeName => $title) {
+            $this->get(route($routeName))->assertOk()->assertSee('<title>'.$title.'</title>', false);
+        }
+    }
 }

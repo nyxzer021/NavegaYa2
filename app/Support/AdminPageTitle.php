@@ -54,6 +54,9 @@ class AdminPageTitle
             'admin.home-hero.index' => 'Portada principal',
             'admin.site-heroes.index' => 'Portadas del sitio',
             'admin.moderation.index' => 'Moderación',
+            'admin.base-policies.index' => 'Políticas base',
+            'admin.company-policies.index' => 'Políticas de empresas',
+            'admin.content-moderation.index' => 'Contenido por moderar',
         ];
 
         if ($name !== null && isset($titles[$name])) {
