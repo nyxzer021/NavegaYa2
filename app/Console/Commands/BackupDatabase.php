@@ -6,6 +6,7 @@ use App\Support\BackupVault;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 
 class BackupDatabase extends Command
@@ -70,7 +71,8 @@ class BackupDatabase extends Command
         }
 
         if ($stdout) {
-            $this->output->write((string) File::get($temp));
+            // OUTPUT_RAW: el respaldo es binario y la consola no debe interpretar ni cambiar sus bytes.
+            $this->output->write((string) File::get($temp), false, OutputInterface::OUTPUT_RAW);
             File::delete($temp);
 
             return self::SUCCESS;
