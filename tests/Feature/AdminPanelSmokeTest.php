@@ -42,6 +42,7 @@ class AdminPanelSmokeTest extends TestCase
             'admin.company-policies.index' => 'Políticas de empresas · NavegaYA',
             'admin.content-moderation.index' => 'Contenido por moderar · NavegaYA',
             'admin.reports.index' => 'Reportes · NavegaYA',
+            'admin.sales.index' => 'Ventas de pasajes · NavegaYA',
         ];
         foreach ($expected as $routeName => $title) {
             $this->get(route($routeName))->assertOk()->assertSee('<title>'.$title.'</title>', false);

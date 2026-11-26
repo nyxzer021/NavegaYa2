@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title','Reportes · NavegaYA')
+@section('title', (request()->routeIs('admin.sales.*') ? 'Ventas de pasajes' : 'Reportes').' · NavegaYA')
 @section('content')
 <div class="mx-auto max-w-7xl space-y-5">
 <section class="flex flex-col gap-5 rounded-3xl bg-gradient-to-r from-emerald-800 to-teal-700 p-7 text-white shadow-sm md:flex-row md:items-center md:justify-between"><div><p class="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">Resumen comercial</p><h1 class="mt-2 text-2xl font-black tracking-tight">Ventas de pasajes</h1><p class="mt-1 max-w-2xl text-sm text-emerald-50">Consulta ingresos, reservas y boletos emitidos. El embarque y los pasajeros se controlan desde el panel de cada operador.</p></div><a href="{{ route('admin.reports.export', request()->query()) }}" class="inline-flex h-11 items-center justify-center rounded-xl bg-amber-400 px-5 text-xs font-black text-emerald-950">↓ Descargar CSV</a></section>
