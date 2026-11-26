@@ -122,6 +122,8 @@
         src="{{ $source }}"
         alt="{{ $selected['title'] }}"
         class="absolute inset-0 h-full w-full object-cover object-center brightness-[.88] saturate-[1.08]"
+        width="1600"
+        height="640"
         fetchpriority="{{ $theme === 'home' ? 'high' : 'auto' }}"
     >
     <div class="absolute inset-0 bg-gradient-to-r {{ $overlay }}"></div>

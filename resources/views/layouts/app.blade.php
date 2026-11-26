@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-slate-50">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('layouts.partials.site-icon')
     @php($pageTitle=$title??config('app.name','NavegaYA').' · Transporte Fluvial y Aéreo en Loreto')
     @php($defaultDescription=app()->getLocale()==='en'?'Compare verified river and air services, check official schedules, buy tickets securely and discover trusted destinations across the Peruvian Amazon.':'Compara servicios fluviales y aéreos verificados, consulta horarios oficiales, compra pasajes de forma segura y descubre destinos de la Amazonía peruana.')
     @php($pageDescription=\Illuminate\Support\Str::limit(strip_tags($description??$defaultDescription),160,''))

@@ -37,7 +37,7 @@
                 <article data-company-card class="flex min-w-0 flex-col gap-3 rounded-[var(--ny-radius)] border border-[var(--ny-border)] bg-[var(--ny-surface)] p-4 shadow-[var(--ny-shadow-sm)]">
                     <div class="flex items-center gap-3">
                         @if ($company->logo_path && ($company->profile_content_status ?? 'published') === 'published')
-                            <img src="{{ $company->logo_path }}" alt="" class="size-12 shrink-0 rounded-full object-cover">
+                            <img src="{{ $company->logo_path }}" alt="Logo de {{ $name }}" class="size-12 shrink-0 rounded-full object-cover" width="48" height="48" loading="lazy" decoding="async">
                         @else
                             <span aria-hidden="true" class="grid size-12 shrink-0 place-items-center rounded-full bg-[var(--ny-primary-hover)] text-base font-bold text-[var(--ny-text-on-dark)]">{{ $initials }}</span>
                         @endif

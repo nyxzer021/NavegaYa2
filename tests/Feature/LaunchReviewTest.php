@@ -54,9 +54,57 @@ class LaunchReviewTest extends TestCase
         $this->post(route('payments.culqi.charge', 'NO-EXISTE'), [])->assertStatus(429);
     }
 
+    public function test_login_password_reset_and_claims_are_rate_limited(): void
+    {
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->post('/login', []);
+        }
+        $this->post('/login', [])->assertStatus(429);
+
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            $this->post('/forgot-password', []);
+        }
+        $this->post('/forgot-password', [])->assertStatus(429);
+
+        for ($attempt = 0; $attempt < 6; $attempt++) {
+            $this->post('/libro-de-reclamaciones', []);
+        }
+        $this->post('/libro-de-reclamaciones', [])->assertStatus(429);
+    }
+
+    public function test_public_pages_link_the_icon_and_the_web_manifest(): void
+    {
+        $manifest = json_decode((string) file_get_contents(public_path('site.webmanifest')), true);
+
+        $this->assertSame('NavegaYA', $manifest['name'] ?? null);
+        $this->assertSame('/favicon.ico', $manifest['icons'][0]['src'] ?? null);
+        $this->assertFileExists(public_path('favicon.ico'));
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('rel="icon"', false)
+            ->assertSee('rel="manifest"', false)
+            ->assertSee('site.webmanifest', false)
+            ->assertDontSee('APP_DEBUG', false);
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('rel="icon"', false)
+            ->assertSee('<label', false);
+    }
+
     public function test_too_many_attempts_and_maintenance_have_branded_pages(): void
     {
         $this->assertStringContainsString('Demasiados intentos', view('errors.429')->render());
         $this->assertStringContainsString('Estamos en mantenimiento', view('errors.503')->render());
+        $this->assertStringContainsString('Página no encontrada', view('errors.404')->render());
+        $this->assertStringContainsString('La sesión expiró', view('errors.419')->render());
+        $this->assertStringContainsString('No pudimos completar la solicitud', view('errors.500')->render());
+
+        foreach (['404', '419', '429', '500', '503'] as $code) {
+            $html = view('errors.'.$code)->render();
+            $this->assertStringNotContainsString('Stack trace', $html);
+            $this->assertStringNotContainsString('vendor/laravel', $html);
+        }
     }
 }

@@ -77,7 +77,7 @@
     <div class="ny-trip-main">
     <div class="ny-trip-who">
         @if($organization->logo_path)
-            <img class="ny-trip-logo" src="{{ $organization->logo_path }}" alt="">
+            <img class="ny-trip-logo" src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}" width="48" height="48" loading="lazy" decoding="async">
         @else
             <span class="ny-trip-logo" aria-hidden="true">{{ $initials }}</span>
         @endif

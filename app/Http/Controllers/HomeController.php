@@ -136,7 +136,7 @@ class HomeController
     private function openRiverDepartures(?string $origin, ?string $destination, ?string $date): Builder
     {
         return RouteDeparture::query()
-            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.fares', 'vessel.organization', 'reservations.seats'])
+            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.fares', 'transportRoute.stops.port', 'vessel.organization', 'vessel.seats:id,vessel_id,space_type', 'reservations.seats'])
             ->where('status', 'scheduled')->where('is_published', true)
             ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
             ->where('departure_at', '>=', now())
@@ -148,7 +148,7 @@ class HomeController
     private function openAirDepartures(?string $origin, ?string $destination, ?string $date): Builder
     {
         return AirDeparture::query()
-            ->with(['airRoute', 'aircraft.organization', 'reservations.seats'])
+            ->with(['airRoute.fares', 'airRoute.stops.port', 'aircraft.organization', 'reservations.seats'])
             ->where('status', 'scheduled')->where('is_published', true)
             ->whereHas('airRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
             ->where('departure_at', '>=', now())

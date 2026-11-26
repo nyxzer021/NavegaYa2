@@ -251,8 +251,8 @@
             <div class="company-carousel" id="company-carousel">
                 @foreach($slides as $banner)
                     <div class="company-slide">
-                        <img class="company-slide-blur" src="{{ $banner->path }}" alt="" aria-hidden="true">
-                        <img class="company-slide-photo" src="{{ $banner->path }}" alt="Portada {{ $banner->position }} de {{ $name }}">
+                        <img class="company-slide-blur" src="{{ $banner->path }}" alt="" aria-hidden="true" width="1200" height="480" @unless($loop->first) loading="lazy" decoding="async" @endunless>
+                        <img class="company-slide-photo" src="{{ $banner->path }}" alt="Portada {{ $banner->position }} de {{ $name }}" width="1200" height="480" @unless($loop->first) loading="lazy" decoding="async" @endunless>
                     </div>
                 @endforeach
             </div>
@@ -268,7 +268,7 @@
                 <div class="company-head">
                     <div class="company-logo" id="company-logo">
                         @if($profilePublished && $organization->logo_path)
-                            <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}">
+                            <img src="{{ $organization->logo_path }}" alt="Logo de {{ $name }}" width="96" height="96" decoding="async">
                         @else
                             @php
                                 $initials = collect(preg_split('/\s+/u', trim($name)) ?: [])->filter()->take(2)->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('');
@@ -420,7 +420,7 @@
                 @foreach($organization->photos as $photo)
                     <figure @if($loop->index >= 8) data-photo-extra hidden @endif>
                         <button type="button" class="company-photo text-left" data-photo-open="{{ $photo->id }}" data-photo-index="{{ $loop->index }}" data-photo-src="{{ $photo->path }}" data-photo-alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" data-photo-title="{{ $photo->caption ?: 'Foto de '.$name }}" data-photo-album="{{ $photo->album?->title }}" data-photo-date="{{ $photo->created_at?->format('d/m/Y') }}" data-photo-comments="{{ route('companies.photos.comments', [$organization, $photo]) }}" data-photo-like="{{ route('companies.photos.likes', [$organization, $photo]) }}" data-photo-store="{{ route('companies.photos.comments.store', [$organization, $photo]) }}">
-                            <img src="{{ $photo->path }}" alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" loading="lazy">
+                            <img src="{{ $photo->path }}" alt="{{ $photo->alt_text ?: ($photo->caption ?: 'Foto de '.$name) }}" width="800" height="600" loading="lazy" decoding="async">
                             <span class="company-count"><span class="company-tone is-comentarios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3.2V6a2 2 0 0 1 2-2Z"/></svg></span>{{ $photo->published_comments_count }}</span>
                         </button>
                         @if($canManageMedia)
@@ -472,7 +472,7 @@
                 $unitDepartureCount = $departuresByVehicle->get($fleetItem['mode'].'-'.$unit->id)?->count() ?? 0;
             @endphp
             <article class="overflow-hidden rounded-3xl bg-white shadow-sm">
-                <img src="{{ $unit->cover_image_path ?: asset($fallbackImages[$index % count($fallbackImages)]) }}" alt="{{ $unit->name }}" class="h-44 w-full object-cover">
+                <img src="{{ $unit->cover_image_path ?: asset($fallbackImages[$index % count($fallbackImages)]) }}" alt="{{ $unit->name }}" class="h-44 w-full object-cover" width="640" height="360" loading="lazy" decoding="async">
                 <div class="p-5">
                     <div class="flex items-center justify-between gap-3">
                         <h3 class="text-lg font-black text-emerald-950">{{ $unit->name }}</h3>
