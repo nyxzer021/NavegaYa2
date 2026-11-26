@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\BackupVault;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -11,15 +12,22 @@ class BackupDatabase extends Command
 {
     protected $signature = 'navegaya:backup-database {--stdout : Escribe el respaldo en la salida estándar, para guardarlo fuera del contenedor} {--force : Lo ejecuta aunque los respaldos automáticos estén apagados}';
 
-    protected $description = 'Crea una copia PostgreSQL en storage/app/backups/database o en la salida estándar';
+    protected $description = 'Crea una copia PostgreSQL y la guarda en el bucket privado, en respaldos/base';
 
-    public function handle(): int
+    public function handle(BackupVault $vault): int
     {
         $stdout = (bool) $this->option('stdout');
         if (! $stdout && ! $this->option('force') && ! config('operations.backups.enabled')) {
             $this->components->info('Respaldos automáticos desactivados.');
 
             return self::SUCCESS;
+        }
+
+        if (! $stdout && ! $vault->privateReady()) {
+            Log::critical($vault->missingMessage());
+            $this->components->error($vault->missingMessage());
+
+            return self::FAILURE;
         }
 
         $connection = config('database.connections.'.config('database.default'));
@@ -29,11 +37,11 @@ class BackupDatabase extends Command
             return self::FAILURE;
         }
 
-        $directory = storage_path('app/backups/database');
-        $filename = 'navegaya-'.now()->format('Ymd-His').'.dump';
-        $path = $directory.DIRECTORY_SEPARATOR.$filename;
-        if (! $stdout) {
-            File::ensureDirectoryExists($directory);
+        $temp = tempnam(sys_get_temp_dir(), 'nydump');
+        if ($temp === false) {
+            $this->components->error('No se pudo preparar el archivo temporal del respaldo.');
+
+            return self::FAILURE;
         }
 
         $command = [
@@ -44,49 +52,46 @@ class BackupDatabase extends Command
             '--host='.(string) ($connection['host'] ?? '127.0.0.1'),
             '--port='.(string) ($connection['port'] ?? 5432),
             '--username='.(string) ($connection['username'] ?? ''),
+            '--file='.$temp,
             (string) $connection['database'],
         ];
-        if (! $stdout) {
-            $command[] = '--file='.$path;
-        }
         $process = new Process($command);
         $process->setTimeout(600);
         $process->setEnv(['PGPASSWORD' => (string) ($connection['password'] ?? '')]);
-        $process->run($stdout ? function (string $type, string $buffer): void {
-            if ($type === Process::OUT) {
-                $this->output->write($buffer);
-            }
-        } : null);
+        $process->run();
 
         if (! $process->isSuccessful()) {
-            if (! $stdout) {
-                File::delete($path);
-            }
-            Log::critical('Falló el respaldo PostgreSQL.', ['exit_code' => $process->getExitCode(), 'error' => $process->getErrorOutput()]);
+            File::delete($temp);
+            $vault->markFailure('No se pudo crear el respaldo de PostgreSQL.');
+            Log::critical('Falló el respaldo PostgreSQL.', ['exit_code' => $process->getExitCode()]);
             $this->components->error('No se pudo crear el respaldo de PostgreSQL.');
 
             return self::FAILURE;
         }
 
         if ($stdout) {
+            $this->output->write((string) File::get($temp));
+            File::delete($temp);
+
             return self::SUCCESS;
         }
 
-        $this->deleteExpired($directory);
-        Log::info('Respaldo PostgreSQL creado.', ['file' => $filename]);
-        $this->components->info("Respaldo creado: {$filename}");
+        $path = BackupVault::DATABASE_PREFIX.'/navegaya-'.$vault->stamp().'.dump';
+        $stored = $vault->putFile($path, $temp);
+        File::delete($temp);
+        if (! $stored) {
+            $vault->markFailure('No se pudo subir el respaldo al bucket privado.');
+            Log::critical('No se pudo subir el respaldo PostgreSQL al bucket privado.');
+            $this->components->error('No se pudo subir el respaldo al bucket privado.');
+
+            return self::FAILURE;
+        }
+
+        $vault->prune(BackupVault::DATABASE_PREFIX);
+        $vault->clearFailure();
+        Log::info('Respaldo PostgreSQL guardado en el bucket privado.', ['file' => $path]);
+        $this->components->info('Respaldo guardado en el bucket privado: '.$path);
 
         return self::SUCCESS;
-    }
-
-    private function deleteExpired(string $directory): void
-    {
-        $threshold = now()->subDays(config('operations.backups.keep_days'));
-
-        foreach (File::files($directory) as $file) {
-            if ($file->getMTime() < $threshold->getTimestamp()) {
-                File::delete($file->getPathname());
-            }
-        }
     }
 }

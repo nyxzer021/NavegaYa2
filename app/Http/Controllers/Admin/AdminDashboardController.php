@@ -21,6 +21,7 @@ use App\Models\Ticket;
 use App\Models\TransportRoute;
 use App\Models\Vessel;
 use App\Services\MarketplaceSales;
+use App\Support\BackupVault;
 use App\Support\DepartureSchedule;
 use App\Support\PhoneNumber;
 use Carbon\Carbon;
@@ -489,8 +490,10 @@ class AdminDashboardController extends Controller
             ->whereHas('organization.subscriptions', fn ($query) => $query->where('status', 'active'))
             ->orderBy('name')
             ->get(['id', 'name']);
+        $backupAlert = app(BackupVault::class)->alert();
 
         return view('admin.dashboard', compact(
+            'backupAlert',
             'period',
             'from',
             'to',

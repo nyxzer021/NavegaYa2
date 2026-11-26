@@ -107,6 +107,9 @@
     $requestSummary = app(\App\Support\AdminRequestInbox::class)->summary();
 @endphp
 <div id="executiveDashboard" data-server-area="{{ $isAdvertisingDashboard ? 'publicidad' : 'transporte' }}" class="w-full space-y-4 text-slate-800">
+    @if($backupAlert)
+        <p role="status" style="margin:0;border:1px solid var(--ny-tone-coral);border-radius:12px;background:var(--ny-surface);padding:12px 16px;color:var(--ny-tone-coral-deep);font-size:14px;line-height:1.4;">{{ $backupAlert }}</p>
+    @endif
     <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
