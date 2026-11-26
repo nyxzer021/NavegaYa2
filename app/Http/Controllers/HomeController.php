@@ -136,7 +136,7 @@ class HomeController
     private function openRiverDepartures(?string $origin, ?string $destination, ?string $date): Builder
     {
         return RouteDeparture::query()
-            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.organization', 'reservations.seats'])
+            ->with(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.fares', 'vessel.organization', 'reservations.seats'])
             ->where('status', 'scheduled')->where('is_published', true)
             ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
             ->where('departure_at', '>=', now())

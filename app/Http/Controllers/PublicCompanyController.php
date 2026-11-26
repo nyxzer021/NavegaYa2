@@ -114,9 +114,9 @@ class PublicCompanyController
             'vessels.basePort',
             'transportRoutes.originPort',
             'transportRoutes.destinationPort',
-            'transportRoutes.departures' => fn ($query) => $query->where('departure_at', '>=', now()->startOfDay())->with(['vessel.organization', 'reservations.seats']),
+            'transportRoutes.departures' => fn ($query) => $query->where('departure_at', '>=', now()->startOfDay())->with(['transportRoute.fares', 'transportRoute.originPort', 'transportRoute.destinationPort', 'vessel.organization', 'reservations.seats']),
             'aircraft',
-            'airRoutes.departures' => fn ($query) => $query->where('departure_at', '>=', now()->startOfDay())->with(['aircraft.organization', 'reservations.seats']),
+            'airRoutes.departures' => fn ($query) => $query->where('departure_at', '>=', now()->startOfDay())->with(['airRoute.fares', 'aircraft.organization', 'reservations.seats']),
         ]);
         $reviews = CompanyReview::with('user')->where('organization_id', $organization->id)->where('status', 'published')->latest()->get();
         $average = round((float) $reviews->avg('rating'), 1);

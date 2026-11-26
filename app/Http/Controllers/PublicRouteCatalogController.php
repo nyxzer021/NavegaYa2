@@ -31,7 +31,7 @@ class PublicRouteCatalogController
 
             return view('routes.air', compact('airDepartures', 'cities', 'dateGroups'));
         }
-        $departures = RouteDeparture::with(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.stops.port', 'vessel.organization', 'reservations.seats'])
+        $departures = RouteDeparture::with(['transportRoute.originPort', 'transportRoute.destinationPort', 'transportRoute.fares', 'transportRoute.stops.port', 'vessel.organization', 'reservations.seats'])
             ->where('status', 'scheduled')->where('is_published', true)
             ->whereHas('transportRoute.organization', fn ($organization) => $organization->where('is_marketplace_paused', false))
             ->where('departure_at', '>=', now())

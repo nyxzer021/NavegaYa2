@@ -104,6 +104,7 @@ use App\Http\Controllers\PublicLocaleController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicPortController;
 use App\Http\Controllers\PublicRouteCatalogController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StaffInvitationController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TravelController;
@@ -116,6 +117,8 @@ Route::post('/seguimiento/encomienda', [CargoTrackingController::class, 'lookup'
 Route::get('/anunciate', [PublicAdController::class, 'showLanding'])->name('advertising.create');
 Route::post('/anunciate', [PublicAdController::class, 'storeLead'])->middleware('throttle:10,1')->name('advertising.store');
 Route::get('/pagina/{slug}', [PublicPageController::class, 'show'])->name('pages.show');
+Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 Route::get('/clima-loreto', [WeatherController::class, 'index'])->name('weather.index');
 Route::match(['get', 'post'], '/idioma', [PublicLocaleController::class, 'store'])->name('public.locale');
 Route::get('/descubrir', [DiscoverController::class, 'index'])->name('discover.index');
@@ -147,7 +150,7 @@ Route::post('/destinos/{city}/valoraciones', [DiscoverController::class, 'review
 Route::get('/dashboard', DashboardController::class)->middleware('auth')->name('dashboard');
 Route::get('/empresa/panel', [CompanyDashboardController::class, 'index'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.dashboard');
 Route::patch('/empresa/panel/perfil', [CompanyDashboardController::class, 'updateProfile'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.dashboard.profile');
-Route::post('/empresa/personal', [CompanyStaffController::class, 'store'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.store');
+Route::post('/empresa/personal', [CompanyStaffController::class, 'store'])->middleware(['auth', 'role:company_admin', 'company.profile', 'throttle:20,1'])->name('company.staff.store');
 Route::patch('/empresa/personal/{user}', [CompanyStaffController::class, 'update'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.update');
 Route::patch('/empresa/personal/{user}/estado', [CompanyStaffController::class, 'toggle'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.toggle');
 Route::patch('/empresa/personal/invitaciones/{invitation}', [CompanyStaffController::class, 'updateInvitation'])->middleware(['auth', 'role:company_admin', 'company.profile'])->name('company.staff.invitations.update');
@@ -326,9 +329,9 @@ Route::get('/libro-de-reclamaciones/constancia/{token}', [ConsumerClaimControlle
 Route::get('/libro-de-reclamaciones/constancia/{token}/pdf', [ConsumerClaimController::class, 'pdf'])->name('claims.pdf');
 Route::get('/reserva/{code}/pago', [PaymentController::class, 'show'])->name('payments.show');
 Route::post('/reserva/{code}/pago/prueba', [PaymentController::class, 'sandboxConfirm'])->name('payments.sandbox-confirm');
-Route::post('/reserva/{code}/pago/culqi', [CulqiPaymentController::class, 'charge'])->name('payments.culqi.charge');
-Route::post('/reserva/{code}/pago/culqi/orden', [CulqiPaymentController::class, 'order'])->name('payments.culqi.order');
-Route::post('/reserva/{code}/pago/mercadopago', [MercadoPagoPaymentController::class, 'start'])->name('payments.mercadopago.start');
+Route::post('/reserva/{code}/pago/culqi', [CulqiPaymentController::class, 'charge'])->middleware('throttle:10,1')->name('payments.culqi.charge');
+Route::post('/reserva/{code}/pago/culqi/orden', [CulqiPaymentController::class, 'order'])->middleware('throttle:10,1')->name('payments.culqi.order');
+Route::post('/reserva/{code}/pago/mercadopago', [MercadoPagoPaymentController::class, 'start'])->middleware('throttle:10,1')->name('payments.mercadopago.start');
 Route::get('/reserva/{code}/pago/mercadopago/retorno', [MercadoPagoPaymentController::class, 'returned'])->name('payments.mercadopago.return');
 Route::post('/webhooks/culqi', [PaymentWebhookController::class, 'culqi'])->name('webhooks.culqi');
 Route::post('/webhooks/mercadopago', [PaymentWebhookController::class, 'mercadopago'])->name('webhooks.mercadopago');
@@ -586,8 +589,8 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
 Route::get('/activar-empresa/{token}', [CompanyActivationController::class, 'create'])->name('company.activation');
 Route::post('/activar-empresa/{token}', [CompanyActivationController::class, 'store']);
 Route::get('/equipo/invitacion/{token}', [StaffInvitationController::class, 'create'])->name('staff.invitation');
-Route::post('/equipo/invitacion/{token}', [StaffInvitationController::class, 'store'])->name('staff.invitation.store');
+Route::post('/equipo/invitacion/{token}', [StaffInvitationController::class, 'store'])->middleware('throttle:6,1')->name('staff.invitation.store');
 Route::get('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'create'])->name('agency.invitation');
-Route::post('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'store'])->name('agency.invitation.store');
+Route::post('/agencia/invitacion/{token}', [AgencyInvitationController::class, 'store'])->middleware('throttle:6,1')->name('agency.invitation.store');
 
 require __DIR__.'/auth.php';
