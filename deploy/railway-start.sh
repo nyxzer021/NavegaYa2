@@ -8,7 +8,9 @@ php artisan route:cache
 php artisan view:cache
 
 if [ "${RUN_SCHEDULER:-1}" != "0" ]; then
-  php artisan schedule:work --no-interaction &
+  nohup php artisan schedule:work --no-interaction &
 fi
 
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
+# Modo clásico: escucha en $PORT, sin worker. HTTPS lo termina el proxy de Railway.
+export SERVER_NAME=":${PORT:-8080}"
+exec frankenphp run --config /etc/frankenphp/Caddyfile --adapter caddyfile
