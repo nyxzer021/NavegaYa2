@@ -6,7 +6,6 @@
     $daysRemaining = $isActive ? max(0, today()->diffInDays($subscription->ends_on)) : 0;
 @endphp
 <section class="space-y-5">
-    @if(session('success'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-800"> {{session('success')}}</div>@endif
     <div class="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
         <article class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 p-7 text-white shadow-xl">
             <div class="absolute -right-14 -top-14 h-48 w-48 rounded-full bg-amber-300/10 blur-2xl"></div>

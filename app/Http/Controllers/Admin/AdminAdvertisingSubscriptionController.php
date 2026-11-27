@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Services\SubscriptionPaymentService;
+use App\Support\AuditRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -71,7 +72,7 @@ class AdminAdvertisingSubscriptionController extends Controller
         } else {
             $subscription = Subscription::create(['organization_id' => $data['organization_id']] + $values);
         }
-        AuditLog::create(['user_id' => $request->user()->id, 'event' => 'manual_subscription_activation', 'subject_type' => Subscription::class, 'subject_id' => $subscription->id, 'changes' => ['reason' => $data['reason'], 'months' => (int) $data['months']], 'ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'route_name' => $request->route()?->getName(), 'http_method' => $request->method(), 'created_at' => now()]);
+        AuditRecorder::record($request, 'subscription.manual_activation', $subscription, ['reason' => $data['reason'], 'months' => (int) $data['months'], 'plan' => $plan->name], (int) $data['organization_id']);
 
         return back()->with('success', 'Excepción registrada y suscripción activada manualmente.');
     }
@@ -82,6 +83,8 @@ class AdminAdvertisingSubscriptionController extends Controller
         $plan = SubscriptionPlan::findOrFail($data['subscription_plan_id']);
         $subscription->update($data + ['monthly_price' => $plan->monthly_price, 'currency' => $plan->currency, 'benefits_snapshot' => $plan->benefits, 'cancelled_at' => $data['status'] === 'cancelled' ? now() : null]);
 
+        AuditRecorder::record($request, 'subscription.updated', $subscription, ['plan' => $plan->name, 'status' => $data['status']], $subscription->organization_id);
+
         return back()->with('success', 'Suscripción actualizada.');
     }
 
@@ -91,12 +94,15 @@ class AdminAdvertisingSubscriptionController extends Controller
         $base = $subscription->ends_on && $subscription->ends_on->isFuture() ? $subscription->ends_on->copy() : today();
         $subscription->loadMissing('plan')->update(['ends_on' => $base->addMonths($months), 'status' => 'active', 'benefits_snapshot' => $subscription->plan?->benefits, 'cancelled_at' => null]);
 
+        AuditRecorder::record($request, 'subscription.renewed', $subscription, ['months' => (int) $months, 'ends_on' => $subscription->ends_on?->toDateString()], $subscription->organization_id);
+
         return back()->with('success', "Suscripción renovada por {$months} mes(es).");
     }
 
-    public function cancel(Subscription $subscription): RedirectResponse
+    public function cancel(Request $request, Subscription $subscription): RedirectResponse
     {
         $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+        AuditRecorder::record($request, 'subscription.cancelled', $subscription, [], $subscription->organization_id);
 
         return back()->with('success', 'Suscripción cancelada y registrada como baja.');
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use App\Services\AdvertisementImageService;
+use App\Support\AuditRecorder;
 use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -78,7 +79,7 @@ class AdminAdvertisementController extends Controller
         return back()->with('success', 'Campaña actualizada.');
     }
 
-    public function approve(Advertisement $ad): RedirectResponse
+    public function approve(Request $request, Advertisement $ad): RedirectResponse
     {
         $this->ensureCarouselCapacity(['status' => 'active', 'placements' => $ad->placements], $ad);
         $startsOn = $ad->starts_on ?: today();
@@ -90,21 +91,24 @@ class AdminAdvertisementController extends Controller
             $endsOn = $startsOn->copy()->addDays((int) $duration);
         }
         $ad->update(['status' => 'active', 'starts_on' => $startsOn, 'ends_on' => $endsOn]);
+        AuditRecorder::record($request, 'campaign.approved', $ad, ['business' => $ad->business_name, 'ends_on' => $endsOn?->toDateString()], $ad->organization_id);
 
         return back()->with('success', 'Anuncio aprobado y publicado.');
     }
 
-    public function pause(Advertisement $ad): RedirectResponse
+    public function pause(Request $request, Advertisement $ad): RedirectResponse
     {
         $ad->update(['status' => 'paused']);
+        AuditRecorder::record($request, 'campaign.paused', $ad, ['business' => $ad->business_name], $ad->organization_id);
 
         return back()->with('success', 'Anuncio pausado.');
     }
 
-    public function resume(Advertisement $ad): RedirectResponse
+    public function resume(Request $request, Advertisement $ad): RedirectResponse
     {
         $this->ensureCarouselCapacity(['status' => 'active', 'placements' => $ad->placements], $ad);
         $ad->update(['status' => 'active']);
+        AuditRecorder::record($request, 'campaign.resumed', $ad, ['business' => $ad->business_name], $ad->organization_id);
 
         return back()->with('success', 'Anuncio reactivado.');
     }
