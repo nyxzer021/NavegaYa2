@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ConsumerClaim;
 use App\Models\Reservation;
 use App\Models\Ticket;
+use App\Models\TicketRefund;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,7 +24,7 @@ class TravelController extends Controller
                 ->whereHas('reservationSeat.reservation', fn ($query) => $query->where('user_id', auth()->id()))
                 ->get()->sortByDesc(fn (Ticket $ticket) => $ticket->issued_at)->values();
             $reservations = Reservation::query()->where('user_id', auth()->id())
-                ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'airDeparture.airRoute', 'airDeparture.aircraft', 'seats.ticket'])
+                ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'airDeparture.airRoute', 'airDeparture.aircraft', 'seats.ticket', 'seats.seat', 'seats.aircraftSeat'])
                 ->latest()->limit(50)->get();
             foreach ($reservations as $reservation) {
                 $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
@@ -38,7 +40,22 @@ class TravelController extends Controller
             }
         }
 
-        return view('travels.lookup', compact('tickets', 'accountMode', 'reservations', 'travelSummary') + ['searched' => false, 'document' => '', 'reference' => '']);
+        $nextTrip = $reservations
+            ->filter(function (Reservation $reservation): bool {
+                $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
+
+                return $reservation->status === 'confirmed' && $trip?->departure_at?->isFuture() && $trip?->status !== 'cancelled';
+            })
+            ->sortBy(fn (Reservation $reservation) => ($reservation->isAir() ? $reservation->airDeparture : $reservation->departure)?->departure_at)
+            ->first();
+        $refunds = $accountMode
+            ? TicketRefund::query()->whereIn('reservation_id', $reservations->pluck('id'))->latest()->get()->unique('reservation_id')->keyBy('reservation_id')
+            : collect();
+        $claims = $accountMode && auth()->user()->hasVerifiedEmail()
+            ? ConsumerClaim::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(auth()->user()->email)])->latest()->limit(10)->get()
+            : collect();
+
+        return view('travels.lookup', compact('tickets', 'accountMode', 'reservations', 'travelSummary', 'nextTrip', 'refunds', 'claims') + ['searched' => false, 'document' => '', 'reference' => '']);
     }
 
     public function search(Request $request): View
@@ -47,7 +64,7 @@ class TravelController extends Controller
         $tickets = $this->ticketsFor($data['document'], $data['reference']);
         session(['travels_ticket_codes' => $tickets->pluck('code')->all()]);
 
-        return view('travels.lookup', ['tickets' => $tickets, 'reservations' => collect(), 'travelSummary' => [], 'searched' => true, 'accountMode' => false, 'document' => $data['document'], 'reference' => $data['reference']]);
+        return view('travels.lookup', ['tickets' => $tickets, 'reservations' => collect(), 'travelSummary' => [], 'nextTrip' => null, 'refunds' => collect(), 'claims' => collect(), 'searched' => true, 'accountMode' => false, 'document' => $data['document'], 'reference' => $data['reference']]);
     }
 
     public function lookup(Request $request): JsonResponse

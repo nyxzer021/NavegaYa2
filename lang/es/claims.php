@@ -94,4 +94,6 @@ return [
     'csv_request' => 'Pedido',
     'csv_due' => 'Plazo',
     'csv_response' => 'Respuesta',
+    'traveler_answered' => 'Respondido',
+    'traveler_within' => 'En plazo',
 ];

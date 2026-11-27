@@ -94,4 +94,6 @@ return [
     'csv_request' => 'Request',
     'csv_due' => 'Deadline',
     'csv_response' => 'Response',
+    'traveler_answered' => 'Answered',
+    'traveler_within' => 'Within the deadline',
 ];

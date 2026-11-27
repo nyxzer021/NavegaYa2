@@ -42,7 +42,7 @@
     @endforeach
     <a class="button" href="{{ route('claims.create', ['empresa' => $organization->id, 'reserva' => $reservation->code]) }}"><x-ui.icon name="claims" class="h-4 w-4" /> {{ __('claims.book') }}</a>
     @if($refundPanel)
-        <section class="ask">
+        <section class="ask" id="reembolso">
             <strong>{{ __('refunds.ask') }}</strong>
             @if($refundPanel['boarded'])
                 <p>{{ __('refunds.boarded') }}</p>
