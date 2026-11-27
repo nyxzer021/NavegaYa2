@@ -40,6 +40,31 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="phone" value="WhatsApp o teléfono" />
+            <x-text-input id="phone" name="phone" type="tel" inputmode="tel" class="mt-1 block w-full" :value="old('phone', $user->phone)" autocomplete="tel" placeholder="965 111 222" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-[180px_1fr]">
+            <div>
+                <x-input-label for="document_type" value="Tipo de documento" />
+                <select id="document_type" name="document_type" class="mt-1 block min-h-11 w-full rounded-md border-slate-300 shadow-sm focus:border-emerald-600 focus:ring-emerald-600">
+                    <option value="">Elige</option>
+                    @foreach(['DNI' => 'DNI', 'CE' => 'Carné de extranjería', 'Pasaporte' => 'Pasaporte'] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('document_type', $user->document_type) === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <x-input-error class="mt-2" :messages="$errors->get('document_type')" />
+            </div>
+            <div>
+                <x-input-label for="document_number" value="Número de documento" />
+                <x-text-input id="document_number" name="document_number" type="text" class="mt-1 block w-full" :value="old('document_number', $user->document_number)" maxlength="20" />
+                <x-input-error class="mt-2" :messages="$errors->get('document_number')" />
+            </div>
+        </div>
+        <p class="text-sm text-slate-600">Con estos datos, tu nombre, documento y WhatsApp aparecen ya llenos cuando compras un pasaje.</p>
+
         <div class="flex items-center gap-4">
             <x-primary-button>Guardar</x-primary-button>
 

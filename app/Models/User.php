@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'phone', 'document_number', 'google_id', 'password', 'email_verified_at', 'agency_id', 'organization_site_id', 'last_login_at'])]
+#[Fillable(['name', 'email', 'phone', 'document_type', 'document_number', 'google_id', 'password', 'email_verified_at', 'agency_id', 'organization_site_id', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -84,6 +84,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isCustomer(): bool
     {
         return $this->roles()->whereIn('code', ['customer', 'traveler', 'passenger'])->exists();
+    }
+
+    /**
+     * Guarda el teléfono y el documento de la primera compra si el perfil aún no los tiene,
+     * para que la siguiente compra aparezca ya llena. Nunca reemplaza un dato que el viajero ya guardó.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function rememberBuyerDetails(array $data): void
+    {
+        $phone = trim((string) ($data['contact_phone'] ?? ''));
+        $document = trim((string) ($data['contact_document'] ?? ''));
+        $changes = array_filter([
+            'phone' => blank($this->phone) && $phone !== '' ? mb_substr($phone, 0, 40) : null,
+            'document_number' => blank($this->document_number) && $document !== '' ? mb_substr($document, 0, 20) : null,
+        ]);
+        if ($changes !== []) {
+            $this->forceFill($changes)->save();
+        }
     }
 
     public function claimGuestPurchases(): void

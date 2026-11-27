@@ -28,6 +28,7 @@ class AirBookingController extends Controller
     public function store(StoreAirBookingRequest $request, AirDeparture $departure): RedirectResponse
     {
         $data = $request->validated();
+        $request->user()?->rememberBuyerDetails($data);
         $departure->loadMissing('airRoute.organization');
         abort_unless(! $departure->airRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         if (count($data['seats']) !== count($data['passengers'])) {

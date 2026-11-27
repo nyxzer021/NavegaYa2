@@ -93,6 +93,7 @@ class BookingController extends Controller
             'infants.*.document' => ['required', 'string', 'max:40'],
             'discount_id' => ['nullable', 'integer', 'exists:discounts,id'],
         ]);
+        $request->user()?->rememberBuyerDetails($data);
         $departure->loadMissing('transportRoute.organization');
         abort_unless(! $departure->transportRoute->organization->is_marketplace_paused && $departure->is_published && $departure->sales_paused_at === null && $departure->status === 'scheduled' && $departure->departure_at->isFuture(), 404);
         if (count($data['seats']) !== count($data['passengers'])) {
