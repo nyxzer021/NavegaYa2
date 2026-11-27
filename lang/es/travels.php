@@ -1,6 +1,16 @@
 <?php
 
 return [
+    'download_certificate' => 'Constancia de pago',
+    'rate_trip' => 'Valora tu viaje',
+    'rating' => 'Tu calificación',
+    'star' => 'estrella',
+    'stars' => 'estrellas',
+    'comment' => 'Cuéntanos cómo te fue',
+    'comment_hint' => 'Puntualidad, atención, comodidad de la embarcación...',
+    'send_review' => 'Enviar opinión',
+    'reviewed' => 'Valoraste este viaje con :stars de 5',
+    'review_pending' => 'en revisión',
     'status_refunded' => 'Devuelto',
     'tab_upcoming' => 'Próximos',
     'tab_history' => 'Historial',

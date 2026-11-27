@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanyReview;
 use App\Models\ConsumerClaim;
 use App\Models\Reservation;
 use App\Models\Ticket;
@@ -46,6 +47,9 @@ class TravelController extends Controller
         $refunds = $accountMode
             ? TicketRefund::query()->whereIn('reservation_id', $reservations->pluck('id'))->latest()->get()->unique('reservation_id')->keyBy('reservation_id')
             : collect();
+        $tripReviews = $accountMode
+            ? CompanyReview::query()->whereIn('reservation_id', $reservations->pluck('id'))->get()->keyBy('reservation_id')
+            : collect();
         $claims = $accountMode && auth()->user()->hasVerifiedEmail()
             ? ConsumerClaim::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(auth()->user()->email)])->latest()->limit(10)->get()
             : collect();
@@ -65,7 +69,7 @@ class TravelController extends Controller
             : new LengthAwarePaginator($historyList->forPage($page, 10)->values(), $historyList->count(), 10, $page, ['path' => route('travels.index'), 'pageName' => 'pagina', 'query' => ['vista' => 'historial']]);
         $tripCounts = ['proximos' => $upcomingList->count(), 'historial' => $historyList->count()];
 
-        return view('travels.lookup', compact('tickets', 'accountMode', 'travelSummary', 'nextTrip', 'refunds', 'claims', 'tripView', 'tripCounts') + ['reservations' => $tripList, 'searched' => false, 'document' => '', 'reference' => '']);
+        return view('travels.lookup', compact('tickets', 'accountMode', 'travelSummary', 'nextTrip', 'refunds', 'claims', 'tripView', 'tripCounts', 'tripReviews') + ['reservations' => $tripList, 'searched' => false, 'document' => '', 'reference' => '']);
     }
 
     /**

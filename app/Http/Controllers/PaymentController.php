@@ -13,6 +13,7 @@ use App\Services\BookingPaymentService;
 use App\Services\CulqiGateway;
 use App\Services\MarketplaceSales;
 use App\Services\MercadoPagoGateway;
+use App\Services\PaymentReceipts;
 use App\Services\TicketRefunds;
 use App\Support\AdminScope;
 use App\Support\BoardingQr;
@@ -165,6 +166,24 @@ class PaymentController extends Controller
         }
 
         return ['open' => $open, 'boarded' => $boarded, 'quote' => $quote];
+    }
+
+    public function certificate(Request $request, string $code, PaymentReceipts $receipts)
+    {
+        $reservation = Reservation::query()->where('code', $code)->firstOrFail();
+        abort_unless($this->ownsReservation($request->user(), $reservation), 403);
+        $payment = Payment::query()->where('reservation_id', $reservation->id)
+            ->whereIn('status', ['confirmed', 'succeeded'])
+            ->where(fn ($query) => $query->whereNull('purpose')->orWhere('purpose', 'ticket'))
+            ->where('amount', '>', 0)->oldest()->first();
+        abort_if($payment === null, 404);
+        $receipt = $receipts->issue($payment);
+        abort_if($receipt === null, 404);
+
+        return app('dompdf.wrapper')
+            ->loadView('company.receipts.certificate', $receipts->certificate($receipt))
+            ->setPaper('a4')
+            ->download($receipt->number.'.pdf');
     }
 
     private function ownsReservation(?User $user, Reservation $reservation): bool

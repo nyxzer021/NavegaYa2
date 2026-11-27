@@ -136,6 +136,50 @@ class TravelerTripsTest extends TestCase
             ->assertDontSee(route('tickets.pdf', 'BOL-DVP-11'), false);
     }
 
+    public function test_the_traveler_downloads_the_payment_certificate_only_for_an_own_paid_trip(): void
+    {
+        $traveler = $this->traveler('constancia@viajero.test');
+        $trip = $this->riverTrip($traveler, 'NY-CON-01', 'BOL-CON-01', '3A', 'Puerto Constancia', 'Lancha Constancia', now()->addDays(4));
+
+        $this->actingAs($traveler)->get(route('tickets.certificate', 'NY-CON-01'))->assertNotFound();
+
+        Payment::create([
+            'reservation_id' => $trip['reservation']->id, 'purpose' => 'ticket', 'method' => 'yape', 'provider' => 'sandbox',
+            'provider_reference' => 'PAY-CON-01', 'amount' => 95, 'status' => 'confirmed', 'paid_at' => now(),
+        ]);
+
+        $this->actingAs($traveler)->get(route('travels.index'))
+            ->assertOk()
+            ->assertSee(route('tickets.certificate', 'NY-CON-01'), false);
+        $response = $this->actingAs($traveler)->get(route('tickets.certificate', 'NY-CON-01'));
+        $response->assertOk();
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
+
+        $stranger = $this->traveler('ajeno-constancia@viajero.test');
+        $this->actingAs($stranger)->get(route('tickets.certificate', 'NY-CON-01'))->assertForbidden();
+    }
+
+    public function test_a_completed_trip_can_be_rated_once_from_my_trips(): void
+    {
+        $traveler = $this->traveler('valora@viajero.test');
+        $trip = $this->riverTrip($traveler, 'NY-VAL-01', 'BOL-VAL-01', '4A', 'Puerto Valora', 'Lancha Valora', now()->subDays(2));
+        $trip['reservation']->departure->update(['status' => 'completed']);
+
+        $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'historial']))
+            ->assertOk()
+            ->assertSee(__('travels.rate_trip'))
+            ->assertSee(route('companies.review', $trip['company']->id), false);
+
+        $this->actingAs($traveler)->post(route('companies.review', $trip['company']->id), [
+            'reservation_id' => $trip['reservation']->id, 'rating' => 4, 'comment' => 'Salió puntual y la atención fue buena.',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'historial']))
+            ->assertOk()
+            ->assertSee(__('travels.reviewed', ['stars' => 4]))
+            ->assertDontSee(__('travels.send_review'));
+    }
+
     public function test_open_refund_shows_status_and_hides_request(): void
     {
         $traveler = $this->traveler('reembolso@viajero.test');

@@ -2,7 +2,8 @@
     $refunds = $refunds ?? collect();
     $claims = $claims ?? collect();
     $travelSummary = $travelSummary ?? [];
-    $presentTrip = function ($reservation) use ($refunds): array {
+    $tripReviews = $tripReviews ?? collect();
+    $presentTrip = function ($reservation) use ($refunds, $tripReviews): array {
         $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
         $route = $reservation->isAir() ? $trip?->airRoute : $trip?->transportRoute;
         $origin = $reservation->isAir() ? ($route?->origin_city ?? __('travels.origin')) : ($route?->originPort?->city ?? __('travels.origin'));
@@ -37,6 +38,9 @@
                 $actions[] = ['href' => route('tickets.pdf', $ticket->code), 'label' => __('travels.download_pdf'), 'variant' => 'secondary'];
             }
         }
+        if ($reservation->status === 'confirmed' && ! $refunded) {
+            $actions[] = ['href' => route('tickets.certificate', $reservation->code), 'label' => __('travels.download_certificate'), 'variant' => 'secondary'];
+        }
         if ($reservation->status === 'pending_payment') {
             $actions[] = ['href' => route('payments.show', $reservation->code), 'label' => __('travels.complete_payment'), 'variant' => 'primary'];
         }
@@ -44,7 +48,13 @@
             $actions[] = ['href' => route('tickets.show', $reservation->code).'#reembolso', 'label' => __('travels.ask_refund'), 'variant' => 'secondary'];
         }
 
+        $review = $tripReviews->get($reservation->id);
+        $canReview = $status === 'done' && ! $refunded && $trip?->status === 'completed' && $review === null;
+
         return [
+            'review' => $review,
+            'canReview' => $canReview,
+            'companyId' => $route?->organization_id,
             'origin' => $origin,
             'destination' => $destination,
             'place' => $place,
@@ -204,6 +214,26 @@
                         </div>
                     @endif
                 </div>
+                @if($row['review'])
+                    <p class="mt-3 flex items-center gap-2 text-ny-sm text-[var(--ny-text-muted)]"><x-ui.icon name="star" class="h-4 w-4 text-amber-500" />{{ __('travels.reviewed', ['stars' => $row['review']->rating]) }} @if($row['review']->status === 'pending')· {{ __('travels.review_pending') }}@endif</p>
+                @elseif($row['canReview'] && $row['companyId'])
+                    <details class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <summary class="flex cursor-pointer items-center gap-2 text-ny-sm font-extrabold text-amber-900"><x-ui.icon name="star" class="h-4 w-4" />{{ __('travels.rate_trip') }}</summary>
+                        <form method="POST" action="{{ route('companies.review', $row['companyId']) }}" class="mt-3 grid gap-3">
+                            @csrf
+                            <input type="hidden" name="reservation_id" value="{{ $reservation->id }}">
+                            <label class="text-ny-sm font-bold text-[var(--ny-text)]">{{ __('travels.rating') }}
+                                <select name="rating" required class="mt-1 min-h-11 w-full rounded-xl border-slate-200">
+                                    @foreach([5, 4, 3, 2, 1] as $stars)<option value="{{ $stars }}">{{ $stars }} {{ $stars === 1 ? __('travels.star') : __('travels.stars') }}</option>@endforeach
+                                </select>
+                            </label>
+                            <label class="text-ny-sm font-bold text-[var(--ny-text)]">{{ __('travels.comment') }}
+                                <textarea name="comment" required minlength="10" maxlength="1000" rows="3" class="mt-1 w-full rounded-xl border-slate-200" placeholder="{{ __('travels.comment_hint') }}"></textarea>
+                            </label>
+                            <x-ui.button type="submit" variant="primary">{{ __('travels.send_review') }}</x-ui.button>
+                        </form>
+                    </details>
+                @endif
             </x-ui.card>
         @empty
             <x-ui.card class="min-w-0 text-center">

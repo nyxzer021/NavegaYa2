@@ -1,6 +1,16 @@
 <?php
 
 return [
+    'download_certificate' => 'Payment certificate',
+    'rate_trip' => 'Rate your trip',
+    'rating' => 'Your rating',
+    'star' => 'star',
+    'stars' => 'stars',
+    'comment' => 'Tell us how it went',
+    'comment_hint' => 'Punctuality, service, comfort...',
+    'send_review' => 'Send review',
+    'reviewed' => 'You rated this trip :stars out of 5',
+    'review_pending' => 'under review',
     'status_refunded' => 'Refunded',
     'tab_upcoming' => 'Upcoming',
     'tab_history' => 'History',

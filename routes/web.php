@@ -337,6 +337,7 @@ Route::post('/webhooks/culqi', [PaymentWebhookController::class, 'culqi'])->name
 Route::post('/webhooks/mercadopago', [PaymentWebhookController::class, 'mercadopago'])->name('webhooks.mercadopago');
 Route::get('/reserva/{code}/boletos', [PaymentController::class, 'tickets'])->name('tickets.show');
 Route::post('/reserva/{code}/reembolso', [PaymentController::class, 'requestRefund'])->middleware('auth')->name('tickets.refund');
+Route::get('/reserva/{code}/constancia', [PaymentController::class, 'certificate'])->middleware('auth')->name('tickets.certificate');
 Route::get('/boleto/{ticketCode}/qr', [PaymentController::class, 'qr'])->name('tickets.qr');
 Route::get('/boleto/{ticketCode}/pdf', [PaymentController::class, 'pdf'])->name('tickets.pdf');
 Route::get('/abordaje/verificar/{token}', [PaymentController::class, 'verify'])->name('tickets.verify');
