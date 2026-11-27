@@ -11,6 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        .mk-nav-icon{display:grid;width:30px;height:30px;flex:0 0 30px;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--c) 32%,transparent);color:color-mix(in srgb,var(--c) 25%,white);transition:background .15s ease,color .15s ease}
+        .mk-nav-icon svg{width:16px;height:16px}
+        a:hover .mk-nav-icon,a.bg-emerald-600 .mk-nav-icon{background:var(--c);color:#fff}
+        .mk-kpi-icon{display:grid;width:40px;height:40px;flex:0 0 40px;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--c) 16%,white);color:var(--c)}
+        .mk-kpi-icon svg{width:20px;height:20px}
+        .mk-empty-icon{display:inline-grid;width:64px;height:64px;place-items:center;border-radius:18px;background:#e8f5ef;color:#0F6E56}
+        .mk-empty-icon svg{width:30px;height:30px}
         .advertiser-menu-toggle{display:none;align-items:center;justify-content:center;min-height:44px;border:0;border-radius:12px;background:#fff;color:#052f25;font-size:12px;font-weight:800;padding:0 12px}
         @media(max-width:1023px){
             .advertiser-menu-toggle{display:inline-flex}
@@ -34,8 +41,8 @@
             </a>
             <div class="flex flex-wrap items-center justify-end gap-3">
                 <button type="button" class="advertiser-menu-toggle" aria-controls="advertiser-sidebar" aria-expanded="false">Menú</button>
-                <a href="{{ route('messages.index') }}" aria-label="Mensajes comerciales" class="relative grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 text-lg transition hover:bg-white/20">@if($unreadBusinessMessages)<span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white">{{ $unreadBusinessMessages > 99 ? '99+' : $unreadBusinessMessages }}</span>@endif<x-ui.icon name="messages" class="h-5 w-5" /></a>
-                <a href="{{ route('support.index') }}" aria-label="Respuestas nuevas de soporte" class="relative grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 text-lg transition hover:bg-white/20">@if($unreadSupportCount)<span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white">{{ $unreadSupportCount > 99 ? '99+' : $unreadSupportCount }}</span>@endif<x-ui.icon name="support" class="h-5 w-5" /></a>
+                <a href="{{ route('messages.index') }}" aria-label="Mensajes comerciales" class="relative grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 text-lg transition hover:bg-white/20">@if($unreadBusinessMessages)<span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-xs font-black text-white">{{ $unreadBusinessMessages > 99 ? '99+' : $unreadBusinessMessages }}</span>@endif<x-ui.icon name="messages" class="h-5 w-5" /></a>
+                <a href="{{ route('support.index') }}" aria-label="Respuestas nuevas de soporte" class="relative grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 text-lg transition hover:bg-white/20">@if($unreadSupportCount)<span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-xs font-black text-white">{{ $unreadSupportCount > 99 ? '99+' : $unreadSupportCount }}</span>@endif<x-ui.icon name="support" class="h-5 w-5" /></a>
                 <span class="hidden text-xs text-emerald-100/70 sm:block">{{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">@csrf
                     <button class="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-xs font-black transition hover:bg-white/20">Cerrar sesión</button>

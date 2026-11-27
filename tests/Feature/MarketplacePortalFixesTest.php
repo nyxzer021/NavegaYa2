@@ -54,6 +54,33 @@ class MarketplacePortalFixesTest extends TestCase
         $this->assertMatchesRegularExpression('/aria-label="Respuestas nuevas de soporte".*?<svg/s', $html);
     }
 
+    public function test_the_portal_uses_icons_readable_text_and_guides_the_next_step(): void
+    {
+        [$owner, $listing] = $this->business('pending');
+        $listing->update(['status' => 'draft']);
+
+        $html = $this->actingAs($owner)->get(route('marketplace.dashboard', ['tab' => 'overview']))
+            ->assertOk()
+            ->assertSee('Pasos para publicar tu negocio')
+            ->assertSee('0 de 5 listos', false)
+            ->assertSee('Sigue con: <strong class="text-slate-800">Activa tu plan</strong>', false)
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/text-\[(?:7|8|9|10|11)px\]/', $html);
+        $this->assertDoesNotMatchRegularExpression('/[▦▣▧▤◉◆↗]/u', $html);
+        $this->assertGreaterThanOrEqual(7, substr_count($html, 'class="mk-nav-icon"'));
+    }
+
+    public function test_a_published_business_no_longer_sees_the_steps(): void
+    {
+        [$owner, $listing] = $this->business();
+        $listing->update(['status' => 'published', 'description' => 'Hotel frente al río.', 'contact_phone' => '965000111', 'opening_schedule' => ['mon' => ['closed' => false]]]);
+
+        $this->actingAs($owner)->get(route('marketplace.dashboard', ['tab' => 'overview']))
+            ->assertOk()
+            ->assertDontSee('Pasos para publicar tu negocio');
+    }
+
     public function test_the_plan_names_are_readable_in_the_registration(): void
     {
         $this->get(route('marketplace.register'))
