@@ -50,6 +50,18 @@ class TravelerTripsTest extends TestCase
             ->assertSee(route('tickets.pdf', $trip['ticket']->code), false);
     }
 
+    public function test_a_refunded_trip_whose_seat_was_released_still_opens_every_ticket_page(): void
+    {
+        $traveler = $this->traveler('devuelto@viajero.test');
+        $trip = $this->riverTrip($traveler, 'NY-DEV-11', 'BOL-DEV-11', '7C', 'Puerto Devuelto', 'Lancha Devuelta', now()->addDays(5));
+        $trip['reservation']->seats()->update(['vessel_seat_id' => null]);
+        $trip['ticket']->update(['status' => 'voided']);
+
+        $this->actingAs($traveler)->get(route('travels.index'))->assertOk()->assertSee('NY-DEV-11');
+        $this->actingAs($traveler)->get(route('tickets.show', 'NY-DEV-11'))->assertOk();
+        $this->get(route('tickets.pdf', 'BOL-DEV-11'))->assertOk();
+    }
+
     public function test_pending_payment_shows_complete_payment(): void
     {
         $traveler = $this->traveler('pendiente@viajero.test');

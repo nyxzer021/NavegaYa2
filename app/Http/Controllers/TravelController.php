@@ -90,7 +90,7 @@ class TravelController extends Controller
                 'route' => $origin.' → '.$destination,
                 'departure' => $trip->departure_at->format('d/m/Y · H:i').' h',
                 'vessel' => $isAir ? $trip->aircraft->name : $trip->vessel->name,
-                'seat' => $isAir ? $seat->aircraftSeat->code : $seat->seat->code,
+                'seat' => $isAir ? ($seat->aircraftSeat?->code ?? '—') : ($seat->seat?->code ?? '—'),
                 'transport' => $isAir ? 'Aéreo' : 'Fluvial',
                 'status' => $ticket->status,
                 'qr_url' => route('tickets.qr', $ticket->code),
