@@ -11,7 +11,9 @@ use App\Models\DestinationListingOffer;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Models\Subscription;
+use App\Models\SubscriptionPaymentRequest;
 use App\Models\SubscriptionPlan;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AdvertisementImageService;
 use App\Support\StoredFiles;
@@ -67,6 +69,8 @@ class MarketplaceBusinessController extends Controller
             'listing' => $listing->load('images.reviews.user', 'businessCategory', 'offers'),
             'subscription' => $org->subscriptions()->with(['plan', 'scheduledPlan'])->latest()->first(),
             'availablePlans' => SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get(),
+            'paymentRequests' => SubscriptionPaymentRequest::query()->where('organization_id', $org->id)->latest()->limit(5)->get(),
+            'paymentInstructions' => SystemSetting::value('subscription_payment_instructions'),
             'cities' => DestinationCity::where('is_active', true)->orderBy('name')->get(),
             'types' => self::TYPES,
             'categories' => BusinessCategory::where('is_active', true)->orderBy('sort_order')->get(),

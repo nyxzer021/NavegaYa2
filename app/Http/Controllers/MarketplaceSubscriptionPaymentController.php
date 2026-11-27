@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\SubscriptionPaymentRequest;
 use App\Models\SubscriptionPlan;
 use App\Services\CulqiException;
 use App\Services\CulqiGateway;
 use App\Services\SubscriptionPaymentService;
+use App\Services\SubscriptionTransfers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MarketplaceSubscriptionPaymentController extends Controller
@@ -175,6 +178,26 @@ class MarketplaceSubscriptionPaymentController extends Controller
         ]);
 
         return response()->json(['order_id' => $order['id'], 'payment_code' => $order['payment_code'] ?? null]);
+    }
+
+    public function requestTransfer(Request $request, SubscriptionTransfers $transfers): RedirectResponse
+    {
+        $data = $request->validate([
+            'method' => ['required', Rule::in(array_keys(SubscriptionPaymentRequest::METHODS))],
+            'months' => ['required', 'integer', Rule::in([1, 3, 6, 12])],
+            'operation_number' => ['required', 'string', 'max:80'],
+            'paid_on' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'voucher' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+        ], [
+            'voucher.required' => 'Adjunta la foto o el PDF del comprobante.',
+            'voucher.mimes' => 'El comprobante debe ser una imagen (JPG, PNG, WEBP) o un PDF.',
+            'voucher.max' => 'El comprobante no puede pesar más de 5 MB.',
+            'operation_number.required' => 'Escribe el número de operación.',
+        ]);
+        $transfers->request($request, $this->subscriptionFor($request), $data, $request->file('voucher'));
+
+        return redirect()->route('marketplace.dashboard', ['tab' => 'plan'])
+            ->with('success', 'Recibimos tu comprobante. NavegaYA lo revisará y activará tu plan.');
     }
 
     private function subscriptionFor(Request $request): Subscription

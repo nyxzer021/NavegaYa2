@@ -17,6 +17,8 @@
         <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"><p class="text-xs font-black uppercase tracking-[.16em] text-emerald-700">Beneficios activos</p><h2 class="mt-2 text-xl font-black">Incluido en {{$subscription?->plan?->name??'tu plan'}}</h2><ul class="mt-5 grid gap-3 text-sm text-slate-600">@foreach($features as $feature)<li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-100 text-xs font-black text-emerald-800"></span><span>{{$feature}}</span></li>@endforeach</ul></article>
     </div>
 
+    @include('marketplace._transfer')
+
     @if($subscription?->scheduledPlan)
     <section class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5"><div><p class="text-xs font-black uppercase tracking-[.16em] text-amber-700">Cambio programado</p><h2 class="mt-1 text-lg font-black text-slate-950">{{$subscription->scheduledPlan->name}} desde el {{$subscription->scheduled_plan_starts_on?->format('d/m/Y')}}</h2><p class="mt-1 text-sm text-slate-600">Mantendrás todos los beneficios de {{$subscription->plan?->name}} hasta que termine el ciclo pagado. Ese día comenzará el precio de S/ {{number_format((float)$subscription->scheduledPlan->monthly_price,2)}} al mes.</p></div><form method="POST" action="{{route('marketplace.subscription.change.cancel')}}">@csrf @method('DELETE')<button class="rounded-xl border border-amber-400 bg-white px-4 py-3 text-xs font-black text-amber-900">Cancelar cambio</button></form></section>
     @endif

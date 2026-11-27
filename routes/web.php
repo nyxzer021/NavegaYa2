@@ -356,6 +356,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/mi-negocio/suscripcion/pago/prueba', [MarketplaceSubscriptionPaymentController::class, 'sandboxConfirm'])->middleware('role:marketplace_admin')->name('marketplace.subscription.sandbox-confirm');
     Route::post('/mi-negocio/suscripcion/cambio-programado', [MarketplaceSubscriptionPaymentController::class, 'scheduleDowngrade'])->middleware('role:marketplace_admin')->name('marketplace.subscription.downgrade');
     Route::delete('/mi-negocio/suscripcion/cambio-programado', [MarketplaceSubscriptionPaymentController::class, 'cancelScheduledChange'])->middleware('role:marketplace_admin')->name('marketplace.subscription.change.cancel');
+    Route::post('/mi-negocio/suscripcion/transferencia', [MarketplaceSubscriptionPaymentController::class, 'requestTransfer'])->middleware(['role:marketplace_admin', 'throttle:6,1'])->name('marketplace.subscription.transfer');
     Route::post('/mi-negocio/suscripcion/pago/culqi', [MarketplaceSubscriptionPaymentController::class, 'charge'])->middleware('role:marketplace_admin')->name('marketplace.subscription.culqi.charge');
     Route::post('/mi-negocio/suscripcion/pago/culqi/orden', [MarketplaceSubscriptionPaymentController::class, 'order'])->middleware('role:marketplace_admin')->name('marketplace.subscription.culqi.order');
     Route::patch('/mi-negocio/ficha', [MarketplaceBusinessController::class, 'update'])->middleware('role:marketplace_admin')->name('marketplace.update');
@@ -460,6 +461,10 @@ Route::middleware(['auth', 'role:super_admin|admin', 'permission'])->prefix('adm
     Route::patch('/publicidad-pautas/{ad}/reactivar', [AdminAdvertisementController::class, 'resume'])->name('advertisements.resume');
     Route::get('/suscripciones-publicitarias', [AdminAdvertisingSubscriptionController::class, 'index'])->name('advertising-subscriptions.index');
     Route::post('/suscripciones-publicitarias', [AdminAdvertisingSubscriptionController::class, 'store'])->name('advertising-subscriptions.store');
+    Route::get('/suscripciones-publicitarias/comprobantes/{paymentRequest}', [AdminAdvertisingSubscriptionController::class, 'voucher'])->name('advertising-subscriptions.vouchers.show');
+    Route::patch('/suscripciones-publicitarias/comprobantes/{paymentRequest}/aprobar', [AdminAdvertisingSubscriptionController::class, 'approveTransfer'])->name('advertising-subscriptions.vouchers.approve');
+    Route::patch('/suscripciones-publicitarias/comprobantes/{paymentRequest}/rechazar', [AdminAdvertisingSubscriptionController::class, 'rejectTransfer'])->name('advertising-subscriptions.vouchers.reject');
+    Route::patch('/suscripciones-publicitarias/datos-de-pago', [AdminAdvertisingSubscriptionController::class, 'updatePaymentInstructions'])->name('advertising-subscriptions.instructions.update');
     Route::patch('/suscripciones-publicitarias/{subscription}', [AdminAdvertisingSubscriptionController::class, 'update'])->name('advertising-subscriptions.update');
     Route::patch('/suscripciones-publicitarias/{subscription}/renovar', [AdminAdvertisingSubscriptionController::class, 'renew'])->name('advertising-subscriptions.renew');
     Route::patch('/suscripciones-publicitarias/{subscription}/cancelar', [AdminAdvertisingSubscriptionController::class, 'cancel'])->name('advertising-subscriptions.cancel');

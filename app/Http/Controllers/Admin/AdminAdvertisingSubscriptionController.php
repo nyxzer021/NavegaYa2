@@ -8,13 +8,18 @@ use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\SubscriptionPaymentRequest;
 use App\Models\SubscriptionPlan;
+use App\Models\SystemSetting;
 use App\Services\SubscriptionPaymentService;
+use App\Services\SubscriptionTransfers;
 use App\Support\AuditRecorder;
+use App\Support\StoredFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminAdvertisingSubscriptionController extends Controller
 {
@@ -45,6 +50,8 @@ class AdminAdvertisingSubscriptionController extends Controller
 
         return view('admin.advertising-subscriptions.index', [
             'subscriptions' => $query->paginate(20)->withQueryString(),
+            'transferRequests' => SubscriptionPaymentRequest::query()->where('status', 'pending')->with(['organization', 'plan', 'requester'])->oldest()->get(),
+            'paymentInstructions' => SystemSetting::value('subscription_payment_instructions'),
             'plans' => SubscriptionPlan::orderBy('monthly_price')->get(),
             'organizations' => Organization::query()
                 ->where(fn ($query) => $query->where('status', 'active')
@@ -149,6 +156,34 @@ class AdminAdvertisingSubscriptionController extends Controller
         AuditLog::create(['user_id' => $request->user()->id, 'event' => 'payment_exception_resolved', 'subject_type' => Payment::class, 'subject_id' => $payment->id, 'changes' => ['resolution' => $data['resolution'], 'reason' => $data['reason']], 'ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'route_name' => $request->route()?->getName(), 'http_method' => $request->method(), 'created_at' => now()]);
 
         return back()->with('success', $data['resolution'] === 'approve' ? 'Pago aprobado y plan activado.' : 'Excepción rechazada y cerrada.');
+    }
+
+    public function voucher(SubscriptionPaymentRequest $paymentRequest): StreamedResponse
+    {
+        return StoredFiles::documentResponse($paymentRequest->voucher_path, 'comprobante-'.$paymentRequest->id);
+    }
+
+    public function approveTransfer(Request $request, SubscriptionPaymentRequest $paymentRequest, SubscriptionTransfers $transfers): RedirectResponse
+    {
+        $transfers->approve($request, $paymentRequest);
+
+        return back()->with('success', 'Comprobante aprobado. El plan quedó activo.');
+    }
+
+    public function rejectTransfer(Request $request, SubscriptionPaymentRequest $paymentRequest, SubscriptionTransfers $transfers): RedirectResponse
+    {
+        $data = $request->validate(['rejection_reason' => ['required', 'string', 'min:5', 'max:500']]);
+        $transfers->reject($request, $paymentRequest, $data['rejection_reason']);
+
+        return back()->with('success', 'Comprobante rechazado. El negocio verá el motivo.');
+    }
+
+    public function updatePaymentInstructions(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['subscription_payment_instructions' => ['nullable', 'string', 'max:1000']]);
+        SystemSetting::updateOrCreate(['key' => 'subscription_payment_instructions'], ['value' => trim((string) ($data['subscription_payment_instructions'] ?? ''))]);
+
+        return back()->with('success', 'Datos de pago actualizados.');
     }
 
     private function validated(Request $request): array
