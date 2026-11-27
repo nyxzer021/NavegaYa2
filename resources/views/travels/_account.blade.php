@@ -22,7 +22,9 @@
             && (bool) $trip?->departure_at?->isFuture()
             && $trip?->status !== 'cancelled'
             && ! $refundOpen;
+        $refunded = $refund !== null && in_array($refund->status, ['approved', 'paid'], true);
         $status = match (true) {
+            $refunded => 'refunded',
             in_array($reservation->status, ['cancelled', 'expired'], true) || $trip?->status === 'cancelled' => 'cancelled',
             $trip?->status === 'rescheduled' || str_contains(mb_strtolower((string) $trip?->notes), 'reprogram') => 'changed',
             $trip?->departure_at?->isPast() || in_array($trip?->status, ['departed', 'in_transit', 'completed'], true) => 'done',
@@ -30,8 +32,8 @@
         };
         $actions = [];
         if ($reservation->status === 'confirmed') {
-            $actions[] = ['href' => route('tickets.show', $reservation->code), 'label' => __('travels.view_ticket'), 'variant' => 'primary'];
-            if ($ticket !== null) {
+            $actions[] = ['href' => route('tickets.show', $reservation->code), 'label' => __('travels.view_ticket'), 'variant' => $refunded ? 'secondary' : 'primary'];
+            if ($ticket !== null && ! $refunded && $ticket->status !== 'voided') {
                 $actions[] = ['href' => route('tickets.pdf', $ticket->code), 'label' => __('travels.download_pdf'), 'variant' => 'secondary'];
             }
         }
@@ -65,12 +67,14 @@
         'done' => __('travels.status_done'),
         'changed' => __('travels.status_changed'),
         'cancelled' => __('travels.status_cancelled'),
+        'refunded' => __('travels.status_refunded'),
     ];
     $statusTone = [
         'upcoming' => 'scheduled',
         'done' => 'done',
         'changed' => 'rescheduled',
         'cancelled' => 'cancelled',
+        'refunded' => 'cancelled',
     ];
     $refundTone = [
         'requested' => 'boarding',
@@ -163,11 +167,22 @@
             </div>
         </x-ui.card>
     @endif
+    @php($tripView = $tripView ?? 'proximos')
+    @php($tripCounts = $tripCounts ?? [])
+    <nav class="flex min-w-0 flex-wrap gap-2" aria-label="{{ __('travels.tabs_label') }}">
+        @foreach(['proximos' => [__('travels.tab_upcoming'), 'departures'], 'historial' => [__('travels.tab_history'), 'clock']] as $tabKey => [$tabLabel, $tabIcon])
+            <a href="{{ route('travels.index', ['vista' => $tabKey]) }}" @if($tripView === $tabKey) aria-current="page" @endif
+               class="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-ny-sm font-extrabold {{ $tripView === $tabKey ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-[var(--ny-border)] bg-white text-[var(--ny-text)] hover:bg-emerald-50' }}">
+                <x-ui.icon :name="$tabIcon" class="h-4 w-4" />{{ $tabLabel }}
+                <span class="rounded-full px-2 text-ny-xs {{ $tripView === $tabKey ? 'bg-white/20' : 'bg-slate-100' }}">{{ $tripCounts[$tabKey] ?? 0 }}</span>
+            </a>
+        @endforeach
+    </nav>
     <div class="min-w-0 space-y-3">
         @forelse($reservations as $reservation)
             @php($row = $presentTrip($reservation))
             <x-ui.card class="min-w-0">
-                <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-trip="{{ $reservation->code }}">
                     <div class="flex min-w-0 items-start gap-3">
                         <span class="ny-mark {{ $row['tone'] }}"><x-ui.icon :name="$row['icon']" /></span>
                         <div class="min-w-0">
@@ -198,6 +213,9 @@
                 <x-ui.button class="mt-4" href="{{ route('home') }}#buscar" variant="primary">{{ __('travels.search') }}</x-ui.button>
             </x-ui.card>
         @endforelse
+        @if($reservations instanceof \Illuminate\Contracts\Pagination\Paginator && $reservations->hasPages())
+            <div class="pt-2">{{ $reservations->links() }}</div>
+        @endif
     </div>
     @if($claims->isNotEmpty())
         <section class="min-w-0 space-y-3">

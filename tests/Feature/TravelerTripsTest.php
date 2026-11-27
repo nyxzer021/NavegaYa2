@@ -62,6 +62,36 @@ class TravelerTripsTest extends TestCase
         $this->get(route('tickets.pdf', 'BOL-DEV-11'))->assertOk();
     }
 
+    public function test_upcoming_and_history_are_separate_tabs_and_history_is_paginated(): void
+    {
+        $traveler = $this->traveler('pestanas@viajero.test');
+        $this->riverTrip($traveler, 'NY-FUT-01', 'BOL-FUT-01', '1A', 'Puerto Futuro', 'Lancha Futura', now()->addDays(4));
+        foreach (range(1, 12) as $n) {
+            $code = sprintf('NY-PAS-%02d', $n);
+            $this->riverTrip($traveler, $code, sprintf('BOL-H%02d', $n), 'P'.$n, 'Puerto Pasado '.$n, 'Lancha Pasada '.$n, now()->subDays($n));
+        }
+
+        $this->actingAs($traveler)->get(route('travels.index'))
+            ->assertOk()
+            ->assertSee(__('travels.tab_upcoming'))
+            ->assertSee(__('travels.tab_history'))
+            ->assertSee('data-trip="NY-FUT-01"', false)
+            ->assertDontSee('data-trip="NY-PAS-01"', false);
+
+        $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'historial']))
+            ->assertOk()
+            ->assertSee('data-trip="NY-PAS-01"', false)
+            ->assertSee('data-trip="NY-PAS-10"', false)
+            ->assertDontSee('data-trip="NY-PAS-11"', false)
+            ->assertDontSee('data-trip="NY-FUT-01"', false);
+
+        $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'historial', 'pagina' => 2]))
+            ->assertOk()
+            ->assertSee('data-trip="NY-PAS-11"', false)
+            ->assertSee('data-trip="NY-PAS-12"', false)
+            ->assertDontSee('data-trip="NY-PAS-01"', false);
+    }
+
     public function test_pending_payment_shows_complete_payment(): void
     {
         $traveler = $this->traveler('pendiente@viajero.test');
@@ -74,6 +104,36 @@ class TravelerTripsTest extends TestCase
             ->assertDontSee(__('travels.next'))
             ->assertDontSee(__('travels.view_ticket'))
             ->assertDontSee(__('travels.ask_refund'));
+    }
+
+    public function test_a_paid_refund_moves_the_trip_to_history_as_refunded_without_pdf(): void
+    {
+        $traveler = $this->traveler('devuelto-pagado@viajero.test');
+        $trip = $this->riverTrip($traveler, 'NY-DVP-11', 'BOL-DVP-11', '9A', 'Puerto Devuelto Pagado', 'Lancha Devuelta', now()->addDays(6));
+        $payment = Payment::create([
+            'reservation_id' => $trip['reservation']->id, 'purpose' => 'ticket', 'method' => 'yape', 'provider' => 'sandbox',
+            'provider_reference' => 'PAY-DVP-11', 'amount' => 95, 'status' => 'confirmed', 'paid_at' => now(),
+        ]);
+        TicketRefund::create([
+            'organization_id' => $trip['company']->id, 'reservation_id' => $trip['reservation']->id, 'payment_id' => $payment->id,
+            'source' => 'passenger', 'cause' => 'regret', 'status' => 'paid', 'fare_amount' => 95, 'fee_amount' => 0, 'amount' => 95,
+            'explanation' => 'Devolución pagada.',
+        ]);
+        $trip['ticket']->update(['status' => 'voided']);
+
+        $this->actingAs($traveler)->get(route('travels.index'))
+            ->assertOk()
+            ->assertDontSee(__('travels.next'));
+
+        $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'proximos']))
+            ->assertOk()
+            ->assertDontSee('data-trip="NY-DVP-11"', false);
+
+        $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'historial']))
+            ->assertOk()
+            ->assertSee('data-trip="NY-DVP-11"', false)
+            ->assertSee(__('travels.status_refunded'))
+            ->assertDontSee(route('tickets.pdf', 'BOL-DVP-11'), false);
     }
 
     public function test_open_refund_shows_status_and_hides_request(): void

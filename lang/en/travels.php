@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'status_refunded' => 'Refunded',
+    'tab_upcoming' => 'Upcoming',
+    'tab_history' => 'History',
+    'tabs_label' => 'Your trips',
     'panel' => 'Traveler panel',
     'title' => 'My trips',
     'greeting' => 'Hello, :name',

@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\TicketRefund;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class TravelController extends Controller
@@ -25,18 +26,11 @@ class TravelController extends Controller
                 ->get()->sortByDesc(fn (Ticket $ticket) => $ticket->issued_at)->values();
             $reservations = Reservation::query()->where('user_id', auth()->id())
                 ->with(['departure.transportRoute.originPort', 'departure.transportRoute.destinationPort', 'departure.vessel', 'airDeparture.airRoute', 'airDeparture.aircraft', 'seats.ticket', 'seats.seat', 'seats.aircraftSeat'])
-                ->latest()->limit(50)->get();
+                ->latest()->get();
+            $this->refundedIds = TicketRefund::query()->whereIn('reservation_id', $reservations->pluck('id'))
+                ->whereIn('status', ['approved', 'paid'])->pluck('reservation_id')->map(fn ($id): int => (int) $id)->all();
             foreach ($reservations as $reservation) {
-                $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
-                if (in_array($reservation->status, ['cancelled', 'expired'], true) || $trip?->status === 'cancelled') {
-                    $travelSummary['cancelled']++;
-                } elseif ($trip?->status === 'rescheduled' || str_contains(mb_strtolower((string) $trip?->notes), 'reprogram')) {
-                    $travelSummary['changed']++;
-                } elseif ($trip?->departure_at?->isPast() || in_array($trip?->status, ['departed', 'in_transit', 'completed'], true)) {
-                    $travelSummary['completed']++;
-                } else {
-                    $travelSummary['upcoming']++;
-                }
+                $travelSummary[$this->tripState($reservation)]++;
             }
         }
 
@@ -44,7 +38,8 @@ class TravelController extends Controller
             ->filter(function (Reservation $reservation): bool {
                 $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
 
-                return $reservation->status === 'confirmed' && $trip?->departure_at?->isFuture() && $trip?->status !== 'cancelled';
+                return $reservation->status === 'confirmed' && $trip?->departure_at?->isFuture() && $trip?->status !== 'cancelled'
+                    && ! in_array((int) $reservation->id, $this->refundedIds, true);
             })
             ->sortBy(fn (Reservation $reservation) => ($reservation->isAir() ? $reservation->airDeparture : $reservation->departure)?->departure_at)
             ->first();
@@ -55,7 +50,50 @@ class TravelController extends Controller
             ? ConsumerClaim::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(auth()->user()->email)])->latest()->limit(10)->get()
             : collect();
 
-        return view('travels.lookup', compact('tickets', 'accountMode', 'reservations', 'travelSummary', 'nextTrip', 'refunds', 'claims') + ['searched' => false, 'document' => '', 'reference' => '']);
+        // Próximos: viajes que aún no salen, del más cercano al más lejano. Historial: el resto, del más reciente al más antiguo.
+        $upcomingList = $reservations
+            ->filter(fn (Reservation $reservation): bool => in_array($this->tripState($reservation), ['upcoming', 'changed'], true) && ($this->tripOf($reservation)?->departure_at?->isFuture() ?? false))
+            ->sortBy(fn (Reservation $reservation) => $this->tripOf($reservation)?->departure_at)
+            ->values();
+        $historyList = $reservations->reject(fn (Reservation $reservation): bool => $upcomingList->contains('id', $reservation->id))
+            ->sortByDesc(fn (Reservation $reservation) => $this->tripOf($reservation)?->departure_at ?? $reservation->created_at)
+            ->values();
+        $tripView = in_array(request('vista'), ['proximos', 'historial'], true) ? request('vista') : ($upcomingList->isNotEmpty() ? 'proximos' : 'historial');
+        $page = max(1, request()->integer('pagina', 1));
+        $tripList = $tripView === 'proximos'
+            ? $upcomingList
+            : new LengthAwarePaginator($historyList->forPage($page, 10)->values(), $historyList->count(), 10, $page, ['path' => route('travels.index'), 'pageName' => 'pagina', 'query' => ['vista' => 'historial']]);
+        $tripCounts = ['proximos' => $upcomingList->count(), 'historial' => $historyList->count()];
+
+        return view('travels.lookup', compact('tickets', 'accountMode', 'travelSummary', 'nextTrip', 'refunds', 'claims', 'tripView', 'tripCounts') + ['reservations' => $tripList, 'searched' => false, 'document' => '', 'reference' => '']);
+    }
+
+    /**
+     * Reservas con una devolución aprobada o pagada: cuentan como canceladas y van al historial.
+     *
+     * @var list<int>
+     */
+    private array $refundedIds = [];
+
+    private function tripOf(Reservation $reservation): mixed
+    {
+        return $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
+    }
+
+    /**
+     * Estado del viaje para los contadores y las pestañas: upcoming, changed, completed o cancelled.
+     */
+    private function tripState(Reservation $reservation): string
+    {
+        $trip = $this->tripOf($reservation);
+
+        return match (true) {
+            in_array((int) $reservation->id, $this->refundedIds, true) => 'cancelled',
+            in_array($reservation->status, ['cancelled', 'expired'], true) || $trip?->status === 'cancelled' => 'cancelled',
+            $trip?->status === 'rescheduled' || str_contains(mb_strtolower((string) $trip?->notes), 'reprogram') => 'changed',
+            $trip?->departure_at?->isPast() || in_array($trip?->status, ['departed', 'in_transit', 'completed'], true) => 'completed',
+            default => 'upcoming',
+        };
     }
 
     public function search(Request $request): View
@@ -64,7 +102,7 @@ class TravelController extends Controller
         $tickets = $this->ticketsFor($data['document'], $data['reference']);
         session(['travels_ticket_codes' => $tickets->pluck('code')->all()]);
 
-        return view('travels.lookup', ['tickets' => $tickets, 'reservations' => collect(), 'travelSummary' => [], 'nextTrip' => null, 'refunds' => collect(), 'claims' => collect(), 'searched' => true, 'accountMode' => false, 'document' => $data['document'], 'reference' => $data['reference']]);
+        return view('travels.lookup', ['tickets' => $tickets, 'reservations' => collect(), 'travelSummary' => [], 'nextTrip' => null, 'refunds' => collect(), 'claims' => collect(), 'tripView' => 'proximos', 'tripCounts' => [], 'searched' => true, 'accountMode' => false, 'document' => $data['document'], 'reference' => $data['reference']]);
     }
 
     public function lookup(Request $request): JsonResponse
