@@ -13,6 +13,7 @@ use App\Models\OrganizationModality;
 use App\Models\OrganizationPhoto;
 use App\Models\Payment;
 use App\Models\PhotoComment;
+use App\Models\SubscriptionPaymentRequest;
 use App\Models\SupportTicket;
 use App\Models\Vessel;
 use Illuminate\Support\Collection;
@@ -32,6 +33,13 @@ class AdminRequestInbox
     public function items(): Collection
     {
         return collect()
+            ->concat(SubscriptionPaymentRequest::query()->where('status', 'pending')->with(['organization', 'plan'])->get()->map(fn (SubscriptionPaymentRequest $paymentRequest) => [
+                'type' => 'transfer', 'icon' => 'wallet', 'area' => 'Comprobantes de pago',
+                'title' => $paymentRequest->organization?->commercial_name ?: $paymentRequest->organization?->legal_name ?: 'Negocio anunciante',
+                'detail' => $paymentRequest->methodLabel().' · S/ '.number_format((float) $paymentRequest->amount, 2).' · plan '.($paymentRequest->plan?->name ?? '').' por '.$paymentRequest->months.' '.($paymentRequest->months === 1 ? 'mes' : 'meses'),
+                'status' => 'Comprobante por revisar', 'created_at' => $paymentRequest->created_at,
+                'url' => route('admin.advertising-subscriptions.index'), 'action' => 'Revisar comprobante',
+            ]))
             ->concat(Payment::query()->whereIn('purpose', ['subscription', 'subscription_upgrade'])->where('requires_review', true)->with('subscription.organization')->get()->map(fn ($payment) => [
                 'type' => 'payment', 'icon' => 'online_payments', 'area' => 'Excepciones de pago',
                 'title' => $payment->subscription?->organization?->commercial_name ?: $payment->subscription?->organization?->legal_name ?: 'Empresa anunciante',
@@ -76,7 +84,7 @@ class AdminRequestInbox
                 'url' => route('admin.moderation.index'), 'action' => 'Revisar reporte',
             ]))
             ->concat(MasterRoute::query()->where('status', 'pending')->with(['originPort', 'destinationPort', 'requestedOrganization'])->get()->map(fn (MasterRoute $segment) => [
-                'type' => 'master_route', 'icon' => 'Ruta', 'area' => 'Tramos por aprobar',
+                'type' => 'master_route', 'icon' => 'routes', 'area' => 'Tramos por aprobar',
                 'title' => $segment->origin_city.' → '.$segment->destination_city,
                 'detail' => ($segment->requestedOrganization?->commercial_name ?: $segment->requestedOrganization?->legal_name ?: 'Empresa').' · '.($segment->modality === 'aereo' ? 'Aéreo' : 'Fluvial').' · '.$segment->formatted_duration,
                 'status' => 'Solicitud de tramo', 'created_at' => $segment->updated_at,
@@ -162,7 +170,7 @@ class AdminRequestInbox
 
         return [
             'total' => $items->count(),
-            'payments' => $items->where('type', 'payment')->count(),
+            'payments' => $items->whereIn('type', ['payment', 'transfer'])->count(),
             'organizations' => $items->where('type', 'organization')->count(),
             'fleet' => $items->where('type', 'fleet')->count(),
             'content' => $items->whereIn('type', ['listing', 'advertisement'])->count(),

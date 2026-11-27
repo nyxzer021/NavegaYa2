@@ -63,6 +63,8 @@ class SubscriptionTransferTest extends TestCase
         $this->actingAs($admin)->get(route('admin.advertising-subscriptions.index'))
             ->assertOk()->assertSee('Comprobantes de pago por revisar')->assertSee('OP-123');
         $this->actingAs($admin)->get(route('admin.advertising-subscriptions.vouchers.show', $request))->assertOk();
+        $this->actingAs($admin)->get(route('admin.requests.index'))
+            ->assertOk()->assertSee('Comprobante por revisar')->assertSee('Hotel Transferencia');
 
         $this->actingAs($admin)->patch(route('admin.advertising-subscriptions.vouchers.approve', $request))->assertSessionHasNoErrors();
 
