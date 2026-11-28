@@ -172,10 +172,7 @@ class PaymentController extends Controller
     {
         $reservation = Reservation::query()->where('code', $code)->firstOrFail();
         abort_unless($this->ownsReservation($request->user(), $reservation), 403);
-        $payment = Payment::query()->where('reservation_id', $reservation->id)
-            ->whereIn('status', ['confirmed', 'succeeded'])
-            ->where(fn ($query) => $query->whereNull('purpose')->orWhere('purpose', 'ticket'))
-            ->where('amount', '>', 0)->oldest()->first();
+        $payment = Payment::query()->withCertificate()->where('reservation_id', $reservation->id)->oldest()->first();
         abort_if($payment === null, 404);
         $receipt = $receipts->issue($payment);
         abort_if($receipt === null, 404);

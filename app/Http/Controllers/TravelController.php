@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanyReview;
 use App\Models\ConsumerClaim;
+use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Ticket;
 use App\Models\TicketRefund;
@@ -50,6 +51,9 @@ class TravelController extends Controller
         $tripReviews = $accountMode
             ? CompanyReview::query()->whereIn('reservation_id', $reservations->pluck('id'))->get()->keyBy('reservation_id')
             : collect();
+        $certificateIds = $accountMode
+            ? Payment::query()->withCertificate()->whereIn('reservation_id', $reservations->pluck('id'))->pluck('reservation_id')->map(fn ($id): int => (int) $id)->unique()->values()->all()
+            : [];
         $claims = $accountMode && auth()->user()->hasVerifiedEmail()
             ? ConsumerClaim::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(auth()->user()->email)])->latest()->limit(10)->get()
             : collect();
@@ -69,7 +73,7 @@ class TravelController extends Controller
             : new LengthAwarePaginator($historyList->forPage($page, 10)->values(), $historyList->count(), 10, $page, ['path' => route('travels.index'), 'pageName' => 'pagina', 'query' => ['vista' => 'historial']]);
         $tripCounts = ['proximos' => $upcomingList->count(), 'historial' => $historyList->count()];
 
-        return view('travels.lookup', compact('tickets', 'accountMode', 'travelSummary', 'nextTrip', 'refunds', 'claims', 'tripView', 'tripCounts', 'tripReviews') + ['reservations' => $tripList, 'searched' => false, 'document' => '', 'reference' => '']);
+        return view('travels.lookup', compact('tickets', 'accountMode', 'travelSummary', 'nextTrip', 'refunds', 'claims', 'tripView', 'tripCounts', 'tripReviews', 'certificateIds') + ['reservations' => $tripList, 'searched' => false, 'document' => '', 'reference' => '']);
     }
 
     /**

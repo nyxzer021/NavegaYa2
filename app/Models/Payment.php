@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\DiscountLedger;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -103,5 +104,13 @@ class Payment extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    /**
+     * Pagos de pasaje confirmados con monto: los que tienen constancia de pago.
+     */
+    public function scopeWithCertificate(Builder $query): void
+    {
+        $query->where('purpose', 'ticket')->where('status', 'confirmed')->where('amount', '>', 0);
     }
 }

@@ -142,6 +142,7 @@ class TravelerTripsTest extends TestCase
         $trip = $this->riverTrip($traveler, 'NY-CON-01', 'BOL-CON-01', '3A', 'Puerto Constancia', 'Lancha Constancia', now()->addDays(4));
 
         $this->actingAs($traveler)->get(route('tickets.certificate', 'NY-CON-01'))->assertNotFound();
+        $this->actingAs($traveler)->get(route('travels.index'))->assertOk()->assertDontSee(route('tickets.certificate', 'NY-CON-01'), false);
 
         Payment::create([
             'reservation_id' => $trip['reservation']->id, 'purpose' => 'ticket', 'method' => 'yape', 'provider' => 'sandbox',
@@ -171,8 +172,8 @@ class TravelerTripsTest extends TestCase
             ->assertSee(route('companies.review', $trip['company']->id), false);
 
         $this->actingAs($traveler)->post(route('companies.review', $trip['company']->id), [
-            'reservation_id' => $trip['reservation']->id, 'rating' => 4, 'comment' => 'Salió puntual y la atención fue buena.',
-        ])->assertSessionHasNoErrors();
+            'reservation_id' => $trip['reservation']->id, 'rating' => 4, 'comment' => 'Salió puntual y la atención fue buena.', 'from' => 'mis-viajes',
+        ])->assertSessionHasNoErrors()->assertRedirect(route('travels.index', ['vista' => 'historial']));
 
         $this->actingAs($traveler)->get(route('travels.index', ['vista' => 'historial']))
             ->assertOk()

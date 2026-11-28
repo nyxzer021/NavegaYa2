@@ -198,8 +198,11 @@ class PublicCompanyController
             'status' => 'pending',
         ]);
 
-        return redirect()->to(route('companies.show', $organization).'#opiniones')
-            ->with('success', 'Tu opinión fue enviada y está pendiente de revisión.');
+        $destination = $request->input('from') === 'mis-viajes'
+            ? route('travels.index', ['vista' => 'historial'])
+            : route('companies.show', $organization).'#opiniones';
+
+        return redirect()->to($destination)->with('success', 'Tu opinión fue enviada y está pendiente de revisión.');
     }
 
     public function comment(Request $request, Organization $organization): RedirectResponse

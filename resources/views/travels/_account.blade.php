@@ -3,7 +3,8 @@
     $claims = $claims ?? collect();
     $travelSummary = $travelSummary ?? [];
     $tripReviews = $tripReviews ?? collect();
-    $presentTrip = function ($reservation) use ($refunds, $tripReviews): array {
+    $certificateIds = $certificateIds ?? [];
+    $presentTrip = function ($reservation) use ($refunds, $tripReviews, $certificateIds): array {
         $trip = $reservation->isAir() ? $reservation->airDeparture : $reservation->departure;
         $route = $reservation->isAir() ? $trip?->airRoute : $trip?->transportRoute;
         $origin = $reservation->isAir() ? ($route?->origin_city ?? __('travels.origin')) : ($route?->originPort?->city ?? __('travels.origin'));
@@ -38,7 +39,7 @@
                 $actions[] = ['href' => route('tickets.pdf', $ticket->code), 'label' => __('travels.download_pdf'), 'variant' => 'secondary'];
             }
         }
-        if ($reservation->status === 'confirmed' && ! $refunded) {
+        if ($reservation->status === 'confirmed' && ! $refunded && in_array((int) $reservation->id, $certificateIds, true)) {
             $actions[] = ['href' => route('tickets.certificate', $reservation->code), 'label' => __('travels.download_certificate'), 'variant' => 'secondary'];
         }
         if ($reservation->status === 'pending_payment') {
@@ -179,6 +180,9 @@
     @endif
     @php($tripView = $tripView ?? 'proximos')
     @php($tripCounts = $tripCounts ?? [])
+    @if(session('success'))
+        <x-ui.toast :message="session('success')" />
+    @endif
     <nav class="flex min-w-0 flex-wrap gap-2" aria-label="{{ __('travels.tabs_label') }}">
         @foreach(['proximos' => [__('travels.tab_upcoming'), 'departures'], 'historial' => [__('travels.tab_history'), 'clock']] as $tabKey => [$tabLabel, $tabIcon])
             <a href="{{ route('travels.index', ['vista' => $tabKey]) }}" @if($tripView === $tabKey) aria-current="page" @endif
@@ -222,6 +226,7 @@
                         <form method="POST" action="{{ route('companies.review', $row['companyId']) }}" class="mt-3 grid gap-3">
                             @csrf
                             <input type="hidden" name="reservation_id" value="{{ $reservation->id }}">
+                            <input type="hidden" name="from" value="mis-viajes">
                             <label class="text-ny-sm font-bold text-[var(--ny-text)]">{{ __('travels.rating') }}
                                 <select name="rating" required class="mt-1 min-h-11 w-full rounded-xl border-slate-200">
                                     @foreach([5, 4, 3, 2, 1] as $stars)<option value="{{ $stars }}">{{ $stars }} {{ $stars === 1 ? __('travels.star') : __('travels.stars') }}</option>@endforeach
